@@ -122,14 +122,6 @@
       </div>
     </section>
 
-    <section class="section intro-strip" aria-label="Selected professional outcomes">
-      <div class="container metrics-grid">
-        <div class="metric"><strong>20+</strong><span>years in software engineering</span></div>
-        <div class="metric"><strong>30%</strong><span>lower response time in a critical system</span></div>
-        <div class="metric"><strong>40%</strong><span>lower average incident detection and response time</span></div>
-        <div class="metric"><strong>≈ 1/3</strong><span>of the previously estimated time to integrate new microservices</span></div>
-      </div>
-    </section>
 
 
     <section class="section trajectory-section" aria-label="Professional trajectory">
@@ -139,8 +131,8 @@
           <h2>My architecture repertoire was built in layers as responsibility and system complexity increased.</h2>
         </div>
         <div class="trajectory-grid">
-          <article><span>2004–2012</span><h3>Foundations and modernization</h3><p>.NET, integrations, automation, data access and legacy-system evolution across different industries.</p></article>
-          <article><span>2012–2017</span><h3>Enterprise platforms</h3><p>ERP, BI, security, integrations and large-scale platforms in the Microsoft ecosystem.</p></article>
+          <article><span>2004–2012</span><h3>Foundations and modernization</h3><p>.NET, integrations, automation and legacy-system evolution. During this period, a data-access library reduced the effort to create and maintain those layers by 90%.</p></article>
+          <article><span>2012–2017</span><h3>Enterprise platforms</h3><p>ERP, BI, security and integrations in the Microsoft ecosystem, including a platform that centralized the management of more than 23,000 email accounts.</p></article>
           <article><span>2017–2020</span><h3>Security and critical environments</h3><p>OAuth, .NET modernization, support, availability, automation and operational monitoring.</p></article>
           <article><span>2020–2025</span><h3>Distributed systems and cloud</h3><p>Microservices, Kafka, AWS, observability, CI/CD, performance, resilience and automated testing.</p></article>
           <article><span>2025–today</span><h3>Architecture and governance</h3><p>.NET on GCP, asynchronous integrations, large data volumes, Kubernetes, Terraform, ADRs and Architecture Center of Excellence work.</p></article>
@@ -161,31 +153,42 @@
         <div class="impact-grid">
           <article class="impact-card">
             <div class="card-topline"><span>Performance</span><span>01</span></div>
-            <h3>Bottleneck in a critical .NET application</h3>
-            <p><strong>Context.</strong> An enterprise application had performance bottlenecks associated with SAP HANA queries.</p>
-            <p><strong>Decision.</strong> Root-cause analysis and query optimization, treating performance as an architectural quality attribute rather than a local tweak.</p>
-            <p><strong>Architecture lens.</strong> Before choosing an intervention, the focus was understanding where the actual cost lived and keeping the response proportional to the observed problem.</p>
-            <p class="impact-result"><strong>Outcome</strong><span>30% reduction in response time</span></p>
+            <h3>Bottleneck in a critical .NET system without rewriting the core</h3>
+            <p><strong>Context.</strong> A corporate .NET Core application concentrated latency in a critical business flow. Investigation showed that the cost was in SAP HANA queries on the synchronous path, not in the overall service design.</p>
+            <p><strong>Decision.</strong> I performed root-cause analysis along the request path, isolated expensive queries and optimized the database interaction — without adding generic caching, an emergency replica or rewriting the application. The intervention stayed exactly where the cost was real.</p>
+            <p><strong>Architecture lens.</strong> Distributing a data-access bottleneck simply multiplies the problem. The proportional decision was to reduce work in the synchronous core and preserve the rest of the system; the stack was a constraint, not an excuse to introduce a new pattern.</p>
+            <p class="impact-result"><strong>Outcome</strong><span>30% lower response time in the critical system, without depending on additional infrastructure.</span></p>
           </article>
 
           <article class="impact-card">
             <div class="card-topline"><span>Modernization</span><span>02</span></div>
-            <h3>Legacy APIs slowing system evolution</h3>
-            <p><strong>Context.</strong> The existing structure made new microservice integrations slower and increased coupling.</p>
-            <p><strong>Decision.</strong> Redesigned legacy APIs using Clean Architecture and clearer responsibility boundaries.</p>
-            <p><strong>Architecture lens.</strong> Clearer boundaries and contracts reduce the cost of change. The priority was lowering coupling and enabling incremental integration without turning modernization into a full rewrite.</p>
-            <p class="impact-result"><strong>Outcome</strong><span>new integrations in about one third of the previously estimated time</span></p>
+            <h3>Legacy APIs that made every new microservice more expensive</h3>
+            <p><strong>Context.</strong> The legacy backend exposed broad boundaries and mixed responsibilities. Each new service pulled in too many dependencies, lengthened integration and increased regression risk in what was already running in production.</p>
+            <p><strong>Decision.</strong> I redesigned APIs around responsibility and contract, separating business rules, data access and the HTTP edge enough for new services to connect through more stable contracts. Clean Architecture was a means, not the objective.</p>
+            <p><strong>Architecture lens.</strong> Modernization that depends on a full rewrite rarely fits real delivery constraints. The bet was explicit boundaries, lower coupling and incremental evolution without renegotiating the entire legacy system for every delivery.</p>
+            <p class="impact-result"><strong>Outcome</strong><span>New integrations in about one third of the time estimated before the redesign.</span></p>
           </article>
 
           <article class="impact-card">
             <div class="card-topline"><span>Observability</span><span>03</span></div>
-            <h3>Slow diagnosis in critical applications</h3>
-            <p><strong>Context.</strong> Detecting and responding to failures took longer than acceptable for the environment.</p>
-            <p><strong>Decision.</strong> Structured monitoring on AWS with Python automation to improve signal, traceability and operational response.</p>
-            <p><strong>Architecture lens.</strong> Observability should shorten the path from symptom to diagnosis to action; dashboards without correlation and operational response have limited value.</p>
-            <p class="impact-result"><strong>Outcome</strong><span>40% reduction in average incident detection and response time</span></p>
+            <h3>Late failure detection in critical applications</h3>
+            <p><strong>Context.</strong> Detecting and responding to failures took longer than the environment tolerated. Signals existed, but the path from “something broke” to “where is the problem” and “what action should we take” was weak.</p>
+            <p><strong>Decision.</strong> I structured AWS monitoring around the incident flow and complemented it with Python automation to improve signal, reduce manual steps and shorten the interval from symptom to diagnosis to action.</p>
+            <p><strong>Architecture lens.</strong> Observability that does not improve operational decisions becomes a collection of dashboards. A tool, script or alert only matters when it reduces time to action and makes the diagnostic path clearer.</p>
+            <p class="impact-result"><strong>Outcome</strong><span>40% lower average time to detect and respond to incidents.</span></p>
+          </article>
+
+          <article class="impact-card impact-card-current">
+            <div class="card-topline"><span>Current architecture</span><span>04</span></div>
+            <h3>Moving credit data without treating every flow with the same consistency model</h3>
+            <p><strong>Context.</strong> In a financial-services platform in the credit and lending domain, APIs, asynchronous processing, scheduled workloads and large volumes must coexist across BigQuery, Redis, .NET services and relational databases.</p>
+            <p><strong>Decision.</strong> I work on technical direction by separating what must remain synchronous, what can become an event, what belongs to scheduled workloads, what requires low-latency state and what remains relational. Decisions are made explicit through flows, ADRs, non-functional requirements and solution reviews before implementation becomes a fait accompli.</p>
+            <p><strong>Architecture lens.</strong> In financial domains, the expensive mistake is treating every piece of data with the same consistency model. GCP, GKE, Pub/Sub, Apigee and Terraform are the factory floor; architectural judgment is in ownership, acceptable delay, cost and evolvability.</p>
+            <p class="impact-result impact-result-qualitative"><strong>Outcome</strong><span>Integration and data-movement decisions made explicit and followed through with engineering teams and the Architecture Center of Excellence.</span></p>
           </article>
         </div>
+
+        <p class="impact-context-note">The quantitative outcomes above are from 2020–2021 in critical .NET/AWS applications. Since 2025, my work has focused on software architecture, credit, GCP and engineering governance.</p>
       </div>
     </section>
 
