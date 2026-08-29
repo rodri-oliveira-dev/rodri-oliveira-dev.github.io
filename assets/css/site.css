@@ -1161,3 +1161,72 @@ h1 {
     margin-top: 22px;
   }
 }
+
+
+/* Mobile first-screen refinement */
+
+@media (max-width: 640px) {
+  .hero {
+    padding-top: 42px;
+    padding-bottom: 48px;
+  }
+
+  .hero-grid {
+    gap: 34px;
+  }
+
+  .hero-grid > div:first-child {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .hero-grid > div:first-child > .eyebrow {
+    order: 1;
+    margin-bottom: 10px;
+  }
+
+  .hero-grid > div:first-child > h1 {
+    order: 2;
+    margin-bottom: 16px;
+    font-size: clamp(36px, 10.8vw, 44px);
+    line-height: 1;
+  }
+
+  .hero-grid > div:first-child > .hero-metrics {
+    order: 3;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-bottom: 18px;
+  }
+
+  .hero-metrics > div {
+    min-height: 76px;
+    padding: 10px 8px;
+  }
+
+  .hero-metrics strong {
+    margin-bottom: 3px;
+    font-size: 20px;
+  }
+
+  .hero-metrics span {
+    font-size: 9px;
+    line-height: 1.28;
+  }
+
+  .hero-grid > div:first-child > .hero-copy {
+    order: 4;
+    margin-bottom: 20px;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+
+  .hero-grid > div:first-child > .hero-actions {
+    order: 5;
+  }
+
+  .hero-grid > div:first-child > .hero-proof {
+    order: 6;
+    margin-top: 16px;
+    font-size: 10px;
+  }
+}
