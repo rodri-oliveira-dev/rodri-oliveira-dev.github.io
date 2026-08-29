@@ -131,6 +131,23 @@
       </div>
     </section>
 
+
+    <section class="section trajectory-section" aria-label="Professional trajectory">
+      <div class="container">
+        <div class="section-heading wide-heading">
+          <p class="eyebrow">Trajectory</p>
+          <h2>My architecture repertoire was built in layers as responsibility and system complexity increased.</h2>
+        </div>
+        <div class="trajectory-grid">
+          <article><span>2004–2012</span><h3>Foundations and modernization</h3><p>.NET, integrations, automation, data access and legacy-system evolution across different industries.</p></article>
+          <article><span>2012–2017</span><h3>Enterprise platforms</h3><p>ERP, BI, security, integrations and large-scale platforms in the Microsoft ecosystem.</p></article>
+          <article><span>2017–2020</span><h3>Security and critical environments</h3><p>OAuth, .NET modernization, support, availability, automation and operational monitoring.</p></article>
+          <article><span>2020–2025</span><h3>Distributed systems and cloud</h3><p>Microservices, Kafka, AWS, observability, CI/CD, performance, resilience and automated testing.</p></article>
+          <article><span>2025–today</span><h3>Architecture and governance</h3><p>.NET on GCP, asynchronous integrations, large data volumes, Kubernetes, Terraform, ADRs and Architecture Center of Excellence work.</p></article>
+        </div>
+      </div>
+    </section>
+
     <section class="section impact-section" id="practice">
       <div class="container">
         <div class="section-heading wide-heading">
@@ -147,6 +164,7 @@
             <h3>Bottleneck in a critical .NET application</h3>
             <p><strong>Context.</strong> An enterprise application had performance bottlenecks associated with SAP HANA queries.</p>
             <p><strong>Decision.</strong> Root-cause analysis and query optimization, treating performance as an architectural quality attribute rather than a local tweak.</p>
+            <p><strong>Architecture lens.</strong> Before choosing an intervention, the focus was understanding where the actual cost lived and keeping the response proportional to the observed problem.</p>
             <p class="impact-result"><strong>Outcome</strong><span>30% reduction in response time</span></p>
           </article>
 
@@ -155,6 +173,7 @@
             <h3>Legacy APIs slowing system evolution</h3>
             <p><strong>Context.</strong> The existing structure made new microservice integrations slower and increased coupling.</p>
             <p><strong>Decision.</strong> Redesigned legacy APIs using Clean Architecture and clearer responsibility boundaries.</p>
+            <p><strong>Architecture lens.</strong> Clearer boundaries and contracts reduce the cost of change. The priority was lowering coupling and enabling incremental integration without turning modernization into a full rewrite.</p>
             <p class="impact-result"><strong>Outcome</strong><span>new integrations in about one third of the previously estimated time</span></p>
           </article>
 
@@ -163,6 +182,7 @@
             <h3>Slow diagnosis in critical applications</h3>
             <p><strong>Context.</strong> Detecting and responding to failures took longer than acceptable for the environment.</p>
             <p><strong>Decision.</strong> Structured monitoring on AWS with Python automation to improve signal, traceability and operational response.</p>
+            <p><strong>Architecture lens.</strong> Observability should shorten the path from symptom to diagnosis to action; dashboards without correlation and operational response have limited value.</p>
             <p class="impact-result"><strong>Outcome</strong><span>40% reduction in average incident detection and response time</span></p>
           </article>
         </div>
@@ -183,36 +203,43 @@
           <article>
             <span>01</span>
             <div>
-              <h3>Start from the problem, not the pattern</h3>
-              <p>Patterns are vocabulary, not objectives. I begin with business context, system forces and quality attributes before selecting technology or structure.</p>
+              <h3>Problem and quality attributes before technology</h3>
+              <p>Availability, consistency, performance, security, cost, operability and evolution define the system forces. Patterns and products come later, as responses to those forces.</p>
             </div>
           </article>
           <article>
             <span>02</span>
             <div>
-              <h3>Constraints are part of the design</h3>
-              <p>Legacy systems, deadlines, organizational boundaries, cloud capabilities, compliance and team maturity are not side notes — they shape the architecture.</p>
+              <h3>Boundaries preserve ownership</h3>
+              <p>I avoid shortcuts that reach directly into another domain's data or rules. I prefer explicit contracts, adapters and clear responsibilities, even when that introduces some additional integration cost.</p>
             </div>
           </article>
           <article>
             <span>03</span>
             <div>
-              <h3>Design for failure and operation</h3>
-              <p>Timeouts, retries, observability, partial results, idempotency, recovery and supportability deserve the same attention as the happy path.</p>
+              <h3>Distributed consistency requires recovery design</h3>
+              <p>Retries, idempotency, unknown outcomes, compensation, dead-letter handling and reprocessing are part of the solution. The happy path alone does not describe an operable distributed system.</p>
             </div>
           </article>
           <article>
             <span>04</span>
             <div>
-              <h3>Governance should create feedback, not friction</h3>
-              <p>Good governance makes the right path easier through automation, conventions, evidence and shared decision records instead of unnecessary ceremony.</p>
+              <h3>Observability must cross boundaries</h3>
+              <p>An operation should remain diagnosable as it crosses HTTP, persistence, asynchronous processing and messaging. Correlation, tracing and operational context are different but complementary responsibilities.</p>
             </div>
           </article>
           <article>
             <span>05</span>
             <div>
-              <h3>Stay close enough to the code</h3>
-              <p>I use implementation, prototypes, libraries and tooling to validate architectural ideas and keep decisions grounded in engineering reality.</p>
+              <h3>Concurrency should be controlled at the smallest useful scope</h3>
+              <p>I prefer serializing the actual contested key or resource instead of reducing global throughput. The strategy must consider consistency, contention, data provider and real concurrent behavior.</p>
+            </div>
+          </article>
+          <article>
+            <span>06</span>
+            <div>
+              <h3>Architecture decisions have context and an expiration date</h3>
+              <p>I record alternatives, consequences and risks because a decision that is right today may stop being adequate tomorrow. Useful governance preserves the why and enables evolution instead of freezing the design.</p>
             </div>
           </article>
         </div>
@@ -232,10 +259,10 @@
 
         <article class="architecture-lab">
           <div>
-            <p class="eyebrow">Inspectable architecture</p>
-            <h3>POC Arquitetura — distributed systems architecture lab in .NET</h3>
+            <p class="eyebrow">Complementary public evidence</p>
+            <h3>Part of my architecture reasoning can be inspected in code.</h3>
             <p>
-              A reference implementation for studying architecture decisions with real code: bounded contexts, Kafka, Outbox/Inbox, idempotency, sagas, Keycloak, OpenTelemetry, ADRs, runbooks and production readiness.
+              POC Arquitetura materializes decisions that are also part of my professional repertoire: bounded contexts, Kafka, Outbox/Inbox, idempotency, sagas, Keycloak, OpenTelemetry, ADRs, runbooks and production readiness. It does not replace professional experience; it makes part of that reasoning observable.
             </p>
           </div>
           <div class="architecture-lab-meta">
