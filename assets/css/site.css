@@ -1053,3 +1053,88 @@ h1 {
     margin-bottom: 20px;
   }
 }
+
+
+/* Portfolio evidence iteration 2 */
+
+.hero-copy {
+  margin-bottom: 24px;
+}
+
+.hero-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 0 0 26px;
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+
+.hero-metrics > div {
+  min-height: 92px;
+  padding: 14px 16px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: rgba(255,255,255,.018);
+}
+
+.hero-metrics strong,
+.hero-metrics span {
+  display: block;
+}
+
+.hero-metrics strong {
+  margin-bottom: 5px;
+  color: var(--text);
+  font-size: 23px;
+  letter-spacing: -.03em;
+}
+
+.hero-metrics span {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.impact-grid {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.impact-card {
+  min-height: 560px;
+}
+
+.impact-card-current {
+  background:
+    linear-gradient(145deg, rgba(125,211,252,.045), rgba(167,139,250,.025)),
+    rgba(255,255,255,.012);
+}
+
+.impact-result-qualitative span {
+  font-size: 16px;
+}
+
+.impact-context-note {
+  max-width: 900px;
+  margin: 28px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+  .hero-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-metrics > div {
+    min-height: auto;
+  }
+
+  .impact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .impact-card {
+    min-height: auto;
+  }
+}
