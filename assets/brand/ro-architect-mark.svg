@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">RO architectural monogram</title>
+  <desc id="desc">Geometric RO monogram inside a hexagonal architectural blueprint mark.</desc>
+  <defs>
+    <linearGradient id="brandGradient" x1="28" y1="32" x2="228" y2="224" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#38d6ff"/>
+      <stop offset=".52" stop-color="#6d8cff"/>
+      <stop offset="1" stop-color="#a855f7"/>
+    </linearGradient>
+    <linearGradient id="metal" x1="64" y1="84" x2="194" y2="174" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f8fbff"/>
+      <stop offset=".52" stop-color="#cbd5e1"/>
+      <stop offset="1" stop-color="#f5f3ff"/>
+    </linearGradient>
+    <filter id="softGlow" x="-35%" y="-35%" width="170%" height="170%">
+      <feGaussianBlur stdDeviation="2.4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M128 14 225 70v116l-97 56-97-56V70l97-56Z"
+          stroke="url(#brandGradient)" stroke-width="4.5" opacity=".98"/>
+    <path d="M128 29 211 77v102l-83 48-83-48V77l83-48Z"
+          stroke="url(#brandGradient)" stroke-width="1.6" opacity=".7"/>
+
+    <circle cx="128" cy="128" r="65" stroke="#7dd3fc" stroke-width="1.2"
+            stroke-dasharray="4 6" opacity=".28"/>
+    <path d="M128 15v226M31 128h194" stroke="#94a3b8" stroke-width="1"
+          stroke-dasharray="4 6" opacity=".28"/>
+    <path d="M53 181 128 48l74 133M56 75l144 106M199 75 56 181"
+          stroke="url(#brandGradient)" stroke-width=".9" opacity=".22"/>
+
+    <g stroke="url(#brandGradient)" stroke-width="1.6" opacity=".72">
+      <circle cx="128" cy="14" r="6"/>
+      <circle cx="225" cy="70" r="6"/>
+      <circle cx="225" cy="186" r="6"/>
+      <circle cx="128" cy="242" r="6"/>
+      <circle cx="31" cy="186" r="6"/>
+      <circle cx="31" cy="70" r="6"/>
+      <rect x="121" y="43" width="14" height="14" rx="2"/>
+      <rect x="121" y="199" width="14" height="14" rx="2"/>
+    </g>
+  </g>
+
+  <g filter="url(#softGlow)">
+    <path d="M66 82h49c22 0 36 13 36 31 0 14-8 24-20 29l26 36h-27l-22-32H91v32H66V82Zm25 20v25h22c8 0 13-5 13-12s-5-13-13-13H91Z"
+          fill="url(#metal)"/>
+    <path d="M149 82h41c22 0 37 15 37 36v24c0 21-15 36-37 36h-41V82Zm25 21v54h14c9 0 14-6 14-16v-22c0-10-5-16-14-16h-14Z"
+          fill="url(#metal)"/>
+  </g>
+</svg>
