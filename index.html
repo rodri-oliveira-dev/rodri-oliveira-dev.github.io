@@ -104,6 +104,12 @@
           <p class="hero-copy">
             Com mais de duas décadas em engenharia de software, atuo na interseção entre negócio, arquitetura e entrega — desenhando sistemas distribuídos, integrações e soluções cloud que precisam continuar confiáveis, compreensíveis e sustentáveis no mundo real.
           </p>
+          <div class="hero-metrics" aria-label="Resultados profissionais selecionados">
+            <div><strong>30%</strong><span>menos tempo de resposta em fluxo crítico .NET/HANA</span></div>
+            <div><strong>40%</strong><span>menos tempo médio de detecção e resposta</span></div>
+            <div><strong>≈ 1/3</strong><span>do tempo para integrar um novo microserviço</span></div>
+          </div>
+
           <div class="hero-actions">
             <a class="button primary" href="#practice">Veja resultados e decisões</a>
             <a class="button secondary" href="mailto:rodrigodotnet@outlook.com">Vamos conversar ↗</a>
@@ -123,14 +129,6 @@
       </div>
     </section>
 
-    <section class="section intro-strip" aria-label="Resultados profissionais selecionados">
-      <div class="container metrics-grid">
-        <div class="metric"><strong>20+</strong><span>anos em engenharia de software</span></div>
-        <div class="metric"><strong>30%</strong><span>menos tempo de resposta em sistema crítico</span></div>
-        <div class="metric"><strong>40%</strong><span>menos tempo médio para detectar e responder a incidentes</span></div>
-        <div class="metric"><strong>≈ 1/3</strong><span>do tempo antes previsto para integrar novos microserviços</span></div>
-      </div>
-    </section>
 
 
     <section class="section trajectory-section" aria-label="Trajetória profissional">
@@ -140,8 +138,8 @@
           <h2>O repertório arquitetural foi construído em camadas, acompanhando o aumento de responsabilidade e complexidade.</h2>
         </div>
         <div class="trajectory-grid">
-          <article><span>2004–2012</span><h3>Fundamentos e modernização</h3><p>.NET, integrações, automação, acesso a dados e evolução de sistemas legados em diferentes setores.</p></article>
-          <article><span>2012–2017</span><h3>Plataformas corporativas</h3><p>ERP, BI, segurança, integrações e plataformas de larga escala no ecossistema Microsoft.</p></article>
+          <article><span>2004–2012</span><h3>Fundamentos e modernização</h3><p>.NET, integrações, automação e evolução de legado. Nesse período, uma biblioteca de acesso a dados reduziu em 90% o esforço de criação e manutenção dessas camadas.</p></article>
+          <article><span>2012–2017</span><h3>Plataformas corporativas</h3><p>ERP, BI, segurança e integrações no ecossistema Microsoft, incluindo uma plataforma que centralizou o gerenciamento de mais de 23 mil contas de e-mail.</p></article>
           <article><span>2017–2020</span><h3>Segurança e ambientes críticos</h3><p>OAuth, modernização .NET, sustentação, disponibilidade, automação e monitoramento operacional.</p></article>
           <article><span>2020–2025</span><h3>Sistemas distribuídos e cloud</h3><p>Microserviços, Kafka, AWS, observabilidade, CI/CD, performance, resiliência e testes automatizados.</p></article>
           <article><span>2025–hoje</span><h3>Arquitetura e governança</h3><p>.NET na GCP, integrações assíncronas, grandes volumes de dados, Kubernetes, Terraform, ADRs e atuação em Centro de Excelência de Arquitetura.</p></article>
@@ -162,31 +160,42 @@
         <div class="impact-grid">
           <article class="impact-card">
             <div class="card-topline"><span>Performance</span><span>01</span></div>
-            <h3>Gargalo em aplicação crítica .NET</h3>
-            <p><strong>Contexto.</strong> Uma aplicação corporativa apresentava gargalos associados a consultas em SAP HANA.</p>
-            <p><strong>Decisão.</strong> Investigação de causa-raiz e otimização das consultas, tratando desempenho como atributo arquitetural e não apenas como ajuste local.</p>
-            <p><strong>Leitura arquitetural.</strong> Antes de escolher uma intervenção, o foco foi entender onde o custo realmente estava e preservar a solução mais proporcional ao problema observado.</p>
-            <p class="impact-result"><strong>Resultado</strong><span>30% de redução no tempo de resposta</span></p>
+            <h3>Gargalo em sistema crítico .NET sem reescrever o núcleo</h3>
+            <p><strong>Contexto.</strong> Uma aplicação corporativa em .NET Core concentrava lentidão em um fluxo de negócio crítico. A investigação mostrou que o custo estava nas consultas ao SAP HANA no caminho síncrono, e não no desenho geral do serviço.</p>
+            <p><strong>Decisão.</strong> Fiz causa-raiz no caminho da requisição, isolei as consultas caras e otimizei a interação com o banco — sem adicionar cache genérico, réplica emergencial ou reescrever a aplicação. A intervenção ficou exatamente onde o custo era real.</p>
+            <p><strong>Leitura arquitetural.</strong> Distribuir um gargalo de acesso a dados apenas multiplica o problema. A decisão proporcional foi reduzir o trabalho no núcleo síncrono e preservar o restante do sistema; a stack entrou como restrição, não como justificativa para introduzir um padrão novo.</p>
+            <p class="impact-result"><strong>Resultado</strong><span>30% menos tempo de resposta no sistema crítico, sem depender de mais infraestrutura.</span></p>
           </article>
 
           <article class="impact-card">
             <div class="card-topline"><span>Modernização</span><span>02</span></div>
-            <h3>APIs legadas bloqueando evolução</h3>
-            <p><strong>Contexto.</strong> A estrutura existente tornava a integração de novos microserviços mais lenta e aumentava o acoplamento.</p>
-            <p><strong>Decisão.</strong> Redesenho das APIs com Clean Architecture e melhor segregação de responsabilidades.</p>
-            <p><strong>Leitura arquitetural.</strong> Fronteiras e contratos mais claros reduzem o custo de evolução. A prioridade foi diminuir acoplamento e permitir integração incremental sem transformar modernização em reescrita total.</p>
-            <p class="impact-result"><strong>Resultado</strong><span>novas integrações em cerca de 1/3 do tempo antes previsto</span></p>
+            <h3>APIs legadas que encareciam cada microserviço novo</h3>
+            <p><strong>Contexto.</strong> O backend legado expunha fronteiras largas e responsabilidades misturadas. Cada novo serviço puxava dependências demais, alongava a integração e aumentava o risco de regressão no que já estava em produção.</p>
+            <p><strong>Decisão.</strong> Redesenhei as APIs por responsabilidade e contrato, separando regras de negócio, acesso a dados e borda HTTP o suficiente para que novos serviços se conectassem a contratos mais estáveis. Clean Architecture foi um meio, não o objetivo.</p>
+            <p><strong>Leitura arquitetural.</strong> Modernização que depende de reescrita total raramente cabe em prazo real. A aposta foi tornar as fronteiras explícitas, reduzir acoplamento e permitir evolução incremental sem renegociar todo o legado a cada entrega.</p>
+            <p class="impact-result"><strong>Resultado</strong><span>Novas integrações em cerca de um terço do tempo previsto antes do redesenho.</span></p>
           </article>
 
           <article class="impact-card">
             <div class="card-topline"><span>Observabilidade</span><span>03</span></div>
-            <h3>Diagnóstico lento em aplicações críticas</h3>
-            <p><strong>Contexto.</strong> Detectar e responder a falhas exigia mais tempo do que o aceitável para o ambiente.</p>
-            <p><strong>Decisão.</strong> Estruturação de monitoramento em AWS e automações em Python para ampliar sinal, rastreabilidade e resposta operacional.</p>
-            <p><strong>Leitura arquitetural.</strong> Observabilidade precisa encurtar o caminho entre sintoma, diagnóstico e ação; dashboards sem capacidade de correlação e resposta operacional têm valor limitado.</p>
-            <p class="impact-result"><strong>Resultado</strong><span>40% de redução no tempo médio de detecção e resposta a incidentes</span></p>
+            <h3>Detecção tardia em aplicações críticas</h3>
+            <p><strong>Contexto.</strong> Detectar e responder a falhas levava mais tempo do que o ambiente tolerava. Havia sinais disponíveis, mas pouco caminho entre “algo quebrou”, “onde está o problema” e “qual ação tomar”.</p>
+            <p><strong>Decisão.</strong> Estruturei monitoramento na AWS pensando no fluxo do incidente, complementado por automações em Python para ampliar sinal, reduzir passos manuais e encurtar o intervalo entre sintoma, diagnóstico e ação.</p>
+            <p><strong>Leitura arquitetural.</strong> Observabilidade que não melhora a decisão operacional vira coleção de gráficos. Ferramenta, script ou alerta só têm valor quando reduzem o tempo até a ação e deixam o caminho de diagnóstico mais claro.</p>
+            <p class="impact-result"><strong>Resultado</strong><span>40% menos tempo médio para detectar e responder a incidentes.</span></p>
+          </article>
+
+          <article class="impact-card impact-card-current">
+            <div class="card-topline"><span>Arquitetura atual</span><span>04</span></div>
+            <h3>Movimentar dados de crédito sem tratar tudo com a mesma consistência</h3>
+            <p><strong>Contexto.</strong> Em uma plataforma de serviços financeiros no domínio de crédito e empréstimos, APIs, processamento assíncrono, cargas agendadas e grandes volumes precisam coexistir entre BigQuery, Redis, serviços .NET e banco relacional.</p>
+            <p><strong>Decisão.</strong> Trabalho a direção técnica separando o que precisa ser síncrono, o que pode ser evento, o que pertence a cargas agendadas, o que exige estado de baixa latência e o que permanece no relacional. As decisões são explicitadas em fluxos, ADRs, requisitos não funcionais e revisões de solução antes de virarem implementação consolidada.</p>
+            <p><strong>Leitura arquitetural.</strong> Em domínio financeiro, o erro caro é tratar todo dado com o mesmo modelo de consistência. GCP, GKE, Pub/Sub, Apigee e Terraform são o chão de fábrica; o julgamento arquitetural está em ownership, atraso aceitável, custo e capacidade de evolução.</p>
+            <p class="impact-result impact-result-qualitative"><strong>Resultado</strong><span>Decisões de integração e movimento de dados tornadas explícitas e acompanhadas junto aos times de engenharia e ao Centro de Excelência de Arquitetura.</span></p>
           </article>
         </div>
+
+        <p class="impact-context-note">Os resultados quantitativos acima são de 2020–2021, em aplicações críticas .NET/AWS. Desde 2025, minha atuação está concentrada em arquitetura de software, crédito, GCP e governança técnica.</p>
       </div>
     </section>
 
