@@ -132,6 +132,23 @@
       </div>
     </section>
 
+
+    <section class="section trajectory-section" aria-label="Trajetória profissional">
+      <div class="container">
+        <div class="section-heading wide-heading">
+          <p class="eyebrow">Trajetória</p>
+          <h2>O repertório arquitetural foi construído em camadas, acompanhando o aumento de responsabilidade e complexidade.</h2>
+        </div>
+        <div class="trajectory-grid">
+          <article><span>2004–2012</span><h3>Fundamentos e modernização</h3><p>.NET, integrações, automação, acesso a dados e evolução de sistemas legados em diferentes setores.</p></article>
+          <article><span>2012–2017</span><h3>Plataformas corporativas</h3><p>ERP, BI, segurança, integrações e plataformas de larga escala no ecossistema Microsoft.</p></article>
+          <article><span>2017–2020</span><h3>Segurança e ambientes críticos</h3><p>OAuth, modernização .NET, sustentação, disponibilidade, automação e monitoramento operacional.</p></article>
+          <article><span>2020–2025</span><h3>Sistemas distribuídos e cloud</h3><p>Microserviços, Kafka, AWS, observabilidade, CI/CD, performance, resiliência e testes automatizados.</p></article>
+          <article><span>2025–hoje</span><h3>Arquitetura e governança</h3><p>.NET na GCP, integrações assíncronas, grandes volumes de dados, Kubernetes, Terraform, ADRs e atuação em Centro de Excelência de Arquitetura.</p></article>
+        </div>
+      </div>
+    </section>
+
     <section class="section impact-section" id="practice">
       <div class="container">
         <div class="section-heading wide-heading">
@@ -148,6 +165,7 @@
             <h3>Gargalo em aplicação crítica .NET</h3>
             <p><strong>Contexto.</strong> Uma aplicação corporativa apresentava gargalos associados a consultas em SAP HANA.</p>
             <p><strong>Decisão.</strong> Investigação de causa-raiz e otimização das consultas, tratando desempenho como atributo arquitetural e não apenas como ajuste local.</p>
+            <p><strong>Leitura arquitetural.</strong> Antes de escolher uma intervenção, o foco foi entender onde o custo realmente estava e preservar a solução mais proporcional ao problema observado.</p>
             <p class="impact-result"><strong>Resultado</strong><span>30% de redução no tempo de resposta</span></p>
           </article>
 
@@ -156,6 +174,7 @@
             <h3>APIs legadas bloqueando evolução</h3>
             <p><strong>Contexto.</strong> A estrutura existente tornava a integração de novos microserviços mais lenta e aumentava o acoplamento.</p>
             <p><strong>Decisão.</strong> Redesenho das APIs com Clean Architecture e melhor segregação de responsabilidades.</p>
+            <p><strong>Leitura arquitetural.</strong> Fronteiras e contratos mais claros reduzem o custo de evolução. A prioridade foi diminuir acoplamento e permitir integração incremental sem transformar modernização em reescrita total.</p>
             <p class="impact-result"><strong>Resultado</strong><span>novas integrações em cerca de 1/3 do tempo antes previsto</span></p>
           </article>
 
@@ -164,6 +183,7 @@
             <h3>Diagnóstico lento em aplicações críticas</h3>
             <p><strong>Contexto.</strong> Detectar e responder a falhas exigia mais tempo do que o aceitável para o ambiente.</p>
             <p><strong>Decisão.</strong> Estruturação de monitoramento em AWS e automações em Python para ampliar sinal, rastreabilidade e resposta operacional.</p>
+            <p><strong>Leitura arquitetural.</strong> Observabilidade precisa encurtar o caminho entre sintoma, diagnóstico e ação; dashboards sem capacidade de correlação e resposta operacional têm valor limitado.</p>
             <p class="impact-result"><strong>Resultado</strong><span>40% de redução no tempo médio de detecção e resposta a incidentes</span></p>
           </article>
         </div>
@@ -184,36 +204,43 @@
           <article>
             <span>01</span>
             <div>
-              <h3>Comece pelo problema, não pelo padrão</h3>
-              <p>Padrões são vocabulário, não objetivo. Começo pelo contexto de negócio, forças do sistema e atributos de qualidade antes de escolher tecnologia ou estrutura.</p>
+              <h3>Problema e atributos de qualidade antes da tecnologia</h3>
+              <p>Disponibilidade, consistência, desempenho, segurança, custo, operabilidade e evolução definem as forças do sistema. Padrões e produtos entram depois, como resposta a essas forças.</p>
             </div>
           </article>
           <article>
             <span>02</span>
             <div>
-              <h3>Restrições fazem parte do design</h3>
-              <p>Legado, prazos, fronteiras organizacionais, capacidades da cloud, compliance e maturidade dos times não são notas de rodapé — eles moldam a arquitetura.</p>
+              <h3>Fronteiras preservam ownership</h3>
+              <p>Evito atalhos que atravessam diretamente dados ou regras de outro domínio. Prefiro contratos explícitos, adapters e responsabilidades claras, mesmo quando isso introduz algum custo adicional de integração.</p>
             </div>
           </article>
           <article>
             <span>03</span>
             <div>
-              <h3>Projete para falha e operação</h3>
-              <p>Timeouts, retries, observabilidade, resultados parciais, idempotência, recuperação e suporte merecem a mesma atenção que o happy path.</p>
+              <h3>Consistência distribuída exige desenho de recuperação</h3>
+              <p>Retries, idempotência, resultados desconhecidos, compensação, DLQ e reprocessamento fazem parte da solução. O happy path sozinho não descreve um sistema distribuído operável.</p>
             </div>
           </article>
           <article>
             <span>04</span>
             <div>
-              <h3>Governança deve gerar feedback, não atrito</h3>
-              <p>Boa governança torna o caminho correto mais fácil por meio de automação, convenções, evidências e registros compartilhados de decisão, não de cerimônia desnecessária.</p>
+              <h3>Observabilidade precisa atravessar fronteiras</h3>
+              <p>Uma operação deve continuar diagnosticável ao cruzar HTTP, persistência, processamento assíncrono e mensageria. Correlação, tracing e contexto operacional são responsabilidades diferentes e complementares.</p>
             </div>
           </article>
           <article>
             <span>05</span>
             <div>
-              <h3>Permaneça perto o suficiente do código</h3>
-              <p>Uso implementação, protótipos, bibliotecas e tooling para validar ideias arquiteturais e manter decisões ancoradas na realidade da engenharia.</p>
+              <h3>Concorrência deve ser controlada no menor escopo útil</h3>
+              <p>Prefiro serializar a chave ou recurso realmente disputado em vez de reduzir o throughput global. A estratégia precisa considerar consistência, contenção, provider de dados e comportamento real sob concorrência.</p>
+            </div>
+          </article>
+          <article>
+            <span>06</span>
+            <div>
+              <h3>Decisões arquiteturais têm contexto e prazo de validade</h3>
+              <p>Registro alternativas, consequências e riscos porque uma decisão correta hoje pode deixar de ser adequada amanhã. Governança útil preserva o porquê e facilita evolução, em vez de congelar o desenho.</p>
             </div>
           </article>
         </div>
@@ -233,10 +260,10 @@
 
         <article class="architecture-lab">
           <div>
-            <p class="eyebrow">Arquitetura inspecionável</p>
-            <h3>POC Arquitetura — laboratório de sistemas distribuídos em .NET</h3>
+            <p class="eyebrow">Evidência pública complementar</p>
+            <h3>Parte do meu raciocínio arquitetural pode ser inspecionada em código.</h3>
             <p>
-              Uma reference implementation para estudar decisões de arquitetura com código real: bounded contexts, Kafka, Outbox/Inbox, idempotência, sagas, Keycloak, OpenTelemetry, ADRs, runbooks e readiness para produção.
+              O projeto POC Arquitetura materializa decisões que também fazem parte do meu repertório profissional: bounded contexts, Kafka, Outbox/Inbox, idempotência, sagas, Keycloak, OpenTelemetry, ADRs, runbooks e readiness para produção. Ele não substitui a trajetória profissional; torna uma parte desse raciocínio observável.
             </p>
           </div>
           <div class="architecture-lab-meta">
