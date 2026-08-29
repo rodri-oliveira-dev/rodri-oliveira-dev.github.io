@@ -641,3 +641,148 @@ h1 {
     transition-duration: .01ms !important;
   }
 }
+
+
+/* Professional positioning refresh */
+
+.lang-link {
+  display: grid;
+  min-width: 34px;
+  min-height: 30px;
+  place-items: center;
+  border-radius: 7px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.lang-link.active {
+  background: var(--text);
+  color: #0a0e18;
+}
+
+.signal-kicker {
+  margin: 10px 0 4px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.wide-heading {
+  max-width: 900px;
+}
+
+.practice-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+
+.practice-card {
+  min-height: 290px;
+  padding: 30px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: rgba(255,255,255,.012);
+}
+
+.practice-card > span {
+  display: block;
+  margin-bottom: 48px;
+  color: var(--accent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+}
+
+.practice-card h3 {
+  margin-bottom: 12px;
+  font-size: 21px;
+  letter-spacing: -.02em;
+}
+
+.practice-card p {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.proof-section {
+  background:
+    radial-gradient(circle at 88% 20%, rgba(167,139,250,.07), transparent 26rem),
+    var(--bg);
+}
+
+.toolkit-section {
+  padding-top: 76px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-soft);
+}
+
+.toolkit-section .toolkit {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.toolkit-heading > div {
+  max-width: 580px;
+}
+
+.toolkit-heading h3 {
+  margin-bottom: 0;
+  font-size: clamp(26px, 3.4vw, 38px);
+  line-height: 1.15;
+  letter-spacing: -.035em;
+}
+
+.section-action {
+  margin-top: 34px;
+}
+
+.writing-section {
+  background: linear-gradient(180deg, rgba(255,255,255,.014), transparent);
+}
+
+.contact-copy {
+  max-width: 650px;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.contact-links .contact-primary {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  .practice-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .toolkit-heading {
+    display: block;
+  }
+
+  .toolkit-heading > p {
+    margin-top: 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .practice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .practice-card {
+    min-height: auto;
+    padding: 26px;
+  }
+
+  .practice-card > span {
+    margin-bottom: 30px;
+  }
+}
