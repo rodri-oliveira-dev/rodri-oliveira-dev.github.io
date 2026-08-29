@@ -80,16 +80,12 @@ button, a { -webkit-tap-highlight-color: transparent; }
   white-space: nowrap;
 }
 
-.brand-mark {
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--line-strong);
-  border-radius: 11px;
-  background: linear-gradient(145deg, rgba(125,211,252,.14), rgba(167,139,250,.14));
-  font-size: 12px;
-  letter-spacing: .08em;
+.brand-symbol {
+  width: 42px;
+  height: 42px;
+  display: block;
+  flex: 0 0 auto;
+  filter: drop-shadow(0 0 12px rgba(109, 140, 255, .18));
 }
 
 .nav {
@@ -784,5 +780,33 @@ h1 {
 
   .practice-card > span {
     margin-bottom: 30px;
+  }
+}
+
+
+/* RO architectural identity */
+
+.signal-brand-mark {
+  width: 104px;
+  height: 104px;
+  display: block;
+  margin: 12px auto 10px;
+  filter: drop-shadow(0 10px 28px rgba(109, 140, 255, .16));
+}
+
+.signal-card .signal-kicker {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 640px) {
+  .brand-symbol {
+    width: 38px;
+    height: 38px;
+  }
+
+  .signal-brand-mark {
+    width: 92px;
+    height: 92px;
   }
 }
