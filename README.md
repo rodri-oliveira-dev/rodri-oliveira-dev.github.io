@@ -25,8 +25,9 @@ The site focuses on:
 
 The website uses dedicated crawlable URLs for each language:
 
-- English: `/`
-- Português (Brasil): `/pt-br/`
+- Português (Brasil), default: `/`
+- English: `/en/`
+- Legacy Portuguese URL: `/pt-br/` redirects to `/`
 
 Both pages include canonical URLs, `hreflang` alternates, Open Graph metadata and Schema.org `Person` structured data. The sitemap contains both language variants.
 
@@ -42,8 +43,9 @@ The site is intentionally dependency-free:
 
 ## Structure
 
-- `index.html` — English portfolio
-- `pt-br/index.html` — Portuguese portfolio
+- `index.html` — Portuguese portfolio and default language
+- `en/index.html` — English portfolio
+- `pt-br/index.html` — legacy redirect to the Portuguese root
 - `assets/css/site.css` — responsive visual system
 - `assets/js/site.js` — minimal UI behavior
 - `assets/brand/` — personal brand assets
