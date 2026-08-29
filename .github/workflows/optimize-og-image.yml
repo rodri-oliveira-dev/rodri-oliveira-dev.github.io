@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - ".github/workflows/optimize-og-image.yml"
+      - "assets/social/rodrigo-de-oliveira-og.png"
   workflow_dispatch:
 
 permissions:
