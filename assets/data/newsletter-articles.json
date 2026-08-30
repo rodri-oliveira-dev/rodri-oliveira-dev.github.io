@@ -1,0 +1,15 @@
+[
+  {
+    "url": "https://pt.linkedin.com/pulse/entities-e-value-objects-identidade-igualdade-modelo-de-de-oliveira-hy4gf",
+    "finalUrl": "https://pt.linkedin.com/pulse/entities-e-value-objects-identidade-igualdade-modelo-de-de-oliveira-hy4gf",
+    "title": "Entities e Value Objects: identidade, igualdade e comportamento no modelo de domínio",
+    "description": "Este é o sexto artigo da série sobre Domain-Driven Design. No texto anterior, estudamos Context Map e como Bounded Contexts podem se relacionar sem destruir a independência de seus modelos.",
+    "publishedAt": "2026-08-17",
+    "metadataSource": {
+      "title": "og:title",
+      "description": "og:description",
+      "publishedAt": "JSON-LD datePublished"
+    },
+    "addedAt": "2026-08-30T23:57:40+00:00"
+  }
+]
