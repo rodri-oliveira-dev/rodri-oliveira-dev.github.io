@@ -165,7 +165,7 @@
       <div class="container">
         <div class="section-heading wide-heading">
           <p class="eyebrow">Results and decisions in real systems</p>
-          <h2>Principles matter. Evidence shows whether the decisions actually worked.</h2>
+          <h2>Principles matter. Here are selected decisions and outcomes from real systems.</h2>
           <p>
             These examples come from my professional experience while preserving client context. The focus is the problem, the engineering decision and the observed outcome.
           </p>
@@ -204,7 +204,7 @@
             <h3>Moving credit data without treating every flow with the same consistency model</h3>
             <p><strong>Context.</strong> In a financial-services platform in the credit and lending domain, APIs, asynchronous processing, scheduled workloads and large volumes must coexist across BigQuery, Redis, .NET services and relational databases.</p>
             <p><strong>Decision.</strong> I work on technical direction by separating what must remain synchronous, what can become an event, what belongs to scheduled workloads, what requires low-latency state and what remains relational. Decisions are made explicit through flows, ADRs, non-functional requirements and solution reviews before implementation becomes a fait accompli.</p>
-            <p><strong>Architecture lens.</strong> In financial domains, the expensive mistake is treating every piece of data with the same consistency model. GCP, GKE, Pub/Sub, Apigee and Terraform are the factory floor; architectural judgment is in ownership, acceptable delay, cost and evolvability.</p>
+            <p><strong>Architecture lens.</strong> In financial domains, different flows require different consistency models. GCP, GKE, Pub/Sub, Apigee and Terraform are part of the technology environment; the architectural decision is defining ownership, consistency, acceptable latency, cost and evolvability.</p>
             <p class="impact-result impact-result-qualitative"><strong>Outcome</strong><span>Integration and data-movement decisions made explicit and followed through with engineering teams and the Architecture Center of Excellence.</span></p>
           </article>
         </div>
@@ -274,7 +274,7 @@
       <div class="container">
         <div class="section-heading">
           <p class="eyebrow">Open source as engineering evidence</p>
-          <h2>I build tools that encode the engineering principles I advocate.</h2>
+          <h2>Public projects materialize part of the engineering principles I apply.</h2>
           <p>
             Open source is not the center of my professional identity. It is where I make part of my engineering thinking observable: explicit domain contracts, safer data access, automated quality feedback and architecture governance.
           </p>
