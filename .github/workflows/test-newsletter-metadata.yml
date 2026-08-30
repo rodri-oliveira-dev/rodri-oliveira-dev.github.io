@@ -263,11 +263,19 @@ jobs:
                   new_record["updatedAt"] = now
                   articles[existing_index] = new_record
 
-          if json_action != "unchanged":
+          trimmed = False
+          if len(articles) > 12:
+              articles = articles[:12]
+              trimmed = True
+
+          if json_action != "unchanged" or trimmed or not data_path.exists():
               data_path.write_text(
                   json.dumps(articles, ensure_ascii=False, indent=2) + "\n",
                   encoding="utf-8",
               )
+
+          if trimmed and json_action == "unchanged":
+              json_action = "trimmed"
 
           def md(value):
               return (
@@ -294,6 +302,7 @@ jobs:
               "inserted": "novo registro adicionado",
               "updated": "registro existente atualizado",
               "unchanged": "registro já estava atualizado",
+              "trimmed": "lista ajustada para o limite de 12 artigos",
           }[json_action]
 
           lines = [
@@ -325,6 +334,7 @@ jobs:
               "",
               f"- **Arquivo:** `{data_path}`",
               f"- **Ação no JSON:** {action_label}",
+              f"- **Artigos armazenados:** {len(articles)} / 12",
               "",
               "> O JSON é persistido para teste, mas ainda não é consumido pelo site.",
               "",
@@ -348,7 +358,7 @@ jobs:
         id: commit
         shell: bash
         run: |
-          if git diff --quiet -- assets/data/newsletter-articles.json; then
+          if [ -z "$(git status --porcelain -- assets/data/newsletter-articles.json)" ]; then
             echo "created=false" >> "$GITHUB_OUTPUT"
             echo "No JSON changes to commit."
             exit 0
