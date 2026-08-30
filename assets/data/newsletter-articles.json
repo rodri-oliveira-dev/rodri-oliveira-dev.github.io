@@ -1,5 +1,18 @@
 [
   {
+    "url": "https://pt.linkedin.com/pulse/domain-subdomain-e-core-onde-se-deve-realmente-tempo-em-de-oliveira-41taf",
+    "finalUrl": "https://pt.linkedin.com/pulse/domain-subdomain-e-core-onde-se-deve-realmente-tempo-em-de-oliveira-41taf",
+    "title": "Domain, Subdomain e Core Domain: onde se deve realmente investir tempo em modelagem",
+    "description": "Este é o terceiro artigo da série sobre Domain-Driven Design. No texto anterior, conversamos sobre Linguagem Ubíqua e sobre como transformar o conhecimento do negócio em software.",
+    "publishedAt": "2026-07-27",
+    "metadataSource": {
+      "title": "og:title",
+      "description": "og:description",
+      "publishedAt": "JSON-LD datePublished"
+    },
+    "addedAt": "2026-08-30T23:58:26+00:00"
+  },
+  {
     "url": "https://pt.linkedin.com/pulse/bounded-context-onde-um-modelo-e-uma-linguagem-rodrigo-de-oliveira-ltrjf",
     "finalUrl": "https://pt.linkedin.com/pulse/bounded-context-onde-um-modelo-e-uma-linguagem-rodrigo-de-oliveira-ltrjf",
     "title": "Bounded Context: onde um modelo e uma linguagem possuem significado consistente",
