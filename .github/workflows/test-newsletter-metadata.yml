@@ -1,0 +1,250 @@
+name: Test newsletter metadata
+
+on:
+  workflow_dispatch:
+    inputs:
+      article_url:
+        description: "URL do artigo (LinkedIn ou outra página pública)"
+        required: true
+        type: string
+      fallback_title:
+        description: "Título manual (opcional; usado apenas se a recuperação automática falhar)"
+        required: false
+        type: string
+      fallback_description:
+        description: "Descrição manual (opcional; usada apenas se a recuperação automática falhar)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-metadata:
+    name: Inspect article metadata
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Recover metadata and build summary
+        shell: bash
+        env:
+          ARTICLE_URL: ${{ inputs.article_url }}
+          FALLBACK_TITLE: ${{ inputs.fallback_title }}
+          FALLBACK_DESCRIPTION: ${{ inputs.fallback_description }}
+        run: |
+          python3 <<'PY'
+          import html
+          import json
+          import os
+          import re
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          from html.parser import HTMLParser
+
+          url = os.environ["ARTICLE_URL"].strip()
+          fallback_title = os.environ.get("FALLBACK_TITLE", "").strip()
+          fallback_description = os.environ.get("FALLBACK_DESCRIPTION", "").strip()
+          summary_path = os.environ["GITHUB_STEP_SUMMARY"]
+
+          parsed = urllib.parse.urlparse(url)
+          if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+              raise SystemExit("URL inválida. Informe uma URL HTTP/HTTPS completa.")
+
+          class MetadataParser(HTMLParser):
+              def __init__(self):
+                  super().__init__(convert_charrefs=True)
+                  self.meta = {}
+                  self.title_parts = []
+                  self.in_title = False
+                  self.in_jsonld = False
+                  self.jsonld_parts = []
+
+              def handle_starttag(self, tag, attrs):
+                  attrs = {k.lower(): v for k, v in attrs if k}
+                  tag = tag.lower()
+
+                  if tag == "meta":
+                      key = (attrs.get("property") or attrs.get("name") or "").strip().lower()
+                      value = (attrs.get("content") or "").strip()
+                      if key and value and key not in self.meta:
+                          self.meta[key] = value
+
+                  elif tag == "title":
+                      self.in_title = True
+
+                  elif tag == "script":
+                      script_type = (attrs.get("type") or "").strip().lower()
+                      if script_type == "application/ld+json":
+                          self.in_jsonld = True
+                          self.jsonld_parts = []
+
+              def handle_endtag(self, tag):
+                  tag = tag.lower()
+                  if tag == "title":
+                      self.in_title = False
+                  elif tag == "script" and self.in_jsonld:
+                      self.in_jsonld = False
+                      raw = "".join(self.jsonld_parts).strip()
+                      if raw:
+                          jsonld_blocks.append(raw)
+
+              def handle_data(self, data):
+                  if self.in_title:
+                      self.title_parts.append(data)
+                  if self.in_jsonld:
+                      self.jsonld_parts.append(data)
+
+          def clean(value):
+              if not value:
+                  return ""
+              value = html.unescape(value)
+              value = re.sub(r"\s+", " ", value).strip()
+              return value
+
+          def walk_jsonld(node):
+              if isinstance(node, dict):
+                  yield node
+                  for value in node.values():
+                      yield from walk_jsonld(value)
+              elif isinstance(node, list):
+                  for item in node:
+                      yield from walk_jsonld(item)
+
+          def jsonld_value(blocks, key):
+              for raw in blocks:
+                  try:
+                      data = json.loads(raw)
+                  except json.JSONDecodeError:
+                      continue
+                  for obj in walk_jsonld(data):
+                      value = obj.get(key)
+                      if isinstance(value, str) and value.strip():
+                          return clean(value)
+              return ""
+
+          request = urllib.request.Request(
+              url,
+              headers={
+                  "User-Agent": (
+                      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/140.0 Safari/537.36"
+                  ),
+                  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                  "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
+              },
+          )
+
+          fetch_error = ""
+          http_status = ""
+          final_url = url
+          body = ""
+
+          try:
+              with urllib.request.urlopen(request, timeout=20) as response:
+                  http_status = str(response.status)
+                  final_url = response.geturl()
+                  charset = response.headers.get_content_charset() or "utf-8"
+                  body = response.read(2_500_000).decode(charset, errors="replace")
+          except urllib.error.HTTPError as exc:
+              http_status = str(exc.code)
+              fetch_error = f"HTTP {exc.code}: {exc.reason}"
+          except Exception as exc:
+              fetch_error = f"{type(exc).__name__}: {exc}"
+
+          meta = {}
+          page_title = ""
+          jsonld_blocks = []
+
+          if body:
+              parser = MetadataParser()
+              parser.feed(body)
+              meta = parser.meta
+              page_title = clean("".join(parser.title_parts))
+
+          auto_title_candidates = [
+              ("og:title", clean(meta.get("og:title"))),
+              ("JSON-LD headline", jsonld_value(jsonld_blocks, "headline")),
+              ("twitter:title", clean(meta.get("twitter:title"))),
+              ("<title>", page_title),
+          ]
+          auto_description_candidates = [
+              ("og:description", clean(meta.get("og:description"))),
+              ("JSON-LD description", jsonld_value(jsonld_blocks, "description")),
+              ("meta description", clean(meta.get("description"))),
+              ("twitter:description", clean(meta.get("twitter:description"))),
+          ]
+
+          def choose(candidates, fallback, fallback_label):
+              for source, value in candidates:
+                  if value:
+                      return value, source, True
+              if fallback:
+                  return clean(fallback), fallback_label, False
+              return "", "não disponível", False
+
+          title, title_source, title_auto = choose(
+              auto_title_candidates,
+              fallback_title,
+              "fallback manual informado",
+          )
+          description, description_source, description_auto = choose(
+              auto_description_candidates,
+              fallback_description,
+              "fallback manual informado",
+          )
+
+          def md(value):
+              return value.replace("\\", "\\\\").replace("|", "\\|").replace("\n", " ").strip()
+
+          if fetch_error:
+              fetch_result = f"Falha na recuperação automática — {fetch_error}"
+          else:
+              fetch_result = f"HTTP {http_status or 'desconhecido'}"
+
+          if title_auto and description_auto:
+              result = "Metadados recuperados automaticamente"
+          elif title or description:
+              result = "Resultado parcial ou com fallback manual"
+          else:
+              result = "Nenhum metadado utilizável encontrado"
+
+          lines = [
+              "# Teste de metadados da newsletter",
+              "",
+              f"**Resultado:** {result}",
+              "",
+              "## Requisição",
+              "",
+              f"- **URL informada:** {md(url)}",
+              f"- **URL final:** {md(final_url)}",
+              f"- **Resposta:** {md(fetch_result)}",
+              "",
+              "## Metadados selecionados",
+              "",
+              "| Campo | Valor | Fonte |",
+              "|---|---|---|",
+              f"| Título | {md(title) if title else '—'} | {md(title_source)} |",
+              f"| Descrição | {md(description) if description else '—'} | {md(description_source)} |",
+              "",
+              "## Fallbacks",
+              "",
+              f"- **Título manual informado:** {'sim' if fallback_title else 'não'}",
+              f"- **Título manual usado:** {'sim' if title_source == 'fallback manual informado' else 'não'}",
+              f"- **Descrição manual informada:** {'sim' if fallback_description else 'não'}",
+              f"- **Descrição manual usada:** {'sim' if description_source == 'fallback manual informado' else 'não'}",
+              "",
+              "> Este workflow é somente de teste. Ele não altera arquivos, não cria commits e não publica conteúdo no site.",
+              "",
+          ]
+
+          with open(summary_path, "a", encoding="utf-8") as summary:
+              summary.write("\n".join(lines))
+
+          print(result)
+          print(f"Title source: {title_source}")
+          print(f"Description source: {description_source}")
+          if fetch_error:
+              print(fetch_error)
+          PY
