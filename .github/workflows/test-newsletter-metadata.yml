@@ -17,7 +17,7 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   inspect-metadata:
@@ -25,7 +25,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Recover metadata and build summary
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Recover metadata and update JSON
+        id: metadata
         shell: bash
         env:
           ARTICLE_URL: ${{ inputs.article_url }}
@@ -40,12 +44,16 @@ jobs:
           import urllib.error
           import urllib.parse
           import urllib.request
+          from datetime import datetime, timezone
           from html.parser import HTMLParser
+          from pathlib import Path
 
           url = os.environ["ARTICLE_URL"].strip()
           fallback_title = os.environ.get("FALLBACK_TITLE", "").strip()
           fallback_description = os.environ.get("FALLBACK_DESCRIPTION", "").strip()
           summary_path = os.environ["GITHUB_STEP_SUMMARY"]
+          output_path = os.environ["GITHUB_OUTPUT"]
+          data_path = Path("assets/data/newsletter-articles.json")
 
           parsed = urllib.parse.urlparse(url)
           if parsed.scheme not in {"http", "https"} or not parsed.netloc:
@@ -69,10 +77,8 @@ jobs:
                       value = (attrs.get("content") or "").strip()
                       if key and value and key not in self.meta:
                           self.meta[key] = value
-
                   elif tag == "title":
                       self.in_title = True
-
                   elif tag == "script":
                       script_type = (attrs.get("type") or "").strip().lower()
                       if script_type == "application/ld+json":
@@ -99,8 +105,7 @@ jobs:
               if not value:
                   return ""
               value = html.unescape(value)
-              value = re.sub(r"\s+", " ", value).strip()
-              return value
+              return re.sub(r"\s+", " ", value).strip()
 
           def walk_jsonld(node):
               if isinstance(node, dict):
@@ -176,27 +181,102 @@ jobs:
               ("twitter:description", clean(meta.get("twitter:description"))),
           ]
 
-          def choose(candidates, fallback, fallback_label):
+          def choose(candidates, fallback):
               for source, value in candidates:
                   if value:
                       return value, source, True
               if fallback:
-                  return clean(fallback), fallback_label, False
+                  return clean(fallback), "fallback manual informado", False
               return "", "não disponível", False
 
-          title, title_source, title_auto = choose(
-              auto_title_candidates,
-              fallback_title,
-              "fallback manual informado",
-          )
+          title, title_source, title_auto = choose(auto_title_candidates, fallback_title)
           description, description_source, description_auto = choose(
               auto_description_candidates,
               fallback_description,
-              "fallback manual informado",
           )
 
+          if not title:
+              raise SystemExit(
+                  "Não foi possível obter o título e nenhum fallback manual foi informado."
+              )
+
+          data_path.parent.mkdir(parents=True, exist_ok=True)
+
+          if data_path.exists():
+              try:
+                  articles = json.loads(data_path.read_text(encoding="utf-8"))
+              except json.JSONDecodeError as exc:
+                  raise SystemExit(f"JSON existente inválido: {exc}")
+              if not isinstance(articles, list):
+                  raise SystemExit("O JSON existente deve conter uma lista de artigos.")
+          else:
+              articles = []
+
+          now = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+          new_record = {
+              "url": url,
+              "finalUrl": final_url,
+              "title": title,
+              "description": description,
+              "metadataSource": {
+                  "title": title_source,
+                  "description": description_source,
+              },
+          }
+
+          existing_index = next(
+              (
+                  i for i, item in enumerate(articles)
+                  if isinstance(item, dict)
+                  and (
+                      item.get("url") == url
+                      or item.get("url") == final_url
+                      or item.get("finalUrl") == url
+                      or item.get("finalUrl") == final_url
+                  )
+              ),
+              None,
+          )
+
+          json_action = "inserted"
+
+          if existing_index is None:
+              new_record["addedAt"] = now
+              articles.insert(0, new_record)
+          else:
+              current = articles[existing_index]
+              added_at = current.get("addedAt") or now
+
+              comparable_current = {
+                  "url": current.get("url", ""),
+                  "finalUrl": current.get("finalUrl", ""),
+                  "title": current.get("title", ""),
+                  "description": current.get("description", ""),
+                  "metadataSource": current.get("metadataSource", {}),
+              }
+
+              if comparable_current == new_record:
+                  json_action = "unchanged"
+              else:
+                  json_action = "updated"
+                  new_record["addedAt"] = added_at
+                  new_record["updatedAt"] = now
+                  articles[existing_index] = new_record
+
+          if json_action != "unchanged":
+              data_path.write_text(
+                  json.dumps(articles, ensure_ascii=False, indent=2) + "\n",
+                  encoding="utf-8",
+              )
+
           def md(value):
-              return value.replace("\\", "\\\\").replace("|", "\\|").replace("\n", " ").strip()
+              return (
+                  str(value)
+                  .replace("\\", "\\\\")
+                  .replace("|", "\\|")
+                  .replace("\n", " ")
+                  .strip()
+              )
 
           if fetch_error:
               fetch_result = f"Falha na recuperação automática — {fetch_error}"
@@ -209,6 +289,12 @@ jobs:
               result = "Resultado parcial ou com fallback manual"
           else:
               result = "Nenhum metadado utilizável encontrado"
+
+          action_label = {
+              "inserted": "novo registro adicionado",
+              "updated": "registro existente atualizado",
+              "unchanged": "registro já estava atualizado",
+          }[json_action]
 
           lines = [
               "# Teste de metadados da newsletter",
@@ -225,7 +311,7 @@ jobs:
               "",
               "| Campo | Valor | Fonte |",
               "|---|---|---|",
-              f"| Título | {md(title) if title else '—'} | {md(title_source)} |",
+              f"| Título | {md(title)} | {md(title_source)} |",
               f"| Descrição | {md(description) if description else '—'} | {md(description_source)} |",
               "",
               "## Fallbacks",
@@ -235,16 +321,59 @@ jobs:
               f"- **Descrição manual informada:** {'sim' if fallback_description else 'não'}",
               f"- **Descrição manual usada:** {'sim' if description_source == 'fallback manual informado' else 'não'}",
               "",
-              "> Este workflow é somente de teste. Ele não altera arquivos, não cria commits e não publica conteúdo no site.",
+              "## Persistência",
+              "",
+              f"- **Arquivo:** `{data_path}`",
+              f"- **Ação no JSON:** {action_label}",
+              "",
+              "> O JSON é persistido para teste, mas ainda não é consumido pelo site.",
               "",
           ]
 
           with open(summary_path, "a", encoding="utf-8") as summary:
               summary.write("\n".join(lines))
 
+          with open(output_path, "a", encoding="utf-8") as output:
+              output.write(f"json_action={json_action}\n")
+
           print(result)
           print(f"Title source: {title_source}")
           print(f"Description source: {description_source}")
+          print(f"JSON action: {json_action}")
           if fetch_error:
               print(fetch_error)
           PY
+
+      - name: Commit JSON when changed
+        id: commit
+        shell: bash
+        run: |
+          if git diff --quiet -- assets/data/newsletter-articles.json; then
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            echo "No JSON changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/data/newsletter-articles.json
+          git commit -m "data: update newsletter article metadata"
+          git push
+          echo "created=true" >> "$GITHUB_OUTPUT"
+
+      - name: Add commit result to summary
+        shell: bash
+        env:
+          COMMIT_CREATED: ${{ steps.commit.outputs.created }}
+        run: |
+          {
+            echo "## Commit"
+            echo
+            if [ "$COMMIT_CREATED" = "true" ]; then
+              echo "- **Commit criado:** sim"
+            else
+              echo "- **Commit criado:** não — o JSON já estava atualizado"
+            fi
+            echo
+            echo "> Nenhum HTML do site é alterado por este workflow."
+          } >> "$GITHUB_STEP_SUMMARY"
