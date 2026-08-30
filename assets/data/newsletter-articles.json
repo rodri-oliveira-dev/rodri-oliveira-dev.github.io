@@ -1,5 +1,18 @@
 [
   {
+    "url": "https://pt.linkedin.com/pulse/context-map-como-bounded-contexts-se-relacionam-sem-seus-de-oliveira-vhowf",
+    "finalUrl": "https://pt.linkedin.com/pulse/context-map-como-bounded-contexts-se-relacionam-sem-seus-de-oliveira-vhowf",
+    "title": "Context Map: como Bounded Contexts se relacionam sem destruir seus modelos",
+    "description": "Este é o quinto artigo da série sobre Domain-Driven Design. No texto anterior, estudamos Bounded Context e a importância de delimitar onde um modelo e uma linguagem possuem significado consistente.",
+    "publishedAt": "2026-08-10",
+    "metadataSource": {
+      "title": "og:title",
+      "description": "og:description",
+      "publishedAt": "JSON-LD datePublished"
+    },
+    "addedAt": "2026-08-30T23:57:57+00:00"
+  },
+  {
     "url": "https://pt.linkedin.com/pulse/entities-e-value-objects-identidade-igualdade-modelo-de-de-oliveira-hy4gf",
     "finalUrl": "https://pt.linkedin.com/pulse/entities-e-value-objects-identidade-igualdade-modelo-de-de-oliveira-hy4gf",
     "title": "Entities e Value Objects: identidade, igualdade e comportamento no modelo de domínio",
