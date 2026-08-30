@@ -1,5 +1,18 @@
 [
   {
+    "url": "https://pt.linkedin.com/pulse/bounded-context-onde-um-modelo-e-uma-linguagem-rodrigo-de-oliveira-ltrjf",
+    "finalUrl": "https://pt.linkedin.com/pulse/bounded-context-onde-um-modelo-e-uma-linguagem-rodrigo-de-oliveira-ltrjf",
+    "title": "Bounded Context: onde um modelo e uma linguagem possuem significado consistente",
+    "description": "Este é o quarto artigo da série sobre Domain-Driven Design. No texto anterior, estudamos Domain, Subdomain e Core Domain e discutimos onde uma organização deve concentrar seu investimento em modelagem.",
+    "publishedAt": "2026-08-03",
+    "metadataSource": {
+      "title": "og:title",
+      "description": "og:description",
+      "publishedAt": "JSON-LD datePublished"
+    },
+    "addedAt": "2026-08-30T23:58:12+00:00"
+  },
+  {
     "url": "https://pt.linkedin.com/pulse/context-map-como-bounded-contexts-se-relacionam-sem-seus-de-oliveira-vhowf",
     "finalUrl": "https://pt.linkedin.com/pulse/context-map-como-bounded-contexts-se-relacionam-sem-seus-de-oliveira-vhowf",
     "title": "Context Map: como Bounded Contexts se relacionam sem destruir seus modelos",
