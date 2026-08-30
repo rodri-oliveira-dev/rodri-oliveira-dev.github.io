@@ -15,6 +15,10 @@ on:
         description: "Descrição manual (opcional; usada apenas se a recuperação automática falhar)"
         required: false
         type: string
+      fallback_published_at:
+        description: "Data manual YYYY-MM-DD (opcional; usada apenas se a recuperação automática falhar)"
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -35,6 +39,7 @@ jobs:
           ARTICLE_URL: ${{ inputs.article_url }}
           FALLBACK_TITLE: ${{ inputs.fallback_title }}
           FALLBACK_DESCRIPTION: ${{ inputs.fallback_description }}
+          FALLBACK_PUBLISHED_AT: ${{ inputs.fallback_published_at }}
         run: |
           python3 <<'PY'
           import html
@@ -51,6 +56,7 @@ jobs:
           url = os.environ["ARTICLE_URL"].strip()
           fallback_title = os.environ.get("FALLBACK_TITLE", "").strip()
           fallback_description = os.environ.get("FALLBACK_DESCRIPTION", "").strip()
+          fallback_published_at = os.environ.get("FALLBACK_PUBLISHED_AT", "").strip()
           summary_path = os.environ["GITHUB_STEP_SUMMARY"]
           output_path = os.environ["GITHUB_OUTPUT"]
           data_path = Path("assets/data/newsletter-articles.json")
@@ -67,6 +73,8 @@ jobs:
                   self.in_title = False
                   self.in_jsonld = False
                   self.jsonld_parts = []
+                  self.time_datetimes = []
+                  self.text_parts = []
 
               def handle_starttag(self, tag, attrs):
                   attrs = {k.lower(): v for k, v in attrs if k}
@@ -84,6 +92,10 @@ jobs:
                       if script_type == "application/ld+json":
                           self.in_jsonld = True
                           self.jsonld_parts = []
+                  elif tag == "time":
+                      value = (attrs.get("datetime") or "").strip()
+                      if value:
+                          self.time_datetimes.append(value)
 
               def handle_endtag(self, tag):
                   tag = tag.lower()
@@ -96,6 +108,7 @@ jobs:
                           jsonld_blocks.append(raw)
 
               def handle_data(self, data):
+                  self.text_parts.append(data)
                   if self.in_title:
                       self.title_parts.append(data)
                   if self.in_jsonld:
@@ -126,6 +139,96 @@ jobs:
                       value = obj.get(key)
                       if isinstance(value, str) and value.strip():
                           return clean(value)
+              return ""
+
+          def normalize_date(value):
+              value = clean(value)
+              if not value:
+                  return ""
+
+              iso_candidate = value.replace("Z", "+00:00")
+              try:
+                  return datetime.fromisoformat(iso_candidate).date().isoformat()
+              except ValueError:
+                  pass
+
+              direct = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", value)
+              if direct:
+                  return direct.group(1)
+
+              months_pt = {
+                  "jan": 1, "janeiro": 1,
+                  "fev": 2, "fevereiro": 2,
+                  "mar": 3, "março": 3, "marco": 3,
+                  "abr": 4, "abril": 4,
+                  "mai": 5, "maio": 5,
+                  "jun": 6, "junho": 6,
+                  "jul": 7, "julho": 7,
+                  "ago": 8, "agosto": 8,
+                  "set": 9, "setembro": 9,
+                  "out": 10, "outubro": 10,
+                  "nov": 11, "novembro": 11,
+                  "dez": 12, "dezembro": 12,
+              }
+              pt_match = re.search(
+                  r"\b(\d{1,2})\s+de\s+([A-Za-zÀ-ÿ.]+)\s+de\s+(\d{4})\b",
+                  value,
+                  re.IGNORECASE,
+              )
+              if pt_match:
+                  day = int(pt_match.group(1))
+                  month_name = pt_match.group(2).lower().rstrip(".")
+                  month = months_pt.get(month_name)
+                  if month:
+                      try:
+                          return datetime(int(pt_match.group(3)), month, day).date().isoformat()
+                      except ValueError:
+                          return ""
+
+              months_en = {
+                  "jan": 1, "january": 1,
+                  "feb": 2, "february": 2,
+                  "mar": 3, "march": 3,
+                  "apr": 4, "april": 4,
+                  "may": 5,
+                  "jun": 6, "june": 6,
+                  "jul": 7, "july": 7,
+                  "aug": 8, "august": 8,
+                  "sep": 9, "sept": 9, "september": 9,
+                  "oct": 10, "october": 10,
+                  "nov": 11, "november": 11,
+                  "dec": 12, "december": 12,
+              }
+              en_match = re.search(
+                  r"\b([A-Za-z]{3,9})\s+(\d{1,2}),\s+(\d{4})\b",
+                  value,
+                  re.IGNORECASE,
+              )
+              if en_match:
+                  month = months_en.get(en_match.group(1).lower().rstrip("."))
+                  if month:
+                      try:
+                          return datetime(
+                              int(en_match.group(3)),
+                              month,
+                              int(en_match.group(2)),
+                          ).date().isoformat()
+                      except ValueError:
+                          return ""
+
+              return ""
+
+          def visible_published_date(text):
+              patterns = [
+                  r"Publicado em\s+\d{1,2}\s+de\s+[A-Za-zÀ-ÿ.]+\s+de\s+\d{4}",
+                  r"Published on\s+[A-Za-z]{3,9}\s+\d{1,2},\s+\d{4}",
+              ]
+              for pattern in patterns:
+                  match = re.search(pattern, text, re.IGNORECASE)
+                  if match:
+                      value = normalize_date(match.group(0))
+                      if value:
+                          return value
               return ""
 
           request = urllib.request.Request(
@@ -160,6 +263,8 @@ jobs:
 
           meta = {}
           page_title = ""
+          visible_text = ""
+          time_datetimes = []
           jsonld_blocks = []
 
           if body:
@@ -167,6 +272,8 @@ jobs:
               parser.feed(body)
               meta = parser.meta
               page_title = clean("".join(parser.title_parts))
+              visible_text = clean(" ".join(parser.text_parts))
+              time_datetimes = parser.time_datetimes
 
           auto_title_candidates = [
               ("og:title", clean(meta.get("og:title"))),
@@ -179,6 +286,12 @@ jobs:
               ("JSON-LD description", jsonld_value(jsonld_blocks, "description")),
               ("meta description", clean(meta.get("description"))),
               ("twitter:description", clean(meta.get("twitter:description"))),
+          ]
+          auto_published_at_candidates = [
+              ("article:published_time", normalize_date(meta.get("article:published_time"))),
+              ("JSON-LD datePublished", normalize_date(jsonld_value(jsonld_blocks, "datePublished"))),
+              ("<time datetime>", normalize_date(time_datetimes[0]) if time_datetimes else ""),
+              ("texto visível da publicação", visible_published_date(visible_text)),
           ]
 
           def choose(candidates, fallback):
@@ -193,6 +306,19 @@ jobs:
           description, description_source, description_auto = choose(
               auto_description_candidates,
               fallback_description,
+          )
+
+          normalized_fallback_published_at = ""
+          if fallback_published_at:
+              normalized_fallback_published_at = normalize_date(fallback_published_at)
+              if not normalized_fallback_published_at:
+                  raise SystemExit(
+                      "Data manual inválida. Use o formato YYYY-MM-DD."
+                  )
+
+          published_at, published_at_source, published_at_auto = choose(
+              auto_published_at_candidates,
+              normalized_fallback_published_at,
           )
 
           if not title:
@@ -218,9 +344,11 @@ jobs:
               "finalUrl": final_url,
               "title": title,
               "description": description,
+              "publishedAt": published_at,
               "metadataSource": {
                   "title": title_source,
                   "description": description_source,
+                  "publishedAt": published_at_source,
               },
           }
 
@@ -252,6 +380,7 @@ jobs:
                   "finalUrl": current.get("finalUrl", ""),
                   "title": current.get("title", ""),
                   "description": current.get("description", ""),
+                  "publishedAt": current.get("publishedAt", ""),
                   "metadataSource": current.get("metadataSource", {}),
               }
 
@@ -291,9 +420,9 @@ jobs:
           else:
               fetch_result = f"HTTP {http_status or 'desconhecido'}"
 
-          if title_auto and description_auto:
+          if title_auto and description_auto and published_at_auto:
               result = "Metadados recuperados automaticamente"
-          elif title or description:
+          elif title or description or published_at:
               result = "Resultado parcial ou com fallback manual"
           else:
               result = "Nenhum metadado utilizável encontrado"
@@ -322,6 +451,7 @@ jobs:
               "|---|---|---|",
               f"| Título | {md(title)} | {md(title_source)} |",
               f"| Descrição | {md(description) if description else '—'} | {md(description_source)} |",
+              f"| Data da publicação | {md(published_at) if published_at else '—'} | {md(published_at_source)} |",
               "",
               "## Fallbacks",
               "",
@@ -329,6 +459,8 @@ jobs:
               f"- **Título manual usado:** {'sim' if title_source == 'fallback manual informado' else 'não'}",
               f"- **Descrição manual informada:** {'sim' if fallback_description else 'não'}",
               f"- **Descrição manual usada:** {'sim' if description_source == 'fallback manual informado' else 'não'}",
+              f"- **Data manual informada:** {'sim' if fallback_published_at else 'não'}",
+              f"- **Data manual usada:** {'sim' if published_at_source == 'fallback manual informado' else 'não'}",
               "",
               "## Persistência",
               "",
@@ -349,6 +481,8 @@ jobs:
           print(result)
           print(f"Title source: {title_source}")
           print(f"Description source: {description_source}")
+          print(f"Published date source: {published_at_source}")
+          print(f"Published date: {published_at or 'not available'}")
           print(f"JSON action: {json_action}")
           if fetch_error:
               print(fetch_error)
