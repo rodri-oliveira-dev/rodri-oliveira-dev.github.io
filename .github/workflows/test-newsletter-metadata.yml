@@ -392,19 +392,47 @@ jobs:
                   new_record["updatedAt"] = now
                   articles[existing_index] = new_record
 
+          order_before = [
+              (
+                  item.get("publishedAt", "") if isinstance(item, dict) else "",
+                  item.get("url", "") if isinstance(item, dict) else "",
+              )
+              for item in articles
+          ]
+
+          articles.sort(
+              key=lambda item: (
+                  item.get("publishedAt", "") if isinstance(item, dict) else "",
+                  item.get("url", "") if isinstance(item, dict) else "",
+              ),
+              reverse=True,
+          )
+
+          order_after = [
+              (
+                  item.get("publishedAt", "") if isinstance(item, dict) else "",
+                  item.get("url", "") if isinstance(item, dict) else "",
+              )
+              for item in articles
+          ]
+          order_changed = order_before != order_after
+
           trimmed = False
           if len(articles) > 12:
               articles = articles[:12]
               trimmed = True
 
-          if json_action != "unchanged" or trimmed or not data_path.exists():
+          if json_action == "unchanged":
+              if trimmed:
+                  json_action = "trimmed"
+              elif order_changed:
+                  json_action = "reordered"
+
+          if json_action != "unchanged" or not data_path.exists():
               data_path.write_text(
                   json.dumps(articles, ensure_ascii=False, indent=2) + "\n",
                   encoding="utf-8",
               )
-
-          if trimmed and json_action == "unchanged":
-              json_action = "trimmed"
 
           def md(value):
               return (
@@ -432,6 +460,7 @@ jobs:
               "updated": "registro existente atualizado",
               "unchanged": "registro já estava atualizado",
               "trimmed": "lista ajustada para o limite de 12 artigos",
+              "reordered": "lista reordenada por data de publicação",
           }[json_action]
 
           lines = [
@@ -467,6 +496,7 @@ jobs:
               f"- **Arquivo:** `{data_path}`",
               f"- **Ação no JSON:** {action_label}",
               f"- **Artigos armazenados:** {len(articles)} / 12",
+              "- **Ordenação:** publishedAt decrescente (mais recente primeiro)",
               "",
               "> O JSON é persistido para teste, mas ainda não é consumido pelo site.",
               "",
