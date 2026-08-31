@@ -1,5 +1,18 @@
 [
   {
+    "url": "https://www.linkedin.com/pulse/primitive-obsession-e-modelo-an%C3%AAmico-quando-o-dom%C3%ADnio-de-oliveira-pdyxf",
+    "finalUrl": "https://www.linkedin.com/pulse/primitive-obsession-e-modelo-an%C3%AAmico-quando-o-dom%C3%ADnio-de-oliveira-pdyxf",
+    "title": "Primitive Obsession e modelo anêmico: quando o domínio vira apenas um conjunto de dados",
+    "description": "Este é o sétimo artigo da série sobre Domain-Driven Design. No texto anterior, estudamos Entities e Value Objects e vimos como identidade, igualdade e comportamento influenciam a modelagem.",
+    "publishedAt": "2026-08-31",
+    "metadataSource": {
+      "title": "og:title",
+      "description": "og:description",
+      "publishedAt": "JSON-LD datePublished"
+    },
+    "addedAt": "2026-08-31T12:33:50+00:00"
+  },
+  {
     "url": "https://pt.linkedin.com/pulse/entities-e-value-objects-identidade-igualdade-modelo-de-de-oliveira-hy4gf",
     "finalUrl": "https://pt.linkedin.com/pulse/entities-e-value-objects-identidade-igualdade-modelo-de-de-oliveira-hy4gf",
     "title": "Entities e Value Objects: identidade, igualdade e comportamento no modelo de domínio",
