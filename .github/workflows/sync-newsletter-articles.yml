@@ -1,0 +1,65 @@
+name: Sync newsletter articles
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 09:00 America/Sao_Paulo (UTC-3)
+    - cron: "0 12 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-newsletter-articles
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Render latest newsletter articles
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Render four latest articles
+        run: python3 .github/scripts/render-newsletter.py
+
+      - name: Validate generated block
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          html = Path("index.html").read_text(encoding="utf-8")
+          start = html.index("<!-- NEWSLETTER_ARTICLES:START -->")
+          end = html.index("<!-- NEWSLETTER_ARTICLES:END -->", start)
+          block = html[start:end]
+
+          count = block.count("<article>")
+          if count < 1 or count > 4:
+              raise SystemExit(f"Quantidade inesperada de artigos renderizados: {count}")
+
+          if block.count('target="_blank"') != count:
+              raise SystemExit("Nem todos os artigos possuem link externo esperado.")
+
+          print(f"Validated {count} newsletter article(s).")
+          PY
+
+          git diff --check
+
+      - name: Commit homepage when changed
+        shell: bash
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "Homepage already up to date."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "content: sync latest newsletter articles"
+          git push
