@@ -6,7 +6,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'none'; connect-src 'none'; frame-src 'none'; media-src 'none'; worker-src 'none'; form-action 'none'; upgrade-insecure-requests">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Rodrigo de Oliveira | Software Architect — .NET, Distributed Systems, Cloud & DDD</title>
-  <meta name="description" content="Software Architect with 20+ years of experience designing enterprise systems, distributed architectures, .NET platforms, cloud solutions and engineering governance.">
+  <meta name="description" content="Software Architect with 20+ years in distributed systems, .NET, cloud, DDD, reliability engineering, Terraform/IaC and automated engineering governance.">
   <meta name="author" content="Rodrigo de Oliveira">
   <meta name="theme-color" content="#070b14">
   <meta name="robots" content="index,follow">
@@ -20,7 +20,7 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Rodrigo de Oliveira">
   <meta property="og:title" content="Rodrigo de Oliveira | Software Architect — .NET, Distributed Systems, Cloud & DDD">
-  <meta property="og:description" content="Software Architect with 20+ years of experience designing enterprise systems, distributed architectures, .NET platforms, cloud solutions and engineering governance.">
+  <meta property="og:description" content="Software Architect with 20+ years in distributed systems, .NET, cloud, DDD, reliability engineering, Terraform/IaC and automated engineering governance.">
   <meta property="og:url" content="https://rodri-oliveira-dev.github.io/en/">
   <meta property="og:image" content="https://rodri-oliveira-dev.github.io/assets/social/rodrigo-de-oliveira-og.png">
   <meta property="og:image:type" content="image/png">
@@ -37,7 +37,7 @@
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Rodrigo de Oliveira | Software Architect — .NET, Distributed Systems, Cloud & DDD">
-  <meta name="twitter:description" content="Software Architect with 20+ years of experience designing enterprise systems, distributed architectures, .NET platforms, cloud solutions and engineering governance.">
+  <meta name="twitter:description" content="Software Architect with 20+ years in distributed systems, .NET, cloud, DDD, reliability engineering, Terraform/IaC and automated engineering governance.">
   <meta name="twitter:image" content="https://rodri-oliveira-dev.github.io/assets/social/rodrigo-de-oliveira-og.png">
   <meta name="twitter:image:alt" content="Rodrigo de Oliveira — Software Architect — .NET, Distributed Systems, Cloud and DDD">
 
@@ -57,7 +57,7 @@
       "jobTitle": "Software Architect",
       "email": "mailto:rodrigodotnet@outlook.com",
       "image": "https://rodri-oliveira-dev.github.io/assets/profile/rodrigo-about.webp",
-      "description": "Software Architect focused on enterprise systems, distributed architectures, .NET, GCP/AWS, Domain-Driven Design and engineering governance.",
+      "description": "Software Architect focused on distributed systems, .NET, GCP/AWS, Domain-Driven Design, reliability engineering, Infrastructure as Code and automated engineering governance.",
       "sameAs": [
         "https://github.com/rodri-oliveira-dev",
         "https://www.linkedin.com/in/rodri-oliveira-dev",
@@ -75,8 +75,12 @@
         "Event-Driven Architecture",
         "API Design",
         "Observability",
+        "Reliability Engineering",
+        "Infrastructure as Code",
+        "Terraform",
+        "Software Supply Chain",
         "Software Quality",
-        "Engineering Governance"
+        "Governance as Code"
       ]
     }
   }
@@ -137,7 +141,7 @@
           <div class="signal-line"><span>01</span><strong>Architecture direction across teams</strong></div>
           <div class="signal-line"><span>02</span><strong>Distributed systems & integrations</strong></div>
           <div class="signal-line"><span>03</span><strong>Cloud & production readiness</strong></div>
-          <div class="signal-line"><span>04</span><strong>Technical governance & enablement</strong></div>
+          <div class="signal-line"><span>04</span><strong>Technical governance, automation & enablement</strong></div>
           <div class="signal-line"><span>05</span><strong>Domain modeling & system boundaries</strong></div>
         </aside>
       </div>
@@ -276,7 +280,7 @@
           <p class="eyebrow">Open source as engineering evidence</p>
           <h2>Public projects materialize part of the engineering principles I apply.</h2>
           <p>
-            Open source is not the center of my professional identity. It is where I make part of my engineering thinking observable: explicit domain contracts, safer data access, automated quality feedback and architecture governance.
+            Open source is not the center of my professional identity. It is where I make part of my engineering reasoning observable and verifiable: architecture decisions, reliability properties, infrastructure, contracts, guardrails and automation move from intention into inspectable code.
           </p>
         </div>
 
@@ -313,34 +317,50 @@
 
         <div class="project-grid">
           <article class="project-card featured">
-            <div class="card-topline"><span>Domain Modeling</span><span>01</span></div>
-            <h3>Brazilian Primitives for .NET</h3>
-            <p>Strongly typed value objects for Brazilian identifiers, designed to preserve domain semantics while keeping persistence concerns optional and explicit.</p>
-            <div class="tags"><span>DDD</span><span>.NET</span><span>EF Core</span><span>Dapper</span></div>
-            <a href="https://github.com/rodri-oliveira-dev/brazilian-primitives" target="_blank" rel="noreferrer">View Brazilian Primitives on GitHub ↗</a>
+            <div class="card-topline"><span>Reliability Engineering</span><span>01</span></div>
+            <h3>ReliableWebhooks</h3>
+            <p>Sending an HTTP POST is simple; preserving delivery across failures, concurrency and restarts is not. The library makes at-least-once delivery, leases, bounded concurrency, deterministic retries, HMAC signing, observability and destination policies explicit, separable and testable responsibilities.</p>
+            <div class="tags"><span>.NET 10</span><span>At-least-once</span><span>Retries</span><span>Observability</span></div>
+            <a href="https://github.com/rodri-oliveira-dev/ReliableWebhooks" target="_blank" rel="noreferrer">View ReliableWebhooks on GitHub ↗</a>
           </article>
 
-          <article class="project-card">
-            <div class="card-topline"><span>Data Contracts</span><span>02</span></div>
-            <h3>Dapper.TypedParameters</h3>
-            <p>Provider-specific packages that make database parameter contracts explicit for SQL Server and PostgreSQL instead of relying only on inference.</p>
-            <div class="tags"><span>Dapper</span><span>SQL Server</span><span>PostgreSQL</span></div>
-            <a href="https://github.com/rodri-oliveira-dev/Dapper.TypedParameters" target="_blank" rel="noreferrer">View Dapper.TypedParameters on GitHub ↗</a>
+          <article class="project-card featured">
+            <div class="card-topline"><span>Cloud & Infrastructure as Code</span><span>02</span></div>
+            <h3>Terraform GCP .NET Blueprint</h3>
+            <p>Cloud infrastructure needs to be reproducible without hiding operational boundaries. The blueprint codifies a production-oriented baseline with Cloud Run, Jobs, Pub/Sub/DLQ, Redis, Secret Manager, VPC, IAM, Workload Identity Federation, CI and observability.</p>
+            <div class="tags"><span>Terraform</span><span>GCP</span><span>Cloud Run</span><span>Pub/Sub</span></div>
+            <a href="https://github.com/rodri-oliveira-dev/terraform-gcp-dotnet-blueprint" target="_blank" rel="noreferrer">View Terraform GCP .NET Blueprint on GitHub ↗</a>
           </article>
 
-          <article class="project-card">
-            <div class="card-topline"><span>Architecture Governance</span><span>03</span></div>
+          <article class="project-card featured">
+            <div class="card-topline"><span>Governance as Code</span><span>03</span></div>
+            <h3>ADR Guard</h3>
+            <p>Architecture decisions lose value when documentation and conventions cannot be verified. The tool validates and indexes ADRs deterministically, exposes stable CI/CD contracts and supports AI-assisted drafting while keeping context, review and architectural acceptance under human control.</p>
+            <div class="tags"><span>ADRs</span><span>.NET Tool</span><span>CI/CD</span><span>AI-assisted</span></div>
+            <a href="https://github.com/rodri-oliveira-dev/adr-guard" target="_blank" rel="noreferrer">View ADR Guard on GitHub ↗</a>
+          </article>
+
+          <article class="project-card featured">
+            <div class="card-topline"><span>Engineering Governance</span><span>04</span></div>
             <h3>DotNetRepoInspector</h3>
-            <p>A deterministic view of .NET repositories based on evaluated MSBuild metadata for CI/CD, automation, governance and engineering evidence.</p>
+            <p>Cross-repository governance becomes fragile when it depends on file parsing or heuristics. The Inspector treats evaluated MSBuild metadata as the source of truth and exposes deterministic contracts for inventory, CI/CD and automation.</p>
             <div class="tags"><span>MSBuild</span><span>CLI</span><span>GitHub Actions</span></div>
             <a href="https://github.com/rodri-oliveira-dev/DotNetRepoInspector" target="_blank" rel="noreferrer">View DotNetRepoInspector on GitHub ↗</a>
           </article>
 
           <article class="project-card">
-            <div class="card-topline"><span>Automated Quality</span><span>04</span></div>
+            <div class="card-topline"><span>Golden Path & Supply Chain</span><span>05</span></div>
+            <h3>.NET Library Template</h3>
+            <p>Build, test, security and release practices do not need to be reinvented for every library. The template turns that baseline into a reusable golden path with package validation, NuGet Audit, CodeQL, OIDC-based Trusted Publishing and explicit software supply-chain controls.</p>
+            <div class="tags"><span>.NET 10</span><span>NuGet</span><span>OIDC</span><span>CodeQL</span></div>
+            <a href="https://github.com/rodri-oliveira-dev/dotnet-library-template" target="_blank" rel="noreferrer">View .NET Library Template on GitHub ↗</a>
+          </article>
+
+          <article class="project-card">
+            <div class="card-topline"><span>Automated Quality</span><span>06</span></div>
             <h3>ComplexityAnalysis.Analyzers</h3>
-            <p>Roslyn analyzers that turn structural and algorithmic complexity into repeatable feedback inside the development workflow.</p>
-            <div class="tags"><span>Roslyn</span><span>Big-O</span><span>Quality</span></div>
+            <p>Complexity metrics only help when they produce useful feedback close to the code. The Roslyn analyzers evaluate algorithmic, cyclomatic, cognitive and structural complexity, using conservative behavior whenever an inference cannot be made safely.</p>
+            <div class="tags"><span>Roslyn</span><span>Big-O</span><span>Quality</span><span>Analyzers</span></div>
             <a href="https://github.com/rodri-oliveira-dev/complexity-analyzers" target="_blank" rel="noreferrer">View ComplexityAnalysis.Analyzers on GitHub ↗</a>
           </article>
         </div>
@@ -427,7 +447,7 @@
             <span>DDD</span>
             <span>Observability</span>
             <span>APIs & Integrations</span>
-            <span>Engineering Governance</span>
+            <span>Governance & Automation</span>
           </div>
         </div>
       </div>
