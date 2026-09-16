@@ -1,0 +1,181 @@
+name: Create v1.0.0 tag
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  actions: read
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: create-v1.0.0-tag
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    name: Tag validated PR #11 merge
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_REPO: ${{ github.repository }}
+      TARGET_SHA: ${{ github.sha }}
+      TAG_NAME: v1.0.0
+      TARGET_PR: "11"
+
+    steps:
+      - name: Confirm this main commit belongs to PR #11
+        id: scope
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          pr_numbers="$(
+            gh api "repos/${GH_REPO}/commits/${TARGET_SHA}/pulls" \
+              --jq 'map(.number | tostring) | join(" ")'
+          )"
+
+          if [[ " ${pr_numbers} " != *" ${TARGET_PR} "* ]]; then
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            echo "Commit ${TARGET_SHA} is not associated with PR #${TARGET_PR}; skipping v1.0.0 tagging."
+            exit 0
+          fi
+
+          echo "eligible=true" >> "$GITHUB_OUTPUT"
+          echo "Commit ${TARGET_SHA} is associated with PR #${TARGET_PR}."
+
+      - name: Wait for all required main workflows
+        if: steps.scope.outputs.eligible == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          required=(
+            "Site validation"
+            "Accessibility"
+            "Lighthouse CI"
+            "GitHub Actions security"
+            "SEO validation"
+            "Notify IndexNow"
+          )
+
+          for attempt in {1..90}; do
+            runs="$(
+              gh run list \
+                --repo "$GH_REPO" \
+                --commit "$TARGET_SHA" \
+                --event push \
+                --limit 100 \
+                --json databaseId,name,status,conclusion,url
+            )"
+
+            missing=0
+            pending=0
+
+            for workflow in "${required[@]}"; do
+              row="$(
+                jq -c --arg workflow "$workflow" \
+                  '[.[] | select(.name == $workflow)] | sort_by(.databaseId) | last // empty' \
+                  <<< "$runs"
+              )"
+
+              if [[ -z "$row" ]]; then
+                echo "Waiting for workflow to start: ${workflow}"
+                missing=1
+                continue
+              fi
+
+              status="$(jq -r '.status' <<< "$row")"
+              conclusion="$(jq -r '.conclusion // ""' <<< "$row")"
+              url="$(jq -r '.url' <<< "$row")"
+
+              if [[ "$status" != "completed" ]]; then
+                echo "Waiting for ${workflow}: ${status} (${url})"
+                pending=1
+                continue
+              fi
+
+              if [[ "$conclusion" != "success" ]]; then
+                echo "Required workflow failed: ${workflow} concluded ${conclusion} (${url})"
+                exit 1
+              fi
+
+              echo "Passed: ${workflow} (${url})"
+            done
+
+            if [[ "$missing" -eq 0 && "$pending" -eq 0 ]]; then
+              echo "All required workflows completed successfully for ${TARGET_SHA}."
+              exit 0
+            fi
+
+            sleep 10
+          done
+
+          echo "Timed out waiting for required workflows on ${TARGET_SHA}."
+          exit 1
+
+      - name: Create annotated v1.0.0 tag
+        if: steps.scope.outputs.eligible == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          existing_ref="$(
+            gh api "repos/${GH_REPO}/git/ref/tags/${TAG_NAME}" 2>/dev/null || true
+          )"
+
+          if [[ -n "$existing_ref" ]]; then
+            ref_sha="$(jq -r '.object.sha' <<< "$existing_ref")"
+            ref_type="$(jq -r '.object.type' <<< "$existing_ref")"
+
+            if [[ "$ref_type" == "tag" ]]; then
+              tagged_sha="$(
+                gh api "repos/${GH_REPO}/git/tags/${ref_sha}" --jq '.object.sha'
+              )"
+            else
+              tagged_sha="$ref_sha"
+            fi
+
+            if [[ "$tagged_sha" == "$TARGET_SHA" ]]; then
+              echo "Tag ${TAG_NAME} already points to ${TARGET_SHA}; nothing to do."
+              exit 0
+            fi
+
+            echo "Tag ${TAG_NAME} already exists and points to ${tagged_sha}, not ${TARGET_SHA}."
+            exit 1
+          fi
+
+          tag_object_sha="$(
+            gh api \
+              --method POST \
+              "repos/${GH_REPO}/git/tags" \
+              -f tag="$TAG_NAME" \
+              -f message="Portfolio release after PR #${TARGET_PR}: SEO, discovery and newsletter automation improvements." \
+              -f object="$TARGET_SHA" \
+              -f type="commit" \
+              --jq '.sha'
+          )"
+
+          gh api \
+            --method POST \
+            "repos/${GH_REPO}/git/refs" \
+            -f ref="refs/tags/${TAG_NAME}" \
+            -f sha="$tag_object_sha" \
+            > /dev/null
+
+          {
+            echo "# Release tag"
+            echo
+            echo "- **Tag:** \`${TAG_NAME}\`"
+            echo "- **Commit:** \`${TARGET_SHA}\`"
+            echo "- **Origem:** PR #${TARGET_PR}"
+            echo "- **Resultado:** todos os workflows obrigatórios em \`main\` concluíram com sucesso antes da criação da tag"
+          } >> "$GITHUB_STEP_SUMMARY"
