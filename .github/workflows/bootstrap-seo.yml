@@ -62,12 +62,6 @@ jobs:
               "git add index.html newsletter/feed.xml",
               "git add index.html en/index.html newsletter/feed.xml sitemap.xml",
           )
-          replace_once(
-              sync,
-              "          - RSS regenerado por ` .github/scripts/generate-newsletter-feed.py`;".replace("` ", "`"),
-              "          - RSS regenerado por `.github/scripts/generate-newsletter-feed.py`;\n"
-              "          - structured data, RSS discovery e sitemap sincronizados por `.github/scripts/sync-seo.py`;",
-          )
 
           imp = Path(".github/workflows/import-newsletter-article.yml")
           replace_once(
@@ -99,12 +93,6 @@ jobs:
               imp,
               "git add assets/data/newsletter-articles.json index.html newsletter/feed.xml",
               "git add assets/data/newsletter-articles.json index.html en/index.html newsletter/feed.xml sitemap.xml",
-          )
-          replace_once(
-              imp,
-              "          - RSS regenerado por ` .github/scripts/generate-newsletter-feed.py`;".replace("` ", "`"),
-              "          - RSS regenerado por `.github/scripts/generate-newsletter-feed.py`;\n"
-              "          - structured data, RSS discovery e sitemap sincronizados por `.github/scripts/sync-seo.py`;",
           )
           indexnow_job = '''\n  notify_indexnow:\n    name: Notify IndexNow after merge\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    needs: merge_pr\n    permissions:\n      actions: write\n      contents: read\n\n    steps:\n      - name: Dispatch IndexNow notification\n        env:\n          GH_TOKEN: ${{ github.token }}\n          GH_REPO: ${{ github.repository }}\n        run: |\n          gh workflow run indexnow.yml \\\n            --repo \"$GH_REPO\" \\\n            --ref main\n\n          echo \"IndexNow notification dispatched for the merged newsletter content.\"\n'''
           replace_once(imp, "\n  rebuild_pages:\n", f"{indexnow_job}\n  rebuild_pages:\n")
