@@ -2,32 +2,7 @@
   const year = document.getElementById("year");
   if (year) year.textContent = new Date().getFullYear();
 
-  const mobileStyles = document.createElement("link");
-  mobileStyles.rel = "stylesheet";
-  mobileStyles.href = "/assets/css/mobile-enhancements.css";
-  document.head.appendChild(mobileStyles);
-
-  const viewport = document.querySelector('meta[name="viewport"]');
-  if (viewport && !viewport.content.includes("viewport-fit=cover")) {
-    viewport.content = `${viewport.content}, viewport-fit=cover`;
-  }
-
-  const themeColor = document.querySelector('meta[name="theme-color"]');
   const mobileViewport = window.matchMedia("(max-width: 900px)");
-
-  const syncThemeColor = () => {
-    if (themeColor) {
-      themeColor.content = mobileViewport.matches ? "#000000" : "#070b14";
-    }
-  };
-
-  syncThemeColor();
-  if (typeof mobileViewport.addEventListener === "function") {
-    mobileViewport.addEventListener("change", syncThemeColor);
-  } else if (typeof mobileViewport.addListener === "function") {
-    mobileViewport.addListener(syncThemeColor);
-  }
-
   const siteHeader = document.querySelector(".site-header");
   const headerInner = document.querySelector(".header-inner");
   const desktopNav = document.querySelector(".nav");
