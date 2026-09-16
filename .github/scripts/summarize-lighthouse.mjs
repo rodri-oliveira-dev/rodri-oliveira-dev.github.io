@@ -1,7 +1,19 @@
 import fs from "node:fs";
 import path from "node:path";
+import { createRequire } from "node:module";
 
+const require = createRequire(import.meta.url);
+const lighthouseConfig = require("../../lighthouserc.cjs");
+const assertions = lighthouseConfig?.ci?.assert?.assertions ?? {};
 const directory = ".lighthouseci";
+const marker = "<!-- lighthouse-ci-report -->";
+
+const categories = [
+  { id: "performance", label: "Performance", assertion: "categories:performance" },
+  { id: "accessibility", label: "Accessibility", assertion: "categories:accessibility" },
+  { id: "best-practices", label: "Best Practices", assertion: "categories:best-practices" },
+  { id: "seo", label: "SEO", assertion: "categories:seo" },
+];
 
 if (!fs.existsSync(directory)) {
   throw new Error("Lighthouse report directory was not created.");
@@ -39,15 +51,14 @@ for (const report of reports) {
   const entry = byUrl.get(url) ?? {
     performance: [],
     accessibility: [],
-    bestPractices: [],
+    "best-practices": [],
     seo: [],
     seoFailures: new Map(),
   };
 
-  entry.performance.push(report.categories.performance.score);
-  entry.accessibility.push(report.categories.accessibility.score);
-  entry.bestPractices.push(report.categories["best-practices"].score);
-  entry.seo.push(report.categories.seo.score);
+  for (const category of categories) {
+    entry[category.id].push(report.categories[category.id].score);
+  }
 
   for (const reference of report.categories.seo.auditRefs ?? []) {
     if (!reference.weight) continue;
@@ -64,16 +75,67 @@ for (const report of reports) {
   byUrl.set(url, entry);
 }
 
+const pageScores = new Map();
+for (const [url, entry] of byUrl) {
+  pageScores.set(
+    url,
+    Object.fromEntries(categories.map((category) => [category.id, median(entry[category.id])])),
+  );
+}
+
+const parseAssertion = (key) => {
+  const assertion = assertions[key];
+  if (!assertion) return { level: "off", minScore: 0 };
+  if (Array.isArray(assertion)) {
+    const [level, options = {}] = assertion;
+    return { level, minScore: options.minScore ?? 1 };
+  }
+  return { level: assertion, minScore: 1 };
+};
+
+const gateRows = categories.map((category) => {
+  const rule = parseAssertion(category.assertion);
+  const result = Math.min(...[...pageScores.values()].map((scores) => scores[category.id]));
+  const passed = result >= rule.minScore;
+  const status = passed ? "✅ PASS" : rule.level === "error" ? "❌ FAIL" : "⚠️ WARN";
+  const enforcement = rule.level === "error" ? "Blocking" : rule.level === "warn" ? "Warning" : "Off";
+  return { ...category, ...rule, result, status, enforcement, passed };
+});
+
+const hasFailure = gateRows.some((row) => !row.passed && row.level === "error");
+const hasWarning = gateRows.some((row) => !row.passed && row.level === "warn");
+const overall = hasFailure ? "❌ FAIL" : hasWarning ? "⚠️ WARN" : "✅ PASS";
+
 const lines = [
+  marker,
   "## Lighthouse CI",
   "",
-  "| URL | Performance | Accessibility | Best Practices | SEO |",
+  `**Quality gate:** ${overall}`,
+  "",
+  "Scores below are the median of 3 Lighthouse runs per page.",
+  "",
+  "| Page | Performance | Accessibility | Best Practices | SEO |",
   "| --- | ---: | ---: | ---: | ---: |",
 ];
 
-for (const [url, entry] of byUrl) {
+for (const [url, scores] of pageScores) {
+  const page = new URL(url).pathname || "/";
   lines.push(
-    `| ${url} | ${percent(median(entry.performance))} | ${percent(median(entry.accessibility))} | ${percent(median(entry.bestPractices))} | ${percent(median(entry.seo))} |`,
+    `| \`${page}\` | ${percent(scores.performance)} | ${percent(scores.accessibility)} | ${percent(scores["best-practices"])} | ${percent(scores.seo)} |`,
+  );
+}
+
+lines.push(
+  "",
+  "### Quality gates",
+  "",
+  "| Gate | Threshold | Enforcement | Result | Status |",
+  "| --- | ---: | --- | ---: | --- |",
+);
+
+for (const row of gateRows) {
+  lines.push(
+    `| ${row.label} | ≥ ${percent(row.minScore)} | ${row.enforcement} | ${percent(row.result)} | ${row.status} |`,
   );
 }
 
@@ -81,7 +143,8 @@ const failures = [...byUrl.entries()].filter(([, entry]) => entry.seoFailures.si
 if (failures.length > 0) {
   lines.push("", "### SEO audits below full score");
   for (const [url, entry] of failures) {
-    lines.push("", `**${url}**`);
+    const page = new URL(url).pathname || "/";
+    lines.push("", `**\`${page}\`**`);
     for (const [id, audit] of entry.seoFailures) {
       const detail = audit.displayValue ? ` — ${audit.displayValue}` : "";
       lines.push(`- \`${id}\`: ${audit.title}${detail}`);
@@ -89,8 +152,18 @@ if (failures.length > 0) {
   }
 }
 
-const summary = `${lines.join("\n")}\n`;
+if (process.env.GITHUB_SERVER_URL && process.env.GITHUB_REPOSITORY && process.env.GITHUB_RUN_ID) {
+  lines.push(
+    "",
+    `[Open Lighthouse workflow run](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})`,
+  );
+}
+
+const comment = `${lines.join("\n")}\n`;
+const summary = `${lines.filter((line) => line !== marker).join("\n")}\n`;
+
 console.log(summary);
+fs.writeFileSync(path.join(directory, "pr-comment.md"), comment, "utf8");
 
 if (process.env.GITHUB_STEP_SUMMARY) {
   fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary, "utf8");
