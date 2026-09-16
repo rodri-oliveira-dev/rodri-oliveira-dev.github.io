@@ -35,7 +35,7 @@ jobs:
         with:
           version: 1.30.1
           inputs: .
-          collect: workflows
+          collect: default
           online-audits: true
           persona: regular
           min-severity: medium
@@ -59,7 +59,7 @@ jobs:
             ghcr.io/zizmorcore/zizmor:1.30.1@sha256:a2eb396d886c053073405c7a980f2139ba2248ec172243cfa3841e57196e8101 \
             --format=json-v1 \
             --persona=regular \
-            --collect=workflows \
+            --collect=default \
             --min-severity=medium \
             --min-confidence=medium \
             --color=never \
