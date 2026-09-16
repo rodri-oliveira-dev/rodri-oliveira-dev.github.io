@@ -10,6 +10,8 @@ on:
 
 permissions:
   contents: read
+  issues: write
+  pull-requests: write
 
 concurrency:
   group: external-link-health-${{ github.workflow }}-${{ github.ref }}
@@ -28,6 +30,8 @@ jobs:
           persist-credentials: false
 
       - name: Check links
+        id: lychee
+        continue-on-error: true
         uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2
         with:
           args: >-
@@ -48,3 +52,61 @@ jobs:
           failIfEmpty: true
           fail: true
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish link health report on PR
+        if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          LYCHEE_OUTCOME: ${{ steps.lychee.outcome }}
+        run: |
+          source_report=".lychee/external-link-health.md"
+          pr_report=".lychee/pr-comment.md"
+
+          if [[ "$LYCHEE_OUTCOME" == "success" ]]; then
+            gate="✅ PASS"
+          else
+            gate="❌ FAIL"
+          fi
+
+          {
+            echo '<!-- external-link-health-report -->'
+            echo '## External link health'
+            echo
+            echo "**Link health gate:** ${gate}"
+            echo
+            echo 'Scheduled baseline uses a 20s timeout and up to 2 retries per link.'
+            echo
+            if [[ -f "$source_report" ]]; then
+              cat "$source_report"
+            else
+              echo 'Lychee did not generate a Markdown report.'
+            fi
+            echo
+            echo "[Open link health workflow run](https://github.com/${GH_REPO}/actions/runs/${GITHUB_RUN_ID})"
+          } > "$pr_report"
+
+          comment_id="$(
+            gh api --paginate "repos/${GH_REPO}/issues/${PR_NUMBER}/comments" \
+              --jq '.[] | select(.body | startswith("<!-- external-link-health-report -->")) | .id' \
+              | head -n 1
+          )"
+
+          if [[ -n "$comment_id" ]]; then
+            gh api --method PATCH "repos/${GH_REPO}/issues/comments/${comment_id}" \
+              -F "body=@${pr_report}" > /dev/null
+          else
+            gh api --method POST "repos/${GH_REPO}/issues/${PR_NUMBER}/comments" \
+              -F "body=@${pr_report}" > /dev/null
+          fi
+
+      - name: Enforce link health gate
+        if: always()
+        env:
+          LYCHEE_OUTCOME: ${{ steps.lychee.outcome }}
+        run: |
+          if [[ "$LYCHEE_OUTCOME" != "success" ]]; then
+            echo "External link health gate failed."
+            exit 1
+          fi
