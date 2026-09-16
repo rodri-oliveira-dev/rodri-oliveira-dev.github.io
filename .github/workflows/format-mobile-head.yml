@@ -1,0 +1,44 @@
+name: Format mobile metadata
+
+on:
+  push:
+    branches:
+      - feat/mobile
+    paths:
+      - .github/workflows/format-mobile-head.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mobile
+          fetch-depth: 0
+
+      - name: Align head metadata formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          for file_name in ("index.html", "en/index.html"):
+              path = Path(file_name)
+              text = path.read_text(encoding="utf-8")
+              text = text.replace('\n<!-- Apple touch icons -->\n', '\n  <!-- Apple touch icons -->\n')
+              text = text.replace('\n<link rel="apple-touch-icon"', '\n  <link rel="apple-touch-icon"')
+              path.write_text(text, encoding="utf-8")
+          PY
+
+          rm .github/workflows/format-mobile-head.yml
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html en/index.html .github/workflows/format-mobile-head.yml
+          git diff --cached --check
+          git commit -m "style: align Apple touch icon metadata"
+          git push origin HEAD:feat/mobile
