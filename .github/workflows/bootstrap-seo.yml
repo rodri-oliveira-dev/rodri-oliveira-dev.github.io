@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   apply:
-    name: Apply SEO integration
+    name: Generate SEO artifacts
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -25,95 +25,6 @@ jobs:
 
       - name: Synchronize HTML and sitemap
         run: python3 .github/scripts/sync-seo.py
-
-      - name: Integrate SEO synchronization into workflows
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          def replace_once(path: Path, old: str, new: str) -> None:
-              text = path.read_text(encoding="utf-8")
-              count = text.count(old)
-              if count != 1:
-                  raise SystemExit(
-                      f"Expected exactly one match in {path} but found {count}: {old!r}"
-                  )
-              path.write_text(text.replace(old, new, 1), encoding="utf-8")
-
-          sync = Path(".github/workflows/sync-newsletter-articles.yml")
-          replace_once(
-              sync,
-              "      - name: Generate newsletter RSS feed\n"
-              "        run: python3 .github/scripts/generate-newsletter-feed.py\n\n"
-              "      - name: Validate generated content",
-              "      - name: Generate newsletter RSS feed\n"
-              "        run: python3 .github/scripts/generate-newsletter-feed.py\n\n"
-              "      - name: Synchronize SEO metadata\n"
-              "        run: python3 .github/scripts/sync-seo.py\n\n"
-              "      - name: Validate generated content",
-          )
-          replace_once(
-              sync,
-              "if git diff --quiet -- index.html newsletter/feed.xml; then",
-              "if git diff --quiet -- index.html en/index.html newsletter/feed.xml sitemap.xml; then",
-          )
-          replace_once(
-              sync,
-              "git add index.html newsletter/feed.xml",
-              "git add index.html en/index.html newsletter/feed.xml sitemap.xml",
-          )
-
-          imp = Path(".github/workflows/import-newsletter-article.yml")
-          replace_once(
-              imp,
-              "      - name: Generate newsletter RSS feed\n"
-              "        run: python3 .github/scripts/generate-newsletter-feed.py\n\n"
-              "      - name: Validate generated content",
-              "      - name: Generate newsletter RSS feed\n"
-              "        run: python3 .github/scripts/generate-newsletter-feed.py\n\n"
-              "      - name: Synchronize SEO metadata\n"
-              "        run: python3 .github/scripts/sync-seo.py\n\n"
-              "      - name: Validate generated content",
-          )
-          replace_once(
-              imp,
-              "assets/data/newsletter-articles.json index.html newsletter/feed.xml)",
-              "assets/data/newsletter-articles.json index.html en/index.html newsletter/feed.xml sitemap.xml)",
-          )
-          replace_once(
-              imp,
-              "            index.html\n"
-              "            newsletter/feed.xml",
-              "            index.html\n"
-              "            en/index.html\n"
-              "            newsletter/feed.xml\n"
-              "            sitemap.xml",
-          )
-          replace_once(
-              imp,
-              "git add assets/data/newsletter-articles.json index.html newsletter/feed.xml",
-              "git add assets/data/newsletter-articles.json index.html en/index.html newsletter/feed.xml sitemap.xml",
-          )
-          indexnow_job = '''\n  notify_indexnow:\n    name: Notify IndexNow after merge\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    needs: merge_pr\n    permissions:\n      actions: write\n      contents: read\n\n    steps:\n      - name: Dispatch IndexNow notification\n        env:\n          GH_TOKEN: ${{ github.token }}\n          GH_REPO: ${{ github.repository }}\n        run: |\n          gh workflow run indexnow.yml \\\n            --repo \"$GH_REPO\" \\\n            --ref main\n\n          echo \"IndexNow notification dispatched for the merged newsletter content.\"\n'''
-          replace_once(imp, "\n  rebuild_pages:\n", f"{indexnow_job}\n  rebuild_pages:\n")
-
-          validation = Path(".github/workflows/site-validation.yml")
-          replace_once(
-              validation,
-              "      - name: Set up Node.js",
-              "      - name: Verify generated SEO artifacts\n"
-              "        shell: bash\n"
-              "        run: |\n"
-              "          python3 .github/scripts/sync-seo.py\n"
-              "          git diff --check\n\n"
-              "          if ! git diff --quiet -- index.html en/index.html sitemap.xml; then\n"
-              "            echo \"Generated SEO artifacts are out of sync. Run: python3 .github/scripts/sync-seo.py\"\n"
-              "            git diff -- index.html en/index.html sitemap.xml\n"
-              "            exit 1\n"
-              "          fi\n\n"
-              "      - name: Set up Node.js",
-          )
-          PY
 
       - name: Validate generated artifacts
         shell: bash
@@ -133,21 +44,17 @@ jobs:
           PY
           git diff --check
 
-      - name: Remove bootstrap workflow and commit result
+      - name: Commit generated HTML and sitemap
         shell: bash
         run: |
-          git rm .github/workflows/bootstrap-seo.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            .github/scripts/sync-seo.py \
-            .github/workflows/import-newsletter-article.yml \
-            .github/workflows/indexnow.yml \
-            .github/workflows/site-validation.yml \
-            .github/workflows/sync-newsletter-articles.yml \
-            1e7dfc65bd806e29edef5985f15cdb79.txt \
-            index.html \
-            en/index.html \
-            sitemap.xml
-          git commit -m "feat: improve SEO discovery and indexing"
+          git add index.html en/index.html sitemap.xml
+
+          if git diff --cached --quiet; then
+            echo "SEO artifacts already synchronized."
+            exit 0
+          fi
+
+          git commit -m "feat: synchronize SEO metadata"
           git push origin HEAD:feat/seo-discovery-indexnow
