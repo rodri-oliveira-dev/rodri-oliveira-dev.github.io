@@ -232,7 +232,7 @@ jobs:
 
           - metadados importados e normalizados em um job dedicado;
           - homepage, RSS, JSON-LD e sitemap gerados e validados em um segundo job;
-          - `lastmod` da homepage é atualizado quando o conteúdo publicado muda;
+          - \`lastmod\` da homepage é atualizado quando o conteúdo publicado muda;
           - branch e Pull Request publicados somente após as validações locais passarem;
           - quality gates executados automaticamente;
           - Pull Request mesclado automaticamente somente quando todos os gates concluírem com sucesso.
@@ -241,12 +241,12 @@ jobs:
 
           - duplicidade de URL verificada;
           - catálogo limitado e ordenado pelo workflow de importação;
-          - homepage renderizada por `.github/scripts/render-newsletter.py`;
-          - RSS regenerado por `.github/scripts/generate-newsletter-feed.py`;
-          - JSON-LD e sitemap sincronizados por `.github/scripts/sync-seo.py`;
+          - homepage renderizada por \`.github/scripts/render-newsletter.py\`;
+          - RSS regenerado por \`.github/scripts/generate-newsletter-feed.py\`;
+          - JSON-LD e sitemap sincronizados por \`.github/scripts/sync-seo.py\`;
           - bloco da newsletter validado;
           - XML e campos obrigatórios dos itens RSS validados;
-          - `git diff --check` executado;
+          - \`git diff --check\` executado;
           - Site validation, SEO validation, Accessibility, Lighthouse CI e GitHub Actions security executados antes do merge;
           - merge automático bloqueado se qualquer quality gate falhar.
 
@@ -311,7 +311,7 @@ jobs:
             echo "- **SEO:** JSON-LD e sitemap sincronizados no mesmo PR"
 
             if [[ -n "$PR_URL" ]]; then
-              echo "- **Branch:** `${PR_BRANCH}`"
+              echo "- **Branch:** \`${PR_BRANCH}\`"
               echo "- **Pull Request:** [#${PR_NUMBER}](${PR_URL})"
 
               if [[ "$AUTOMATION_TOKEN_CONFIGURED" == "true" ]]; then
@@ -503,7 +503,7 @@ jobs:
             echo "# Newsletter import completed"
             echo
             echo "- **Pull Request:** [#${PR_NUMBER}](${PR_URL})"
-            echo "- **Merge commit:** `${merge_sha}`"
+            echo "- **Merge commit:** \`${merge_sha}\`"
             echo "- **Result:** quality gates passed and PR merged automatically"
           } >> "$GITHUB_STEP_SUMMARY"
 
