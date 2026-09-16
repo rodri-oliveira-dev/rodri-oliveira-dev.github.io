@@ -12,10 +12,10 @@ module.exports = {
     },
     assert: {
       assertions: {
-        "categories:performance": ["warn", { minScore: 0.8 }],
-        "categories:accessibility": ["warn", { minScore: 0.9 }],
-        "categories:best-practices": ["error", { minScore: 0.95 }],
-        "categories:seo": ["error", { minScore: 0.95 }],
+        "categories:performance": ["warn", { minScore: 0.8, aggregationMethod: "median" }],
+        "categories:accessibility": ["warn", { minScore: 0.9, aggregationMethod: "median" }],
+        "categories:best-practices": ["error", { minScore: 0.95, aggregationMethod: "median" }],
+        "categories:seo": ["error", { minScore: 0.95, aggregationMethod: "median" }],
       },
     },
   },
