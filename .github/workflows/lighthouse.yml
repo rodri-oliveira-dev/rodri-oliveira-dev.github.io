@@ -65,6 +65,9 @@ jobs:
       - name: Collect Lighthouse reports
         run: npx --no-install lhci collect --config=lighthouserc.cjs
 
+      - name: Summarize Lighthouse results
+        run: node .github/scripts/summarize-lighthouse.mjs
+
       - name: Assert Lighthouse budgets
         run: npx --no-install lhci assert --config=lighthouserc.cjs
 
