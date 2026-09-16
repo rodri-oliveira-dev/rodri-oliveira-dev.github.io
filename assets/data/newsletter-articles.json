@@ -1,5 +1,18 @@
 [
   {
+    "url": "https://www.linkedin.com/pulse/aggregates-e-aggregate-roots-desenhando-fronteiras-de-de-oliveira-c4fkf/",
+    "finalUrl": "https://www.linkedin.com/pulse/aggregates-e-aggregate-roots-desenhando-fronteiras-de-de-oliveira-c4fkf/",
+    "title": "Aggregates e Aggregate Roots: desenhando fronteiras de consistência",
+    "description": "Este é o oitavo artigo da série sobre Domain-Driven Design. No texto anterior, falamos sobre Primitive Obsession e modelo anêmico, discutindo como trazer significado e comportamento de volta ao domínio.",
+    "publishedAt": "2026-09-14",
+    "metadataSource": {
+      "title": "og:title",
+      "description": "og:description",
+      "publishedAt": "JSON-LD datePublished"
+    },
+    "addedAt": "2026-09-16T16:21:44+00:00"
+  },
+  {
     "url": "https://www.linkedin.com/pulse/primitive-obsession-e-modelo-an%C3%AAmico-quando-o-dom%C3%ADnio-de-oliveira-pdyxf",
     "finalUrl": "https://www.linkedin.com/pulse/primitive-obsession-e-modelo-an%C3%AAmico-quando-o-dom%C3%ADnio-de-oliveira-pdyxf",
     "title": "Primitive Obsession e modelo anêmico: quando o domínio vira apenas um conjunto de dados",
