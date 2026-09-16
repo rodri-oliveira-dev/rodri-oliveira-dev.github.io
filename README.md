@@ -41,6 +41,12 @@ O site é intencionalmente livre de dependências de runtime:
 - nenhum framework ou dependência de package manager;
 - publicação estática pelo GitHub Pages.
 
+## Automação e qualidade
+
+O repositório possui workflows para validação estrutural, acessibilidade, segurança do GitHub Actions, Lighthouse CI, saúde de links externos, atualização de dependências e automação de conteúdo.
+
+A documentação completa dos workflows, gatilhos, quality gates, relatórios em Pull Requests e arquivos de suporte está em [`.github/README.md`](.github/README.md).
+
 ## Estrutura
 
 - `index.html` — portfólio em português e idioma padrão
