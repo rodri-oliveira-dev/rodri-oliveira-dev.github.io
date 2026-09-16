@@ -5,7 +5,6 @@
   "rules": {
     "doctype-style": "off",
     "long-title": "off",
-    "aria-label-misuse": "off",
     "no-raw-characters": "off"
   }
 }

@@ -62,42 +62,6 @@ jobs:
           cat /tmp/portfolio-http.log
           exit 1
 
-      - name: Verify rendered styles
-        run: |
-          node <<'NODE'
-          const puppeteer = require('puppeteer');
-
-          (async () => {
-            const browser = await puppeteer.launch({
-              headless: true,
-              args: ['--no-sandbox', '--disable-setuid-sandbox']
-            });
-            const page = await browser.newPage();
-            const failed = [];
-            page.on('requestfailed', request => {
-              failed.push({ url: request.url(), error: request.failure()?.errorText });
-            });
-            await page.goto('http://127.0.0.1:8080/', { waitUntil: 'networkidle0' });
-            const rendered = await page.evaluate(() => {
-              const body = getComputedStyle(document.body);
-              const brand = getComputedStyle(document.querySelector('.brand-name'));
-              const stylesheets = [...document.styleSheets].map(sheet => sheet.href || 'inline');
-              return {
-                bodyColor: body.color,
-                bodyBackgroundColor: body.backgroundColor,
-                bodyBackgroundImage: body.backgroundImage,
-                brandColor: brand.color,
-                stylesheets
-              };
-            });
-            console.log(JSON.stringify({ rendered, failed }, null, 2));
-            await browser.close();
-          })().catch(error => {
-            console.error(error);
-            process.exit(1);
-          });
-          NODE
-
       - name: Run WCAG 2 AA checks
         run: npx --no-install pa11y-ci --config .pa11yci --threshold 0
 
