@@ -36,6 +36,9 @@ jobs:
       - name: Generate newsletter RSS feed
         run: python3 .github/scripts/generate-newsletter-feed.py
 
+      - name: Synchronize SEO metadata
+        run: python3 .github/scripts/sync-seo.py
+
       - name: Validate generated content
         id: validation
         shell: bash
@@ -88,12 +91,12 @@ jobs:
         id: changes
         shell: bash
         run: |
-          if git diff --quiet -- index.html newsletter/feed.xml; then
+          if git diff --quiet -- index.html en/index.html newsletter/feed.xml sitemap.xml; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "Generated newsletter content already up to date."
+            echo "Generated newsletter and SEO content already up to date."
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "Generated newsletter content update detected."
+            echo "Generated newsletter or SEO content update detected."
           fi
 
       - name: Publish automation branch and open or update PR
@@ -115,7 +118,7 @@ jobs:
           git switch -c "$AUTOMATION_BRANCH"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html newsletter/feed.xml
+          git add index.html en/index.html newsletter/feed.xml sitemap.xml
           git commit -m "content: sync latest newsletter articles"
 
           if [[ -n "$remote_sha" ]]; then
@@ -129,12 +132,13 @@ jobs:
           cat > /tmp/newsletter-sync-pr.md <<EOF
           ## Resumo
 
-          Atualiza automaticamente a homepage e o RSS público com os artigos mais recentes do catálogo da newsletter.
+          Atualiza automaticamente a homepage, o RSS público e os metadados SEO com os artigos mais recentes do catálogo da newsletter.
 
           ## Validação
 
           - bloco da newsletter renderizado por \`.github/scripts/render-newsletter.py\`;
           - RSS regenerado por \`.github/scripts/generate-newsletter-feed.py\`;
+          - JSON-LD, RSS discovery e sitemap sincronizados por \`.github/scripts/sync-seo.py\`;
           - quantidade de artigos da homepage validada antes do commit;
           - XML e campos obrigatórios dos itens RSS validados antes do commit;
           - \`git diff --check\` executado;
