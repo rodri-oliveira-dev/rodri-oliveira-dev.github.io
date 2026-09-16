@@ -1,6 +1,7 @@
 ADR
 ADRs
 Apigee
+ciclomática
 CrispyWaffle
 DDD
 Dapper
@@ -13,8 +14,13 @@ Henk
 IAM
 IaC
 Keycloak
+linkedin
+mensageria
+microserviço
+microserviços
 Mollema
 MSBuild
+nojekyll
 NuGet
 OIDC
 Oliveira
@@ -24,6 +30,7 @@ PubSub
 Redis
 ReliableWebhooks
 Rodrigo
+rodri
 Roslyn
 Terraform
 YamlDotNet
