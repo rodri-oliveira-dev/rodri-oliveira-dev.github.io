@@ -1,0 +1,76 @@
+name: Lighthouse CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lighthouse-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lighthouse:
+    name: Lighthouse quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install Lighthouse CI
+        run: npm install --no-save --package-lock=false @lhci/cli@0.15.1
+
+      - name: Prepare local Lighthouse fixture
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          for file_name in ("index.html", "en/index.html"):
+              path = Path(file_name)
+              content = path.read_text(encoding="utf-8")
+              content = content.replace("; upgrade-insecure-requests", "")
+              path.write_text(content, encoding="utf-8")
+          PY
+
+      - name: Start local site
+        run: |
+          python3 -m http.server 8080 --bind 127.0.0.1 > /tmp/portfolio-http.log 2>&1 &
+          echo $! > /tmp/portfolio-http.pid
+
+          for _ in {1..20}; do
+            if curl --fail --silent --show-error http://127.0.0.1:8080/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          cat /tmp/portfolio-http.log
+          exit 1
+
+      - name: Collect Lighthouse reports
+        run: npx --no-install lhci collect --config=lighthouserc.cjs
+
+      - name: Assert Lighthouse budgets
+        run: npx --no-install lhci assert --config=lighthouserc.cjs
+
+      - name: Stop local site
+        if: always()
+        run: |
+          if [[ -f /tmp/portfolio-http.pid ]]; then
+            kill "$(cat /tmp/portfolio-http.pid)" 2>/dev/null || true
+          fi
