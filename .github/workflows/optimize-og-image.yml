@@ -11,16 +11,30 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
+
+concurrency:
+  group: optimize-og-image
+  cancel-in-progress: true
 
 jobs:
   optimize:
+    name: Optimize Open Graph image
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    timeout-minutes: 10
+    env:
+      AUTOMATION_BRANCH: automation/optimize-og-image
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.12"
 
@@ -28,9 +42,11 @@ jobs:
         run: python -m pip install --disable-pip-version-check pillow
 
       - name: Generate optimized WebP
+        id: optimize
         shell: bash
         run: |
           python - <<'PY'
+          import os
           from pathlib import Path
           from PIL import Image
 
@@ -52,17 +68,135 @@ jobs:
 
           if size >= 300 * 1024:
               raise SystemExit(f"Optimized image is still too large: {size} bytes")
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"size_bytes={size}\n")
+              output.write(f"dimensions={original_size[0]}x{original_size[1]}\n")
           PY
 
-      - name: Commit optimized asset
+      - name: Detect optimized asset changes
+        id: changes
         shell: bash
         run: |
+          if git diff --quiet -- assets/social/rodrigo-de-oliveira-og.webp; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Optimized asset already up to date."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Optimized asset update detected."
+          fi
+
+      - name: Publish automation branch and open or update PR
+        id: pull_request
+        if: steps.changes.outputs.changed == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.AUTOMATION_PR_TOKEN || github.token }}
+          GH_REPO: ${{ github.repository }}
+          AUTOMATION_TOKEN_CONFIGURED: ${{ secrets.AUTOMATION_PR_TOKEN != '' }}
+        run: |
+          gh auth setup-git
+
+          remote_sha="$(
+            git ls-remote --heads origin "refs/heads/${AUTOMATION_BRANCH}" \
+              | awk '{print $1}'
+          )"
+
+          git switch -c "$AUTOMATION_BRANCH"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add assets/social/rodrigo-de-oliveira-og.webp
-          if git diff --cached --quiet; then
-            echo "No changes to commit."
-            exit 0
+          git commit -m "perf: optimize Open Graph WebP image"
+
+          if [[ -n "$remote_sha" ]]; then
+            git push \
+              --force-with-lease="refs/heads/${AUTOMATION_BRANCH}:${remote_sha}" \
+              origin "HEAD:refs/heads/${AUTOMATION_BRANCH}"
+          else
+            git push --set-upstream origin "HEAD:refs/heads/${AUTOMATION_BRANCH}"
           fi
-          git commit -m "perf: add optimized Open Graph WebP image"
-          git push
+
+          cat > /tmp/optimize-og-image-pr.md <<EOF
+          ## Resumo
+
+          Atualiza automaticamente a versão WebP da imagem Open Graph a partir do PNG de origem presente na \`main\`.
+
+          ## Validação
+
+          - imagem convertida para WebP com qualidade 80;
+          - dimensões originais preservadas;
+          - arquivo final limitado a menos de 300 KB;
+          - quality gates do repositório devem passar antes do merge.
+
+          ## Origem
+
+          Gerado por [Optimize Open Graph image](https://github.com/${GH_REPO}/actions/runs/${GITHUB_RUN_ID}).
+
+          > Este PR é mantido pela automação. Novas otimizações atualizam a mesma branch enquanto o PR estiver aberto.
+          EOF
+
+          pr_number="$(
+            gh pr list \
+              --repo "$GH_REPO" \
+              --head "$AUTOMATION_BRANCH" \
+              --base main \
+              --state open \
+              --json number \
+              --jq '.[0].number // empty'
+          )"
+
+          if [[ -n "$pr_number" ]]; then
+            gh pr edit "$pr_number" \
+              --repo "$GH_REPO" \
+              --title "perf: optimize Open Graph image" \
+              --body-file /tmp/optimize-og-image-pr.md
+            pr_url="$(gh pr view "$pr_number" --repo "$GH_REPO" --json url --jq '.url')"
+          else
+            pr_url="$(
+              gh pr create \
+                --repo "$GH_REPO" \
+                --base main \
+                --head "$AUTOMATION_BRANCH" \
+                --title "perf: optimize Open Graph image" \
+                --body-file /tmp/optimize-og-image-pr.md
+            )"
+            pr_number="$(gh pr view "$pr_url" --repo "$GH_REPO" --json number --jq '.number')"
+          fi
+
+          {
+            echo "number=${pr_number}"
+            echo "url=${pr_url}"
+            echo "automation_token_configured=${AUTOMATION_TOKEN_CONFIGURED}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Write optimization summary
+        if: always()
+        shell: bash
+        env:
+          ASSET_CHANGED: ${{ steps.changes.outputs.changed }}
+          SIZE_BYTES: ${{ steps.optimize.outputs.size_bytes }}
+          DIMENSIONS: ${{ steps.optimize.outputs.dimensions }}
+          PR_NUMBER: ${{ steps.pull_request.outputs.number }}
+          PR_URL: ${{ steps.pull_request.outputs.url }}
+          AUTOMATION_TOKEN_CONFIGURED: ${{ steps.pull_request.outputs.automation_token_configured }}
+        run: |
+          {
+            echo "# Open Graph image optimization"
+            echo
+            echo "- **Dimensões:** ${DIMENSIONS:-n/a}"
+            echo "- **Tamanho do WebP:** ${SIZE_BYTES:-n/a} bytes"
+            echo "- **Asset alterado:** ${ASSET_CHANGED:-n/a}"
+
+            if [[ -n "$PR_URL" ]]; then
+              echo "- **Branch:** \`${AUTOMATION_BRANCH}\`"
+              echo "- **Pull Request:** [#${PR_NUMBER}](${PR_URL})"
+
+              if [[ "$AUTOMATION_TOKEN_CONFIGURED" == "true" ]]; then
+                echo "- **Token de automação dedicado:** configurado"
+              else
+                echo "- **Token de automação dedicado:** não configurado; o GitHub pode exigir aprovação manual para iniciar os workflows do PR criado pelo \`GITHUB_TOKEN\`."
+              fi
+            else
+              echo "- **Pull Request:** não necessário"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
