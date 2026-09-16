@@ -121,8 +121,11 @@ def main() -> None:
     ET.indent(rss, space="  ")
 
     FEED_PATH.parent.mkdir(parents=True, exist_ok=True)
-    tree = ET.ElementTree(rss)
-    tree.write(FEED_PATH, encoding="utf-8", xml_declaration=True)
+    xml = ET.tostring(rss, encoding="unicode")
+    FEED_PATH.write_text(
+        '<?xml version="1.0" encoding="utf-8"?>\n' + xml + "\n",
+        encoding="utf-8",
+    )
 
     # Parse the generated file again so malformed output fails the workflow immediately.
     ET.parse(FEED_PATH)
