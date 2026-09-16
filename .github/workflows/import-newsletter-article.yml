@@ -135,6 +135,11 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+    outputs:
+      branch: ${{ steps.pull_request.outputs.branch }}
+      number: ${{ steps.pull_request.outputs.number }}
+      url: ${{ steps.pull_request.outputs.url }}
+      automation_token_configured: ${{ steps.pull_request.outputs.automation_token_configured }}
 
     steps:
       - name: Checkout repository
@@ -196,7 +201,9 @@ jobs:
 
           - metadados importados e normalizados em um job dedicado;
           - homepage renderizada e validada em um segundo job;
-          - branch e Pull Request publicados somente após as validações passarem.
+          - branch e Pull Request publicados somente após as validações locais passarem;
+          - quality gates executados automaticamente;
+          - Pull Request mesclado automaticamente somente quando todos os gates concluírem com sucesso.
 
           ## Validação
 
@@ -205,13 +212,14 @@ jobs:
           - homepage renderizada por \`.github/scripts/render-newsletter.py\`;
           - bloco da newsletter validado;
           - \`git diff --check\` executado;
-          - quality gates do repositório devem passar antes do merge.
+          - Site validation, Accessibility, Lighthouse CI e GitHub Actions security executados antes do merge;
+          - merge automático bloqueado se qualquer quality gate falhar.
 
           ## Origem
 
           Gerado por [Import newsletter article](https://github.com/${GH_REPO}/actions/runs/${GITHUB_RUN_ID}).
 
-          > O JSON e a homepage são revisados no mesmo PR. O workflow diário de sincronização permanece como mecanismo de reconciliação.
+          > O JSON e a homepage são revisados no mesmo PR. Se algum quality gate falhar, o PR permanece aberto para inspeção; caso todos passem, o merge é automático.
           EOF
 
           pr_number="$(
@@ -277,3 +285,210 @@ jobs:
               echo "- **Pull Request:** não criado"
             fi
           } >> "$GITHUB_STEP_SUMMARY"
+
+  quality_gates:
+    name: Run quality gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: publish_pr
+    permissions:
+      actions: write
+      checks: read
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Run repository quality gates
+        id: quality
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ needs.publish_pr.outputs.number }}
+          PR_BRANCH: ${{ needs.publish_pr.outputs.branch }}
+          AUTOMATION_TOKEN_CONFIGURED: ${{ needs.publish_pr.outputs.automation_token_configured }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$PR_NUMBER" || -z "$PR_BRANCH" ]]; then
+            echo "Pull Request metadata is missing."
+            exit 1
+          fi
+
+          if [[ "$AUTOMATION_TOKEN_CONFIGURED" == "true" ]]; then
+            echo "Dedicated automation token detected; waiting for native pull_request checks."
+
+            checks_found=0
+            for _ in {1..30}; do
+              checks_found="$(
+                gh pr checks "$PR_NUMBER" \
+                  --repo "$GH_REPO" \
+                  --json name \
+                  --jq 'length' 2>/dev/null || echo 0
+              )"
+
+              if [[ "$checks_found" -gt 0 ]]; then
+                break
+              fi
+
+              sleep 2
+            done
+
+            if [[ "$checks_found" -eq 0 ]]; then
+              echo "No pull_request checks were detected for PR #${PR_NUMBER}."
+              exit 1
+            fi
+
+            gh pr checks "$PR_NUMBER" \
+              --repo "$GH_REPO" \
+              --watch \
+              --fail-fast
+
+            echo "mode=native" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Using GITHUB_TOKEN; dispatching quality workflows explicitly."
+          workflows=(
+            "site-validation.yml"
+            "accessibility.yml"
+            "lighthouse.yml"
+            "actions-security.yml"
+          )
+
+          declare -A run_ids
+
+          for workflow in "${workflows[@]}"; do
+            echo "Dispatching ${workflow} on ${PR_BRANCH}..."
+            gh workflow run "$workflow" \
+              --repo "$GH_REPO" \
+              --ref "$PR_BRANCH"
+          done
+
+          for workflow in "${workflows[@]}"; do
+            run_id=""
+
+            for _ in {1..30}; do
+              run_id="$(
+                gh run list \
+                  --repo "$GH_REPO" \
+                  --workflow "$workflow" \
+                  --branch "$PR_BRANCH" \
+                  --event workflow_dispatch \
+                  --limit 1 \
+                  --json databaseId \
+                  --jq '.[0].databaseId // empty'
+              )"
+
+              if [[ -n "$run_id" ]]; then
+                break
+              fi
+
+              sleep 2
+            done
+
+            if [[ -z "$run_id" ]]; then
+              echo "Could not locate dispatched run for ${workflow}."
+              exit 1
+            fi
+
+            run_ids["$workflow"]="$run_id"
+          done
+
+          for workflow in "${workflows[@]}"; do
+            run_id="${run_ids[$workflow]}"
+            echo "Waiting for ${workflow} (run ${run_id})..."
+            gh run watch "$run_id" \
+              --repo "$GH_REPO" \
+              --exit-status
+          done
+
+          {
+            echo "# Newsletter quality gates"
+            echo
+            echo "PR #${PR_NUMBER} passed all explicitly dispatched quality gates:"
+            echo
+            for workflow in "${workflows[@]}"; do
+              run_id="${run_ids[$workflow]}"
+              echo "- **${workflow}:** [run ${run_id}](https://github.com/${GH_REPO}/actions/runs/${run_id})"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "mode=dispatched" >> "$GITHUB_OUTPUT"
+
+  merge_pr:
+    name: Merge automation Pull Request
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs:
+      - publish_pr
+      - quality_gates
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      merge_sha: ${{ steps.merge.outputs.merge_sha }}
+
+    steps:
+      - name: Merge Pull Request after quality gates
+        id: merge
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.AUTOMATION_PR_TOKEN || github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ needs.publish_pr.outputs.number }}
+          PR_URL: ${{ needs.publish_pr.outputs.url }}
+        run: |
+          set -euo pipefail
+
+          gh pr merge "$PR_NUMBER" \
+            --repo "$GH_REPO" \
+            --squash \
+            --delete-branch
+
+          merge_sha="$(
+            gh pr view "$PR_NUMBER" \
+              --repo "$GH_REPO" \
+              --json mergeCommit \
+              --jq '.mergeCommit.oid'
+          )"
+
+          if [[ -z "$merge_sha" || "$merge_sha" == "null" ]]; then
+            echo "Pull Request was merged, but merge commit SHA could not be determined."
+            exit 1
+          fi
+
+          echo "merge_sha=${merge_sha}" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "# Newsletter import completed"
+            echo
+            echo "- **Pull Request:** [#${PR_NUMBER}](${PR_URL})"
+            echo "- **Merge commit:** \`${merge_sha}\`"
+            echo "- **Result:** quality gates passed and PR merged automatically"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  rebuild_pages:
+    name: Trigger GitHub Pages build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs:
+      - publish_pr
+      - merge_pr
+    if: ${{ needs.publish_pr.outputs.automation_token_configured != 'true' }}
+    permissions:
+      contents: read
+      pages: write
+
+    steps:
+      - name: Request Pages build for merged content
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh api \
+            --method POST \
+            "repos/${GH_REPO}/pages/builds" \
+            > /dev/null
+
+          echo "GitHub Pages build requested for the latest revision on main."
