@@ -9,12 +9,14 @@ A estratégia é manter o site estático simples, mas protegido por verificaçõ
 | Workflow | Arquivo | Execução | Objetivo |
 | --- | --- | --- | --- |
 | Site validation | [`site-validation.yml`](workflows/site-validation.yml) | Pull Request, push em `main` e manual | Validar HTML, links, ortografia e workflows |
+| SEO validation | [`seo-validation.yml`](workflows/seo-validation.yml) | Pull Request, push em `main` e manual | Validar JSON-LD, sitemap, RSS discovery e consistência dos artefatos SEO |
 | Accessibility | [`accessibility.yml`](workflows/accessibility.yml) | Pull Request, push em `main` e manual | Aplicar verificações automatizadas de WCAG 2 AA |
 | GitHub Actions security | [`actions-security.yml`](workflows/actions-security.yml) | Pull Request, push em `main` e manual | Auditar a segurança da automação com zizmor |
 | Lighthouse CI | [`lighthouse.yml`](workflows/lighthouse.yml) | Pull Request, push em `main` e manual | Medir Performance, Accessibility, Best Practices e SEO |
 | External link health | [`external-link-health.yml`](workflows/external-link-health.yml) | Semanal, manual e quando o próprio workflow muda em PR | Detectar link rot com uma verificação externa mais tolerante |
-| Import newsletter article | [`import-newsletter-article.yml`](workflows/import-newsletter-article.yml) | Manual | Importar metadados, renderizar a homepage e propor a alteração via Pull Request |
-| Sync newsletter articles | [`sync-newsletter-articles.yml`](workflows/sync-newsletter-articles.yml) | Diário e manual | Renderizar os artigos mais recentes e propor a atualização via Pull Request |
+| Import newsletter article | [`import-newsletter-article.yml`](workflows/import-newsletter-article.yml) | Manual | Importar metadados e atualizar catálogo, homepage, RSS, JSON-LD e sitemap via Pull Request |
+| Sync newsletter articles | [`sync-newsletter-articles.yml`](workflows/sync-newsletter-articles.yml) | Manual, somente fallback | Reconciliar manualmente os artefatos da newsletter caso necessário |
+| Notify IndexNow | [`indexnow.yml`](workflows/indexnow.yml) | Push em `main`, diário e manual | Notificar mecanismos compatíveis com IndexNow sobre URLs públicas alteradas |
 | Optimize Open Graph image | [`optimize-og-image.yml`](workflows/optimize-og-image.yml) | Push específico em `main` e manual | Gerar e validar o WebP e propor a atualização via Pull Request |
 
 ## Quality gates
@@ -33,6 +35,19 @@ Ele executa:
 O workflow roda em todo Pull Request, em todo push que chega à `main` e também pode ser executado manualmente.
 
 LinkedIn e Medium são excluídos da verificação HTTP do Lychee porque esses serviços frequentemente rejeitam requisições automatizadas mesmo quando a URL é válida.
+
+### SEO validation
+
+O [`seo-validation.yml`](workflows/seo-validation.yml) valida os artefatos SEO gerados pelo repositório.
+
+Ele verifica que:
+
+- `index.html` e `en/index.html` possuem RSS autodiscovery;
+- o JSON-LD estruturado permanece válido e consistente;
+- `sitemap.xml` é XML válido e possui `lastmod` para as URLs indexáveis;
+- executar [`scripts/sync-seo.py`](scripts/sync-seo.py) não produz diferenças não commitadas.
+
+Esse último ponto funciona como um gate de drift: se catálogo, homepage, dados estruturados ou sitemap ficarem fora de sincronia, o Pull Request falha antes do merge.
 
 ### Accessibility
 
@@ -107,7 +122,7 @@ Se o Lychee encontra links quebrados, o relatório é publicado antes de o passo
 
 ### Import newsletter article
 
-O [`import-newsletter-article.yml`](workflows/import-newsletter-article.yml) é executado manualmente com uma URL de artigo.
+O [`import-newsletter-article.yml`](workflows/import-newsletter-article.yml) é executado manualmente com uma URL de artigo e é o fluxo principal de atualização da newsletter no site.
 
 O workflow tenta recuperar automaticamente título, descrição e data de publicação a partir da página pública. Quando a recuperação não é suficiente, aceita fallbacks manuais informados no `workflow_dispatch`.
 
@@ -117,34 +132,37 @@ O processo:
 2. extrai e normaliza os metadados disponíveis;
 3. impede duplicidade de URL;
 4. atualiza `assets/data/newsletter-articles.json` e mantém até 12 artigos ordenados por data de publicação;
-5. executa [`scripts/render-newsletter.py`](scripts/render-newsletter.py) para renderizar a homepage com o catálogo resultante;
-6. valida o bloco gerado e executa `git diff --check`;
-7. cria uma branch `automation/import-newsletter-article-<run-id>` contendo o JSON e `index.html`;
-8. cria ou atualiza o Pull Request correspondente para `main`;
-9. deixa JSON e homepage passarem juntos pelos quality gates antes do merge;
-10. registra o Pull Request criado no Job Summary.
+5. executa [`scripts/render-newsletter.py`](scripts/render-newsletter.py) para renderizar a homepage;
+6. executa [`scripts/generate-newsletter-feed.py`](scripts/generate-newsletter-feed.py) para regenerar o RSS;
+7. executa [`scripts/sync-seo.py`](scripts/sync-seo.py) para sincronizar JSON-LD, RSS discovery e `sitemap.xml` com `lastmod`;
+8. valida homepage, RSS e artefatos gerados e executa `git diff --check`;
+9. cria uma branch `automation/import-newsletter-article-<run-id>` contendo catálogo e todos os artefatos gerados;
+10. cria ou atualiza o Pull Request correspondente para `main`;
+11. executa os quality gates aplicáveis, incluindo SEO validation;
+12. mescla automaticamente o Pull Request somente quando todos os gates passam.
 
 Cada execução usa uma branch derivada do `run-id`, evitando que uma nova importação sobrescreva outra importação ainda em revisão. Em uma reexecução do mesmo run, a branch correspondente é atualizada com `force-with-lease`.
 
-O workflow não faz push direto para a `main` e não precisa mais disparar o workflow de sincronização após a importação. O `Sync newsletter articles` continua existindo como mecanismo diário de reconciliação caso a homepage fique diferente do catálogo persistido.
+O workflow não faz push direto para a `main`. Como ele já atualiza catálogo, homepage, RSS, JSON-LD e sitemap no mesmo ciclo da importação, o agendamento diário do `Sync newsletter articles` foi desativado por redundância.
 
 O resultado detalhado da recuperação de metadados também é escrito no Job Summary.
 
 ### Sync newsletter articles
 
-O [`sync-newsletter-articles.yml`](workflows/sync-newsletter-articles.yml) executa diariamente às 12:00 UTC, equivalente a 09:00 em `America/Sao_Paulo` enquanto o fuso estiver em UTC-3, e também pode ser disparado manualmente.
+O [`sync-newsletter-articles.yml`](workflows/sync-newsletter-articles.yml) não possui mais execução agendada. O cron diário foi removido porque o [`import-newsletter-article.yml`](workflows/import-newsletter-article.yml) passou a cobrir integralmente a necessidade de atualização da newsletter e dos artefatos SEO no momento da importação.
 
-Ele usa [`scripts/render-newsletter.py`](scripts/render-newsletter.py) para renderizar na homepage os quatro artigos mais recentes do catálogo e valida o bloco gerado antes de qualquer publicação.
+O workflow permanece disponível somente por `workflow_dispatch` como mecanismo manual de reconciliação/fallback. Ele pode ser usado caso seja necessário regenerar a homepage, o RSS, o JSON-LD ou o sitemap a partir do catálogo persistido sem importar um novo artigo.
 
-Quando `index.html` não muda, a execução termina sem criar commit ou Pull Request. Quando existe alteração, o workflow:
+Quando executado manualmente, ele:
 
-1. cria um commit na branch fixa `automation/sync-newsletter-articles`;
-2. cria ou atualiza um único Pull Request dessa branch para `main`;
-3. preserva a proteção da `main`, sem push direto para a branch protegida;
-4. deixa a alteração passar pelos quality gates normais do repositório antes do merge;
-5. registra no Job Summary a quantidade de artigos, se houve alteração e o Pull Request associado.
+1. renderiza os quatro artigos mais recentes na homepage;
+2. regenera o RSS;
+3. sincroniza os metadados SEO e o sitemap;
+4. valida o conteúdo gerado;
+5. encerra sem alteração quando todos os artefatos já estão atualizados;
+6. quando existe drift, cria ou atualiza a branch `automation/sync-newsletter-articles` e abre o Pull Request correspondente.
 
-O checkout usa credenciais não persistentes e a branch automatizada é atualizada com `force-with-lease`, evitando sobrescrever silenciosamente uma alteração remota inesperada.
+Essa separação mantém uma ferramenta de recuperação operacional sem consumir runners diariamente para uma reconciliação que o fluxo principal já garante.
 
 #### Token das automações com Pull Request
 
@@ -153,6 +171,14 @@ Os workflows de importação, sincronização e otimização da imagem Open Grap
 O GitHub pode exigir aprovação manual para iniciar os workflows de um Pull Request criado ou atualizado pelo próprio `GITHUB_TOKEN`. Para permitir que esses gates sejam iniciados automaticamente, pode ser configurado o secret opcional `AUTOMATION_PR_TOKEN`, contendo um token dedicado com acesso mínimo ao repositório para conteúdo e Pull Requests.
 
 Quando `AUTOMATION_PR_TOKEN` existe, ele é preferido. Caso contrário, os workflows usam `github.token` como fallback e informam essa condição no Job Summary.
+
+### IndexNow
+
+O [`indexnow.yml`](workflows/indexnow.yml) notifica o endpoint público do IndexNow quando alterações relevantes chegam à `main`.
+
+O workflow também possui execução manual e uma execução diária de fallback. Esse agendamento é independente da sincronização da newsletter: ele existe apenas para cobrir cenários em que uma alteração tenha sido mesclada por uma credencial de automação que não origine um novo evento `push` de workflow.
+
+A submissão é limitada às URLs públicas pertinentes à alteração, incluindo a homepage, a versão em inglês e o RSS quando aplicável.
 
 ### Optimize Open Graph image
 
@@ -224,6 +250,8 @@ Além dos workflows, a automação depende destes arquivos:
 - [`../lighthouserc.cjs`](../lighthouserc.cjs) — URLs, número de runs e budgets do Lighthouse;
 - [`../.pa11yci`](../.pa11yci) — configuração de acessibilidade;
 - [`scripts/render-newsletter.py`](scripts/render-newsletter.py) — renderização dos artigos;
+- [`scripts/generate-newsletter-feed.py`](scripts/generate-newsletter-feed.py) — geração do RSS;
+- [`scripts/sync-seo.py`](scripts/sync-seo.py) — sincronização de JSON-LD, RSS discovery e sitemap;
 - [`scripts/summarize-lighthouse.mjs`](scripts/summarize-lighthouse.mjs) — resumo e comentário do Lighthouse;
 - [`scripts/summarize-zizmor.mjs`](scripts/summarize-zizmor.mjs) — resumo e comentário do zizmor.
 
