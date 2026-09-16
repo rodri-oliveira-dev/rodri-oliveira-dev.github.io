@@ -149,9 +149,11 @@ jobs:
             pr_number="$(gh pr view "$pr_url" --repo "$GH_REPO" --json number --jq '.number')"
           fi
 
-          echo "number=${pr_number}" >> "$GITHUB_OUTPUT"
-          echo "url=${pr_url}" >> "$GITHUB_OUTPUT"
-          echo "automation_token_configured=${AUTOMATION_TOKEN_CONFIGURED}" >> "$GITHUB_OUTPUT"
+          {
+            echo "number=${pr_number}"
+            echo "url=${pr_url}"
+            echo "automation_token_configured=${AUTOMATION_TOKEN_CONFIGURED}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Write synchronization summary
         if: always()
