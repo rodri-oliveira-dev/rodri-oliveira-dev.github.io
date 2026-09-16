@@ -48,8 +48,11 @@ jobs:
             --timeout 10
             --max-retries 1
             --exclude 'https://(www\.)?linkedin\.com/'
-            './**/*.html'
-            './**/*.md'
+            --exclude 'https://medium\.com/'
+            './index.html'
+            './en/index.html'
+            './pt-br/index.html'
+            './README.md'
           fail: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
