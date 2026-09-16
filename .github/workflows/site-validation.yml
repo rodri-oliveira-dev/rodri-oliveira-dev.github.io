@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: site-validation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   site-validation:
     name: Site validation
@@ -41,6 +45,8 @@ jobs:
             --root-dir "$(pwd)"
             --verbose
             --no-progress
+            --timeout 10
+            --max-retries 1
             --exclude 'https://(www\.)?linkedin\.com/'
             './**/*.html'
             './**/*.md'
