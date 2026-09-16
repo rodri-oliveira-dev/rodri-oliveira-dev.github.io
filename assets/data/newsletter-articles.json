@@ -1,5 +1,18 @@
 [
   {
+    "url": "https://www.linkedin.com/pulse/%C3%A9-poss%C3%ADvel-detectar-complexidade-big-o-durante-rodrigo-de-oliveira-b0upf/",
+    "finalUrl": "https://www.linkedin.com/pulse/%C3%A9-poss%C3%ADvel-detectar-complexidade-big-o-durante-rodrigo-de-oliveira-b0upf/",
+    "title": "É possível detectar complexidade Big-O durante a compilação?",
+    "description": "Quando aprendemos análise de algoritmos, normalmente fazemos o exercício de olhar para um trecho de código e tentar responder perguntas como: quantas vezes esse laço executa? Existe outro laço dentro dele? Essa busca percorre uma coleção inteira? Essa recursão divide o problema pela metade? Depois d",
+    "publishedAt": "2026-09-16",
+    "metadataSource": {
+      "title": "og:title",
+      "description": "og:description",
+      "publishedAt": "JSON-LD datePublished"
+    },
+    "addedAt": "2026-09-16T16:48:04+00:00"
+  },
+  {
     "url": "https://www.linkedin.com/pulse/aggregates-e-aggregate-roots-desenhando-fronteiras-de-de-oliveira-c4fkf/",
     "finalUrl": "https://www.linkedin.com/pulse/aggregates-e-aggregate-roots-desenhando-fronteiras-de-de-oliveira-c4fkf/",
     "title": "Aggregates e Aggregate Roots: desenhando fronteiras de consistência",
