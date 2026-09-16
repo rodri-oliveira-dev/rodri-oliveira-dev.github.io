@@ -1,0 +1,80 @@
+name: Bootstrap mobile assets
+
+on:
+  push:
+    branches:
+      - feat/mobile
+    paths:
+      - .github/workflows/mobile-assets-bootstrap.yml
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/mobile
+          fetch-depth: 0
+
+      - name: Copy Apple touch icons and update metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p assets/brand
+          source_base="https://raw.githubusercontent.com/rodri-oliveira-dev/rodri-oliveira-dev/feat/mobile/assets/brand"
+
+          for file in \
+            apple-touch-icon-iphone-60x60.png \
+            apple-touch-icon-ipad-76x76.png \
+            apple-touch-icon-iphone-retina-120x120.png \
+            apple-touch-icon-ipad-retina-152x152.png
+          do
+            curl --fail --silent --show-error --location \
+              "${source_base}/${file}" \
+              --output "assets/brand/${file}"
+          done
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          icon_marker = '  <link rel="icon" type="image/svg+xml" href="/favicon.svg">'
+          icon_block = '''  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+          <!-- Apple touch icons -->
+          <link rel="apple-touch-icon" sizes="60x60" href="/assets/brand/apple-touch-icon-iphone-60x60.png">
+          <link rel="apple-touch-icon" sizes="76x76" href="/assets/brand/apple-touch-icon-ipad-76x76.png">
+          <link rel="apple-touch-icon" sizes="120x120" href="/assets/brand/apple-touch-icon-iphone-retina-120x120.png">
+          <link rel="apple-touch-icon" sizes="152x152" href="/assets/brand/apple-touch-icon-ipad-retina-152x152.png">'''
+
+          for file_name in ("index.html", "en/index.html"):
+              path = Path(file_name)
+              text = path.read_text(encoding="utf-8")
+
+              if 'rel="apple-touch-icon"' in text:
+                  continue
+              if icon_marker not in text:
+                  raise SystemExit(f"favicon marker not found in {file_name}")
+
+              path.write_text(
+                  text.replace(icon_marker, icon_block, 1),
+                  encoding="utf-8",
+              )
+          PY
+
+          # This bootstrap workflow is only needed once.
+          rm .github/workflows/mobile-assets-bootstrap.yml
+
+      - name: Commit generated mobile changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html en/index.html assets/brand .github/workflows/mobile-assets-bootstrap.yml
+          git diff --cached --check
+          git commit -m "feat: add Apple touch icons for mobile devices"
+          git push origin HEAD:feat/mobile
