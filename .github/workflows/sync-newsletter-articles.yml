@@ -1,10 +1,11 @@
 name: Sync newsletter articles
 
+# O agendamento diário foi removido intencionalmente.
+# O workflow import-newsletter-article.yml já atualiza catálogo, homepage, RSS,
+# JSON-LD e sitemap no mesmo ciclo da importação. Este workflow permanece
+# disponível apenas como mecanismo manual de reconciliação/fallback.
 on:
   workflow_dispatch:
-  schedule:
-    # 09:00 America/Sao_Paulo (UTC-3)
-    - cron: "0 12 * * *"
 
 permissions:
   contents: write
@@ -132,7 +133,7 @@ jobs:
           cat > /tmp/newsletter-sync-pr.md <<EOF
           ## Resumo
 
-          Atualiza automaticamente a homepage, o RSS público e os metadados SEO com os artigos mais recentes do catálogo da newsletter.
+          Atualiza manualmente a homepage, o RSS público e os metadados SEO com os artigos mais recentes do catálogo da newsletter.
 
           ## Validação
 
@@ -146,9 +147,9 @@ jobs:
 
           ## Origem
 
-          Gerado por [Sync newsletter articles](https://github.com/${GH_REPO}/actions/runs/${GITHUB_RUN_ID}).
+          Gerado manualmente por [Sync newsletter articles](https://github.com/${GH_REPO}/actions/runs/${GITHUB_RUN_ID}).
 
-          > Este PR é mantido pela automação. Novas sincronizações atualizam a mesma branch enquanto o PR estiver aberto.
+          > O agendamento diário foi desativado porque o workflow `import-newsletter-article.yml` já cobre a atualização de catálogo, homepage, RSS, JSON-LD e sitemap. Esta sincronização permanece somente como fallback manual.
           EOF
 
           pr_number="$(
@@ -199,6 +200,7 @@ jobs:
           {
             echo "# Newsletter synchronization"
             echo
+            echo "- **Modo:** manual fallback"
             echo "- **Artigos renderizados na homepage:** ${ARTICLE_COUNT:-n/a}"
             echo "- **Itens publicados no RSS:** ${FEED_COUNT:-n/a}"
             echo "- **Conteúdo gerado alterado:** ${CONTENT_CHANGED:-n/a}"
