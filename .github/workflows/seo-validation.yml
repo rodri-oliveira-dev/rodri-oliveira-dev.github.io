@@ -1,0 +1,80 @@
+name: SEO validation
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: seo-validation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  seo-validation:
+    name: SEO metadata consistency
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Regenerate SEO artifacts
+        run: python3 .github/scripts/sync-seo.py
+
+      - name: Validate generated files are committed
+        shell: bash
+        run: |
+          git diff --check
+
+          if ! git diff --quiet -- index.html en/index.html sitemap.xml; then
+            echo "SEO artifacts are out of sync. Run: python3 .github/scripts/sync-seo.py"
+            git diff -- index.html en/index.html sitemap.xml
+            exit 1
+          fi
+
+      - name: Validate structured data and sitemap
+        run: |
+          python3 - <<'PY'
+          import json
+          import re
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          for page in ("index.html", "en/index.html"):
+              html = Path(page).read_text(encoding="utf-8")
+              if 'type="application/rss+xml"' not in html:
+                  raise SystemExit(f"RSS autodiscovery missing in {page}")
+
+              match = re.search(
+                  r'<!-- SEO_STRUCTURED_DATA:START -->\s*<script type="application/ld\+json">\s*(\{.*?\})\s*</script>\s*<!-- SEO_STRUCTURED_DATA:END -->',
+                  html,
+                  re.DOTALL,
+              )
+              if not match:
+                  raise SystemExit(f"SEO structured data block missing in {page}")
+
+              payload = json.loads(match.group(1))
+              graph = payload.get("@graph", [])
+              types = {node.get("@type") for node in graph if isinstance(node, dict)}
+              for required in ("WebSite", "ProfilePage", "Person"):
+                  if required not in types:
+                      raise SystemExit(f"{required} structured data missing in {page}")
+
+          root = ET.parse("sitemap.xml").getroot()
+          namespace = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+          urls = root.findall("sm:url", namespace)
+          if len(urls) != 2:
+              raise SystemExit(f"Unexpected sitemap URL count: {len(urls)}")
+          for entry in urls:
+              if not (entry.findtext("sm:lastmod", namespaces=namespace) or "").strip():
+                  raise SystemExit("Sitemap URL without lastmod")
+          PY

@@ -29,7 +29,7 @@ O site utiliza URLs dedicadas e indexáveis para cada idioma:
 - Inglês: `/en/`
 - URL legada em português: `/pt-br/`, redirecionada para `/`
 
-As duas páginas possuem URLs canônicas, alternates com `hreflang`, metadados Open Graph e dados estruturados Schema.org do tipo `Person`. O sitemap contém as duas variantes de idioma.
+As duas páginas possuem URLs canônicas, alternates com `hreflang`, metadados Open Graph e dados estruturados Schema.org. O sitemap contém as duas variantes de idioma e usa `lastmod` para sinalizar alterações relevantes.
 
 ## RSS da newsletter
 
@@ -39,7 +39,9 @@ Os artigos catalogados da newsletter **Café com código** também são publicad
 - Fonte dos dados: `assets/data/newsletter-articles.json`
 - Gerador: `.github/scripts/generate-newsletter-feed.py`
 
-O feed é determinístico e contém todo o histórico válido presente no catálogo, ordenado do artigo mais recente para o mais antigo. Os workflows de importação e sincronização regeneram e validam o XML antes de publicar alterações.
+O feed é determinístico e contém todo o histórico válido presente no catálogo, ordenado do artigo mais recente para o mais antigo.
+
+A atualização normal da newsletter é feita pelo workflow `.github/workflows/import-newsletter-article.yml`. Ele importa o artigo e, no mesmo ciclo, atualiza catálogo, homepage, RSS, JSON-LD e sitemap. Por isso, a execução diária de `.github/workflows/sync-newsletter-articles.yml` foi desativada. Esse workflow permanece disponível apenas por `workflow_dispatch` como mecanismo manual de reconciliação/fallback.
 
 ## Abordagem técnica
 

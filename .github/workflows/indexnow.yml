@@ -1,0 +1,155 @@
+name: Notify IndexNow
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  schedule:
+    # Daily fallback for changes merged by automation tokens that do not emit push workflows.
+    - cron: "30 12 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: indexnow-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  notify:
+    name: Submit changed public URLs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SITE_HOST: rodri-oliveira-dev.github.io
+      SITE_URL: https://rodri-oliveira-dev.github.io
+      INDEXNOW_KEY: 1e7dfc65bd806e29edef5985f15cdb79
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Build IndexNow payload
+        id: payload
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          site_url = os.environ["SITE_URL"].rstrip("/")
+          event_name = os.environ["EVENT_NAME"]
+          before = os.environ.get("BEFORE_SHA", "")
+          current = os.environ["CURRENT_SHA"]
+          key = os.environ["INDEXNOW_KEY"]
+
+          submit_all = event_name in {"workflow_dispatch", "schedule"} or not before or set(before) == {"0"}
+          changed = set()
+
+          if not submit_all:
+              result = subprocess.run(
+                  ["git", "diff", "--name-only", before, current],
+                  text=True,
+                  capture_output=True,
+                  check=True,
+              )
+              changed = {line.strip() for line in result.stdout.splitlines() if line.strip()}
+
+          urls = set()
+          if submit_all:
+              urls.update(
+                  {
+                      f"{site_url}/",
+                      f"{site_url}/en/",
+                      f"{site_url}/newsletter/feed.xml",
+                  }
+              )
+          else:
+              root_signals = {
+                  "index.html",
+                  "robots.txt",
+                  "sitemap.xml",
+                  "assets/data/newsletter-articles.json",
+                  "newsletter/feed.xml",
+              }
+              if changed & root_signals:
+                  urls.add(f"{site_url}/")
+              if "en/index.html" in changed or "sitemap.xml" in changed:
+                  urls.add(f"{site_url}/en/")
+              if "newsletter/feed.xml" in changed or "assets/data/newsletter-articles.json" in changed:
+                  urls.add(f"{site_url}/newsletter/feed.xml")
+
+          payload = {
+              "host": os.environ["SITE_HOST"],
+              "key": key,
+              "keyLocation": f"{site_url}/{key}.txt",
+              "urlList": sorted(urls),
+          }
+          Path("/tmp/indexnow.json").write_text(
+              json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+
+          output = Path(os.environ["GITHUB_OUTPUT"])
+          with output.open("a", encoding="utf-8") as handle:
+              handle.write(f"count={len(urls)}\n")
+
+          print(f"Prepared {len(urls)} URL(s) for IndexNow.")
+          for url in sorted(urls):
+              print(f"- {url}")
+          PY
+
+      - name: Wait for public ownership key
+        if: steps.payload.outputs.count != '0'
+        shell: bash
+        run: |
+          key_url="${SITE_URL}/${INDEXNOW_KEY}.txt"
+          for attempt in {1..18}; do
+            body="$(curl --silent --show-error --location --max-time 10 "$key_url" || true)"
+            if [[ "$body" == "$INDEXNOW_KEY" || "$body" == "$INDEXNOW_KEY"$'\n' ]]; then
+              echo "IndexNow ownership key is publicly available."
+              exit 0
+            fi
+            echo "Ownership key not available yet (attempt ${attempt}/18)."
+            sleep 10
+          done
+
+          echo "IndexNow ownership key was not available after the deployment window."
+          exit 1
+
+      - name: Submit URLs to IndexNow
+        if: steps.payload.outputs.count != '0'
+        shell: bash
+        run: |
+          curl \
+            --fail-with-body \
+            --silent \
+            --show-error \
+            --request POST \
+            --header 'Content-Type: application/json; charset=utf-8' \
+            --data-binary @/tmp/indexnow.json \
+            https://api.indexnow.org/indexnow
+
+      - name: Write summary
+        if: always()
+        shell: bash
+        env:
+          URL_COUNT: ${{ steps.payload.outputs.count }}
+        run: |
+          {
+            echo "# IndexNow"
+            echo
+            echo "- **URLs submetidas:** ${URL_COUNT:-0}"
+            echo "- **Host:** \`${SITE_HOST}\`"
+            echo "- **Endpoint:** \`https://api.indexnow.org/indexnow\`"
+          } >> "$GITHUB_STEP_SUMMARY"

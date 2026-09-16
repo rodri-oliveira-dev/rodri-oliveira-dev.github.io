@@ -89,6 +89,9 @@ jobs:
       - name: Generate newsletter RSS feed
         run: python3 .github/scripts/generate-newsletter-feed.py
 
+      - name: Synchronize SEO metadata
+        run: python3 .github/scripts/sync-seo.py
+
       - name: Validate generated content
         id: validation
         shell: bash
@@ -137,7 +140,7 @@ jobs:
           echo "Validated ${article_count} homepage article(s) and ${feed_count} RSS item(s)."
           git diff --check
 
-          if [[ -z "$(git status --porcelain -- assets/data/newsletter-articles.json index.html newsletter/feed.xml)" ]]; then
+          if [[ -z "$(git status --porcelain -- assets/data/newsletter-articles.json index.html en/index.html newsletter/feed.xml sitemap.xml)" ]]; then
             echo "Import completed without repository changes."
             exit 1
           fi
@@ -149,7 +152,9 @@ jobs:
           path: |
             assets/data/newsletter-articles.json
             index.html
+            en/index.html
             newsletter/feed.xml
+            sitemap.xml
           if-no-files-found: error
           retention-days: 1
 
@@ -200,7 +205,7 @@ jobs:
           git switch -c "$automation_branch"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/data/newsletter-articles.json index.html newsletter/feed.xml
+          git add assets/data/newsletter-articles.json index.html en/index.html newsletter/feed.xml sitemap.xml
           git diff --cached --check
 
           if git diff --cached --quiet; then
@@ -221,12 +226,13 @@ jobs:
           cat > /tmp/newsletter-import-pr.md <<EOF
           ## Resumo
 
-          Importa metadados de um artigo para o catálogo da newsletter, atualiza a homepage e regenera o RSS público.
+          Importa metadados de um artigo para o catálogo da newsletter, atualiza a homepage, regenera o RSS público e sincroniza os metadados SEO.
 
           ## Pipeline
 
           - metadados importados e normalizados em um job dedicado;
-          - homepage e RSS gerados e validados em um segundo job;
+          - homepage, RSS, JSON-LD e sitemap gerados e validados em um segundo job;
+          - \`lastmod\` da homepage é atualizado quando o conteúdo publicado muda;
           - branch e Pull Request publicados somente após as validações locais passarem;
           - quality gates executados automaticamente;
           - Pull Request mesclado automaticamente somente quando todos os gates concluírem com sucesso.
@@ -237,17 +243,18 @@ jobs:
           - catálogo limitado e ordenado pelo workflow de importação;
           - homepage renderizada por \`.github/scripts/render-newsletter.py\`;
           - RSS regenerado por \`.github/scripts/generate-newsletter-feed.py\`;
+          - JSON-LD e sitemap sincronizados por \`.github/scripts/sync-seo.py\`;
           - bloco da newsletter validado;
           - XML e campos obrigatórios dos itens RSS validados;
           - \`git diff --check\` executado;
-          - Site validation, Accessibility, Lighthouse CI e GitHub Actions security executados antes do merge;
+          - Site validation, SEO validation, Accessibility, Lighthouse CI e GitHub Actions security executados antes do merge;
           - merge automático bloqueado se qualquer quality gate falhar.
 
           ## Origem
 
           Gerado por [Import newsletter article](https://github.com/${GH_REPO}/actions/runs/${GITHUB_RUN_ID}).
 
-          > O JSON, a homepage e o RSS são revisados no mesmo PR. Se algum quality gate falhar, o PR permanece aberto para inspeção; caso todos passem, o merge é automático.
+          > O JSON, a homepage, o RSS e os metadados SEO são revisados no mesmo PR. Se algum quality gate falhar, o PR permanece aberto para inspeção; caso todos passem, o merge é automático.
           EOF
 
           pr_number="$(
@@ -301,6 +308,7 @@ jobs:
             echo
             echo "- **Artigos renderizados na homepage:** ${ARTICLE_COUNT:-n/a}"
             echo "- **Itens publicados no RSS:** ${FEED_COUNT:-n/a}"
+            echo "- **SEO:** JSON-LD e sitemap sincronizados no mesmo PR"
 
             if [[ -n "$PR_URL" ]]; then
               echo "- **Branch:** \`${PR_BRANCH}\`"
@@ -381,6 +389,7 @@ jobs:
           echo "Using GITHUB_TOKEN; dispatching quality workflows explicitly."
           workflows=(
             "site-validation.yml"
+            "seo-validation.yml"
             "accessibility.yml"
             "lighthouse.yml"
             "actions-security.yml"
