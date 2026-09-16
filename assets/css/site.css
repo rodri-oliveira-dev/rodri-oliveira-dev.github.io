@@ -214,6 +214,10 @@ h1 {
   background: rgba(255,255,255,.025);
 }
 
+.mobile-contact-action {
+  display: none;
+}
+
 .signal-card {
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -603,6 +607,8 @@ h1 {
 }
 
 @media (max-width: 640px) {
+  .mobile-contact-action { display: inline-flex; }
+
   .container { width: min(calc(100% - 28px), var(--max)); }
 
   .section { padding: 72px 0; }
