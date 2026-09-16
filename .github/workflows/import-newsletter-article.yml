@@ -62,12 +62,13 @@ jobs:
           retention-days: 1
 
   render_validate:
-    name: Render and validate homepage
+    name: Render and validate newsletter content
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: import_metadata
     outputs:
       article_count: ${{ steps.validation.outputs.article_count }}
+      feed_count: ${{ steps.validation.outputs.feed_count }}
 
     steps:
       - name: Checkout repository
@@ -84,6 +85,9 @@ jobs:
 
       - name: Render homepage with imported article
         run: python3 .github/scripts/render-newsletter.py
+
+      - name: Generate newsletter RSS feed
+        run: python3 .github/scripts/generate-newsletter-feed.py
 
       - name: Validate generated content
         id: validation
@@ -108,11 +112,32 @@ jobs:
           PY
           )"
 
+          feed_count="$(python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+
+          root = ET.parse("newsletter/feed.xml").getroot()
+          if root.tag != "rss" or root.attrib.get("version") != "2.0":
+              raise SystemExit("RSS 2.0 inválido.")
+
+          items = root.findall("./channel/item")
+          if not items:
+              raise SystemExit("RSS sem artigos.")
+
+          for item in items:
+              for field in ("title", "link", "guid", "pubDate"):
+                  if not (item.findtext(field) or "").strip():
+                      raise SystemExit(f"Item RSS sem campo obrigatório: {field}")
+
+          print(len(items))
+          PY
+          )"
+
           echo "article_count=${article_count}" >> "$GITHUB_OUTPUT"
-          echo "Validated ${article_count} newsletter article(s)."
+          echo "feed_count=${feed_count}" >> "$GITHUB_OUTPUT"
+          echo "Validated ${article_count} homepage article(s) and ${feed_count} RSS item(s)."
           git diff --check
 
-          if [[ -z "$(git status --porcelain -- assets/data/newsletter-articles.json index.html)" ]]; then
+          if [[ -z "$(git status --porcelain -- assets/data/newsletter-articles.json index.html newsletter/feed.xml)" ]]; then
             echo "Import completed without repository changes."
             exit 1
           fi
@@ -124,6 +149,7 @@ jobs:
           path: |
             assets/data/newsletter-articles.json
             index.html
+            newsletter/feed.xml
           if-no-files-found: error
           retention-days: 1
 
@@ -174,7 +200,7 @@ jobs:
           git switch -c "$automation_branch"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/data/newsletter-articles.json index.html
+          git add assets/data/newsletter-articles.json index.html newsletter/feed.xml
           git diff --cached --check
 
           if git diff --cached --quiet; then
@@ -195,12 +221,12 @@ jobs:
           cat > /tmp/newsletter-import-pr.md <<EOF
           ## Resumo
 
-          Importa metadados de um artigo para o catálogo da newsletter e atualiza a homepage com o estado resultante.
+          Importa metadados de um artigo para o catálogo da newsletter, atualiza a homepage e regenera o RSS público.
 
           ## Pipeline
 
           - metadados importados e normalizados em um job dedicado;
-          - homepage renderizada e validada em um segundo job;
+          - homepage e RSS gerados e validados em um segundo job;
           - branch e Pull Request publicados somente após as validações locais passarem;
           - quality gates executados automaticamente;
           - Pull Request mesclado automaticamente somente quando todos os gates concluírem com sucesso.
@@ -210,7 +236,9 @@ jobs:
           - duplicidade de URL verificada;
           - catálogo limitado e ordenado pelo workflow de importação;
           - homepage renderizada por \`.github/scripts/render-newsletter.py\`;
+          - RSS regenerado por \`.github/scripts/generate-newsletter-feed.py\`;
           - bloco da newsletter validado;
+          - XML e campos obrigatórios dos itens RSS validados;
           - \`git diff --check\` executado;
           - Site validation, Accessibility, Lighthouse CI e GitHub Actions security executados antes do merge;
           - merge automático bloqueado se qualquer quality gate falhar.
@@ -219,7 +247,7 @@ jobs:
 
           Gerado por [Import newsletter article](https://github.com/${GH_REPO}/actions/runs/${GITHUB_RUN_ID}).
 
-          > O JSON e a homepage são revisados no mesmo PR. Se algum quality gate falhar, o PR permanece aberto para inspeção; caso todos passem, o merge é automático.
+          > O JSON, a homepage e o RSS são revisados no mesmo PR. Se algum quality gate falhar, o PR permanece aberto para inspeção; caso todos passem, o merge é automático.
           EOF
 
           pr_number="$(
@@ -262,6 +290,7 @@ jobs:
         shell: bash
         env:
           ARTICLE_COUNT: ${{ needs.render_validate.outputs.article_count }}
+          FEED_COUNT: ${{ needs.render_validate.outputs.feed_count }}
           PR_BRANCH: ${{ steps.pull_request.outputs.branch }}
           PR_NUMBER: ${{ steps.pull_request.outputs.number }}
           PR_URL: ${{ steps.pull_request.outputs.url }}
@@ -271,6 +300,7 @@ jobs:
             echo "# Newsletter import pipeline"
             echo
             echo "- **Artigos renderizados na homepage:** ${ARTICLE_COUNT:-n/a}"
+            echo "- **Itens publicados no RSS:** ${FEED_COUNT:-n/a}"
 
             if [[ -n "$PR_URL" ]]; then
               echo "- **Branch:** \`${PR_BRANCH}\`"
