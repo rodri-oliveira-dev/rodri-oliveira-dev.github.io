@@ -13,7 +13,7 @@ A estratégia é manter o site estático simples, mas protegido por verificaçõ
 | GitHub Actions security | [`actions-security.yml`](workflows/actions-security.yml) | Pull Request, push em `main` e manual | Auditar a segurança da automação com zizmor |
 | Lighthouse CI | [`lighthouse.yml`](workflows/lighthouse.yml) | Pull Request, push em `main` e manual | Medir Performance, Accessibility, Best Practices e SEO |
 | External link health | [`external-link-health.yml`](workflows/external-link-health.yml) | Semanal, manual e quando o próprio workflow muda em PR | Detectar link rot com uma verificação externa mais tolerante |
-| Import newsletter article | [`import-newsletter-article.yml`](workflows/import-newsletter-article.yml) | Manual | Importar metadados de um artigo para o catálogo da newsletter |
+| Import newsletter article | [`import-newsletter-article.yml`](workflows/import-newsletter-article.yml) | Manual | Importar metadados, renderizar a homepage e propor a alteração via Pull Request |
 | Sync newsletter articles | [`sync-newsletter-articles.yml`](workflows/sync-newsletter-articles.yml) | Diário e manual | Renderizar os artigos mais recentes e propor a atualização via Pull Request |
 | Optimize Open Graph image | [`optimize-og-image.yml`](workflows/optimize-og-image.yml) | Push específico em `main` e manual | Gerar e validar a versão WebP da imagem Open Graph |
 
@@ -114,14 +114,21 @@ O workflow tenta recuperar automaticamente título, descrição e data de public
 O processo:
 
 1. valida e acessa a URL informada;
-2. extrai metadados disponíveis;
+2. extrai e normaliza os metadados disponíveis;
 3. impede duplicidade de URL;
-4. atualiza `assets/data/newsletter-articles.json`;
-5. mantém até 12 artigos ordenados por data de publicação;
-6. cria commit apenas quando o JSON mudou;
-7. dispara `sync-newsletter-articles.yml` para atualizar a homepage.
+4. atualiza `assets/data/newsletter-articles.json` e mantém até 12 artigos ordenados por data de publicação;
+5. executa [`scripts/render-newsletter.py`](scripts/render-newsletter.py) para renderizar a homepage com o catálogo resultante;
+6. valida o bloco gerado e executa `git diff --check`;
+7. cria uma branch `automation/import-newsletter-article-<run-id>` contendo o JSON e `index.html`;
+8. cria ou atualiza o Pull Request correspondente para `main`;
+9. deixa JSON e homepage passarem juntos pelos quality gates antes do merge;
+10. registra o Pull Request criado no Job Summary.
 
-O resultado detalhado da importação é escrito no Job Summary.
+Cada execução usa uma branch derivada do `run-id`, evitando que uma nova importação sobrescreva outra importação ainda em revisão. Em uma reexecução do mesmo run, a branch correspondente é atualizada com `force-with-lease`.
+
+O workflow não faz push direto para a `main` e não precisa mais disparar o workflow de sincronização após a importação. O `Sync newsletter articles` continua existindo como mecanismo diário de reconciliação caso a homepage fique diferente do catálogo persistido.
+
+O resultado detalhado da recuperação de metadados também é escrito no Job Summary.
 
 ### Sync newsletter articles
 
@@ -139,13 +146,13 @@ Quando `index.html` não muda, a execução termina sem criar commit ou Pull Req
 
 O checkout usa credenciais não persistentes e a branch automatizada é atualizada com `force-with-lease`, evitando sobrescrever silenciosamente uma alteração remota inesperada.
 
-#### Token da automação
+#### Token das automações de conteúdo
 
-Por padrão, o workflow usa o `GITHUB_TOKEN` com permissões explícitas de `contents: write` e `pull-requests: write`.
+Os workflows de importação e sincronização usam o `GITHUB_TOKEN` com permissões explícitas de `contents: write` e `pull-requests: write` quando nenhum token dedicado é configurado.
 
 O GitHub pode exigir aprovação manual para iniciar os workflows de um Pull Request criado ou atualizado pelo próprio `GITHUB_TOKEN`. Para permitir que esses gates sejam iniciados automaticamente, pode ser configurado o secret opcional `AUTOMATION_PR_TOKEN`, contendo um token dedicado com acesso mínimo ao repositório para conteúdo e Pull Requests.
 
-Quando `AUTOMATION_PR_TOKEN` existe, ele é preferido. Caso contrário, o workflow usa `github.token` como fallback e informa essa condição no Job Summary.
+Quando `AUTOMATION_PR_TOKEN` existe, ele é preferido. Caso contrário, os workflows usam `github.token` como fallback e informam essa condição no Job Summary.
 
 ### Optimize Open Graph image
 
