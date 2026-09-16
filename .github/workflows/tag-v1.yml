@@ -131,7 +131,9 @@ jobs:
           set -euo pipefail
 
           existing_ref="$(
-            gh api "repos/${GH_REPO}/git/ref/tags/${TAG_NAME}" 2>/dev/null || true
+            gh api "repos/${GH_REPO}/git/matching-refs/tags/${TAG_NAME}" \
+              | jq -c --arg ref "refs/tags/${TAG_NAME}" \
+                  'map(select(.ref == $ref)) | first // empty'
           )"
 
           if [[ -n "$existing_ref" ]]; then
