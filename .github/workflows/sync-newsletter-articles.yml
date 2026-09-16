@@ -149,7 +149,7 @@ jobs:
 
           Gerado manualmente por [Sync newsletter articles](https://github.com/${GH_REPO}/actions/runs/${GITHUB_RUN_ID}).
 
-          > O agendamento diário foi desativado porque o workflow `import-newsletter-article.yml` já cobre a atualização de catálogo, homepage, RSS, JSON-LD e sitemap. Esta sincronização permanece somente como fallback manual.
+          > O agendamento diário foi desativado porque o workflow import-newsletter-article.yml já cobre a atualização de catálogo, homepage, RSS, JSON-LD e sitemap. Esta sincronização permanece somente como fallback manual.
           EOF
 
           pr_number="$(
