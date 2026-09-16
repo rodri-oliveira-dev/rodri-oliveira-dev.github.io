@@ -14,6 +14,7 @@
   <link rel="alternate" hreflang="en" href="https://rodri-oliveira-dev.github.io/en/">
   <link rel="alternate" hreflang="pt-BR" href="https://rodri-oliveira-dev.github.io/">
   <link rel="alternate" hreflang="x-default" href="https://rodri-oliveira-dev.github.io/">
+  <link rel="alternate" type="application/rss+xml" title="Café com código — RSS" href="https://rodri-oliveira-dev.github.io/newsletter/feed.xml">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/assets/css/site.css">
 
@@ -41,50 +42,76 @@
   <meta name="twitter:image" content="https://rodri-oliveira-dev.github.io/assets/social/rodrigo-de-oliveira-og.png">
   <meta name="twitter:image:alt" content="Rodrigo de Oliveira — Software Architect — .NET, Distributed Systems, Cloud and DDD">
 
+  <!-- SEO_STRUCTURED_DATA:START -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "ProfilePage",
-    "@id": "https://rodri-oliveira-dev.github.io/en/#profile",
-    "url": "https://rodri-oliveira-dev.github.io/en/",
-    "name": "Rodrigo de Oliveira — Software Architect",
-    "inLanguage": "en",
-    "mainEntity": {
-      "@type": "Person",
-      "@id": "https://rodri-oliveira-dev.github.io/#person",
-      "name": "Rodrigo de Oliveira",
-      "url": "https://rodri-oliveira-dev.github.io/",
-      "jobTitle": "Software Architect",
-      "email": "mailto:rodrigodotnet@outlook.com",
-      "image": "https://rodri-oliveira-dev.github.io/assets/profile/rodrigo-about.webp",
-      "description": "Software Architect focused on distributed systems, .NET, GCP/AWS, Domain-Driven Design, reliability, Infrastructure as Code, and engineering governance.",
-      "sameAs": [
-        "https://github.com/rodri-oliveira-dev",
-        "https://www.linkedin.com/in/rodri-oliveira-dev",
-        "https://medium.com/@rodrigodotnet",
-        "https://www.nuget.org/profiles/rodri-oliveira-dev"
-      ],
-      "knowsAbout": [
-        "Software Architecture",
-        ".NET",
-        "C#",
-        "Distributed Systems",
-        "Domain-Driven Design",
-        "GCP",
-        "AWS",
-        "Event-Driven Architecture",
-        "API Design",
-        "Observability",
-        "Reliability Engineering",
-        "Infrastructure as Code",
-        "Terraform",
-        "Software Supply Chain",
-        "Software Quality",
-        "Governance as Code"
-      ]
-    }
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://rodri-oliveira-dev.github.io/#website",
+        "url": "https://rodri-oliveira-dev.github.io/",
+        "name": "Rodrigo de Oliveira",
+        "alternateName": "Rodrigo de Oliveira — Software Architect",
+        "inLanguage": [
+          "pt-BR",
+          "en"
+        ],
+        "publisher": {
+          "@id": "https://rodri-oliveira-dev.github.io/#person"
+        }
+      },
+      {
+        "@type": "ProfilePage",
+        "@id": "https://rodri-oliveira-dev.github.io/en/#profile",
+        "url": "https://rodri-oliveira-dev.github.io/en/",
+        "name": "Rodrigo de Oliveira — Software Architect",
+        "inLanguage": "en",
+        "isPartOf": {
+          "@id": "https://rodri-oliveira-dev.github.io/#website"
+        },
+        "mainEntity": {
+          "@id": "https://rodri-oliveira-dev.github.io/#person"
+        }
+      },
+      {
+        "@type": "Person",
+        "@id": "https://rodri-oliveira-dev.github.io/#person",
+        "name": "Rodrigo de Oliveira",
+        "url": "https://rodri-oliveira-dev.github.io/",
+        "jobTitle": "Software Architect",
+        "email": "mailto:rodrigodotnet@outlook.com",
+        "image": "https://rodri-oliveira-dev.github.io/assets/profile/rodrigo-about.webp",
+        "description": "Software Architect focused on distributed systems, .NET, GCP/AWS, Domain-Driven Design, reliability, Infrastructure as Code, and engineering governance.",
+        "sameAs": [
+          "https://github.com/rodri-oliveira-dev",
+          "https://www.linkedin.com/in/rodri-oliveira-dev",
+          "https://medium.com/@rodrigodotnet",
+          "https://www.nuget.org/profiles/rodri-oliveira-dev"
+        ],
+        "knowsAbout": [
+          "Software Architecture",
+          ".NET",
+          "C#",
+          "Distributed Systems",
+          "Domain-Driven Design",
+          "GCP",
+          "AWS",
+          "Event-Driven Architecture",
+          "API Design",
+          "Observability",
+          "Reliability Engineering",
+          "Infrastructure as Code",
+          "Terraform",
+          "Software Supply Chain",
+          "Software Quality",
+          "Governance as Code"
+        ]
+      }
+    ]
   }
   </script>
+  <!-- SEO_STRUCTURED_DATA:END -->
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>

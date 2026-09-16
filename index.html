@@ -15,6 +15,7 @@
   <link rel="alternate" hreflang="en" href="https://rodri-oliveira-dev.github.io/en/">
   <link rel="alternate" hreflang="pt-BR" href="https://rodri-oliveira-dev.github.io/">
   <link rel="alternate" hreflang="x-default" href="https://rodri-oliveira-dev.github.io/">
+  <link rel="alternate" type="application/rss+xml" title="Café com código — RSS" href="https://rodri-oliveira-dev.github.io/newsletter/feed.xml">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/assets/css/site.css">
 
@@ -42,50 +43,158 @@
   <meta name="twitter:image" content="https://rodri-oliveira-dev.github.io/assets/social/rodrigo-de-oliveira-og.png">
   <meta name="twitter:image:alt" content="Rodrigo de Oliveira — Arquiteto de Software — .NET, Sistemas Distribuídos, Cloud e DDD">
 
+  <!-- SEO_STRUCTURED_DATA:START -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "ProfilePage",
-    "@id": "https://rodri-oliveira-dev.github.io/#profile",
-    "url": "https://rodri-oliveira-dev.github.io/",
-    "name": "Rodrigo de Oliveira — Arquiteto de Software",
-    "inLanguage": "pt-BR",
-    "mainEntity": {
-      "@type": "Person",
-      "@id": "https://rodri-oliveira-dev.github.io/#person",
-      "name": "Rodrigo de Oliveira",
-      "url": "https://rodri-oliveira-dev.github.io/",
-      "jobTitle": "Arquiteto de Software",
-      "email": "mailto:rodrigodotnet@outlook.com",
-      "image": "https://rodri-oliveira-dev.github.io/assets/profile/rodrigo-about.webp",
-      "description": "Arquiteto de Software focado em sistemas distribuídos, .NET, GCP/AWS, Domain-Driven Design, confiabilidade, Infrastructure as Code e governança de engenharia.",
-      "sameAs": [
-        "https://github.com/rodri-oliveira-dev",
-        "https://www.linkedin.com/in/rodri-oliveira-dev",
-        "https://medium.com/@rodrigodotnet",
-        "https://www.nuget.org/profiles/rodri-oliveira-dev"
-      ],
-      "knowsAbout": [
-        "Arquitetura de Software",
-        ".NET",
-        "C#",
-        "Sistemas Distribuídos",
-        "Domain-Driven Design",
-        "GCP",
-        "AWS",
-        "Arquitetura Orientada a Eventos",
-        "APIs",
-        "Observabilidade",
-        "Reliability Engineering",
-        "Infrastructure as Code",
-        "Terraform",
-        "Software Supply Chain",
-        "Qualidade de Software",
-        "Governança como Código"
-      ]
-    }
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://rodri-oliveira-dev.github.io/#website",
+        "url": "https://rodri-oliveira-dev.github.io/",
+        "name": "Rodrigo de Oliveira",
+        "alternateName": "Rodrigo de Oliveira — Software Architect",
+        "inLanguage": [
+          "pt-BR",
+          "en"
+        ],
+        "publisher": {
+          "@id": "https://rodri-oliveira-dev.github.io/#person"
+        }
+      },
+      {
+        "@type": "ProfilePage",
+        "@id": "https://rodri-oliveira-dev.github.io/#profile",
+        "url": "https://rodri-oliveira-dev.github.io/",
+        "name": "Rodrigo de Oliveira — Arquiteto de Software",
+        "inLanguage": "pt-BR",
+        "isPartOf": {
+          "@id": "https://rodri-oliveira-dev.github.io/#website"
+        },
+        "mainEntity": {
+          "@id": "https://rodri-oliveira-dev.github.io/#person"
+        },
+        "hasPart": [
+          {
+            "@id": "https://www.linkedin.com/pulse/%C3%A9-poss%C3%ADvel-detectar-complexidade-big-o-durante-rodrigo-de-oliveira-b0upf/#article"
+          },
+          {
+            "@id": "https://www.linkedin.com/pulse/aggregates-e-aggregate-roots-desenhando-fronteiras-de-de-oliveira-c4fkf/#article"
+          },
+          {
+            "@id": "https://www.linkedin.com/pulse/primitive-obsession-e-modelo-an%C3%AAmico-quando-o-dom%C3%ADnio-de-oliveira-pdyxf#article"
+          },
+          {
+            "@id": "https://pt.linkedin.com/pulse/entities-e-value-objects-identidade-igualdade-modelo-de-de-oliveira-hy4gf#article"
+          }
+        ]
+      },
+      {
+        "@type": "Person",
+        "@id": "https://rodri-oliveira-dev.github.io/#person",
+        "name": "Rodrigo de Oliveira",
+        "url": "https://rodri-oliveira-dev.github.io/",
+        "jobTitle": "Arquiteto de Software",
+        "email": "mailto:rodrigodotnet@outlook.com",
+        "image": "https://rodri-oliveira-dev.github.io/assets/profile/rodrigo-about.webp",
+        "description": "Arquiteto de Software focado em sistemas distribuídos, .NET, GCP/AWS, Domain-Driven Design, confiabilidade, Infrastructure as Code e governança de engenharia.",
+        "sameAs": [
+          "https://github.com/rodri-oliveira-dev",
+          "https://www.linkedin.com/in/rodri-oliveira-dev",
+          "https://medium.com/@rodrigodotnet",
+          "https://www.nuget.org/profiles/rodri-oliveira-dev"
+        ],
+        "knowsAbout": [
+          "Arquitetura de Software",
+          ".NET",
+          "C#",
+          "Sistemas Distribuídos",
+          "Domain-Driven Design",
+          "GCP",
+          "AWS",
+          "Arquitetura Orientada a Eventos",
+          "APIs",
+          "Observabilidade",
+          "Reliability Engineering",
+          "Infrastructure as Code",
+          "Terraform",
+          "Software Supply Chain",
+          "Qualidade de Software",
+          "Governança como Código"
+        ]
+      },
+      {
+        "@type": "Article",
+        "@id": "https://www.linkedin.com/pulse/%C3%A9-poss%C3%ADvel-detectar-complexidade-big-o-durante-rodrigo-de-oliveira-b0upf/#article",
+        "url": "https://www.linkedin.com/pulse/%C3%A9-poss%C3%ADvel-detectar-complexidade-big-o-durante-rodrigo-de-oliveira-b0upf/",
+        "headline": "É possível detectar complexidade Big-O durante a compilação?",
+        "datePublished": "2026-09-16",
+        "inLanguage": "pt-BR",
+        "author": {
+          "@id": "https://rodri-oliveira-dev.github.io/#person"
+        },
+        "isPartOf": {
+          "@type": "Periodical",
+          "name": "Café com código",
+          "url": "https://www.linkedin.com/newsletters/caf%C3%A9-com-c%C3%B3digo-6880618748047314945/"
+        },
+        "description": "Quando aprendemos análise de algoritmos, normalmente fazemos o exercício de olhar para um trecho de código e tentar responder perguntas como: quantas vezes esse laço executa? Existe outro laço dentro dele? Essa busca percorre uma coleção inteira? Essa recursão divide o problema pela metade? Depois d"
+      },
+      {
+        "@type": "Article",
+        "@id": "https://www.linkedin.com/pulse/aggregates-e-aggregate-roots-desenhando-fronteiras-de-de-oliveira-c4fkf/#article",
+        "url": "https://www.linkedin.com/pulse/aggregates-e-aggregate-roots-desenhando-fronteiras-de-de-oliveira-c4fkf/",
+        "headline": "Aggregates e Aggregate Roots: desenhando fronteiras de consistência",
+        "datePublished": "2026-09-14",
+        "inLanguage": "pt-BR",
+        "author": {
+          "@id": "https://rodri-oliveira-dev.github.io/#person"
+        },
+        "isPartOf": {
+          "@type": "Periodical",
+          "name": "Café com código",
+          "url": "https://www.linkedin.com/newsletters/caf%C3%A9-com-c%C3%B3digo-6880618748047314945/"
+        },
+        "description": "Este é o oitavo artigo da série sobre Domain-Driven Design. No texto anterior, falamos sobre Primitive Obsession e modelo anêmico, discutindo como trazer significado e comportamento de volta ao domínio."
+      },
+      {
+        "@type": "Article",
+        "@id": "https://www.linkedin.com/pulse/primitive-obsession-e-modelo-an%C3%AAmico-quando-o-dom%C3%ADnio-de-oliveira-pdyxf#article",
+        "url": "https://www.linkedin.com/pulse/primitive-obsession-e-modelo-an%C3%AAmico-quando-o-dom%C3%ADnio-de-oliveira-pdyxf",
+        "headline": "Primitive Obsession e modelo anêmico: quando o domínio vira apenas um conjunto de dados",
+        "datePublished": "2026-08-31",
+        "inLanguage": "pt-BR",
+        "author": {
+          "@id": "https://rodri-oliveira-dev.github.io/#person"
+        },
+        "isPartOf": {
+          "@type": "Periodical",
+          "name": "Café com código",
+          "url": "https://www.linkedin.com/newsletters/caf%C3%A9-com-c%C3%B3digo-6880618748047314945/"
+        },
+        "description": "Este é o sétimo artigo da série sobre Domain-Driven Design. No texto anterior, estudamos Entities e Value Objects e vimos como identidade, igualdade e comportamento influenciam a modelagem."
+      },
+      {
+        "@type": "Article",
+        "@id": "https://pt.linkedin.com/pulse/entities-e-value-objects-identidade-igualdade-modelo-de-de-oliveira-hy4gf#article",
+        "url": "https://pt.linkedin.com/pulse/entities-e-value-objects-identidade-igualdade-modelo-de-de-oliveira-hy4gf",
+        "headline": "Entities e Value Objects: identidade, igualdade e comportamento no modelo de domínio",
+        "datePublished": "2026-08-17",
+        "inLanguage": "pt-BR",
+        "author": {
+          "@id": "https://rodri-oliveira-dev.github.io/#person"
+        },
+        "isPartOf": {
+          "@type": "Periodical",
+          "name": "Café com código",
+          "url": "https://www.linkedin.com/newsletters/caf%C3%A9-com-c%C3%B3digo-6880618748047314945/"
+        },
+        "description": "Este é o sexto artigo da série sobre Domain-Driven Design. No texto anterior, estudamos Context Map e como Bounded Contexts podem se relacionar sem destruir a independência de seus modelos."
+      }
+    ]
   }
   </script>
+  <!-- SEO_STRUCTURED_DATA:END -->
 </head>
 <body>
   <a class="skip-link" href="#main">Ir para o conteúdo</a>
