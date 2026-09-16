@@ -14,7 +14,7 @@ A estratégia é manter o site estático simples, mas protegido por verificaçõ
 | Lighthouse CI | [`lighthouse.yml`](workflows/lighthouse.yml) | Pull Request, push em `main` e manual | Medir Performance, Accessibility, Best Practices e SEO |
 | External link health | [`external-link-health.yml`](workflows/external-link-health.yml) | Semanal, manual e quando o próprio workflow muda em PR | Detectar link rot com uma verificação externa mais tolerante |
 | Import newsletter article | [`import-newsletter-article.yml`](workflows/import-newsletter-article.yml) | Manual | Importar metadados de um artigo para o catálogo da newsletter |
-| Sync newsletter articles | [`sync-newsletter-articles.yml`](workflows/sync-newsletter-articles.yml) | Diário e manual | Renderizar os artigos mais recentes na homepage |
+| Sync newsletter articles | [`sync-newsletter-articles.yml`](workflows/sync-newsletter-articles.yml) | Diário e manual | Renderizar os artigos mais recentes e propor a atualização via Pull Request |
 | Optimize Open Graph image | [`optimize-og-image.yml`](workflows/optimize-og-image.yml) | Push específico em `main` e manual | Gerar e validar a versão WebP da imagem Open Graph |
 
 ## Quality gates
@@ -127,7 +127,25 @@ O resultado detalhado da importação é escrito no Job Summary.
 
 O [`sync-newsletter-articles.yml`](workflows/sync-newsletter-articles.yml) executa diariamente às 12:00 UTC, equivalente a 09:00 em `America/Sao_Paulo` enquanto o fuso estiver em UTC-3, e também pode ser disparado manualmente.
 
-Ele usa [`scripts/render-newsletter.py`](scripts/render-newsletter.py) para renderizar na homepage os quatro artigos mais recentes do catálogo, valida o bloco gerado e cria commit em `index.html` somente quando há alteração.
+Ele usa [`scripts/render-newsletter.py`](scripts/render-newsletter.py) para renderizar na homepage os quatro artigos mais recentes do catálogo e valida o bloco gerado antes de qualquer publicação.
+
+Quando `index.html` não muda, a execução termina sem criar commit ou Pull Request. Quando existe alteração, o workflow:
+
+1. cria um commit na branch fixa `automation/sync-newsletter-articles`;
+2. cria ou atualiza um único Pull Request dessa branch para `main`;
+3. preserva a proteção da `main`, sem push direto para a branch protegida;
+4. deixa a alteração passar pelos quality gates normais do repositório antes do merge;
+5. registra no Job Summary a quantidade de artigos, se houve alteração e o Pull Request associado.
+
+O checkout usa credenciais não persistentes e a branch automatizada é atualizada com `force-with-lease`, evitando sobrescrever silenciosamente uma alteração remota inesperada.
+
+#### Token da automação
+
+Por padrão, o workflow usa o `GITHUB_TOKEN` com permissões explícitas de `contents: write` e `pull-requests: write`.
+
+O GitHub pode exigir aprovação manual para iniciar os workflows de um Pull Request criado ou atualizado pelo próprio `GITHUB_TOKEN`. Para permitir que esses gates sejam iniciados automaticamente, pode ser configurado o secret opcional `AUTOMATION_PR_TOKEN`, contendo um token dedicado com acesso mínimo ao repositório para conteúdo e Pull Requests.
+
+Quando `AUTOMATION_PR_TOKEN` existe, ele é preferido. Caso contrário, o workflow usa `github.token` como fallback e informa essa condição no Job Summary.
 
 ### Optimize Open Graph image
 
@@ -176,6 +194,7 @@ Os workflows seguem algumas regras comuns:
 - checks usados como gates de PR não dependem de filtros de caminho que poderiam impedir a emissão do status obrigatório;
 - runs anteriores do mesmo contexto são cancelados quando isso é seguro, reduzindo consumo desnecessário de runner;
 - workflows que precisam escrever no repositório mantêm essa permissão explícita e limitada ao caso operacional;
+- automações de conteúdo devem preferir branch + Pull Request em vez de push direto para a `main` protegida;
 - relatórios são publicados antes do enforcement final quando isso é necessário para preservar o diagnóstico de uma falha.
 
 ## Arquivos relacionados
