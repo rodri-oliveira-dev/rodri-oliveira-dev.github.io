@@ -1,0 +1,46 @@
+name: Migrate newsletter import workflow
+
+on:
+  push:
+    branches:
+      - feat/align-site-architecture-positioning
+    paths:
+      - ".github/workflows/migrate-import-workflow.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    name: Migrate import workflow
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: feat/align-site-architecture-positioning
+          persist-credentials: false
+
+      - name: Apply migration
+        run: python3 .github/scripts/migrate-import-workflow.py
+
+      - name: Validate diff
+        run: git diff --check
+
+      - name: Commit migrated workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- .github/workflows/import-newsletter-article.yml; then
+            echo "No workflow changes detected."
+            exit 0
+          fi
+
+          gh auth setup-git
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/import-newsletter-article.yml
+          git commit -m "ci: route newsletter imports through pull requests"
+          git push origin HEAD:feat/align-site-architecture-positioning
