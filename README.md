@@ -31,6 +31,16 @@ O site utiliza URLs dedicadas e indexáveis para cada idioma:
 
 As duas páginas possuem URLs canônicas, alternates com `hreflang`, metadados Open Graph e dados estruturados Schema.org do tipo `Person`. O sitemap contém as duas variantes de idioma.
 
+## RSS da newsletter
+
+Os artigos catalogados da newsletter **Café com código** também são publicados em RSS 2.0:
+
+- Feed público: `https://rodri-oliveira-dev.github.io/newsletter/feed.xml`
+- Fonte dos dados: `assets/data/newsletter-articles.json`
+- Gerador: `.github/scripts/generate-newsletter-feed.py`
+
+O feed é determinístico e contém todo o histórico válido presente no catálogo, ordenado do artigo mais recente para o mais antigo. Os workflows de importação e sincronização regeneram e validam o XML antes de publicar alterações.
+
 ## Abordagem técnica
 
 O site é intencionalmente livre de dependências de runtime:
@@ -52,6 +62,8 @@ A documentação completa dos workflows, gatilhos, quality gates, relatórios em
 - `index.html` — portfólio em português e idioma padrão
 - `en/index.html` — portfólio em inglês
 - `pt-br/index.html` — redirecionamento legado para a raiz em português
+- `newsletter/feed.xml` — feed RSS 2.0 da newsletter Café com código
+- `assets/data/newsletter-articles.json` — catálogo usado pela homepage e pelo RSS
 - `assets/css/site.css` — sistema visual responsivo
 - `assets/js/site.js` — comportamento mínimo de interface
 - `assets/brand/` — identidade visual pessoal

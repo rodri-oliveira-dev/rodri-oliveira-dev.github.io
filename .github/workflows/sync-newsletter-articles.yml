@@ -33,7 +33,10 @@ jobs:
       - name: Render four latest articles
         run: python3 .github/scripts/render-newsletter.py
 
-      - name: Validate generated block
+      - name: Generate newsletter RSS feed
+        run: python3 .github/scripts/generate-newsletter-feed.py
+
+      - name: Validate generated content
         id: validation
         shell: bash
         run: |
@@ -56,20 +59,41 @@ jobs:
           PY
           )"
 
+          feed_count="$(python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+
+          root = ET.parse("newsletter/feed.xml").getroot()
+          if root.tag != "rss" or root.attrib.get("version") != "2.0":
+              raise SystemExit("RSS 2.0 inválido.")
+
+          items = root.findall("./channel/item")
+          if not items:
+              raise SystemExit("RSS sem artigos.")
+
+          for item in items:
+              for field in ("title", "link", "guid", "pubDate"):
+                  if not (item.findtext(field) or "").strip():
+                      raise SystemExit(f"Item RSS sem campo obrigatório: {field}")
+
+          print(len(items))
+          PY
+          )"
+
           echo "article_count=${article_count}" >> "$GITHUB_OUTPUT"
-          echo "Validated ${article_count} newsletter article(s)."
+          echo "feed_count=${feed_count}" >> "$GITHUB_OUTPUT"
+          echo "Validated ${article_count} homepage article(s) and ${feed_count} RSS item(s)."
           git diff --check
 
-      - name: Detect homepage changes
+      - name: Detect generated content changes
         id: changes
         shell: bash
         run: |
-          if git diff --quiet -- index.html; then
+          if git diff --quiet -- index.html newsletter/feed.xml; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "Homepage already up to date."
+            echo "Generated newsletter content already up to date."
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "Homepage update detected."
+            echo "Generated newsletter content update detected."
           fi
 
       - name: Publish automation branch and open or update PR
@@ -91,7 +115,7 @@ jobs:
           git switch -c "$AUTOMATION_BRANCH"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html
+          git add index.html newsletter/feed.xml
           git commit -m "content: sync latest newsletter articles"
 
           if [[ -n "$remote_sha" ]]; then
@@ -105,12 +129,14 @@ jobs:
           cat > /tmp/newsletter-sync-pr.md <<EOF
           ## Resumo
 
-          Atualiza automaticamente a homepage com os artigos mais recentes do catálogo da newsletter.
+          Atualiza automaticamente a homepage e o RSS público com os artigos mais recentes do catálogo da newsletter.
 
           ## Validação
 
           - bloco da newsletter renderizado por \`.github/scripts/render-newsletter.py\`;
-          - quantidade de artigos validada antes do commit;
+          - RSS regenerado por \`.github/scripts/generate-newsletter-feed.py\`;
+          - quantidade de artigos da homepage validada antes do commit;
+          - XML e campos obrigatórios dos itens RSS validados antes do commit;
           - \`git diff --check\` executado;
           - quality gates do repositório devem passar antes do merge.
 
@@ -160,7 +186,8 @@ jobs:
         shell: bash
         env:
           ARTICLE_COUNT: ${{ steps.validation.outputs.article_count }}
-          HOMEPAGE_CHANGED: ${{ steps.changes.outputs.changed }}
+          FEED_COUNT: ${{ steps.validation.outputs.feed_count }}
+          CONTENT_CHANGED: ${{ steps.changes.outputs.changed }}
           PR_NUMBER: ${{ steps.pull_request.outputs.number }}
           PR_URL: ${{ steps.pull_request.outputs.url }}
           AUTOMATION_TOKEN_CONFIGURED: ${{ steps.pull_request.outputs.automation_token_configured }}
@@ -168,8 +195,9 @@ jobs:
           {
             echo "# Newsletter synchronization"
             echo
-            echo "- **Artigos renderizados:** ${ARTICLE_COUNT:-n/a}"
-            echo "- **Homepage alterada:** ${HOMEPAGE_CHANGED:-n/a}"
+            echo "- **Artigos renderizados na homepage:** ${ARTICLE_COUNT:-n/a}"
+            echo "- **Itens publicados no RSS:** ${FEED_COUNT:-n/a}"
+            echo "- **Conteúdo gerado alterado:** ${CONTENT_CHANGED:-n/a}"
 
             if [[ -n "$PR_URL" ]]; then
               echo "- **Branch:** \`${AUTOMATION_BRANCH}\`"

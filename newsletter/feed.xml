@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+  <channel>
+    <title>Café com código — Rodrigo de Oliveira</title>
+    <link>https://www.linkedin.com/newsletters/caf%C3%A9-com-c%C3%B3digo-6880618748047314945/</link>
+    <description>Artigos sobre arquitetura de software, .NET, DDD, cloud e engenharia de software.</description>
+    <atom:link href="https://rodri-oliveira-dev.github.io/newsletter/feed.xml" rel="self" type="application/rss+xml" />
+    <language>pt-BR</language>
+    <item>
+      <title>É possível detectar complexidade Big-O durante a compilação?</title>
+      <link>https://www.linkedin.com/pulse/%C3%A9-poss%C3%ADvel-detectar-complexidade-big-o-durante-rodrigo-de-oliveira-b0upf/</link>
+      <guid isPermaLink="true">https://www.linkedin.com/pulse/%C3%A9-poss%C3%ADvel-detectar-complexidade-big-o-durante-rodrigo-de-oliveira-b0upf/</guid>
+      <pubDate>Wed, 16 Sep 2026 00:00:00 GMT</pubDate>
+      <description>Quando aprendemos análise de algoritmos, normalmente fazemos o exercício de olhar para um trecho de código e tentar responder perguntas como: quantas vezes esse laço executa? Existe outro laço dentro dele? Essa busca percorre uma coleção inteira? Essa recursão divide o problema pela metade? Depois d</description>
+    </item>
+    <item>
+      <title>Aggregates e Aggregate Roots: desenhando fronteiras de consistência</title>
+      <link>https://www.linkedin.com/pulse/aggregates-e-aggregate-roots-desenhando-fronteiras-de-de-oliveira-c4fkf/</link>
+      <guid isPermaLink="true">https://www.linkedin.com/pulse/aggregates-e-aggregate-roots-desenhando-fronteiras-de-de-oliveira-c4fkf/</guid>
+      <pubDate>Mon, 14 Sep 2026 00:00:00 GMT</pubDate>
+      <description>Este é o oitavo artigo da série sobre Domain-Driven Design. No texto anterior, falamos sobre Primitive Obsession e modelo anêmico, discutindo como trazer significado e comportamento de volta ao domínio.</description>
+    </item>
+    <item>
+      <title>Primitive Obsession e modelo anêmico: quando o domínio vira apenas um conjunto de dados</title>
+      <link>https://www.linkedin.com/pulse/primitive-obsession-e-modelo-an%C3%AAmico-quando-o-dom%C3%ADnio-de-oliveira-pdyxf</link>
+      <guid isPermaLink="true">https://www.linkedin.com/pulse/primitive-obsession-e-modelo-an%C3%AAmico-quando-o-dom%C3%ADnio-de-oliveira-pdyxf</guid>
+      <pubDate>Mon, 31 Aug 2026 00:00:00 GMT</pubDate>
+      <description>Este é o sétimo artigo da série sobre Domain-Driven Design. No texto anterior, estudamos Entities e Value Objects e vimos como identidade, igualdade e comportamento influenciam a modelagem.</description>
+    </item>
+    <item>
+      <title>Entities e Value Objects: identidade, igualdade e comportamento no modelo de domínio</title>
+      <link>https://pt.linkedin.com/pulse/entities-e-value-objects-identidade-igualdade-modelo-de-de-oliveira-hy4gf</link>
+      <guid isPermaLink="true">https://pt.linkedin.com/pulse/entities-e-value-objects-identidade-igualdade-modelo-de-de-oliveira-hy4gf</guid>
+      <pubDate>Mon, 17 Aug 2026 00:00:00 GMT</pubDate>
+      <description>Este é o sexto artigo da série sobre Domain-Driven Design. No texto anterior, estudamos Context Map e como Bounded Contexts podem se relacionar sem destruir a independência de seus modelos.</description>
+    </item>
+    <item>
+      <title>Context Map: como Bounded Contexts se relacionam sem destruir seus modelos</title>
+      <link>https://pt.linkedin.com/pulse/context-map-como-bounded-contexts-se-relacionam-sem-seus-de-oliveira-vhowf</link>
+      <guid isPermaLink="true">https://pt.linkedin.com/pulse/context-map-como-bounded-contexts-se-relacionam-sem-seus-de-oliveira-vhowf</guid>
+      <pubDate>Mon, 10 Aug 2026 00:00:00 GMT</pubDate>
+      <description>Este é o quinto artigo da série sobre Domain-Driven Design. No texto anterior, estudamos Bounded Context e a importância de delimitar onde um modelo e uma linguagem possuem significado consistente.</description>
+    </item>
+    <item>
+      <title>Bounded Context: onde um modelo e uma linguagem possuem significado consistente</title>
+      <link>https://pt.linkedin.com/pulse/bounded-context-onde-um-modelo-e-uma-linguagem-rodrigo-de-oliveira-ltrjf</link>
+      <guid isPermaLink="true">https://pt.linkedin.com/pulse/bounded-context-onde-um-modelo-e-uma-linguagem-rodrigo-de-oliveira-ltrjf</guid>
+      <pubDate>Mon, 03 Aug 2026 00:00:00 GMT</pubDate>
+      <description>Este é o quarto artigo da série sobre Domain-Driven Design. No texto anterior, estudamos Domain, Subdomain e Core Domain e discutimos onde uma organização deve concentrar seu investimento em modelagem.</description>
+    </item>
+    <item>
+      <title>Domain, Subdomain e Core Domain: onde se deve realmente investir tempo em modelagem</title>
+      <link>https://pt.linkedin.com/pulse/domain-subdomain-e-core-onde-se-deve-realmente-tempo-em-de-oliveira-41taf</link>
+      <guid isPermaLink="true">https://pt.linkedin.com/pulse/domain-subdomain-e-core-onde-se-deve-realmente-tempo-em-de-oliveira-41taf</guid>
+      <pubDate>Mon, 27 Jul 2026 00:00:00 GMT</pubDate>
+      <description>Este é o terceiro artigo da série sobre Domain-Driven Design. No texto anterior, conversamos sobre Linguagem Ubíqua e sobre como transformar o conhecimento do negócio em software.</description>
+    </item>
+    <item>
+      <title>Linguagem Ubíqua: como transformar conhecimento do negócio em software</title>
+      <link>https://pt.linkedin.com/pulse/linguagem-ub%C3%ADqua-como-transformar-conhecimento-do-em-de-oliveira-i1vjf</link>
+      <guid isPermaLink="true">https://pt.linkedin.com/pulse/linguagem-ub%C3%ADqua-como-transformar-conhecimento-do-em-de-oliveira-i1vjf</guid>
+      <pubDate>Mon, 20 Jul 2026 00:00:00 GMT</pubDate>
+      <description>Este é o segundo artigo da série sobre Domain-Driven Design. No primeiro, vimos por que DDD não é uma arquitetura e como ele pode trabalhar em conjunto com Clean Architecture, Arquitetura Hexagonal e Onion Architecture.</description>
+    </item>
+  </channel>
+</rss>
