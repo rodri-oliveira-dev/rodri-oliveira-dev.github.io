@@ -1,0 +1,48 @@
+{
+  "version": "0.2",
+  "language": "en-US",
+  "useGitignore": true,
+  "import": [
+    "./node_modules/@cspell/dict-pt-br/cspell-ext.json"
+  ],
+  "dictionaryDefinitions": [
+    {
+      "name": "site-terms",
+      "path": "./.cspell/site-terms.txt",
+      "addWords": true
+    }
+  ],
+  "dictionaries": [
+    "site-terms"
+  ],
+  "overrides": [
+    {
+      "filename": "index.html",
+      "language": "pt_BR,en-US",
+      "dictionaries": [
+        "pt-br",
+        "site-terms"
+      ]
+    },
+    {
+      "filename": "en/index.html",
+      "language": "en-US",
+      "dictionaries": [
+        "site-terms"
+      ]
+    },
+    {
+      "filename": "README.md",
+      "language": "pt_BR,en-US",
+      "dictionaries": [
+        "pt-br",
+        "site-terms"
+      ]
+    }
+  ],
+  "ignoreRegExpList": [
+    "Urls",
+    "Email",
+    "Base64"
+  ]
+}

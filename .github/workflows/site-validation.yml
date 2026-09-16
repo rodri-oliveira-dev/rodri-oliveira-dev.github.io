@@ -1,0 +1,68 @@
+name: Site validation
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  site-validation:
+    name: Site validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install validation tooling
+        run: npm install --no-save --ignore-scripts html-validate@11.15.0 @cspell/dict-pt-br@2.4.2
+
+      - name: Validate HTML
+        run: npx --no-install html-validate index.html en/index.html pt-br/index.html
+
+      - name: Validate links
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2
+        with:
+          args: >-
+            --root-dir "$(pwd)"
+            --verbose
+            --no-progress
+            --exclude 'https://(www\.)?linkedin\.com/'
+            './**/*.html'
+            './**/*.md'
+          fail: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check spelling
+        uses: streetsidesoftware/cspell-action@e0668cf020899e887ee8ad4d173c31738a79eae8 # v9.0.1
+        with:
+          config: .cspell.json
+          files: |
+            index.html
+            en/index.html
+            README.md
+          incremental_files_only: false
+          strict: true
+          suggestions: true
+          inline: error
+          report: all
+
+      - name: Validate GitHub Actions workflows
+        uses: docker://rhysd/actionlint:1.7.12
+        with:
+          args: -color
