@@ -1,0 +1,13 @@
+BEGIN:VCARD
+VERSION:4.0
+KIND:individual
+FN:Rodrigo de Oliveira
+N:de Oliveira;Rodrigo;;;
+TITLE:Software Architect
+EMAIL;TYPE=work:rodrigodotnet@outlook.com
+TEL;VALUE=uri;TYPE=cell:tel:+5519998861786
+URL:https://rodri-oliveira-dev.github.io/
+URL:https://www.linkedin.com/in/rodri-oliveira-dev
+URL:https://github.com/rodri-oliveira-dev
+URL:https://wa.me/5519998861786
+END:VCARD
