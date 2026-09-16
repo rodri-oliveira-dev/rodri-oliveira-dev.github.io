@@ -15,7 +15,7 @@ A estratégia é manter o site estático simples, mas protegido por verificaçõ
 | External link health | [`external-link-health.yml`](workflows/external-link-health.yml) | Semanal, manual e quando o próprio workflow muda em PR | Detectar link rot com uma verificação externa mais tolerante |
 | Import newsletter article | [`import-newsletter-article.yml`](workflows/import-newsletter-article.yml) | Manual | Importar metadados, renderizar a homepage e propor a alteração via Pull Request |
 | Sync newsletter articles | [`sync-newsletter-articles.yml`](workflows/sync-newsletter-articles.yml) | Diário e manual | Renderizar os artigos mais recentes e propor a atualização via Pull Request |
-| Optimize Open Graph image | [`optimize-og-image.yml`](workflows/optimize-og-image.yml) | Push específico em `main` e manual | Gerar e validar a versão WebP da imagem Open Graph |
+| Optimize Open Graph image | [`optimize-og-image.yml`](workflows/optimize-og-image.yml) | Push específico em `main` e manual | Gerar e validar o WebP e propor a atualização via Pull Request |
 
 ## Quality gates
 
@@ -146,9 +146,9 @@ Quando `index.html` não muda, a execução termina sem criar commit ou Pull Req
 
 O checkout usa credenciais não persistentes e a branch automatizada é atualizada com `force-with-lease`, evitando sobrescrever silenciosamente uma alteração remota inesperada.
 
-#### Token das automações de conteúdo
+#### Token das automações com Pull Request
 
-Os workflows de importação e sincronização usam o `GITHUB_TOKEN` com permissões explícitas de `contents: write` e `pull-requests: write` quando nenhum token dedicado é configurado.
+Os workflows de importação, sincronização e otimização da imagem Open Graph usam o `GITHUB_TOKEN` com permissões explícitas de `contents: write` e `pull-requests: write` quando nenhum token dedicado é configurado.
 
 O GitHub pode exigir aprovação manual para iniciar os workflows de um Pull Request criado ou atualizado pelo próprio `GITHUB_TOKEN`. Para permitir que esses gates sejam iniciados automaticamente, pode ser configurado o secret opcional `AUTOMATION_PR_TOKEN`, contendo um token dedicado com acesso mínimo ao repositório para conteúdo e Pull Requests.
 
@@ -163,7 +163,18 @@ Ele roda manualmente ou quando, na `main`, muda:
 - o próprio workflow;
 - `assets/social/rodrigo-de-oliveira-og.png`.
 
-O workflow usa Pillow para gerar WebP com as mesmas dimensões da imagem original, verifica se o arquivo final permanece abaixo de 300 KB e cria commit somente quando o asset otimizado mudou.
+O processo:
+
+1. parte sempre do estado atual da `main`;
+2. gera o WebP com Pillow, qualidade 80 e as mesmas dimensões do PNG;
+3. reprova a execução se as dimensões mudarem ou se o arquivo final atingir 300 KB;
+4. encerra sem commit quando o WebP já está atualizado;
+5. quando há mudança, cria um commit na branch fixa `automation/optimize-og-image`;
+6. cria ou atualiza um único Pull Request dessa branch para `main`;
+7. deixa o asset otimizado passar pelos quality gates antes do merge;
+8. registra dimensões, tamanho do arquivo, estado da alteração e Pull Request no Job Summary.
+
+O workflow não faz mais push direto para a `main`. O checkout usa credenciais não persistentes, e uma nova otimização atualiza a branch automatizada com `force-with-lease`, evitando sobrescrever silenciosamente uma alteração remota inesperada.
 
 ## Dependabot
 
