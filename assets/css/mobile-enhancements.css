@@ -19,6 +19,15 @@ html {
     min-height: 64px;
   }
 
+  .language-switcher {
+    flex: 0 0 auto;
+  }
+
+  .lang-link {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
   .mobile-nav-ready .brand {
     display: none;
   }
@@ -117,5 +126,61 @@ html {
 
   .hero-actions > .button[href^="mailto:"] {
     display: none;
+  }
+
+  .eyebrow {
+    font-size: 13px;
+    letter-spacing: .11em;
+    line-height: 1.45;
+  }
+
+  .hero-proof {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .hero-metrics span {
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  .card-topline {
+    gap: 12px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .tags span,
+  .architecture-lab-meta span {
+    font-size: 12px;
+  }
+
+  .focus-list span {
+    font-size: 13px;
+  }
+
+  .signal-kicker {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .signal-line span {
+    font-size: 13px;
+  }
+
+  .trajectory-grid article > span,
+  .writing-cards span,
+  .practice-card > span,
+  .impact-result strong {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .principles article > span {
+    font-size: 13px;
+  }
+
+  .site-footer {
+    font-size: 13px;
   }
 }
