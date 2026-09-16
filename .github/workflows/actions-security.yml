@@ -33,5 +33,9 @@ jobs:
           inputs: .
           collect: workflows
           online-audits: true
+          persona: regular
+          min-severity: medium
+          min-confidence: medium
+          config: zizmor.yml
           advanced-security: false
           annotations: true
