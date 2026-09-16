@@ -5,6 +5,9 @@ on:
     branches:
       - main
   workflow_dispatch:
+  schedule:
+    # Daily fallback for changes merged by automation tokens that do not emit push workflows.
+    - cron: "30 12 * * *"
 
 permissions:
   contents: read
@@ -50,7 +53,7 @@ jobs:
           current = os.environ["CURRENT_SHA"]
           key = os.environ["INDEXNOW_KEY"]
 
-          submit_all = event_name == "workflow_dispatch" or not before or set(before) == {"0"}
+          submit_all = event_name in {"workflow_dispatch", "schedule"} or not before or set(before) == {"0"}
           changed = set()
 
           if not submit_all:
