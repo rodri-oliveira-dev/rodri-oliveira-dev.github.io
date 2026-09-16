@@ -66,6 +66,8 @@ jobs:
           )
 
           for attempt in {1..90}; do
+            echo "Validation poll ${attempt}/90 for ${TARGET_SHA}."
+
             runs="$(
               gh run list \
                 --repo "$GH_REPO" \
