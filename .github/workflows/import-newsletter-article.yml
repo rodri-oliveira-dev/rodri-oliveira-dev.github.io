@@ -21,8 +21,7 @@ on:
         type: string
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 concurrency:
   group: import-newsletter-article
@@ -133,6 +132,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: render_validate
+    permissions:
+      contents: write
+      pull-requests: write
 
     steps:
       - name: Checkout repository
