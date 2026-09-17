@@ -1,5 +1,11 @@
 html {
+  --a11y-control-border: rgba(255, 255, 255, .36);
   background: #000;
+}
+
+.button.secondary,
+.language-switcher {
+  border-color: var(--a11y-control-border);
 }
 
 .mobile-nav-toggle,
@@ -19,6 +25,15 @@ html {
     min-height: 64px;
   }
 
+  .language-switcher {
+    flex: 0 0 auto;
+  }
+
+  .lang-link {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
   .mobile-nav-ready .brand {
     display: none;
   }
@@ -33,7 +48,7 @@ html {
     justify-content: center;
     gap: 5px;
     padding: 0;
-    border: 1px solid var(--line-strong);
+    border: 1px solid var(--a11y-control-border);
     border-radius: 12px;
     color: var(--text);
     background: rgba(255, 255, 255, .035);
@@ -70,7 +85,7 @@ html {
     display: grid;
     gap: 2px;
     padding: 10px max(14px, env(safe-area-inset-right)) 16px max(14px, env(safe-area-inset-left));
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid var(--a11y-control-border);
     background: #000;
     box-shadow: 0 24px 48px rgba(0, 0, 0, .36);
     opacity: 0;
@@ -101,7 +116,7 @@ html {
 
   .mobile-nav-panel a:hover,
   .mobile-nav-panel a:focus-visible {
-    background: rgba(255, 255, 255, .055);
+    background: rgba(255, 255, 255, .10);
   }
 }
 
@@ -117,5 +132,61 @@ html {
 
   .hero-actions > .button[href^="mailto:"] {
     display: none;
+  }
+
+  .eyebrow {
+    font-size: 13px;
+    letter-spacing: .11em;
+    line-height: 1.45;
+  }
+
+  .hero-grid > div:first-child > .hero-proof {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .hero-metrics span {
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  .card-topline {
+    gap: 12px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .tags span,
+  .architecture-lab-meta span {
+    font-size: 12px;
+  }
+
+  .focus-list span {
+    font-size: 13px;
+  }
+
+  .signal-kicker {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .signal-line span {
+    font-size: 13px;
+  }
+
+  .trajectory-grid article > span,
+  .writing-cards span,
+  .practice-card > span,
+  .impact-result strong {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .principles article > span {
+    font-size: 13px;
+  }
+
+  .site-footer {
+    font-size: 13px;
   }
 }

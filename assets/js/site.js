@@ -2,37 +2,13 @@
   const year = document.getElementById("year");
   if (year) year.textContent = new Date().getFullYear();
 
-  const mobileStyles = document.createElement("link");
-  mobileStyles.rel = "stylesheet";
-  mobileStyles.href = "/assets/css/mobile-enhancements.css";
-  document.head.appendChild(mobileStyles);
-
-  const viewport = document.querySelector('meta[name="viewport"]');
-  if (viewport && !viewport.content.includes("viewport-fit=cover")) {
-    viewport.content = `${viewport.content}, viewport-fit=cover`;
-  }
-
-  const themeColor = document.querySelector('meta[name="theme-color"]');
   const mobileViewport = window.matchMedia("(max-width: 900px)");
-
-  const syncThemeColor = () => {
-    if (themeColor) {
-      themeColor.content = mobileViewport.matches ? "#000000" : "#070b14";
-    }
-  };
-
-  syncThemeColor();
-  if (typeof mobileViewport.addEventListener === "function") {
-    mobileViewport.addEventListener("change", syncThemeColor);
-  } else if (typeof mobileViewport.addListener === "function") {
-    mobileViewport.addListener(syncThemeColor);
-  }
-
   const siteHeader = document.querySelector(".site-header");
   const headerInner = document.querySelector(".header-inner");
   const desktopNav = document.querySelector(".nav");
+  const languageSwitcher = document.querySelector(".language-switcher");
 
-  if (!siteHeader || !headerInner || !desktopNav) return;
+  if (!siteHeader || !headerInner || !desktopNav || !languageSwitcher) return;
 
   const isPortuguese = document.documentElement.lang.toLowerCase().startsWith("pt");
   const openLabel = isPortuguese ? "Abrir navegação" : "Open navigation";
@@ -55,6 +31,7 @@
   const mobileNav = document.createElement("nav");
   mobileNav.id = "mobile-navigation";
   mobileNav.className = "mobile-nav-panel";
+  mobileNav.setAttribute("aria-hidden", "true");
   mobileNav.setAttribute(
     "aria-label",
     desktopNav.getAttribute("aria-label") || (isPortuguese ? "Navegação principal" : "Primary navigation"),
@@ -65,21 +42,50 @@
   });
 
   headerInner.insertBefore(toggle, headerInner.firstChild);
-  siteHeader.appendChild(mobileNav);
+  headerInner.insertBefore(mobileNav, languageSwitcher);
   document.documentElement.classList.add("mobile-nav-ready");
 
-  const setMenuOpen = (open) => {
+  const firstMenuLink = mobileNav.querySelector("a");
+
+  const setMenuOpen = (open, { focusFirst = false, restoreToggle = false } = {}) => {
     toggle.setAttribute("aria-expanded", String(open));
     toggle.setAttribute("aria-label", open ? closeLabel : openLabel);
+    mobileNav.setAttribute("aria-hidden", String(!open));
     mobileNav.classList.toggle("is-open", open);
+
+    if (open && focusFirst && firstMenuLink) {
+      window.requestAnimationFrame(() => firstMenuLink.focus());
+    } else if (!open && restoreToggle) {
+      toggle.focus();
+    }
   };
 
   toggle.addEventListener("click", () => {
-    setMenuOpen(toggle.getAttribute("aria-expanded") !== "true");
+    const shouldOpen = toggle.getAttribute("aria-expanded") !== "true";
+    setMenuOpen(shouldOpen, { focusFirst: shouldOpen });
   });
 
   mobileNav.addEventListener("click", (event) => {
     if (event.target.closest("a")) setMenuOpen(false);
+  });
+
+  mobileNav.addEventListener("focusout", (event) => {
+    if (
+      toggle.getAttribute("aria-expanded") === "true" &&
+      !mobileNav.contains(event.relatedTarget) &&
+      event.relatedTarget !== toggle
+    ) {
+      setMenuOpen(false);
+    }
+  });
+
+  toggle.addEventListener("focusout", (event) => {
+    if (
+      toggle.getAttribute("aria-expanded") === "true" &&
+      !mobileNav.contains(event.relatedTarget)
+    ) {
+      setMenuOpen(false);
+    }
   });
 
   document.addEventListener("click", (event) => {
@@ -90,8 +96,7 @@
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && toggle.getAttribute("aria-expanded") === "true") {
-      setMenuOpen(false);
-      toggle.focus();
+      setMenuOpen(false, { restoreToggle: true });
     }
   });
 
