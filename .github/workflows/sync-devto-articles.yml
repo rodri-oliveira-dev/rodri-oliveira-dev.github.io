@@ -75,8 +75,8 @@ jobs:
                   raise SystemExit(f"Article does not belong to the expected DEV account: {article['url']}")
 
           html = Path("en/index.html").read_text(encoding="utf-8")
-          start_marker = "<!-- DEVTO_ARTICLES:START -->"
-          end_marker = "<!-- DEVTO_ARTICLES:END -->"
+          start_marker = "<!-- COMMUNITY_ARTICLES:START -->"
+          end_marker = "<!-- COMMUNITY_ARTICLES:END -->"
           if html.count(start_marker) != 1 or html.count(end_marker) != 1:
               raise SystemExit("DEV Community article markers are missing or duplicated.")
 
