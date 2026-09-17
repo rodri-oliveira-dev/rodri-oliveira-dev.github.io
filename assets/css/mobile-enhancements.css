@@ -140,7 +140,7 @@ html {
     line-height: 1.45;
   }
 
-  .hero-proof {
+  .hero-grid > div:first-child > .hero-proof {
     font-size: 12px;
     line-height: 1.5;
   }
