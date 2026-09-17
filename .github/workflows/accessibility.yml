@@ -35,6 +35,9 @@ jobs:
       - name: Install Pa11y CI
         run: npm install --no-save --package-lock=false pa11y-ci@4.1.1
 
+      - name: Validate contrast tokens
+        run: node .github/scripts/check-contrast.mjs
+
       - name: Prepare local accessibility fixture
         run: |
           python3 - <<'PY'
