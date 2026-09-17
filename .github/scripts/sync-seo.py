@@ -12,6 +12,7 @@ from xml.sax.saxutils import escape
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA_PATH = ROOT / "assets/data/newsletter-articles.json"
+DEVTO_DATA_PATH = ROOT / "assets/data/devto-articles.json"
 PT_INDEX = ROOT / "index.html"
 EN_INDEX = ROOT / "en/index.html"
 SITEMAP_PATH = ROOT / "sitemap.xml"
@@ -38,7 +39,7 @@ RSS_DISCOVERY_PATTERN = re.compile(
 )
 
 
-def rss_discovery(language: str) -> str:
+def rss_discovery(language: str, devto_enabled: bool) -> str:
     if language == "pt-BR":
         return (
             '  <link rel="alternate" type="application/rss+xml" '
@@ -47,10 +48,19 @@ def rss_discovery(language: str) -> str:
         )
 
     if language == "en":
+        if devto_enabled:
+            return (
+                '  <link rel="alternate" type="application/rss+xml" '
+                'title="Rodrigo de Oliveira on DEV Community — RSS" '
+                f'href="{EN_FEED_URL}">'
+            )
+
+        # Migration compatibility: until the DEV catalog is initialized by the
+        # dedicated sync workflow, keep the already-published English page stable.
         return (
             '  <link rel="alternate" type="application/rss+xml" '
-            'title="Rodrigo de Oliveira on DEV Community — RSS" '
-            f'href="{EN_FEED_URL}">'
+            'title="Café com código — RSS" '
+            f'href="{PT_FEED_URL}">'
         )
 
     raise SystemExit(f"Idioma sem RSS configurado: {language}.")
@@ -120,8 +130,21 @@ def article_nodes(articles: list[dict]) -> tuple[list[dict], list[dict]]:
     return nodes, refs
 
 
-def person_node(language: str) -> dict:
+def person_node(language: str, devto_enabled: bool) -> dict:
     is_pt = language == "pt-BR"
+    same_as = [
+        "https://github.com/rodri-oliveira-dev",
+        "https://www.linkedin.com/in/rodri-oliveira-dev",
+    ]
+    if not is_pt and devto_enabled:
+        same_as.append(DEV_PROFILE_URL)
+    same_as.extend(
+        [
+            "https://medium.com/@rodrigodotnet",
+            "https://www.nuget.org/profiles/rodri-oliveira-dev",
+        ]
+    )
+
     return {
         "@type": "Person",
         "@id": PERSON_ID,
@@ -137,13 +160,7 @@ def person_node(language: str) -> dict:
             else "Software Architect focused on distributed systems, .NET, GCP/AWS, "
             "Domain-Driven Design, reliability, Infrastructure as Code, and engineering governance."
         ),
-        "sameAs": [
-            "https://github.com/rodri-oliveira-dev",
-            "https://www.linkedin.com/in/rodri-oliveira-dev",
-            DEV_PROFILE_URL,
-            "https://medium.com/@rodrigodotnet",
-            "https://www.nuget.org/profiles/rodri-oliveira-dev",
-        ],
+        "sameAs": same_as,
         "knowsAbout": (
             [
                 "Arquitetura de Software",
@@ -186,7 +203,11 @@ def person_node(language: str) -> dict:
     }
 
 
-def structured_data(language: str, articles: list[dict]) -> dict:
+def structured_data(
+    language: str,
+    articles: list[dict],
+    devto_enabled: bool,
+) -> dict:
     is_pt = language == "pt-BR"
     page_url = SITE_URL if is_pt else EN_URL
     profile_id = PT_PROFILE_ID if is_pt else EN_PROFILE_ID
@@ -220,13 +241,22 @@ def structured_data(language: str, articles: list[dict]) -> dict:
 
     return {
         "@context": "https://schema.org",
-        "@graph": [website, profile, person_node(language), *article_graph],
+        "@graph": [
+            website,
+            profile,
+            person_node(language, devto_enabled),
+            *article_graph,
+        ],
     }
 
 
-def structured_block(language: str, articles: list[dict]) -> str:
+def structured_block(
+    language: str,
+    articles: list[dict],
+    devto_enabled: bool,
+) -> str:
     payload = json.dumps(
-        structured_data(language, articles),
+        structured_data(language, articles, devto_enabled),
         ensure_ascii=False,
         indent=2,
     )
@@ -240,8 +270,13 @@ def structured_block(language: str, articles: list[dict]) -> str:
     )
 
 
-def replace_structured_data(html: str, language: str, articles: list[dict]) -> str:
-    block = structured_block(language, articles)
+def replace_structured_data(
+    html: str,
+    language: str,
+    articles: list[dict],
+    devto_enabled: bool,
+) -> str:
+    block = structured_block(language, articles, devto_enabled)
 
     if SEO_START in html and SEO_END in html:
         before, remainder = html.split(SEO_START, 1)
@@ -258,8 +293,12 @@ def replace_structured_data(html: str, language: str, articles: list[dict]) -> s
     return updated
 
 
-def ensure_rss_discovery(html: str, language: str) -> str:
-    expected = rss_discovery(language)
+def ensure_rss_discovery(
+    html: str,
+    language: str,
+    devto_enabled: bool,
+) -> str:
+    expected = rss_discovery(language, devto_enabled)
     updated, count = RSS_DISCOVERY_PATTERN.subn(expected, html, count=1)
     if count == 1:
         return updated
@@ -270,10 +309,15 @@ def ensure_rss_discovery(html: str, language: str) -> str:
     return html.replace(anchor, f"{anchor}\n{expected}", 1)
 
 
-def synchronize_html(path: Path, language: str, articles: list[dict]) -> None:
+def synchronize_html(
+    path: Path,
+    language: str,
+    articles: list[dict],
+    devto_enabled: bool,
+) -> None:
     html = path.read_text(encoding="utf-8")
-    html = ensure_rss_discovery(html, language)
-    html = replace_structured_data(html, language, articles)
+    html = ensure_rss_discovery(html, language, devto_enabled)
+    html = replace_structured_data(html, language, articles, devto_enabled)
     path.write_text(html, encoding="utf-8")
 
 
@@ -360,11 +404,12 @@ def validate_json_ld(path: Path) -> None:
 
 def main() -> None:
     articles = load_articles()
+    devto_enabled = DEVTO_DATA_PATH.exists()
     pt_dirty = file_was_dirty(PT_INDEX)
     en_dirty = file_was_dirty(EN_INDEX)
 
-    synchronize_html(PT_INDEX, "pt-BR", articles)
-    synchronize_html(EN_INDEX, "en", articles)
+    synchronize_html(PT_INDEX, "pt-BR", articles, False)
+    synchronize_html(EN_INDEX, "en", articles, devto_enabled)
     write_sitemap(articles, pt_dirty, en_dirty)
 
     validate_json_ld(PT_INDEX)
@@ -372,7 +417,10 @@ def main() -> None:
 
     print("SEO artifacts synchronized:")
     print("- index.html: WebSite/ProfilePage/Person + latest Article entities + PT-BR RSS discovery")
-    print("- en/index.html: WebSite/ProfilePage/Person + DEV Community RSS discovery")
+    if devto_enabled:
+        print("- en/index.html: WebSite/ProfilePage/Person + DEV Community RSS discovery")
+    else:
+        print("- en/index.html: migration-compatible newsletter RSS discovery (DEV catalog not initialized)")
     print("- sitemap.xml: hreflang + reliable lastmod")
 
 
