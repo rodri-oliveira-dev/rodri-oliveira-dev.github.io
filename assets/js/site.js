@@ -3,6 +3,7 @@
   if (year) year.textContent = new Date().getFullYear();
 
   const mobileViewport = window.matchMedia("(max-width: 900px)");
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const siteHeader = document.querySelector(".site-header");
   const headerInner = document.querySelector(".header-inner");
   const desktopNav = document.querySelector(".nav");
@@ -60,13 +61,57 @@
     }
   };
 
+  const getSectionContent = (target) => {
+    const directContainer = Array.from(target.children).find((child) =>
+      child.classList.contains("container"),
+    );
+
+    return directContainer || target;
+  };
+
+  const navigateToMobileAnchor = (link) => {
+    const href = link.getAttribute("href");
+    if (!href || !href.startsWith("#") || href.length === 1) return false;
+
+    const target = document.getElementById(href.slice(1));
+    if (!target) return false;
+
+    setMenuOpen(false);
+
+    window.requestAnimationFrame(() => {
+      const content = getSectionContent(target);
+      const headerHeight = siteHeader.getBoundingClientRect().height;
+      const contentTop = content.getBoundingClientRect().top + window.scrollY;
+      const top = Math.max(0, contentTop - headerHeight - 12);
+
+      window.scrollTo({
+        top,
+        behavior: reducedMotion.matches ? "auto" : "smooth",
+      });
+
+      if (window.location.hash !== href) {
+        window.history.pushState(null, "", href);
+      }
+    });
+
+    return true;
+  };
+
   toggle.addEventListener("click", () => {
     const shouldOpen = toggle.getAttribute("aria-expanded") !== "true";
     setMenuOpen(shouldOpen, { focusFirst: shouldOpen });
   });
 
   mobileNav.addEventListener("click", (event) => {
-    if (event.target.closest("a")) setMenuOpen(false);
+    const link = event.target.closest("a");
+    if (!link) return;
+
+    if (mobileViewport.matches && navigateToMobileAnchor(link)) {
+      event.preventDefault();
+      return;
+    }
+
+    setMenuOpen(false);
   });
 
   mobileNav.addEventListener("focusout", (event) => {
