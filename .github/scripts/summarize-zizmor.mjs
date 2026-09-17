@@ -49,7 +49,12 @@ const exitCode = fs.existsSync(exitCodePath)
   ? Number.parseInt(fs.readFileSync(exitCodePath, "utf8").trim(), 10)
   : null;
 
-const operationalFailure = parseError !== null || (Number.isInteger(exitCode) && exitCode > 1);
+const hasExitCode = Number.isInteger(exitCode);
+const operationalFailure =
+  parseError !== null ||
+  !hasExitCode ||
+  exitCode > 1 ||
+  (exitCode !== 0 && findings.length === 0);
 const failed = operationalFailure || findings.length > 0;
 const gate = failed ? "❌ FAIL" : "✅ PASS";
 
@@ -85,11 +90,12 @@ const lines = [
 ];
 
 if (operationalFailure) {
+  const statusDetail = hasExitCode ? ` (scanner exit ${exitCode})` : "";
   lines.push(
     "",
     "### Scanner status",
     "",
-    `The zizmor report could not be completed reliably${parseError ? `: ${escapeCell(parseError)}` : "."}`,
+    `The authoritative zizmor scan could not be completed reliably${statusDetail}${parseError ? `: ${escapeCell(parseError)}` : "."}`,
   );
 }
 
