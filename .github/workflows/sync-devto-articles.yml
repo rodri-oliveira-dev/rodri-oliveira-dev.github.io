@@ -1,0 +1,508 @@
+name: Sync DEV Community articles
+
+on:
+  schedule:
+    - cron: "15 10 * * *"
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/scripts/sync-devto-articles.py"
+      - ".github/workflows/sync-devto-articles.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-devto-articles
+  cancel-in-progress: false
+
+env:
+  AUTOMATION_BRANCH: automation/sync-devto-articles
+  WORKSPACE_ARTIFACT: devto-sync-workspace
+
+jobs:
+  sync_render:
+    name: Fetch, render and validate DEV Community articles
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      changed: ${{ steps.changes.outputs.changed }}
+      article_count: ${{ steps.validation.outputs.article_count }}
+      rendered_count: ${{ steps.validation.outputs.rendered_count }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Synchronize DEV Community RSS
+        run: python3 .github/scripts/sync-devto-articles.py
+
+      - name: Synchronize SEO metadata
+        run: python3 .github/scripts/sync-seo.py
+
+      - name: Validate generated English content
+        id: validation
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          read -r article_count rendered_count < <(python3 - <<'PY'
+          import json
+          from pathlib import Path
+          from urllib.parse import urlsplit
+
+          data = json.loads(Path("assets/data/devto-articles.json").read_text(encoding="utf-8"))
+          if not isinstance(data, list) or not data:
+              raise SystemExit("DEV Community catalog is empty or invalid.")
+
+          for article in data:
+              if not isinstance(article, dict):
+                  raise SystemExit("DEV Community catalog contains a non-object item.")
+              for field in ("title", "url", "publishedAt"):
+                  if not str(article.get(field) or "").strip():
+                      raise SystemExit(f"DEV Community article is missing {field}.")
+
+              url = urlsplit(str(article["url"]))
+              if url.scheme != "https" or url.hostname != "dev.to":
+                  raise SystemExit(f"Unexpected DEV Community article URL: {article['url']}")
+              if not url.path.startswith("/rodri-oliveira-dev/"):
+                  raise SystemExit(f"Article does not belong to the expected DEV account: {article['url']}")
+
+          html = Path("en/index.html").read_text(encoding="utf-8")
+          start_marker = "<!-- DEVTO_ARTICLES:START -->"
+          end_marker = "<!-- DEVTO_ARTICLES:END -->"
+          if html.count(start_marker) != 1 or html.count(end_marker) != 1:
+              raise SystemExit("DEV Community article markers are missing or duplicated.")
+
+          start = html.index(start_marker)
+          end = html.index(end_marker, start)
+          block = html[start:end]
+          rendered = block.count("<article>")
+          if rendered < 1 or rendered > 4:
+              raise SystemExit(f"Unexpected number of rendered DEV articles: {rendered}")
+          if block.count('target="_blank"') != rendered:
+              raise SystemExit("Not every DEV article has the expected external link.")
+          if "https://dev.to/feed/rodri-oliveira-dev" not in html:
+              raise SystemExit("English RSS autodiscovery does not point to DEV Community.")
+          if "Read my articles on Medium" in html:
+              raise SystemExit("Legacy Medium call-to-action is still present in the English page.")
+
+          print(len(data), rendered)
+          PY
+          )
+
+          if [[ -n "$(git status --porcelain -- index.html newsletter/feed.xml assets/data/newsletter-articles.json)" ]]; then
+            echo "The English DEV sync attempted to modify Portuguese newsletter artifacts."
+            git status --short -- index.html newsletter/feed.xml assets/data/newsletter-articles.json
+            exit 1
+          fi
+
+          git diff --check
+          echo "article_count=${article_count}" >> "$GITHUB_OUTPUT"
+          echo "rendered_count=${rendered_count}" >> "$GITHUB_OUTPUT"
+          echo "Validated ${rendered_count} rendered article(s) from ${article_count} DEV feed item(s)."
+
+      - name: Detect generated content changes
+        id: changes
+        shell: bash
+        run: |
+          if git diff --quiet -- assets/data/devto-articles.json en/index.html sitemap.xml; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "English DEV Community content is already up to date."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "New or updated DEV Community content detected."
+          fi
+
+      - name: Upload rendered workspace
+        if: steps.changes.outputs.changed == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ env.WORKSPACE_ARTIFACT }}
+          path: |
+            assets/data/devto-articles.json
+            en/index.html
+            sitemap.xml
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Write no-change summary
+        if: steps.changes.outputs.changed != 'true'
+        shell: bash
+        env:
+          ARTICLE_COUNT: ${{ steps.validation.outputs.article_count }}
+          RENDERED_COUNT: ${{ steps.validation.outputs.rendered_count }}
+        run: |
+          {
+            echo "# DEV Community synchronization"
+            echo
+            echo "- **Feed:** https://dev.to/feed/rodri-oliveira-dev"
+            echo "- **Feed items validated:** ${ARTICLE_COUNT:-n/a}"
+            echo "- **Articles rendered on the English homepage:** ${RENDERED_COUNT:-n/a}"
+            echo "- **Result:** no repository changes required"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  publish_pr:
+    name: Publish automation Pull Request
+    if: needs.sync_render.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: sync_render
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      branch: ${{ steps.pull_request.outputs.branch }}
+      number: ${{ steps.pull_request.outputs.number }}
+      url: ${{ steps.pull_request.outputs.url }}
+      automation_token_configured: ${{ steps.pull_request.outputs.automation_token_configured }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download rendered workspace
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ${{ env.WORKSPACE_ARTIFACT }}
+          path: .
+
+      - name: Publish automation branch and open or update PR
+        id: pull_request
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.AUTOMATION_PR_TOKEN || github.token }}
+          GH_REPO: ${{ github.repository }}
+          AUTOMATION_TOKEN_CONFIGURED: ${{ secrets.AUTOMATION_PR_TOKEN != '' }}
+        run: |
+          set -euo pipefail
+          gh auth setup-git
+
+          remote_sha="$(
+            git ls-remote --heads origin "refs/heads/${AUTOMATION_BRANCH}" \
+              | awk '{print $1}'
+          )"
+
+          git switch -c "$AUTOMATION_BRANCH"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/data/devto-articles.json en/index.html sitemap.xml
+          git diff --cached --check
+
+          if git diff --cached --quiet; then
+            echo "DEV Community synchronization completed without repository changes."
+            exit 1
+          fi
+
+          git commit -m "content: sync latest DEV Community articles"
+
+          if [[ -n "$remote_sha" ]]; then
+            git push \
+              --force-with-lease="refs/heads/${AUTOMATION_BRANCH}:${remote_sha}" \
+              origin "HEAD:refs/heads/${AUTOMATION_BRANCH}"
+          else
+            git push --set-upstream origin "HEAD:refs/heads/${AUTOMATION_BRANCH}"
+          fi
+
+          cat > /tmp/devto-sync-pr.md <<EOF
+          ## Resumo
+
+          Sincroniza automaticamente a versão em inglês do site com o RSS público do DEV Community.
+
+          ## Origem
+
+          - RSS: https://dev.to/feed/rodri-oliveira-dev
+          - Perfil: https://dev.to/rodri-oliveira-dev
+
+          ## Alterações automáticas
+
+          - normaliza os artigos em \`assets/data/devto-articles.json\`;
+          - renderiza até quatro artigos mais recentes em \`en/index.html\`;
+          - substitui o conteúdo legado do Medium na seção Writing;
+          - aponta o RSS autodiscovery da página em inglês para o DEV Community;
+          - sincroniza o \`lastmod\` do sitemap usando a infraestrutura SEO já existente;
+          - mantém os artefatos da newsletter em português isolados deste fluxo.
+
+          ## Validação
+
+          - apenas URLs HTTPS de \`dev.to/rodri-oliveira-dev/...\` são aceitas;
+          - títulos e URLs são escapados antes da renderização;
+          - entre 1 e 4 artigos precisam ser renderizados;
+          - alterações nos artefatos da newsletter PT-BR fazem o workflow falhar;
+          - \`git diff --check\` é executado antes da publicação;
+          - os quality gates do repositório são executados antes do merge;
+          - o merge é automático somente após todos os gates concluírem com sucesso.
+
+          ## Execução
+
+          Gerado por [Sync DEV Community articles](https://github.com/${GH_REPO}/actions/runs/${GITHUB_RUN_ID}).
+          EOF
+
+          pr_number="$(
+            gh pr list \
+              --repo "$GH_REPO" \
+              --head "$AUTOMATION_BRANCH" \
+              --base main \
+              --state open \
+              --json number \
+              --jq '.[0].number // empty'
+          )"
+
+          if [[ -n "$pr_number" ]]; then
+            gh pr edit "$pr_number" \
+              --repo "$GH_REPO" \
+              --title "content: sync latest DEV Community articles" \
+              --body-file /tmp/devto-sync-pr.md
+            pr_url="$(gh pr view "$pr_number" --repo "$GH_REPO" --json url --jq '.url')"
+          else
+            pr_url="$(
+              gh pr create \
+                --repo "$GH_REPO" \
+                --base main \
+                --head "$AUTOMATION_BRANCH" \
+                --title "content: sync latest DEV Community articles" \
+                --body-file /tmp/devto-sync-pr.md
+            )"
+            pr_number="$(gh pr view "$pr_url" --repo "$GH_REPO" --json number --jq '.number')"
+          fi
+
+          {
+            echo "branch=${AUTOMATION_BRANCH}"
+            echo "number=${pr_number}"
+            echo "url=${pr_url}"
+            echo "automation_token_configured=${AUTOMATION_TOKEN_CONFIGURED}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Add Pull Request result to summary
+        if: always()
+        shell: bash
+        env:
+          ARTICLE_COUNT: ${{ needs.sync_render.outputs.article_count }}
+          RENDERED_COUNT: ${{ needs.sync_render.outputs.rendered_count }}
+          PR_BRANCH: ${{ steps.pull_request.outputs.branch }}
+          PR_NUMBER: ${{ steps.pull_request.outputs.number }}
+          PR_URL: ${{ steps.pull_request.outputs.url }}
+          AUTOMATION_TOKEN_CONFIGURED: ${{ steps.pull_request.outputs.automation_token_configured }}
+        run: |
+          {
+            echo "# DEV Community synchronization"
+            echo
+            echo "- **Feed items validated:** ${ARTICLE_COUNT:-n/a}"
+            echo "- **Articles rendered on the English homepage:** ${RENDERED_COUNT:-n/a}"
+            echo "- **Branch:** \`${PR_BRANCH:-n/a}\`"
+            echo "- **Pull Request:** ${PR_URL:-n/a}"
+            echo "- **Dedicated automation token configured:** ${AUTOMATION_TOKEN_CONFIGURED:-false}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  quality_gates:
+    name: Run quality gates
+    if: needs.sync_render.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs:
+      - sync_render
+      - publish_pr
+    permissions:
+      actions: write
+      checks: read
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Run repository quality gates
+        id: quality
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ needs.publish_pr.outputs.number }}
+          PR_BRANCH: ${{ needs.publish_pr.outputs.branch }}
+          AUTOMATION_TOKEN_CONFIGURED: ${{ needs.publish_pr.outputs.automation_token_configured }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$PR_NUMBER" || -z "$PR_BRANCH" ]]; then
+            echo "Pull Request metadata is missing."
+            exit 1
+          fi
+
+          if [[ "$AUTOMATION_TOKEN_CONFIGURED" == "true" ]]; then
+            echo "Dedicated automation token detected; waiting for native pull_request checks."
+
+            checks_found=0
+            for _ in {1..30}; do
+              checks_found="$(
+                gh pr checks "$PR_NUMBER" \
+                  --repo "$GH_REPO" \
+                  --json name \
+                  --jq 'length' 2>/dev/null || echo 0
+              )"
+
+              if [[ "$checks_found" -gt 0 ]]; then
+                break
+              fi
+
+              sleep 2
+            done
+
+            if [[ "$checks_found" -eq 0 ]]; then
+              echo "No pull_request checks were detected for PR #${PR_NUMBER}."
+              exit 1
+            fi
+
+            gh pr checks "$PR_NUMBER" \
+              --repo "$GH_REPO" \
+              --watch \
+              --fail-fast
+
+            echo "mode=native" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Using GITHUB_TOKEN; dispatching quality workflows explicitly."
+          workflows=(
+            "site-validation.yml"
+            "seo-validation.yml"
+            "accessibility.yml"
+            "lighthouse.yml"
+            "actions-security.yml"
+          )
+
+          declare -A run_ids
+
+          for workflow in "${workflows[@]}"; do
+            echo "Dispatching ${workflow} on ${PR_BRANCH}..."
+            gh workflow run "$workflow" \
+              --repo "$GH_REPO" \
+              --ref "$PR_BRANCH"
+          done
+
+          for workflow in "${workflows[@]}"; do
+            run_id=""
+
+            for _ in {1..30}; do
+              run_id="$(
+                gh run list \
+                  --repo "$GH_REPO" \
+                  --workflow "$workflow" \
+                  --branch "$PR_BRANCH" \
+                  --event workflow_dispatch \
+                  --limit 1 \
+                  --json databaseId \
+                  --jq '.[0].databaseId // empty'
+              )"
+
+              if [[ -n "$run_id" ]]; then
+                break
+              fi
+
+              sleep 2
+            done
+
+            if [[ -z "$run_id" ]]; then
+              echo "Could not locate dispatched run for ${workflow}."
+              exit 1
+            fi
+
+            run_ids["$workflow"]="$run_id"
+          done
+
+          for workflow in "${workflows[@]}"; do
+            run_id="${run_ids[$workflow]}"
+            echo "Waiting for ${workflow} (run ${run_id})..."
+            gh run watch "$run_id" \
+              --repo "$GH_REPO" \
+              --exit-status
+          done
+
+          echo "mode=dispatched" >> "$GITHUB_OUTPUT"
+
+  merge_pr:
+    name: Merge automation Pull Request
+    if: needs.sync_render.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs:
+      - sync_render
+      - publish_pr
+      - quality_gates
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      merge_sha: ${{ steps.merge.outputs.merge_sha }}
+
+    steps:
+      - name: Merge Pull Request after quality gates
+        id: merge
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.AUTOMATION_PR_TOKEN || github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ needs.publish_pr.outputs.number }}
+          PR_URL: ${{ needs.publish_pr.outputs.url }}
+        run: |
+          set -euo pipefail
+
+          gh pr merge "$PR_NUMBER" \
+            --repo "$GH_REPO" \
+            --squash \
+            --delete-branch
+
+          merge_sha="$(
+            gh pr view "$PR_NUMBER" \
+              --repo "$GH_REPO" \
+              --json mergeCommit \
+              --jq '.mergeCommit.oid'
+          )"
+
+          if [[ -z "$merge_sha" || "$merge_sha" == "null" ]]; then
+            echo "Pull Request was merged, but merge commit SHA could not be determined."
+            exit 1
+          fi
+
+          echo "merge_sha=${merge_sha}" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "# DEV Community synchronization completed"
+            echo
+            echo "- **Pull Request:** [#${PR_NUMBER}](${PR_URL})"
+            echo "- **Merge commit:** \`${merge_sha}\`"
+            echo "- **Result:** quality gates passed and PR merged automatically"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  rebuild_pages:
+    name: Trigger GitHub Pages build
+    if: ${{ needs.sync_render.outputs.changed == 'true' && needs.publish_pr.outputs.automation_token_configured != 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs:
+      - sync_render
+      - publish_pr
+      - merge_pr
+    permissions:
+      contents: read
+      pages: write
+
+    steps:
+      - name: Request Pages build for merged content
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh api \
+            --method POST \
+            "repos/${GH_REPO}/pages/builds" \
+            > /dev/null
+
+          echo "GitHub Pages build requested for the latest revision on main."
