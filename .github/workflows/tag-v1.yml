@@ -1,4 +1,4 @@
-name: Create v1.0.0 tag
+name: Create release tag
 
 on:
   push:
@@ -11,22 +11,20 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: create-v1.0.0-tag
+  group: create-release-tag
   cancel-in-progress: false
 
 jobs:
   tag:
-    name: Tag validated PR #11 merge
+    name: Tag validated main merge
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
       GH_REPO: ${{ github.repository }}
       TARGET_SHA: ${{ github.sha }}
-      TAG_NAME: v1.0.0
-      TARGET_PR: "11"
 
     steps:
-      - name: Confirm this main commit belongs to PR #11
+      - name: Resolve merged pull request
         id: scope
         shell: bash
         env:
@@ -34,22 +32,107 @@ jobs:
         run: |
           set -euo pipefail
 
-          pr_numbers="$(
-            gh api "repos/${GH_REPO}/commits/${TARGET_SHA}/pulls" \
-              --jq 'map(.number | tostring) | join(" ")'
+          pull_requests="$(gh api "repos/${GH_REPO}/commits/${TARGET_SHA}/pulls")"
+          pr_number="$(
+            jq -r '
+              [.[] | select(.merged_at != null)]
+              | sort_by(.merged_at)
+              | last
+              | .number // empty
+            ' <<< "$pull_requests"
           )"
 
-          if [[ " ${pr_numbers} " != *" ${TARGET_PR} "* ]]; then
+          if [[ -z "$pr_number" ]]; then
             echo "eligible=false" >> "$GITHUB_OUTPUT"
-            echo "Commit ${TARGET_SHA} is not associated with PR #${TARGET_PR}; skipping v1.0.0 tagging."
+            echo "Commit ${TARGET_SHA} is not associated with a merged pull request; skipping release tagging."
             exit 0
           fi
 
           echo "eligible=true" >> "$GITHUB_OUTPUT"
-          echo "Commit ${TARGET_SHA} is associated with PR #${TARGET_PR}."
+          echo "pr_number=${pr_number}" >> "$GITHUB_OUTPUT"
+          echo "Commit ${TARGET_SHA} is associated with merged PR #${pr_number}."
+
+      - name: Determine next semantic version
+        id: version
+        if: steps.scope.outputs.eligible == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.scope.outputs.pr_number }}
+        run: |
+          set -euo pipefail
+
+          tag_rows="$(
+            gh api --paginate "repos/${GH_REPO}/tags?per_page=100" \
+              --jq '.[] | [.name, .commit.sha] | @tsv'
+          )"
+
+          existing_for_sha="$(
+            awk -v sha="$TARGET_SHA" \
+              '$2 == sha && $1 ~ /^[0-9]+\.[0-9]+\.[0-9]+$/ { print $1 }' \
+              <<< "$tag_rows" \
+              | sort -V \
+              | tail -n 1
+          )"
+
+          if [[ -n "$existing_for_sha" ]]; then
+            echo "already_tagged=true" >> "$GITHUB_OUTPUT"
+            echo "tag_name=${existing_for_sha}" >> "$GITHUB_OUTPUT"
+            echo "Commit ${TARGET_SHA} is already tagged as ${existing_for_sha}; nothing to do."
+            exit 0
+          fi
+
+          latest_tag="$(
+            awk '$1 ~ /^[0-9]+\.[0-9]+\.[0-9]+$/ { print $1 }' <<< "$tag_rows" \
+              | sort -V \
+              | tail -n 1
+          )"
+          latest_tag="${latest_tag:-0.0.0}"
+
+          labels="$(
+            gh api "repos/${GH_REPO}/issues/${PR_NUMBER}" \
+              --jq '.labels[].name' \
+              | tr '[:upper:]' '[:lower:]'
+          )"
+
+          bump="patch"
+
+          if grep -Eq '^(release:major|semver:major|major|breaking|breaking-change)$' <<< "$labels"; then
+            bump="major"
+          elif grep -Eq '^(release:minor|semver:minor|minor|enhancement|feature)$' <<< "$labels"; then
+            bump="minor"
+          elif grep -Eq '^(release:patch|semver:patch|patch|bug|fix)$' <<< "$labels"; then
+            bump="patch"
+          fi
+
+          IFS='.' read -r major minor patch <<< "$latest_tag"
+
+          case "$bump" in
+            major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            patch)
+              patch=$((patch + 1))
+              ;;
+          esac
+
+          tag_name="${major}.${minor}.${patch}"
+
+          echo "already_tagged=false" >> "$GITHUB_OUTPUT"
+          echo "bump=${bump}" >> "$GITHUB_OUTPUT"
+          echo "previous_tag=${latest_tag}" >> "$GITHUB_OUTPUT"
+          echo "tag_name=${tag_name}" >> "$GITHUB_OUTPUT"
+
+          echo "Version decision for PR #${PR_NUMBER}: ${latest_tag} -> ${tag_name} (${bump})."
 
       - name: Wait for all required main workflows
-        if: steps.scope.outputs.eligible == 'true'
+        if: steps.scope.outputs.eligible == 'true' && steps.version.outputs.already_tagged != 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -122,28 +205,24 @@ jobs:
           echo "Timed out waiting for required workflows on ${TARGET_SHA}."
           exit 1
 
-      - name: Create annotated v1.0.0 tag
-        if: steps.scope.outputs.eligible == 'true'
+      - name: Create annotated release tag
+        if: steps.scope.outputs.eligible == 'true' && steps.version.outputs.already_tagged != 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.scope.outputs.pr_number }}
+          TAG_NAME: ${{ steps.version.outputs.tag_name }}
+          BUMP: ${{ steps.version.outputs.bump }}
+          PREVIOUS_TAG: ${{ steps.version.outputs.previous_tag }}
         run: |
           set -euo pipefail
 
-          existing_ref="$(
-            gh api "repos/${GH_REPO}/git/matching-refs/tags/${TAG_NAME}" \
-              | jq -c --arg ref "refs/tags/${TAG_NAME}" \
-                  'map(select(.ref == $ref)) | first // empty'
-          )"
-
-          if [[ -n "$existing_ref" ]]; then
-            ref_sha="$(jq -r '.object.sha' <<< "$existing_ref")"
-            ref_type="$(jq -r '.object.type' <<< "$existing_ref")"
+          if ref_json="$(gh api "repos/${GH_REPO}/git/ref/tags/${TAG_NAME}" 2>/dev/null)"; then
+            ref_sha="$(jq -r '.object.sha' <<< "$ref_json")"
+            ref_type="$(jq -r '.object.type' <<< "$ref_json")"
 
             if [[ "$ref_type" == "tag" ]]; then
-              tagged_sha="$(
-                gh api "repos/${GH_REPO}/git/tags/${ref_sha}" --jq '.object.sha'
-              )"
+              tagged_sha="$(gh api "repos/${GH_REPO}/git/tags/${ref_sha}" --jq '.object.sha')"
             else
               tagged_sha="$ref_sha"
             fi
@@ -157,12 +236,15 @@ jobs:
             exit 1
           fi
 
+          pr_title="$(gh api "repos/${GH_REPO}/pulls/${PR_NUMBER}" --jq '.title')"
+          tag_message="Release ${TAG_NAME} after PR #${PR_NUMBER}: ${pr_title}"
+
           tag_object_sha="$(
             gh api \
               --method POST \
               "repos/${GH_REPO}/git/tags" \
               -f tag="$TAG_NAME" \
-              -f message="Portfolio release after PR #${TARGET_PR}: SEO, discovery and newsletter automation improvements." \
+              -f message="$tag_message" \
               -f object="$TARGET_SHA" \
               -f type="commit" \
               --jq '.sha'
@@ -180,6 +262,7 @@ jobs:
             echo
             echo "- **Tag:** \`${TAG_NAME}\`"
             echo "- **Commit:** \`${TARGET_SHA}\`"
-            echo "- **Origem:** PR #${TARGET_PR}"
+            echo "- **Origem:** PR #${PR_NUMBER}"
+            echo "- **Bump:** \`${BUMP}\` (anterior: \`${PREVIOUS_TAG}\`)"
             echo "- **Resultado:** todos os workflows obrigatórios em \`main\` concluíram com sucesso antes da criação da tag"
           } >> "$GITHUB_STEP_SUMMARY"
