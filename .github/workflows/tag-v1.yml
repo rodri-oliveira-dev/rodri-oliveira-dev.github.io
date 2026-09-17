@@ -48,8 +48,10 @@ jobs:
             exit 0
           fi
 
-          echo "eligible=true" >> "$GITHUB_OUTPUT"
-          echo "pr_number=${pr_number}" >> "$GITHUB_OUTPUT"
+          {
+            echo "eligible=true"
+            echo "pr_number=${pr_number}"
+          } >> "$GITHUB_OUTPUT"
           echo "Commit ${TARGET_SHA} is associated with merged PR #${pr_number}."
 
       - name: Determine next semantic version
@@ -76,8 +78,10 @@ jobs:
           )"
 
           if [[ -n "$existing_for_sha" ]]; then
-            echo "already_tagged=true" >> "$GITHUB_OUTPUT"
-            echo "tag_name=${existing_for_sha}" >> "$GITHUB_OUTPUT"
+            {
+              echo "already_tagged=true"
+              echo "tag_name=${existing_for_sha}"
+            } >> "$GITHUB_OUTPUT"
             echo "Commit ${TARGET_SHA} is already tagged as ${existing_for_sha}; nothing to do."
             exit 0
           fi
@@ -124,10 +128,12 @@ jobs:
 
           tag_name="${major}.${minor}.${patch}"
 
-          echo "already_tagged=false" >> "$GITHUB_OUTPUT"
-          echo "bump=${bump}" >> "$GITHUB_OUTPUT"
-          echo "previous_tag=${latest_tag}" >> "$GITHUB_OUTPUT"
-          echo "tag_name=${tag_name}" >> "$GITHUB_OUTPUT"
+          {
+            echo "already_tagged=false"
+            echo "bump=${bump}"
+            echo "previous_tag=${latest_tag}"
+            echo "tag_name=${tag_name}"
+          } >> "$GITHUB_OUTPUT"
 
           echo "Version decision for PR #${PR_NUMBER}: ${latest_tag} -> ${tag_name} (${bump})."
 
