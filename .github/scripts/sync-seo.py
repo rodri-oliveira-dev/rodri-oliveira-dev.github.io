@@ -18,7 +18,9 @@ SITEMAP_PATH = ROOT / "sitemap.xml"
 
 SITE_URL = "https://rodri-oliveira-dev.github.io/"
 EN_URL = f"{SITE_URL}en/"
-FEED_URL = f"{SITE_URL}newsletter/feed.xml"
+PT_FEED_URL = f"{SITE_URL}newsletter/feed.xml"
+EN_FEED_URL = "https://dev.to/feed/rodri-oliveira-dev"
+DEV_PROFILE_URL = "https://dev.to/rodri-oliveira-dev"
 NEWSLETTER_URL = (
     "https://www.linkedin.com/newsletters/"
     "caf%C3%A9-com-c%C3%B3digo-6880618748047314945/"
@@ -30,11 +32,28 @@ EN_PROFILE_ID = f"{EN_URL}#profile"
 
 SEO_START = "  <!-- SEO_STRUCTURED_DATA:START -->"
 SEO_END = "  <!-- SEO_STRUCTURED_DATA:END -->"
-RSS_DISCOVERY = (
-    '  <link rel="alternate" type="application/rss+xml" '
-    'title="Café com código — RSS" '
-    f'href="{FEED_URL}">'
+RSS_DISCOVERY_PATTERN = re.compile(
+    r'^\s*<link rel="alternate" type="application/rss\+xml"[^>]*>\s*$',
+    re.MULTILINE,
 )
+
+
+def rss_discovery(language: str) -> str:
+    if language == "pt-BR":
+        return (
+            '  <link rel="alternate" type="application/rss+xml" '
+            'title="Café com código — RSS" '
+            f'href="{PT_FEED_URL}">'
+        )
+
+    if language == "en":
+        return (
+            '  <link rel="alternate" type="application/rss+xml" '
+            'title="Rodrigo de Oliveira on DEV Community — RSS" '
+            f'href="{EN_FEED_URL}">'
+        )
+
+    raise SystemExit(f"Idioma sem RSS configurado: {language}.")
 
 
 def article_url(article: dict) -> str:
@@ -121,6 +140,7 @@ def person_node(language: str) -> dict:
         "sameAs": [
             "https://github.com/rodri-oliveira-dev",
             "https://www.linkedin.com/in/rodri-oliveira-dev",
+            DEV_PROFILE_URL,
             "https://medium.com/@rodrigodotnet",
             "https://www.nuget.org/profiles/rodri-oliveira-dev",
         ],
@@ -238,19 +258,21 @@ def replace_structured_data(html: str, language: str, articles: list[dict]) -> s
     return updated
 
 
-def ensure_rss_discovery(html: str) -> str:
-    if 'type="application/rss+xml"' in html:
-        return html
+def ensure_rss_discovery(html: str, language: str) -> str:
+    expected = rss_discovery(language)
+    updated, count = RSS_DISCOVERY_PATTERN.subn(expected, html, count=1)
+    if count == 1:
+        return updated
 
     anchor = '  <link rel="alternate" hreflang="x-default" href="https://rodri-oliveira-dev.github.io/">'
     if anchor not in html:
         raise SystemExit("Link hreflang x-default não encontrado para inserir RSS discovery.")
-    return html.replace(anchor, f"{anchor}\n{RSS_DISCOVERY}", 1)
+    return html.replace(anchor, f"{anchor}\n{expected}", 1)
 
 
 def synchronize_html(path: Path, language: str, articles: list[dict]) -> None:
     html = path.read_text(encoding="utf-8")
-    html = ensure_rss_discovery(html)
+    html = ensure_rss_discovery(html, language)
     html = replace_structured_data(html, language, articles)
     path.write_text(html, encoding="utf-8")
 
@@ -349,8 +371,8 @@ def main() -> None:
     validate_json_ld(EN_INDEX)
 
     print("SEO artifacts synchronized:")
-    print("- index.html: WebSite/ProfilePage/Person + latest Article entities + RSS discovery")
-    print("- en/index.html: WebSite/ProfilePage/Person + RSS discovery")
+    print("- index.html: WebSite/ProfilePage/Person + latest Article entities + PT-BR RSS discovery")
+    print("- en/index.html: WebSite/ProfilePage/Person + DEV Community RSS discovery")
     print("- sitemap.xml: hreflang + reliable lastmod")
 
 
