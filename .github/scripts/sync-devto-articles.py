@@ -38,8 +38,8 @@ SECTION_PATTERN = re.compile(
     re.MULTILINE | re.DOTALL,
 )
 
-START = "        <!-- DEVTO_ARTICLES:START -->"
-END = "        <!-- DEVTO_ARTICLES:END -->"
+START = "        <!-- COMMUNITY_ARTICLES:START -->"
+END = "        <!-- COMMUNITY_ARTICLES:END -->"
 
 MONTHS_EN = (
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
