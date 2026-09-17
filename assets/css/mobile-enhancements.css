@@ -14,6 +14,10 @@ html {
 }
 
 @media (max-width: 900px) {
+  html {
+    scroll-padding-top: calc(65px + env(safe-area-inset-top));
+  }
+
   .site-header {
     background: #000;
     -webkit-backdrop-filter: none;
