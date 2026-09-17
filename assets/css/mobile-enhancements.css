@@ -1,5 +1,11 @@
 html {
+  --a11y-control-border: rgba(255, 255, 255, .36);
   background: #000;
+}
+
+.button.secondary,
+.language-switcher {
+  border-color: var(--a11y-control-border);
 }
 
 .mobile-nav-toggle,
@@ -42,7 +48,7 @@ html {
     justify-content: center;
     gap: 5px;
     padding: 0;
-    border: 1px solid var(--line-strong);
+    border: 1px solid var(--a11y-control-border);
     border-radius: 12px;
     color: var(--text);
     background: rgba(255, 255, 255, .035);
@@ -79,7 +85,7 @@ html {
     display: grid;
     gap: 2px;
     padding: 10px max(14px, env(safe-area-inset-right)) 16px max(14px, env(safe-area-inset-left));
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid var(--a11y-control-border);
     background: #000;
     box-shadow: 0 24px 48px rgba(0, 0, 0, .36);
     opacity: 0;
@@ -110,7 +116,7 @@ html {
 
   .mobile-nav-panel a:hover,
   .mobile-nav-panel a:focus-visible {
-    background: rgba(255, 255, 255, .055);
+    background: rgba(255, 255, 255, .10);
   }
 }
 
