@@ -1,0 +1,14 @@
+[
+  {
+    "url": "https://dev.to/rodri-oliveira-dev/can-big-o-complexity-be-detected-at-compile-time-1nk1",
+    "title": "Can Big-O Complexity Be Detected at Compile Time?",
+    "description": "When we learn algorithm analysis, we usually practice by looking at a piece of code and asking questions such as: how many times does this loop run? Is there another loop inside it? Does this search scan an entire collection? Does this recursion split the problem in half? After a while, we start recognizing these patt…",
+    "publishedAt": "2026-09-17T20:08:02Z",
+    "tags": [
+      "csharp",
+      "roslyn",
+      "algorithms",
+      "dotnet"
+    ]
+  }
+]
