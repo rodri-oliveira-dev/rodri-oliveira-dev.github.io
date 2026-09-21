@@ -1,5 +1,18 @@
 [
   {
+    "url": "https://www.linkedin.com/pulse/adr-registrando-o-porqu%C3%AA-das-decis%C3%B5es-e-como-guard-esse-de-oliveira-zk1tf/",
+    "finalUrl": "https://www.linkedin.com/pulse/adr-registrando-o-porqu%C3%AA-das-decis%C3%B5es-e-como-guard-esse-de-oliveira-zk1tf/",
+    "title": "ADR: registrando o porquê das decisões e como o ADR Guard ajuda a manter esse histórico confiável",
+    "description": "Em projetos que vivem por alguns anos, existe um tipo de pergunta que aparece com uma frequência impressionante: “Por que fizemos isso desse jeito?” Talvez seja a escolha de PostgreSQL em vez de MongoDB. Talvez seja a decisão de usar mensageria, adotar microsserviços, manter um monólito modular, imp",
+    "publishedAt": "2026-09-21",
+    "metadataSource": {
+      "title": "og:title",
+      "description": "og:description",
+      "publishedAt": "JSON-LD datePublished"
+    },
+    "addedAt": "2026-09-21T19:28:45+00:00"
+  },
+  {
     "url": "https://www.linkedin.com/pulse/%C3%A9-poss%C3%ADvel-detectar-complexidade-big-o-durante-rodrigo-de-oliveira-b0upf/",
     "finalUrl": "https://www.linkedin.com/pulse/%C3%A9-poss%C3%ADvel-detectar-complexidade-big-o-durante-rodrigo-de-oliveira-b0upf/",
     "title": "É possível detectar complexidade Big-O durante a compilação?",
