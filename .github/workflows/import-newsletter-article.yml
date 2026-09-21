@@ -468,6 +468,8 @@ jobs:
       pull-requests: write
     outputs:
       merge_sha: ${{ steps.merge.outputs.merge_sha }}
+      merged: ${{ steps.merge.outputs.merged }}
+      auto_merge_enabled: ${{ steps.merge.outputs.auto_merge_enabled }}
 
     steps:
       - name: Merge Pull Request after quality gates
@@ -481,31 +483,56 @@ jobs:
         run: |
           set -euo pipefail
 
-          gh pr merge "$PR_NUMBER" \
+          merged="false"
+          auto_merge_enabled="false"
+          merge_sha=""
+
+          if gh pr merge "$PR_NUMBER" \
             --repo "$GH_REPO" \
             --squash \
-            --delete-branch
-
-          merge_sha="$(
-            gh pr view "$PR_NUMBER" \
+            --delete-branch; then
+            merged="true"
+          else
+            echo "Direct merge is blocked by the base branch policy; enabling auto-merge."
+            gh pr merge "$PR_NUMBER" \
               --repo "$GH_REPO" \
-              --json mergeCommit \
-              --jq '.mergeCommit.oid'
-          )"
-
-          if [[ -z "$merge_sha" || "$merge_sha" == "null" ]]; then
-            echo "Pull Request was merged, but merge commit SHA could not be determined."
-            exit 1
+              --auto \
+              --squash \
+              --delete-branch
+            auto_merge_enabled="true"
           fi
 
-          echo "merge_sha=${merge_sha}" >> "$GITHUB_OUTPUT"
+          pr_state="$(
+            gh pr view "$PR_NUMBER" \
+              --repo "$GH_REPO" \
+              --json state,mergedAt,mergeCommit \
+              --jq '{state: .state, mergedAt: .mergedAt, mergeSha: (.mergeCommit.oid // "")}'
+          )"
+
+          merged_at="$(jq -r '.mergedAt // empty' <<< "$pr_state")"
+          merge_sha="$(jq -r '.mergeSha // empty' <<< "$pr_state")"
+
+          if [[ -n "$merged_at" ]]; then
+            merged="true"
+          fi
 
           {
-            echo "# Newsletter import completed"
+            echo "merge_sha=${merge_sha}"
+            echo "merged=${merged}"
+            echo "auto_merge_enabled=${auto_merge_enabled}"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "# Newsletter import merge status"
             echo
             echo "- **Pull Request:** [#${PR_NUMBER}](${PR_URL})"
-            echo "- **Merge commit:** \`${merge_sha}\`"
-            echo "- **Result:** quality gates passed and PR merged automatically"
+
+            if [[ "$merged" == "true" ]]; then
+              echo "- **Merge commit:** \`${merge_sha}\`"
+              echo "- **Result:** quality gates passed and PR merged automatically"
+            else
+              echo "- **Result:** quality gates passed; auto-merge enabled and waiting for branch policy requirements"
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
   rebuild_pages:
@@ -515,7 +542,7 @@ jobs:
     needs:
       - publish_pr
       - merge_pr
-    if: ${{ needs.publish_pr.outputs.automation_token_configured != 'true' }}
+    if: ${{ needs.publish_pr.outputs.automation_token_configured != 'true' && needs.merge_pr.outputs.merged == 'true' }}
     permissions:
       contents: read
       pages: write
