@@ -35,3 +35,7 @@ rodri
 Roslyn
 Terraform
 YamlDotNet
+Aspire
+LikeC4
+MCP
+dotnet
