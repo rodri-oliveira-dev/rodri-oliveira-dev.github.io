@@ -401,6 +401,9 @@
           <p>
             Open source é uma forma de deixar parte do meu raciocínio técnico disponível para inspeção: decisões arquiteturais, confiabilidade, infraestrutura, contratos, guardrails e automação aparecem no código e na forma como os projetos são operados.
           </p>
+          <p>
+            Trato governança como parte da engenharia: o repositório <a href="https://github.com/rodri-oliveira-dev/.github" target="_blank" rel="noreferrer">.github</a> centraliza padrões, automações, secret scanning e um registro versionado de governança para agentes, com sincronização de skills upstream e distribuição controlada por Pull Request.
+          </p>
         </div>
 
         <article class="architecture-lab">
@@ -434,6 +437,21 @@
           <a class="text-link" href="https://github.com/rodri-oliveira-dev/poc-arquitetura" target="_blank" rel="noreferrer">Explorar decisões, código e documentação ↗</a>
         </article>
 
+        <article class="architecture-lab">
+          <div>
+            <p class="eyebrow">Arquitetura executável e observabilidade</p>
+            <h3>dotnet-observability-lab: arquitetura versionada, executável e verificável.</h3>
+            <p>
+              Laboratório em .NET 10, Aspire e OpenTelemetry para processamento assíncrono confiável, Outbox/Inbox, at-least-once delivery e idempotência. ADRs e LikeC4 formam uma fonte de verdade arquitetural versionada, validada no CI e publicada como documentação interativa.
+            </p>
+          </div>
+          <div class="architecture-lab-meta">
+            <span>.NET 10</span><span>Aspire</span><span>OpenTelemetry</span><span>Outbox / Inbox</span><span>LikeC4</span><span>GitHub Pages</span>
+          </div>
+          <a class="text-link" href="https://rodri-oliveira-dev.github.io/dotnet-observability-lab/" target="_blank" rel="noreferrer">Abrir documentação arquitetural interativa ↗</a>
+          <a class="text-link" href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab" target="_blank" rel="noreferrer">Explorar o laboratório no GitHub ↗</a>
+        </article>
+
         <div class="project-grid">
           <article class="project-card featured">
             <div class="card-topline"><span>Reliability Engineering</span><span>01</span></div>
@@ -454,11 +472,33 @@
           <article class="project-card featured">
             <div class="card-topline"><span>Governança como Código</span><span>03</span></div>
             <h3>ADR Guard</h3>
-            <p>Leva ADRs para dentro do fluxo de engenharia com validação e indexação determinísticas, integração estável ao CI/CD e drafting assistido por IA, mantendo revisão e aceitação arquitetural com pessoas.</p>
-            <div class="tags"><span>ADRs</span><span>.NET Tool</span><span>CI/CD</span><span>AI-assisted</span></div>
+            <p>Leva ADRs para dentro do fluxo de engenharia com validação e indexação determinísticas por CLI/.NET Tool, containers e GitHub Action, além de drafting assistido por IA com revisão e aceitação arquitetural humanas.</p>
+            <div class="tags"><span>ADRs</span><span>.NET Tool</span><span>GitHub Action</span><span>Containers</span></div>
             <a href="https://github.com/rodri-oliveira-dev/adr-guard" target="_blank" rel="noreferrer">Ver ADR Guard no GitHub ↗</a>
           </article>
+
+          <article class="project-card featured">
+            <div class="card-topline"><span>Governança técnica</span><span>04</span></div>
+            <h3>DotNetRepoInspector</h3>
+            <p>Usa metadados avaliados pelo MSBuild como fonte de verdade para inventário e governança de repositórios .NET. O mesmo contrato determinístico é exposto por CLI/.NET Tool, GitHub Action e um servidor MCP local read-only.</p>
+            <div class="tags"><span>MSBuild</span><span>.NET Tool</span><span>GitHub Action</span><span>MCP</span></div>
+            <a href="https://github.com/rodri-oliveira-dev/DotNetRepoInspector" target="_blank" rel="noreferrer">Ver DotNetRepoInspector no GitHub ↗</a>
+          </article>
         </div>
+
+        <article class="architecture-lab">
+          <div>
+            <p class="eyebrow">Contribuições upstream selecionadas</p>
+            <h3>Trabalhar em bases que não controlo também faz parte da evidência.</h3>
+            <p>
+              No LikeC4, contribuí para a expansão oficial da localização em Português do Brasil, incluindo README, infraestrutura de i18n, tutorial, Guides e referência técnica da DSL. Também mantenho contribuições incorporadas em projetos como Ocelot e Architecture Decision Record.
+            </p>
+          </div>
+          <div class="architecture-lab-meta">
+            <span>LikeC4</span><span>Ocelot</span><span>ADR</span><span>pt-BR</span>
+          </div>
+          <a class="text-link" href="https://github.com/users/rodri-oliveira-dev/projects/1/views/1" target="_blank" rel="noreferrer">Acompanhar contribuições open source ↗</a>
+        </article>
 
         <div class="section-action">
           <a class="text-link" href="https://github.com/rodri-oliveira-dev?tab=repositories" target="_blank" rel="noreferrer">Ver todos os projetos no GitHub ↗</a>
