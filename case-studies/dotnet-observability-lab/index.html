@@ -183,7 +183,7 @@
           <p class="eyebrow">Fluxo nominal</p>
           <h2>O happy path existe, mas não é a arquitetura inteira.</h2>
         </div>
-        <ol class="case-study-flow">
+        <ol role="list" class="case-study-flow">
           <li><strong>POST /values</strong><span>requisição idempotente</span></li>
           <li><strong>PostgreSQL</strong><span>valor + Outbox atômicos</span></li>
           <li><strong>Outbox Worker</strong><span>claim + publish confirmado</span></li>
