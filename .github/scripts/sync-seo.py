@@ -362,7 +362,13 @@ def max_date(*values: str) -> str:
     return max(parsed).isoformat()
 
 
-def write_sitemap(articles: list[dict], pt_dirty: bool, en_dirty: bool) -> None:
+def write_sitemap(
+    articles: list[dict],
+    pt_dirty: bool,
+    en_dirty: bool,
+    pt_case_dirty: bool,
+    en_case_dirty: bool,
+) -> None:
     today = datetime.now(timezone.utc).date().isoformat()
     latest_article = (
         str(articles[0]["publishedAt"]).strip() if articles else git_last_modified(PT_INDEX)
@@ -371,8 +377,12 @@ def write_sitemap(articles: list[dict], pt_dirty: bool, en_dirty: bool) -> None:
     en_git = git_last_modified(EN_INDEX)
     pt_lastmod = max_date(latest_article, today if pt_dirty else pt_git)
     en_lastmod = max_date(today if en_dirty else en_git)
-    pt_case_lastmod = git_last_modified(PT_CASE_STUDY)
-    en_case_lastmod = git_last_modified(EN_CASE_STUDY)
+    pt_case_lastmod = (
+        today if pt_case_dirty else git_last_modified(PT_CASE_STUDY)
+    )
+    en_case_lastmod = (
+        today if en_case_dirty else git_last_modified(EN_CASE_STUDY)
+    )
 
     sitemap = f'''<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
@@ -427,10 +437,18 @@ def main() -> None:
     devto_enabled = DEVTO_DATA_PATH.exists()
     pt_dirty = file_was_dirty(PT_INDEX)
     en_dirty = file_was_dirty(EN_INDEX)
+    pt_case_dirty = file_was_dirty(PT_CASE_STUDY)
+    en_case_dirty = file_was_dirty(EN_CASE_STUDY)
 
     synchronize_html(PT_INDEX, "pt-BR", articles, False)
     synchronize_html(EN_INDEX, "en", articles, devto_enabled)
-    write_sitemap(articles, pt_dirty, en_dirty)
+    write_sitemap(
+        articles,
+        pt_dirty,
+        en_dirty,
+        pt_case_dirty,
+        en_case_dirty,
+    )
 
     validate_json_ld(PT_INDEX)
     validate_json_ld(EN_INDEX)
