@@ -49,6 +49,37 @@ jobs:
             --max-retries 1
             --exclude 'https://(www\.)?linkedin\.com/'
             --exclude 'https://medium\.com/'
+            --exclude '^https://rodri-oliveira-dev\.github\.io/(en/)?case-studies/dotnet-observability-lab/?
+            './en/index.html'
+            './pt-br/index.html'
+            './case-studies/dotnet-observability-lab/index.html'
+            './en/case-studies/dotnet-observability-lab/index.html'
+            './README.md'
+          fail: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check spelling
+        uses: streetsidesoftware/cspell-action@6f3c77c1406bc930f944ba97e9801a22e42caf58 # v9.1.0
+        with:
+          config: .cspell.json
+          files: |
+            index.html
+            en/index.html
+            case-studies/dotnet-observability-lab/index.html
+            en/case-studies/dotnet-observability-lab/index.html
+            README.md
+          incremental_files_only: false
+          strict: true
+          suggestions: true
+          inline: error
+          report: all
+
+      - name: Validate GitHub Actions workflows
+        uses: docker://rhysd/actionlint:1.7.12
+        with:
+          args: -color
+
             './index.html'
             './en/index.html'
             './pt-br/index.html'
