@@ -36,7 +36,7 @@ jobs:
         run: npm install --no-save --ignore-scripts html-validate@11.15.0 @cspell/dict-pt-br@2.4.2
 
       - name: Validate HTML
-        run: npx --no-install html-validate index.html en/index.html pt-br/index.html
+        run: npx --no-install html-validate index.html en/index.html pt-br/index.html case-studies/dotnet-observability-lab/index.html en/case-studies/dotnet-observability-lab/index.html
 
       - name: Validate links
         uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2
@@ -52,6 +52,8 @@ jobs:
             './index.html'
             './en/index.html'
             './pt-br/index.html'
+            './case-studies/dotnet-observability-lab/index.html'
+            './en/case-studies/dotnet-observability-lab/index.html'
             './README.md'
           fail: true
         env:
@@ -64,6 +66,8 @@ jobs:
           files: |
             index.html
             en/index.html
+            case-studies/dotnet-observability-lab/index.html
+            en/case-studies/dotnet-observability-lab/index.html
             README.md
           incremental_files_only: false
           strict: true
