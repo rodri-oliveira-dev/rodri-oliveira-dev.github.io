@@ -82,7 +82,7 @@ jobs:
               (entry.findtext("sm:loc", namespaces=namespace) or "").strip()
               for entry in urls
           }
-          if actual_urls != expected_urls:
+          if len(urls) != len(expected_urls) or actual_urls != expected_urls:
               raise SystemExit(f"Unexpected sitemap URLs: {sorted(actual_urls)}")
           for entry in urls:
               if not (entry.findtext("sm:lastmod", namespaces=namespace) or "").strip():
