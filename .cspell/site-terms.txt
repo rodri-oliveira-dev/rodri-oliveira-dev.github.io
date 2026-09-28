@@ -39,3 +39,5 @@ Aspire
 LikeC4
 MCP
 dotnet
+Repo2C4
+stdio
