@@ -46,3 +46,5 @@ redelivery
 eviction
 exactly-once
 TechArticle
+Evolutibilidade
+inspectable
