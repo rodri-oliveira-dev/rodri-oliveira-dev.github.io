@@ -15,10 +15,14 @@ DATA_PATH = ROOT / "assets/data/newsletter-articles.json"
 DEVTO_DATA_PATH = ROOT / "assets/data/devto-articles.json"
 PT_INDEX = ROOT / "index.html"
 EN_INDEX = ROOT / "en/index.html"
+PT_CASE_STUDY = ROOT / "case-studies/dotnet-observability-lab/index.html"
+EN_CASE_STUDY = ROOT / "en/case-studies/dotnet-observability-lab/index.html"
 SITEMAP_PATH = ROOT / "sitemap.xml"
 
 SITE_URL = "https://rodri-oliveira-dev.github.io/"
 EN_URL = f"{SITE_URL}en/"
+PT_CASE_STUDY_URL = f"{SITE_URL}case-studies/dotnet-observability-lab/"
+EN_CASE_STUDY_URL = f"{EN_URL}case-studies/dotnet-observability-lab/"
 PT_FEED_URL = f"{SITE_URL}newsletter/feed.xml"
 EN_FEED_URL = "https://dev.to/feed/rodri-oliveira-dev"
 DEV_PROFILE_URL = "https://dev.to/rodri-oliveira-dev"
@@ -358,7 +362,13 @@ def max_date(*values: str) -> str:
     return max(parsed).isoformat()
 
 
-def write_sitemap(articles: list[dict], pt_dirty: bool, en_dirty: bool) -> None:
+def write_sitemap(
+    articles: list[dict],
+    pt_dirty: bool,
+    en_dirty: bool,
+    pt_case_dirty: bool,
+    en_case_dirty: bool,
+) -> None:
     today = datetime.now(timezone.utc).date().isoformat()
     latest_article = (
         str(articles[0]["publishedAt"]).strip() if articles else git_last_modified(PT_INDEX)
@@ -367,6 +377,12 @@ def write_sitemap(articles: list[dict], pt_dirty: bool, en_dirty: bool) -> None:
     en_git = git_last_modified(EN_INDEX)
     pt_lastmod = max_date(latest_article, today if pt_dirty else pt_git)
     en_lastmod = max_date(today if en_dirty else en_git)
+    pt_case_lastmod = (
+        today if pt_case_dirty else git_last_modified(PT_CASE_STUDY)
+    )
+    en_case_lastmod = (
+        today if en_case_dirty else git_last_modified(EN_CASE_STUDY)
+    )
 
     sitemap = f'''<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
@@ -384,6 +400,20 @@ def write_sitemap(articles: list[dict], pt_dirty: bool, en_dirty: bool) -> None:
     <xhtml:link rel="alternate" hreflang="en" href="{escape(EN_URL)}"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="{escape(SITE_URL)}"/>
     <lastmod>{en_lastmod}</lastmod>
+  </url>
+  <url>
+    <loc>{escape(PT_CASE_STUDY_URL)}</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="{escape(PT_CASE_STUDY_URL)}"/>
+    <xhtml:link rel="alternate" hreflang="en" href="{escape(EN_CASE_STUDY_URL)}"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="{escape(PT_CASE_STUDY_URL)}"/>
+    <lastmod>{pt_case_lastmod}</lastmod>
+  </url>
+  <url>
+    <loc>{escape(EN_CASE_STUDY_URL)}</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="{escape(PT_CASE_STUDY_URL)}"/>
+    <xhtml:link rel="alternate" hreflang="en" href="{escape(EN_CASE_STUDY_URL)}"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="{escape(PT_CASE_STUDY_URL)}"/>
+    <lastmod>{en_case_lastmod}</lastmod>
   </url>
 </urlset>
 '''
@@ -407,10 +437,18 @@ def main() -> None:
     devto_enabled = DEVTO_DATA_PATH.exists()
     pt_dirty = file_was_dirty(PT_INDEX)
     en_dirty = file_was_dirty(EN_INDEX)
+    pt_case_dirty = file_was_dirty(PT_CASE_STUDY)
+    en_case_dirty = file_was_dirty(EN_CASE_STUDY)
 
     synchronize_html(PT_INDEX, "pt-BR", articles, False)
     synchronize_html(EN_INDEX, "en", articles, devto_enabled)
-    write_sitemap(articles, pt_dirty, en_dirty)
+    write_sitemap(
+        articles,
+        pt_dirty,
+        en_dirty,
+        pt_case_dirty,
+        en_case_dirty,
+    )
 
     validate_json_ld(PT_INDEX)
     validate_json_ld(EN_INDEX)
@@ -421,7 +459,7 @@ def main() -> None:
         print("- en/index.html: WebSite/ProfilePage/Person + DEV Community RSS discovery")
     else:
         print("- en/index.html: migration-compatible newsletter RSS discovery (DEV catalog not initialized)")
-    print("- sitemap.xml: hreflang + reliable lastmod")
+    print("- sitemap.xml: portfolio + bilingual case study hreflang + reliable lastmod")
 
 
 if __name__ == "__main__":

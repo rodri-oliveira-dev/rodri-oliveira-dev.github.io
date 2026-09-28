@@ -72,9 +72,52 @@ jobs:
           root = ET.parse("sitemap.xml").getroot()
           namespace = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
           urls = root.findall("sm:url", namespace)
-          if len(urls) != 2:
-              raise SystemExit(f"Unexpected sitemap URL count: {len(urls)}")
+          expected_urls = {
+              "https://rodri-oliveira-dev.github.io/",
+              "https://rodri-oliveira-dev.github.io/en/",
+              "https://rodri-oliveira-dev.github.io/case-studies/dotnet-observability-lab/",
+              "https://rodri-oliveira-dev.github.io/en/case-studies/dotnet-observability-lab/",
+          }
+          actual_urls = {
+              (entry.findtext("sm:loc", namespaces=namespace) or "").strip()
+              for entry in urls
+          }
+          if len(urls) != len(expected_urls) or actual_urls != expected_urls:
+              raise SystemExit(f"Unexpected sitemap URLs: {sorted(actual_urls)}")
           for entry in urls:
               if not (entry.findtext("sm:lastmod", namespaces=namespace) or "").strip():
                   raise SystemExit("Sitemap URL without lastmod")
+
+          for page in (
+              "case-studies/dotnet-observability-lab/index.html",
+              "en/case-studies/dotnet-observability-lab/index.html",
+          ):
+              html = Path(page).read_text(encoding="utf-8")
+              match = re.search(
+                  r'<script type="application/ld\+json">\s*(\{.*?\})\s*</script>',
+                  html,
+                  re.DOTALL,
+              )
+              if not match:
+                  raise SystemExit(f"Article structured data missing in {page}")
+              payload = json.loads(match.group(1))
+              article_types = payload.get("@type", [])
+              if isinstance(article_types, str):
+                  article_types = [article_types]
+              for required_type in ("Article", "TechArticle"):
+                  if required_type not in article_types:
+                      raise SystemExit(
+                          f"{required_type} structured data type missing in {page}"
+                      )
+              for required_field in (
+                  "headline",
+                  "author",
+                  "datePublished",
+                  "dateModified",
+                  "image",
+              ):
+                  if not payload.get(required_field):
+                      raise SystemExit(
+                          f"{required_field} structured data field missing in {page}"
+                      )
           PY
