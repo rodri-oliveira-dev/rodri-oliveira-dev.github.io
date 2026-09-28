@@ -945,6 +945,45 @@ h1 {
   font-size: 11px;
 }
 
+.contribution-updated {
+  font-size: 12px;
+}
+
+.contribution-list {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.contribution-list li {
+  display: grid;
+  grid-template-columns: minmax(180px, .34fr) 1fr;
+  gap: 16px 28px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.contribution-list strong {
+  color: var(--text);
+}
+
+.contribution-list a {
+  color: var(--accent);
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.contribution-list a:hover,
+.contribution-list a:focus-visible {
+  text-decoration: underline;
+}
+
 .architecture-lab > .text-link {
   grid-column: 1 / -1;
 }
@@ -978,6 +1017,11 @@ h1 {
 }
 
 @media (max-width: 640px) {
+  .contribution-list li {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
   .hero {
     padding-top: 66px;
   }
