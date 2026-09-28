@@ -41,3 +41,8 @@ MCP
 dotnet
 Repo2C4
 stdio
+best-effort
+redelivery
+eviction
+exactly-once
+TechArticle
