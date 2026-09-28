@@ -1,5 +1,18 @@
 [
   {
+    "url": "https://www.linkedin.com/pulse/um-reposit%C3%B3rio-github-como-camada-central-de-e-rodrigo-de-oliveira-slhjf/",
+    "finalUrl": "https://www.linkedin.com/pulse/um-reposit%C3%B3rio-github-como-camada-central-de-e-rodrigo-de-oliveira-slhjf/",
+    "title": "Um repositório .github como camada central de governança e automação",
+    "description": "Quando mantemos um ou dois repositórios, repetir algumas configurações não parece um problema. Um CONTRIBUTING.",
+    "publishedAt": "2026-09-28",
+    "metadataSource": {
+      "title": "og:title",
+      "description": "og:description",
+      "publishedAt": "JSON-LD datePublished"
+    },
+    "addedAt": "2026-09-28T12:45:35+00:00"
+  },
+  {
     "url": "https://www.linkedin.com/pulse/adr-registrando-o-porqu%C3%AA-das-decis%C3%B5es-e-como-guard-esse-de-oliveira-zk1tf/",
     "finalUrl": "https://www.linkedin.com/pulse/adr-registrando-o-porqu%C3%AA-das-decis%C3%B5es-e-como-guard-esse-de-oliveira-zk1tf/",
     "title": "ADR: registrando o porquê das decisões e como o ADR Guard ajuda a manter esse histórico confiável",
