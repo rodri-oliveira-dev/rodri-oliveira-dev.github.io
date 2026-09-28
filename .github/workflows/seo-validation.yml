@@ -72,9 +72,35 @@ jobs:
           root = ET.parse("sitemap.xml").getroot()
           namespace = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
           urls = root.findall("sm:url", namespace)
-          if len(urls) != 2:
-              raise SystemExit(f"Unexpected sitemap URL count: {len(urls)}")
+          expected_urls = {
+              "https://rodri-oliveira-dev.github.io/",
+              "https://rodri-oliveira-dev.github.io/en/",
+              "https://rodri-oliveira-dev.github.io/case-studies/dotnet-observability-lab/",
+              "https://rodri-oliveira-dev.github.io/en/case-studies/dotnet-observability-lab/",
+          }
+          actual_urls = {
+              (entry.findtext("sm:loc", namespaces=namespace) or "").strip()
+              for entry in urls
+          }
+          if actual_urls != expected_urls:
+              raise SystemExit(f"Unexpected sitemap URLs: {sorted(actual_urls)}")
           for entry in urls:
               if not (entry.findtext("sm:lastmod", namespaces=namespace) or "").strip():
                   raise SystemExit("Sitemap URL without lastmod")
+
+          for page in (
+              "case-studies/dotnet-observability-lab/index.html",
+              "en/case-studies/dotnet-observability-lab/index.html",
+          ):
+              html = Path(page).read_text(encoding="utf-8")
+              match = re.search(
+                  r'<script type="application/ld\+json">\s*(\{.*?\})\s*</script>',
+                  html,
+                  re.DOTALL,
+              )
+              if not match:
+                  raise SystemExit(f"TechArticle structured data missing in {page}")
+              payload = json.loads(match.group(1))
+              if payload.get("@type") != "TechArticle":
+                  raise SystemExit(f"Unexpected structured data type in {page}")
           PY
