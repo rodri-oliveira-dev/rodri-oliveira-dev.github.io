@@ -183,6 +183,7 @@
           <p class="eyebrow">Nominal flow</p>
           <h2>The happy path exists, but it is not the whole architecture.</h2>
         </div>
+        <!-- html-validate-disable-next prefer-native-element, no-redundant-role -- Safari/VoiceOver requires an explicit list role when list-style is none -->
         <ol role="list" class="case-study-flow">
           <li><strong>POST /values</strong><span>idempotent request</span></li>
           <li><strong>PostgreSQL</strong><span>atomic value + Outbox</span></li>
