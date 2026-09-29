@@ -1,5 +1,17 @@
 [
   {
+    "url": "https://dev.to/rodri-oliveira-dev/how-i-organized-security-policies-reusable-workflows-net-maintenance-and-ai-agent-governance-4jgg",
+    "title": "How I organized security policies, reusable workflows, .NET maintenance, and AI agent governance across my GitHub repositories.",
+    "description": "The challenge of maintaining multiple repositories When you maintain one or two repositories, duplicating a few configuration files doesn't seem like a big deal. A CONTRIBUTING.md here, a pull request template there, some security policies, and a few GitHub Actions workflows. Everything works, and development continue…",
+    "publishedAt": "2026-09-29T14:30:00Z",
+    "tags": [
+      "github",
+      "devops",
+      "githubactions",
+      "platformengineering"
+    ]
+  },
+  {
     "url": "https://dev.to/rodri-oliveira-dev/adr-recording-the-why-behind-decisions-and-how-adr-guard-helps-keep-architectural-history-reliable-10cb",
     "title": "ADR: Recording the Why Behind Decisions and How ADR Guard Helps Keep Architectural History Reliable",
     "description": "In projects that live for more than a few years, there is one question that comes up surprisingly often: “Why did we build it this way?” Maybe it was the decision to choose PostgreSQL instead of MongoDB. Maybe the team decided to use messaging, adopt microservices, keep a modular monolith, introduce distributed cachin…",
