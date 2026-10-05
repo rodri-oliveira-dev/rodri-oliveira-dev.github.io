@@ -7,6 +7,13 @@
     <atom:link href="https://rodri-oliveira-dev.github.io/newsletter/feed.xml" rel="self" type="application/rss+xml" />
     <language>pt-BR</language>
     <item>
+      <title>Construindo fluxos event-driven confiáveis com .NET e Kafka</title>
+      <link>https://www.linkedin.com/pulse/construindo-fluxos-event-driven-confi%C3%A1veis-com-net-e-de-oliveira-0a1ye/</link>
+      <guid isPermaLink="true">https://www.linkedin.com/pulse/construindo-fluxos-event-driven-confi%C3%A1veis-com-net-e-de-oliveira-0a1ye/</guid>
+      <pubDate>Mon, 05 Oct 2026 00:00:00 GMT</pubDate>
+      <description>Salvar um registro no banco de dados é fácil. Ou, pelo menos, é uma parte do desenvolvimento para a qual temos ferramentas bastante maduras.</description>
+    </item>
+    <item>
       <title>Um repositório .github como camada central de governança e automação</title>
       <link>https://www.linkedin.com/pulse/um-reposit%C3%B3rio-github-como-camada-central-de-e-rodrigo-de-oliveira-slhjf/</link>
       <guid isPermaLink="true">https://www.linkedin.com/pulse/um-reposit%C3%B3rio-github-como-camada-central-de-e-rodrigo-de-oliveira-slhjf/</guid>
