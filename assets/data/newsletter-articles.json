@@ -1,5 +1,18 @@
 [
   {
+    "url": "https://www.linkedin.com/pulse/construindo-fluxos-event-driven-confi%C3%A1veis-com-net-e-de-oliveira-0a1ye/",
+    "finalUrl": "https://www.linkedin.com/pulse/construindo-fluxos-event-driven-confi%C3%A1veis-com-net-e-de-oliveira-0a1ye/",
+    "title": "Construindo fluxos event-driven confiáveis com .NET e Kafka",
+    "description": "Salvar um registro no banco de dados é fácil. Ou, pelo menos, é uma parte do desenvolvimento para a qual temos ferramentas bastante maduras.",
+    "publishedAt": "2026-10-05",
+    "metadataSource": {
+      "title": "og:title",
+      "description": "og:description",
+      "publishedAt": "JSON-LD datePublished"
+    },
+    "addedAt": "2026-10-05T12:10:52+00:00"
+  },
+  {
     "url": "https://www.linkedin.com/pulse/um-reposit%C3%B3rio-github-como-camada-central-de-e-rodrigo-de-oliveira-slhjf/",
     "finalUrl": "https://www.linkedin.com/pulse/um-reposit%C3%B3rio-github-como-camada-central-de-e-rodrigo-de-oliveira-slhjf/",
     "title": "Um repositório .github como camada central de governança e automação",
