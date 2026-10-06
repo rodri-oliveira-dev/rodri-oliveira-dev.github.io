@@ -19,7 +19,7 @@ concurrency:
 jobs:
   notify:
     name: Submit changed public URLs
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 10
     env:
       SITE_HOST: rodri-oliveira-dev.github.io
