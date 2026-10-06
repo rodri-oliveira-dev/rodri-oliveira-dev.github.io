@@ -19,7 +19,7 @@ concurrency:
 jobs:
   zizmor:
     name: zizmor security audit
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 10
 
     steps:
