@@ -18,7 +18,7 @@ concurrency:
 jobs:
   sync:
     name: Render latest newsletter articles
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 10
     env:
       AUTOMATION_BRANCH: automation/sync-newsletter-articles
