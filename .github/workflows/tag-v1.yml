@@ -17,7 +17,7 @@ concurrency:
 jobs:
   tag:
     name: Tag validated main merge
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 20
     env:
       GH_REPO: ${{ github.repository }}

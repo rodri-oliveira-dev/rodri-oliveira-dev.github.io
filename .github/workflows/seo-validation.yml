@@ -17,7 +17,7 @@ concurrency:
 jobs:
   seo-validation:
     name: SEO metadata consistency
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 10
 
     steps:

@@ -25,7 +25,7 @@ env:
 jobs:
   sync_render:
     name: Fetch, render and validate DEV Community articles
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 10
     outputs:
       changed: ${{ steps.changes.outputs.changed }}
@@ -151,7 +151,7 @@ jobs:
   publish_pr:
     name: Publish automation Pull Request
     if: needs.sync_render.outputs.changed == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 10
     needs: sync_render
     permissions:
@@ -307,7 +307,7 @@ jobs:
   quality_gates:
     name: Run quality gates
     if: needs.sync_render.outputs.changed == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 30
     needs:
       - sync_render
@@ -430,7 +430,7 @@ jobs:
   merge_pr:
     name: Merge automation Pull Request
     if: needs.sync_render.outputs.changed == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 10
     needs:
       - sync_render
@@ -484,7 +484,7 @@ jobs:
   rebuild_pages:
     name: Trigger GitHub Pages build
     if: ${{ needs.sync_render.outputs.changed == 'true' && needs.publish_pr.outputs.automation_token_configured != 'true' }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 5
     needs:
       - sync_render

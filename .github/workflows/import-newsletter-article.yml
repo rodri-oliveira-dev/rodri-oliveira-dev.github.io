@@ -34,7 +34,7 @@ env:
 jobs:
   import_metadata:
     name: Import article metadata
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 10
 
     steps:
@@ -63,7 +63,7 @@ jobs:
 
   render_validate:
     name: Render and validate newsletter content
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 10
     needs: import_metadata
     outputs:
@@ -161,7 +161,7 @@ jobs:
 
   publish_pr:
     name: Publish automation Pull Request
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 10
     needs: render_validate
     permissions:
@@ -327,7 +327,7 @@ jobs:
 
   quality_gates:
     name: Run quality gates
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 30
     needs: publish_pr
     permissions:
@@ -458,7 +458,7 @@ jobs:
 
   merge_pr:
     name: Merge automation Pull Request
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 10
     needs:
       - publish_pr
@@ -537,7 +537,7 @@ jobs:
 
   rebuild_pages:
     name: Trigger GitHub Pages build
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 5
     needs:
       - publish_pr
