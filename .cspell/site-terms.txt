@@ -52,6 +52,7 @@ Repo2C4
 rodri
 Rodrigo
 Roslyn
+serialização
 SPA
 stdio
 TechArticle
