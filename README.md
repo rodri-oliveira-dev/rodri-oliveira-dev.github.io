@@ -64,6 +64,7 @@ A documentação completa dos workflows, gatilhos, quality gates, relatórios em
 - `index.html` — portfólio em português e idioma padrão
 - `en/index.html` — portfólio em inglês
 - `pt-br/index.html` — redirecionamento legado para a raiz em português
+- `case-studies/` e `en/case-studies/` — estudos de caso arquiteturais bilíngues do portfólio
 - `newsletter/feed.xml` — feed RSS 2.0 da newsletter Café com código
 - `assets/data/newsletter-articles.json` — catálogo usado pela homepage e pelo RSS
 - `assets/css/site.css` — sistema visual responsivo
