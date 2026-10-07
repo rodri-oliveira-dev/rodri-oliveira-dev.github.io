@@ -38,6 +38,21 @@
         "pt-br",
         "site-terms"
       ]
+    },
+    {
+      "filename": "case-studies/**/*.html",
+      "language": "pt_BR,en-US",
+      "dictionaries": [
+        "pt-br",
+        "site-terms"
+      ]
+    },
+    {
+      "filename": "en/case-studies/**/*.html",
+      "language": "en-US",
+      "dictionaries": [
+        "site-terms"
+      ]
     }
   ],
   "ignoreRegExpList": [

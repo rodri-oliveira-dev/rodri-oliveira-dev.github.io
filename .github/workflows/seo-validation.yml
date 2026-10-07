@@ -77,6 +77,8 @@ jobs:
               "https://rodri-oliveira-dev.github.io/en/",
               "https://rodri-oliveira-dev.github.io/case-studies/dotnet-observability-lab/",
               "https://rodri-oliveira-dev.github.io/en/case-studies/dotnet-observability-lab/",
+              "https://rodri-oliveira-dev.github.io/case-studies/repo-control-center/",
+              "https://rodri-oliveira-dev.github.io/en/case-studies/repo-control-center/",
           }
           actual_urls = {
               (entry.findtext("sm:loc", namespaces=namespace) or "").strip()

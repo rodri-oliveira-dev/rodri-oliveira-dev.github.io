@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'none'; connect-src 'none'; frame-src 'none'; media-src 'none'; worker-src 'none'; form-action 'none'; upgrade-insecure-requests">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Case study | Repo Control Center — Rodrigo de Oliveira</title>
+  <meta name="description" content="Architectural case study of Repo Control Center: portfolio observability, GitHub Actions collection, static snapshots, explicit confidence, and GitHub Pages delivery.">
+  <meta name="author" content="Rodrigo de Oliveira">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#070b14">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://rodri-oliveira-dev.github.io/en/case-studies/repo-control-center/">
+  <link rel="alternate" hreflang="pt-BR" href="https://rodri-oliveira-dev.github.io/case-studies/repo-control-center/">
+  <link rel="alternate" hreflang="en" href="https://rodri-oliveira-dev.github.io/en/case-studies/repo-control-center/">
+  <link rel="alternate" hreflang="x-default" href="https://rodri-oliveira-dev.github.io/case-studies/repo-control-center/">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="stylesheet" href="/assets/css/site.css">
+  <link rel="stylesheet" href="/assets/css/mobile-enhancements.css">
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Rodrigo de Oliveira">
+  <meta property="og:title" content="Case study | Repo Control Center">
+  <meta property="og:description" content="Turning scattered GitHub signals into a static observability layer for a repository portfolio.">
+  <meta property="og:url" content="https://rodri-oliveira-dev.github.io/en/case-studies/repo-control-center/">
+  <meta property="og:image" content="https://rodri-oliveira-dev.github.io/assets/social/rodrigo-de-oliveira-og.png">
+  <meta property="og:image:alt" content="Rodrigo de Oliveira — Software Architect">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="pt_BR">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Case study | Repo Control Center">
+  <meta name="twitter:description" content="Portfolio observability with GitHub Actions, static snapshots, and explicit data confidence.">
+  <meta name="twitter:image" content="https://rodri-oliveira-dev.github.io/assets/social/rodrigo-de-oliveira-og.png">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": ["Article", "TechArticle"],
+    "headline": "Repo Control Center: portfolio observability without a permanent backend",
+    "description": "Architectural case study of Repo Control Center.",
+    "datePublished": "2026-10-07",
+    "dateModified": "2026-10-07",
+    "image": "https://rodri-oliveira-dev.github.io/assets/social/rodrigo-de-oliveira-og.png",
+    "inLanguage": "en",
+    "url": "https://rodri-oliveira-dev.github.io/en/case-studies/repo-control-center/",
+    "author": {
+      "@type": "Person",
+      "name": "Rodrigo de Oliveira",
+      "url": "https://rodri-oliveira-dev.github.io/"
+    },
+    "about": [
+      "Software Architecture",
+      "Engineering Intelligence",
+      "GitHub Actions",
+      "Observability",
+      "Angular",
+      "GitHub Pages"
+    ]
+  }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="/en/" aria-label="Rodrigo de Oliveira — portfolio">
+        <span class="brand-symbol brand-symbol-image" aria-hidden="true"></span>
+        <span class="brand-name">Rodrigo de Oliveira</span>
+      </a>
+      <nav class="nav" aria-label="Case study navigation">
+        <a href="/en/">Portfolio</a>
+        <a href="#decisions">Decisions</a>
+        <a href="#tradeoffs">Trade-offs</a>
+        <a href="#evidence">Evidence</a>
+      </nav>
+      <div class="language-switcher" role="group" aria-label="Language">
+        <a class="lang-link active" href="/en/case-studies/repo-control-center/" lang="en" aria-current="page">EN</a>
+        <a class="lang-link" href="/case-studies/repo-control-center/" lang="pt-BR">PT</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="case-study-hero" id="top">
+      <div class="container">
+        <p class="eyebrow">Architectural case study · engineering intelligence</p>
+        <h1>Turn dozens of repositories into an observable portfolio without creating another backend to operate.</h1>
+        <p class="case-study-lead">
+          <strong>Repo Control Center</strong> started from a simple operational problem: as the number of repositories grows, CI, delivery, releases, security, packages, and activity become too scattered to form a reliable view of the whole. The solution collects evidence outside the browser, makes incomplete information explicit, and publishes a static snapshot for inspection.
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" href="https://rodri-oliveira-dev.github.io/repo-status-dashboard/" target="_blank" rel="noreferrer">Open Repo Control Center ↗</a>
+          <a class="button secondary" href="https://github.com/rodri-oliveira-dev/repo-status-dashboard" target="_blank" rel="noreferrer">Explore repository ↗</a>
+        </div>
+        <p class="case-study-note">The dashboard is read-only. Tokens used for collection remain inside GitHub Actions and are never sent to the published SPA.</p>
+      </div>
+    </section>
+
+    <section class="section case-study-section">
+      <div class="container case-study-two-column">
+        <div>
+          <p class="eyebrow">Problem</p>
+          <h2>GitHub has the signals, but it does not provide an operational portfolio view as one system.</h2>
+        </div>
+        <div class="case-study-copy">
+          <p>Builds, deployments, releases, activity, alerts, packages, and open work exist across different surfaces and APIs. Opening repositories one by one works while the set is small; beyond that point, finding context becomes operational overhead itself.</p>
+          <p>The challenge was not simply to build another visual dashboard. It was to establish a common language for repository state without turning missing data into failure, and without adding permanent infrastructure just to aggregate signals that change at a relatively low frequency.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section architecture-section">
+      <div class="container">
+        <div class="section-heading wide-heading">
+          <p class="eyebrow">Constraints and quality attributes</p>
+          <h2>The architecture starts from data confidence and acceptable operational cost.</h2>
+        </div>
+        <div class="case-study-constraint-grid">
+          <article><span>01</span><h3>No permanent backend</h3><p>Collection runs in GitHub Actions and produces a JSON snapshot embedded in the Pages artifact.</p></article>
+          <article><span>02</span><h3>No browser credentials</h3><p>The SPA consumes static data only. Tokens and permissions remain inside the automation environment.</p></article>
+          <article><span>03</span><h3>Incomplete data is a valid state</h3><p>Each repository reports complete, partial, or unavailable collection plus confidence derived from source coverage.</p></article>
+          <article><span>04</span><h3>One failed source must not stop the portfolio</h3><p>Optional queries may fail without blocking publication of the remaining repositories; degradation remains explicit.</p></article>
+        </div>
+        <div class="case-study-quality-list" role="group" aria-label="Prioritized quality attributes">
+          <span>Operability</span><span>Observability</span><span>Security</span><span>Data confidence</span><span>Low cost</span><span>Evolvability</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section case-study-section" id="decisions">
+      <div class="container">
+        <div class="section-heading wide-heading">
+          <p class="eyebrow">Architectural decisions</p>
+          <h2>The design separates privileged collection, data contract, and public presentation.</h2>
+        </div>
+        <div class="case-study-decision-grid">
+          <article>
+            <h3>GitHub Actions as the collection process</h3>
+            <p>The Node.js collector queries APIs during the workflow, paginates responses, bounds concurrency, and normalizes evidence before publication.</p>
+            <p><strong>Trade-off:</strong> updates are periodic rather than real-time.</p>
+          </article>
+          <article>
+            <h3>Static snapshot as the boundary</h3>
+            <p>The published JSON decouples the SPA from authenticated APIs and turns collection into a reproducible read contract.</p>
+            <p><strong>Trade-off:</strong> the UI represents the last successful workflow state.</p>
+          </article>
+          <article>
+            <h3>Angular SPA on GitHub Pages</h3>
+            <p>The interface provides filters, search, repository details, and aggregate insights without an application service running continuously.</p>
+            <p><strong>Trade-off:</strong> detailed routes use hashes and all content depends on the published snapshot.</p>
+          </article>
+          <article>
+            <h3>Confidence separated from health</h3>
+            <p><code>complete</code>, <code>partial</code>, and <code>unavailable</code> describe collection observability; repository health remains a separate classification.</p>
+            <p><strong>Trade-off:</strong> the UI must communicate uncertainty instead of collapsing everything into one color.</p>
+          </article>
+          <article>
+            <h3>Semantic workflow classification</h3>
+            <p>CI, quality, security, mutation, delivery, release, Pages, and maintenance represent different roles; only the appropriate signal should affect build and delivery status.</p>
+            <p><strong>Trade-off:</strong> heuristics need explicit overrides when names do not express intent.</p>
+          </article>
+          <article>
+            <h3>Security as evidence, not a magic score</h3>
+            <p>Dependabot, code scanning, security workflows, and OpenSSF Scorecard remain separate signals. Lack of access lowers confidence rather than becoming a security claim.</p>
+            <p><strong>Trade-off:</strong> the result is more honest but less simplistic.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section architecture-section">
+      <div class="container">
+        <div class="section-heading wide-heading">
+          <p class="eyebrow">Flow</p>
+          <h2>Collect, normalize, publish, and inspect without runtime coupling to GitHub.</h2>
+        </div>
+        <!-- html-validate-disable-next prefer-native-element, no-redundant-role -- Safari/VoiceOver requires an explicit list role when list-style is none -->
+        <ol role="list" class="case-study-flow">
+          <li><strong>GitHub APIs</strong><span>signals distributed across sources</span></li>
+          <li><strong>Node.js collector</strong><span>pagination, rules, and failure tolerance</span></li>
+          <li><strong>repositories.json</strong><span>snapshot and read contract</span></li>
+          <li><strong>Angular SPA</strong><span>filters, details, and insights</span></li>
+          <li><strong>GitHub Pages</strong><span>static publication</span></li>
+          <li><strong>Quality gates</strong><span>CI, Lighthouse, SEO, and ZAP</span></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section case-study-section" id="tradeoffs">
+      <div class="container">
+        <div class="section-heading wide-heading">
+          <p class="eyebrow">Trade-offs and limits</p>
+          <h2>Reducing infrastructure moves complexity into the data contract and evidence interpretation.</h2>
+        </div>
+        <div class="case-study-failure-grid">
+          <article><h3>Not real-time</h3><p>The current schedule refreshes roughly every hour. That is sufficient for portfolio maintenance but does not replace production monitoring.</p></article>
+          <article><h3>Not every delivery is observable</h3><p>Deployments outside GitHub may not appear; versions remain blank when no trustworthy association with delivery exists.</p></article>
+          <article><h3>Permissions affect coverage</h3><p>Actions, Deployments, and security alerts may require additional permissions. Missing access is reported as reduced confidence.</p></article>
+          <article><h3>A snapshot is not a time series</h3><p>Thirty-day metrics are recomputed from the current collection window. Temporal trends require persistence of previous snapshots.</p></article>
+          <article><h3>Heuristics have boundaries</h3><p>Workflow names outside conventions may remain unknown. Per-repository configuration acts as an explicit override.</p></article>
+          <article><h3>GitHub Pages has platform limits</h3><p>Some headers and hosting behavior are not controlled by the application and must be treated as platform responsibility.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section case-study-section" id="evidence">
+      <div class="container">
+        <div class="section-heading wide-heading">
+          <p class="eyebrow">Public evidence</p>
+          <h2>The case can be validated in the application, collector, and quality gates.</h2>
+        </div>
+        <div class="case-study-evidence-list">
+          <a href="https://rodri-oliveira-dev.github.io/repo-status-dashboard/" target="_blank" rel="noreferrer"><strong>Published dashboard</strong><span>Consolidated view, details, filters, health, coverage, and confidence.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/repo-status-dashboard/blob/main/scripts/collect-github-status.mjs" target="_blank" rel="noreferrer"><strong>Collector</strong><span>Collection, pagination, failure tolerance, and snapshot serialization.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/repo-status-dashboard/blob/main/scripts/github-status-rules.mjs" target="_blank" rel="noreferrer"><strong>Classification rules</strong><span>Health, workflow roles, delivery, and deterministic reasons.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/repo-status-dashboard/actions" target="_blank" rel="noreferrer"><strong>Automation</strong><span>Collection, tests, build, publishing, and continuous validation.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/repo-status-dashboard" target="_blank" rel="noreferrer"><strong>Repository</strong><span>Angular implementation, snapshot contract, security, SEO, and documentation.</span></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section case-study-limitations">
+      <div class="container case-study-two-column">
+        <div>
+          <p class="eyebrow">Architectural reading</p>
+          <h2>Engineering observability also needs to model uncertainty.</h2>
+        </div>
+        <div class="case-study-copy">
+          <p>The central lesson is not “how to build a dashboard.” Consolidating engineering signals requires preserving the difference between absence, collection failure, negative evidence, and positive evidence. Without that distinction, a simple interface can produce an incorrect interpretation of the portfolio.</p>
+          <p>By making coverage and confidence explicit, Repo Control Center treats the quality of observation itself as part of the domain — reducing false diagnoses while remaining useful when not every source is available.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <span>© <span id="year"></span> Rodrigo de Oliveira</span>
+      <span><a class="text-link" href="/en/">Back to portfolio</a></span>
+    </div>
+  </footer>
+
+  <script src="/assets/js/site.js" defer></script>
+</body>
+</html>

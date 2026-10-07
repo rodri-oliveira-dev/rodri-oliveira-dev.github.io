@@ -17,12 +17,16 @@ PT_INDEX = ROOT / "index.html"
 EN_INDEX = ROOT / "en/index.html"
 PT_CASE_STUDY = ROOT / "case-studies/dotnet-observability-lab/index.html"
 EN_CASE_STUDY = ROOT / "en/case-studies/dotnet-observability-lab/index.html"
+PT_REPO_CONTROL_CASE_STUDY = ROOT / "case-studies/repo-control-center/index.html"
+EN_REPO_CONTROL_CASE_STUDY = ROOT / "en/case-studies/repo-control-center/index.html"
 SITEMAP_PATH = ROOT / "sitemap.xml"
 
 SITE_URL = "https://rodri-oliveira-dev.github.io/"
 EN_URL = f"{SITE_URL}en/"
 PT_CASE_STUDY_URL = f"{SITE_URL}case-studies/dotnet-observability-lab/"
 EN_CASE_STUDY_URL = f"{EN_URL}case-studies/dotnet-observability-lab/"
+PT_REPO_CONTROL_CASE_STUDY_URL = f"{SITE_URL}case-studies/repo-control-center/"
+EN_REPO_CONTROL_CASE_STUDY_URL = f"{EN_URL}case-studies/repo-control-center/"
 PT_FEED_URL = f"{SITE_URL}newsletter/feed.xml"
 EN_FEED_URL = "https://dev.to/feed/rodri-oliveira-dev"
 DEV_PROFILE_URL = "https://dev.to/rodri-oliveira-dev"
@@ -368,6 +372,8 @@ def write_sitemap(
     en_dirty: bool,
     pt_case_dirty: bool,
     en_case_dirty: bool,
+    pt_repo_control_dirty: bool,
+    en_repo_control_dirty: bool,
 ) -> None:
     today = datetime.now(timezone.utc).date().isoformat()
     latest_article = (
@@ -382,6 +388,16 @@ def write_sitemap(
     )
     en_case_lastmod = (
         today if en_case_dirty else git_last_modified(EN_CASE_STUDY)
+    )
+    pt_repo_control_lastmod = (
+        today
+        if pt_repo_control_dirty
+        else git_last_modified(PT_REPO_CONTROL_CASE_STUDY)
+    )
+    en_repo_control_lastmod = (
+        today
+        if en_repo_control_dirty
+        else git_last_modified(EN_REPO_CONTROL_CASE_STUDY)
     )
 
     sitemap = f'''<?xml version="1.0" encoding="UTF-8"?>
@@ -415,6 +431,20 @@ def write_sitemap(
     <xhtml:link rel="alternate" hreflang="x-default" href="{escape(PT_CASE_STUDY_URL)}"/>
     <lastmod>{en_case_lastmod}</lastmod>
   </url>
+  <url>
+    <loc>{escape(PT_REPO_CONTROL_CASE_STUDY_URL)}</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="{escape(PT_REPO_CONTROL_CASE_STUDY_URL)}"/>
+    <xhtml:link rel="alternate" hreflang="en" href="{escape(EN_REPO_CONTROL_CASE_STUDY_URL)}"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="{escape(PT_REPO_CONTROL_CASE_STUDY_URL)}"/>
+    <lastmod>{pt_repo_control_lastmod}</lastmod>
+  </url>
+  <url>
+    <loc>{escape(EN_REPO_CONTROL_CASE_STUDY_URL)}</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="{escape(PT_REPO_CONTROL_CASE_STUDY_URL)}"/>
+    <xhtml:link rel="alternate" hreflang="en" href="{escape(EN_REPO_CONTROL_CASE_STUDY_URL)}"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="{escape(PT_REPO_CONTROL_CASE_STUDY_URL)}"/>
+    <lastmod>{en_repo_control_lastmod}</lastmod>
+  </url>
 </urlset>
 '''
     SITEMAP_PATH.write_text(sitemap, encoding="utf-8")
@@ -439,6 +469,8 @@ def main() -> None:
     en_dirty = file_was_dirty(EN_INDEX)
     pt_case_dirty = file_was_dirty(PT_CASE_STUDY)
     en_case_dirty = file_was_dirty(EN_CASE_STUDY)
+    pt_repo_control_dirty = file_was_dirty(PT_REPO_CONTROL_CASE_STUDY)
+    en_repo_control_dirty = file_was_dirty(EN_REPO_CONTROL_CASE_STUDY)
 
     synchronize_html(PT_INDEX, "pt-BR", articles, False)
     synchronize_html(EN_INDEX, "en", articles, devto_enabled)
@@ -448,6 +480,8 @@ def main() -> None:
         en_dirty,
         pt_case_dirty,
         en_case_dirty,
+        pt_repo_control_dirty,
+        en_repo_control_dirty,
     )
 
     validate_json_ld(PT_INDEX)
@@ -459,7 +493,7 @@ def main() -> None:
         print("- en/index.html: WebSite/ProfilePage/Person + DEV Community RSS discovery")
     else:
         print("- en/index.html: migration-compatible newsletter RSS discovery (DEV catalog not initialized)")
-    print("- sitemap.xml: portfolio + bilingual case study hreflang + reliable lastmod")
+    print("- sitemap.xml: portfolio + bilingual case studies hreflang + reliable lastmod")
 
 
 if __name__ == "__main__":
