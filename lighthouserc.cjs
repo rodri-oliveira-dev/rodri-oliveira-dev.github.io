@@ -6,6 +6,8 @@ module.exports = {
         "http://127.0.0.1:8080/en/",
         "http://127.0.0.1:8080/case-studies/dotnet-observability-lab/",
         "http://127.0.0.1:8080/en/case-studies/dotnet-observability-lab/",
+        "http://127.0.0.1:8080/case-studies/repo-control-center/",
+        "http://127.0.0.1:8080/en/case-studies/repo-control-center/",
       ],
       numberOfRuns: 3,
       settings: {
