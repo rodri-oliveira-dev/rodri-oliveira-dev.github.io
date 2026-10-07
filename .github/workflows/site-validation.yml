@@ -49,7 +49,7 @@ jobs:
             --max-retries 1
             --exclude 'https://(www\.)?linkedin\.com/'
             --exclude 'https://medium\.com/'
-            --exclude '^https://rodri-oliveira-dev\.github\.io/(en/)?case-studies/(dotnet-observability-lab|repo-control-center)/?
+            --exclude '^https://rodri-oliveira-dev\.github\.io/(en/)?case-studies/(dotnet-observability-lab|repo-control-center)/?$'
             './index.html'
             './en/index.html'
             './pt-br/index.html'
