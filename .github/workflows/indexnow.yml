@@ -45,6 +45,7 @@ jobs:
           import json
           import os
           import subprocess
+          import xml.etree.ElementTree as ET
           from pathlib import Path
 
           site_url = os.environ["SITE_URL"].rstrip("/")
@@ -65,29 +66,57 @@ jobs:
               )
               changed = {line.strip() for line in result.stdout.splitlines() if line.strip()}
 
+          def sitemap_urls() -> set[str]:
+              sitemap = Path("sitemap.xml")
+              if not sitemap.exists():
+                  return set()
+
+              root = ET.fromstring(sitemap.read_text(encoding="utf-8"))
+              namespace = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+              return {
+                  loc.text.strip()
+                  for loc in root.findall("sm:url/sm:loc", namespace)
+                  if loc.text and loc.text.strip()
+              }
+
           urls = set()
           if submit_all:
-              urls.update(
-                  {
-                      f"{site_url}/",
-                      f"{site_url}/en/",
-                      f"{site_url}/newsletter/feed.xml",
-                  }
-              )
+              urls.update(sitemap_urls())
+              urls.add(f"{site_url}/newsletter/feed.xml")
           else:
               root_signals = {
                   "index.html",
                   "robots.txt",
-                  "sitemap.xml",
                   "assets/data/newsletter-articles.json",
                   "newsletter/feed.xml",
               }
               if changed & root_signals:
                   urls.add(f"{site_url}/")
-              if "en/index.html" in changed or "sitemap.xml" in changed:
+              if "en/index.html" in changed:
                   urls.add(f"{site_url}/en/")
               if "newsletter/feed.xml" in changed or "assets/data/newsletter-articles.json" in changed:
                   urls.add(f"{site_url}/newsletter/feed.xml")
+
+              if "sitemap.xml" in changed:
+                  urls.update(sitemap_urls())
+
+              page_paths = {
+                  "case-studies/dotnet-observability-lab/index.html": (
+                      f"{site_url}/case-studies/dotnet-observability-lab/"
+                  ),
+                  "en/case-studies/dotnet-observability-lab/index.html": (
+                      f"{site_url}/en/case-studies/dotnet-observability-lab/"
+                  ),
+                  "case-studies/repo-control-center/index.html": (
+                      f"{site_url}/case-studies/repo-control-center/"
+                  ),
+                  "en/case-studies/repo-control-center/index.html": (
+                      f"{site_url}/en/case-studies/repo-control-center/"
+                  ),
+              }
+              for path, url in page_paths.items():
+                  if path in changed:
+                      urls.add(url)
 
           payload = {
               "host": os.environ["SITE_HOST"],
