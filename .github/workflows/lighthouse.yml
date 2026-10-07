@@ -42,7 +42,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
-          for file_name in ("index.html", "en/index.html", "case-studies/dotnet-observability-lab/index.html", "en/case-studies/dotnet-observability-lab/index.html"):
+          for file_name in ("index.html", "en/index.html", "case-studies/dotnet-observability-lab/index.html", "en/case-studies/dotnet-observability-lab/index.html", "case-studies/repo-control-center/index.html", "en/case-studies/repo-control-center/index.html"):
               path = Path(file_name)
               content = path.read_text(encoding="utf-8")
               content = content.replace("; upgrade-insecure-requests", "")
