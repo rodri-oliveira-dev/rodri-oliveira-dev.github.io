@@ -1,5 +1,17 @@
 [
   {
+    "url": "https://dev.to/rodri-oliveira-dev/what-happens-after-the-commit-1a4c",
+    "title": "What Happens After the Commit?",
+    "description": "Saving a record to a database is relatively easy. We have mature tools for that problem. We open a transaction, change some state, commit it, and roll everything back if something fails before the commit. Things become much more interesting when the database commit is not the end of the operation . Imagine a financial…",
+    "publishedAt": "2026-10-07T13:01:00Z",
+    "tags": [
+      "distributedsystems",
+      "architecture",
+      "dotnet",
+      "kafka"
+    ]
+  },
+  {
     "url": "https://dev.to/rodri-oliveira-dev/how-i-organized-security-policies-reusable-workflows-net-maintenance-and-ai-agent-governance-4jgg",
     "title": "How I organized security policies, reusable workflows, .NET maintenance, and AI agent governance across my GitHub repositories.",
     "description": "The challenge of maintaining multiple repositories When you maintain one or two repositories, duplicating a few configuration files doesn't seem like a big deal. A CONTRIBUTING.md here, a pull request template there, some security policies, and a few GitHub Actions workflows. Everything works, and development continue…",
