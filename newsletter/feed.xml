@@ -7,6 +7,13 @@
     <atom:link href="https://rodri-oliveira-dev.github.io/newsletter/feed.xml" rel="self" type="application/rss+xml" />
     <language>pt-BR</language>
     <item>
+      <title>DDD e CQRS: quando a complexidade do domínio realmente justifica a arquitetura</title>
+      <link>https://www.linkedin.com/pulse/ddd-e-cqrs-quando-complexidade-do-dom%C3%ADnio-realmente-de-oliveira-mngaf/</link>
+      <guid isPermaLink="true">https://www.linkedin.com/pulse/ddd-e-cqrs-quando-complexidade-do-dom%C3%ADnio-realmente-de-oliveira-mngaf/</guid>
+      <pubDate>Sat, 10 Oct 2026 00:00:00 GMT</pubDate>
+      <description>Existem decisões arquiteturais que melhoram um sistema e outras que apenas o tornam mais sofisticado. A diferença entre uma coisa e outra, muitas vezes, está menos na qualidade da tecnologia e mais na adequação ao problema.</description>
+    </item>
+    <item>
       <title>Construindo fluxos event-driven confiáveis com .NET e Kafka</title>
       <link>https://www.linkedin.com/pulse/construindo-fluxos-event-driven-confi%C3%A1veis-com-net-e-de-oliveira-0a1ye/</link>
       <guid isPermaLink="true">https://www.linkedin.com/pulse/construindo-fluxos-event-driven-confi%C3%A1veis-com-net-e-de-oliveira-0a1ye/</guid>
