@@ -7,6 +7,13 @@
     <atom:link href="https://rodri-oliveira-dev.github.io/newsletter/feed.xml" rel="self" type="application/rss+xml" />
     <language>pt-BR</language>
     <item>
+      <title>Dotfiles</title>
+      <link>https://www.linkedin.com/pulse/dotfiles-rodrigo-de-oliveira-9hg6f/</link>
+      <guid isPermaLink="true">https://www.linkedin.com/pulse/dotfiles-rodrigo-de-oliveira-9hg6f/</guid>
+      <pubDate>Mon, 12 Oct 2026 00:00:00 GMT</pubDate>
+      <description>Quem trabalha com desenvolvimento há algum tempo inevitavelmente começa a personalizar o próprio ambiente. Primeiro aparece um alias para não digitar git status toda hora.</description>
+    </item>
+    <item>
       <title>DDD e CQRS: quando a complexidade do domínio realmente justifica a arquitetura</title>
       <link>https://www.linkedin.com/pulse/ddd-e-cqrs-quando-complexidade-do-dom%C3%ADnio-realmente-de-oliveira-mngaf/</link>
       <guid isPermaLink="true">https://www.linkedin.com/pulse/ddd-e-cqrs-quando-complexidade-do-dom%C3%ADnio-realmente-de-oliveira-mngaf/</guid>
@@ -82,13 +89,6 @@
       <guid isPermaLink="true">https://pt.linkedin.com/pulse/domain-subdomain-e-core-onde-se-deve-realmente-tempo-em-de-oliveira-41taf</guid>
       <pubDate>Mon, 27 Jul 2026 00:00:00 GMT</pubDate>
       <description>Este é o terceiro artigo da série sobre Domain-Driven Design. No texto anterior, conversamos sobre Linguagem Ubíqua e sobre como transformar o conhecimento do negócio em software.</description>
-    </item>
-    <item>
-      <title>Linguagem Ubíqua: como transformar conhecimento do negócio em software</title>
-      <link>https://pt.linkedin.com/pulse/linguagem-ub%C3%ADqua-como-transformar-conhecimento-do-em-de-oliveira-i1vjf</link>
-      <guid isPermaLink="true">https://pt.linkedin.com/pulse/linguagem-ub%C3%ADqua-como-transformar-conhecimento-do-em-de-oliveira-i1vjf</guid>
-      <pubDate>Mon, 20 Jul 2026 00:00:00 GMT</pubDate>
-      <description>Este é o segundo artigo da série sobre Domain-Driven Design. No primeiro, vimos por que DDD não é uma arquitetura e como ele pode trabalhar em conjunto com Clean Architecture, Arquitetura Hexagonal e Onion Architecture.</description>
     </item>
   </channel>
 </rss>

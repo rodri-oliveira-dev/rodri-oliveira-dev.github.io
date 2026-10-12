@@ -1,5 +1,18 @@
 [
   {
+    "url": "https://www.linkedin.com/pulse/dotfiles-rodrigo-de-oliveira-9hg6f/",
+    "finalUrl": "https://www.linkedin.com/pulse/dotfiles-rodrigo-de-oliveira-9hg6f/",
+    "title": "Dotfiles",
+    "description": "Quem trabalha com desenvolvimento há algum tempo inevitavelmente começa a personalizar o próprio ambiente. Primeiro aparece um alias para não digitar git status toda hora.",
+    "publishedAt": "2026-10-12",
+    "metadataSource": {
+      "title": "og:title",
+      "description": "og:description",
+      "publishedAt": "JSON-LD datePublished"
+    },
+    "addedAt": "2026-10-12T23:06:33+00:00"
+  },
+  {
     "url": "https://www.linkedin.com/pulse/ddd-e-cqrs-quando-complexidade-do-dom%C3%ADnio-realmente-de-oliveira-mngaf/",
     "finalUrl": "https://www.linkedin.com/pulse/ddd-e-cqrs-quando-complexidade-do-dom%C3%ADnio-realmente-de-oliveira-mngaf/",
     "title": "DDD e CQRS: quando a complexidade do domínio realmente justifica a arquitetura",
@@ -141,18 +154,5 @@
       "publishedAt": "JSON-LD datePublished"
     },
     "addedAt": "2026-08-30T23:58:26+00:00"
-  },
-  {
-    "url": "https://pt.linkedin.com/pulse/linguagem-ub%C3%ADqua-como-transformar-conhecimento-do-em-de-oliveira-i1vjf",
-    "finalUrl": "https://pt.linkedin.com/pulse/linguagem-ub%C3%ADqua-como-transformar-conhecimento-do-em-de-oliveira-i1vjf",
-    "title": "Linguagem Ubíqua: como transformar conhecimento do negócio em software",
-    "description": "Este é o segundo artigo da série sobre Domain-Driven Design. No primeiro, vimos por que DDD não é uma arquitetura e como ele pode trabalhar em conjunto com Clean Architecture, Arquitetura Hexagonal e Onion Architecture.",
-    "publishedAt": "2026-07-20",
-    "metadataSource": {
-      "title": "og:title",
-      "description": "og:description",
-      "publishedAt": "JSON-LD datePublished"
-    },
-    "addedAt": "2026-08-30T23:58:42+00:00"
   }
 ]
