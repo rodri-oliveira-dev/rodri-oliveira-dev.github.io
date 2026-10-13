@@ -162,11 +162,11 @@ def person_node(language: str, devto_enabled: bool) -> dict:
         "email": "mailto:rodrigodotnet@outlook.com",
         "image": f"{SITE_URL}assets/profile/rodrigo-about.webp",
         "description": (
-            "Arquiteto de Software focado em sistemas distribuídos, .NET, GCP/AWS, "
-            "Domain-Driven Design, confiabilidade, Infrastructure as Code e governança de engenharia."
+            "Arquiteto de Software com mais de 20 anos de experiência em sistemas "
+            "corporativos, .NET, sistemas distribuídos, integrações e cloud."
             if is_pt
-            else "Software Architect focused on distributed systems, .NET, GCP/AWS, "
-            "Domain-Driven Design, reliability, Infrastructure as Code, and engineering governance."
+            else "Software Architect with more than 20 years of experience in enterprise "
+            "software, .NET, distributed systems, integrations, and cloud."
         ),
         "sameAs": same_as,
         "knowsAbout": (
@@ -182,11 +182,7 @@ def person_node(language: str, devto_enabled: bool) -> dict:
                 "APIs",
                 "Observabilidade",
                 "Reliability Engineering",
-                "Infrastructure as Code",
-                "Terraform",
-                "Software Supply Chain",
                 "Qualidade de Software",
-                "Governança como Código",
             ]
             if is_pt
             else [
@@ -201,11 +197,7 @@ def person_node(language: str, devto_enabled: bool) -> dict:
                 "API Design",
                 "Observability",
                 "Reliability Engineering",
-                "Infrastructure as Code",
-                "Terraform",
-                "Software Supply Chain",
                 "Software Quality",
-                "Governance as Code",
             ]
         ),
     }

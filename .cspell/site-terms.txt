@@ -16,6 +16,7 @@ Evolutibilidade
 exactly-once
 FluentMap
 GCP
+gamificação
 GitHub
 HANA
 Henk
@@ -58,5 +59,6 @@ stdio
 TechArticle
 Terraform
 TOML
+weme
 YamlDotNet
 ZAP

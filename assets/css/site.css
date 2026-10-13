@@ -1550,3 +1550,307 @@ h1 {
     gap: 6px;
   }
 }
+
+/* Personal portfolio homepage */
+
+.hero-content {
+  max-width: 780px;
+}
+
+.hero-content h1 {
+  margin-bottom: 18px;
+  font-size: clamp(48px, 6.5vw, 82px);
+}
+
+.hero-role {
+  margin-bottom: 28px;
+  color: var(--accent);
+  font-size: clamp(18px, 2vw, 24px);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.hero-role span {
+  margin: 0 .18em;
+  color: var(--muted);
+}
+
+.hero-artwork {
+  width: min(100%, 410px);
+  height: auto;
+  justify-self: end;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.career-section,
+.contributions-section {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, .015);
+}
+
+.career-timeline {
+  position: relative;
+  display: grid;
+  gap: 0;
+  margin: 54px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.career-timeline::before {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 175px;
+  width: 1px;
+  background: var(--line-strong);
+  content: "";
+}
+
+.career-entry {
+  position: relative;
+  display: grid;
+  grid-template-columns: 144px 32px minmax(0, 1fr);
+  padding-bottom: 64px;
+}
+
+.career-entry:last-child {
+  padding-bottom: 0;
+}
+
+.career-entry::before {
+  z-index: 1;
+  grid-column: 2;
+  width: 11px;
+  height: 11px;
+  margin: 8px auto 0;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  background: var(--bg);
+  content: "";
+}
+
+.career-entry-current::before {
+  background: var(--accent);
+  box-shadow: 0 0 0 5px rgba(125, 211, 252, .12);
+}
+
+.career-period {
+  grid-column: 1;
+  grid-row: 1;
+  padding: 4px 18px 0 0;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.career-content {
+  grid-column: 3;
+  grid-row: 1;
+  max-width: 850px;
+  padding-left: 30px;
+}
+
+.career-content h3 {
+  margin-bottom: 18px;
+  font-size: clamp(24px, 3vw, 32px);
+  line-height: 1.15;
+}
+
+.career-content p {
+  margin-bottom: 16px;
+  color: var(--muted);
+}
+
+.career-content p:last-child {
+  margin-bottom: 0;
+}
+
+.career-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.current-label {
+  margin-top: -18px;
+  padding: 3px 8px;
+  border: 1px solid rgba(125, 211, 252, .35);
+  border-radius: 999px;
+  color: var(--accent);
+  background: rgba(125, 211, 252, .07);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.selected-projects {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.selected-projects .project-card {
+  min-height: 390px;
+}
+
+.selected-projects .project-card p {
+  flex: 1 1 auto;
+}
+
+.project-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin-top: 24px;
+}
+
+.project-links a {
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.project-links a:hover,
+.project-links a:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.compact-heading {
+  max-width: 800px;
+}
+
+.compact-heading .text-link {
+  display: inline-block;
+  margin-top: 8px;
+}
+
+.contact-block {
+  margin-top: 38px;
+  padding-top: 30px;
+  border-top: 1px solid var(--line);
+}
+
+.contact-block h3 {
+  margin-bottom: 18px;
+  font-size: 22px;
+}
+
+.contact-block .contact-links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 1150px) and (min-width: 901px) {
+  .header-inner {
+    gap: 18px;
+  }
+
+  .nav {
+    gap: 15px;
+  }
+
+  .nav a {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 1050px) {
+  .selected-projects {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .hero-artwork {
+    width: min(100%, 360px);
+    justify-self: start;
+  }
+
+  .career-timeline::before {
+    left: 7px;
+  }
+
+  .career-entry {
+    grid-template-columns: 24px minmax(0, 1fr);
+    padding-bottom: 52px;
+  }
+
+  .career-entry::before {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    margin: 7px 0 0;
+  }
+
+  .career-period {
+    grid-column: 2;
+    grid-row: 1;
+    padding: 0 0 8px 18px;
+    text-align: left;
+  }
+
+  .career-content {
+    grid-column: 2;
+    grid-row: 2;
+    padding-left: 18px;
+  }
+}
+
+@media (max-width: 700px) {
+  .selected-projects,
+  .contact-block .contact-links {
+    grid-template-columns: 1fr;
+  }
+
+  .selected-projects .project-card {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero-content > * {
+    order: initial !important;
+  }
+
+  .hero-content h1 {
+    margin-bottom: 14px;
+  }
+
+  .hero-role {
+    margin-bottom: 22px;
+    font-size: 17px;
+  }
+
+  .hero-content .hero-copy {
+    order: initial;
+  }
+
+  .hero-artwork {
+    width: min(82vw, 300px);
+  }
+
+  .career-entry {
+    padding-bottom: 44px;
+  }
+
+  .career-content h3 {
+    font-size: 24px;
+  }
+
+  .career-content p {
+    font-size: 15px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .project-card,
+  .project-links a {
+    transition: none;
+  }
+}
