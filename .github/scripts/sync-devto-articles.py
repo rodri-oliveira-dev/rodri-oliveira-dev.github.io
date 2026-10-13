@@ -19,7 +19,6 @@ EN_INDEX = ROOT / "en/index.html"
 DATA_PATH = ROOT / "assets/data/devto-articles.json"
 
 FEED_URL = "https://dev.to/feed/rodri-oliveira-dev"
-PROFILE_URL = "https://dev.to/rodri-oliveira-dev"
 ALLOWED_HOST = "dev.to"
 ALLOWED_PATH_PREFIX = "/rodri-oliveira-dev/"
 
@@ -257,28 +256,6 @@ def render_article(article: dict) -> str:
           </article>"""
 
 
-def render_writing_section(articles: list[dict]) -> str:
-    rendered = "\n".join(render_article(article) for article in articles[:4])
-    return f"""    <section class="section writing-section" id="writing">
-      <div class="container writing-grid">
-        <div class="section-heading">
-          <p class="eyebrow">Writing &amp; knowledge sharing</p>
-          <h2>I write to make complex engineering ideas easier to apply.</h2>
-          <p>
-            My articles connect architecture theory with implementation reality — especially .NET, distributed systems, Domain-Driven Design, cloud, software quality, and the trade-offs behind technical decisions. My English long-form writing is published on DEV Community.
-          </p>
-          <a class="text-link" href="{PROFILE_URL}" target="_blank" rel="noreferrer">Read my articles on DEV Community ↗</a>
-        </div>
-
-        <div class="writing-cards article-list">
-{START}
-{rendered}
-{END}
-        </div>
-      </div>
-    </section>"""
-
-
 def synchronize_rss_discovery(document: str) -> str:
     updated, count = RSS_PATTERN.subn(RSS_TAG, document, count=1)
     if count == 1:
@@ -294,11 +271,24 @@ def synchronize_rss_discovery(document: str) -> str:
 
 
 def synchronize_writing_section(document: str, articles: list[dict]) -> str:
-    section = render_writing_section(articles)
-    updated, count = SECTION_PATTERN.subn(section, document, count=1)
-    if count != 1:
-        raise SystemExit("Could not locate the English writing section in en/index.html.")
-    return updated
+    """Update generated article cards while preserving the surrounding Writing section."""
+    sections = list(SECTION_PATTERN.finditer(document))
+    if len(sections) != 1:
+        raise SystemExit("Expected exactly one English writing section in en/index.html.")
+
+    if document.count(START) != 1 or document.count(END) != 1:
+        raise SystemExit("Expected exactly one pair of COMMUNITY_ARTICLES markers.")
+
+    section = sections[0]
+    start = document.index(START)
+    end = document.index(END)
+    if not (section.start() <= start < end and end + len(END) <= section.end()):
+        raise SystemExit("COMMUNITY_ARTICLES markers must be ordered inside the Writing section.")
+
+    # Only the article cards are generated; headings, copy and layout remain editorial.
+    rendered = "\n" + "\n".join(render_article(article) for article in articles[:4]) + "\n"
+    content_start = start + len(START)
+    return document[:content_start] + rendered + document[end:]
 
 
 def synchronize_homepage(articles: list[dict]) -> None:
