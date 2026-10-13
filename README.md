@@ -4,22 +4,19 @@ Site profissional pessoal de **Rodrigo de Oliveira, Arquiteto de Software**.
 
 **Site:** https://rodri-oliveira-dev.github.io/
 
-O portfólio funciona como um cartão de visita profissional: arquitetura de software corporativa em primeiro plano, com projetos open source e conteúdo técnico como evidências de uma atuação hands-on em engenharia.
+O portfólio apresenta minha trajetória profissional, projetos open source, contribuições e publicações técnicas.
 
 > **Este repositório não é um projeto open source e não está aberto para contribuições externas.**
 
-## Posicionamento
+## Conteúdo
 
-O site apresenta minha atuação principalmente em:
+A página inicial está organizada em:
 
-- arquitetura de software corporativa;
-- sistemas distribuídos e integrações;
-- .NET e arquitetura cloud;
-- Domain-Driven Design;
-- prontidão para produção, observabilidade e resiliência;
-- governança técnica e engineering enablement;
-- projetos open source como evidência de engenharia;
-- produção de conteúdo e compartilhamento de conhecimento.
+- apresentação profissional;
+- trajetória profissional em uma timeline;
+- projetos e contribuições open source;
+- artigos e publicações;
+- informações pessoais e canais de contato.
 
 ## Idiomas e SEO
 
