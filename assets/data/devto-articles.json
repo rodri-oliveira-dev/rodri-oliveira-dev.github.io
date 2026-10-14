@@ -1,5 +1,17 @@
 [
   {
+    "url": "https://dev.to/rodri-oliveira-dev/github-dotfiles-treating-your-development-environment-like-code-2a04",
+    "title": "GitHub Dotfiles: Treating Your Development Environment Like Code",
+    "description": "Most developers eventually accumulate a collection of small configuration files, aliases, scripts, shell functions, and Git preferences that make their daily work a little more comfortable. At first, they usually live directly inside ~/.bashrc , ~/.gitconfig , random folders under ~/scripts , or maybe inside a note ca…",
+    "publishedAt": "2026-10-14T14:00:00Z",
+    "tags": [
+      "dotfiles",
+      "github",
+      "dotnet",
+      "devtools"
+    ]
+  },
+  {
     "url": "https://dev.to/rodri-oliveira-dev/what-happens-after-the-commit-1a4c",
     "title": "What Happens After the Commit?",
     "description": "Saving a record to a database is relatively easy. We have mature tools for that problem. We open a transaction, change some state, commit it, and roll everything back if something fails before the commit. Things become much more interesting when the database commit is not the end of the operation . Imagine a financial…",
