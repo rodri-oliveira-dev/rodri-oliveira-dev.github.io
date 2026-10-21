@@ -15,18 +15,10 @@ DATA_PATH = ROOT / "assets/data/newsletter-articles.json"
 DEVTO_DATA_PATH = ROOT / "assets/data/devto-articles.json"
 PT_INDEX = ROOT / "index.html"
 EN_INDEX = ROOT / "en/index.html"
-PT_CASE_STUDY = ROOT / "case-studies/dotnet-observability-lab/index.html"
-EN_CASE_STUDY = ROOT / "en/case-studies/dotnet-observability-lab/index.html"
-PT_REPO_CONTROL_CASE_STUDY = ROOT / "case-studies/repo-control-center/index.html"
-EN_REPO_CONTROL_CASE_STUDY = ROOT / "en/case-studies/repo-control-center/index.html"
 SITEMAP_PATH = ROOT / "sitemap.xml"
 
 SITE_URL = "https://rodri-oliveira-dev.github.io/"
 EN_URL = f"{SITE_URL}en/"
-PT_CASE_STUDY_URL = f"{SITE_URL}case-studies/dotnet-observability-lab/"
-EN_CASE_STUDY_URL = f"{EN_URL}case-studies/dotnet-observability-lab/"
-PT_REPO_CONTROL_CASE_STUDY_URL = f"{SITE_URL}case-studies/repo-control-center/"
-EN_REPO_CONTROL_CASE_STUDY_URL = f"{EN_URL}case-studies/repo-control-center/"
 PT_FEED_URL = f"{SITE_URL}newsletter/feed.xml"
 EN_FEED_URL = "https://dev.to/feed/rodri-oliveira-dev"
 DEV_PROFILE_URL = "https://dev.to/rodri-oliveira-dev"
@@ -358,14 +350,55 @@ def max_date(*values: str) -> str:
     return max(parsed).isoformat()
 
 
+def discover_case_studies() -> list[tuple[str, Path, Path]]:
+    """Return complete bilingual case-study pairs ordered by slug."""
+    pt_root = ROOT / "case-studies"
+    en_root = ROOT / "en/case-studies"
+    pt_pages = {path.parent.name: path for path in pt_root.glob("*/index.html")}
+    en_pages = {path.parent.name: path for path in en_root.glob("*/index.html")}
+
+    missing_en = sorted(set(pt_pages) - set(en_pages))
+    missing_pt = sorted(set(en_pages) - set(pt_pages))
+    if missing_en or missing_pt:
+        raise SystemExit(
+            "Case studies must be bilingual pairs. "
+            f"Missing EN: {missing_en}; missing PT-BR: {missing_pt}."
+        )
+
+    return [(slug, pt_pages[slug], en_pages[slug]) for slug in sorted(pt_pages)]
+
+
+def case_study_sitemap_block(
+    slug: str,
+    pt_path: Path,
+    en_path: Path,
+    today: str,
+) -> str:
+    pt_url = f"{SITE_URL}case-studies/{slug}/"
+    en_url = f"{EN_URL}case-studies/{slug}/"
+    pt_lastmod = today if file_was_dirty(pt_path) else git_last_modified(pt_path)
+    en_lastmod = today if file_was_dirty(en_path) else git_last_modified(en_path)
+    return f'''  <url>
+    <loc>{escape(pt_url)}</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="{escape(pt_url)}"/>
+    <xhtml:link rel="alternate" hreflang="en" href="{escape(en_url)}"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="{escape(pt_url)}"/>
+    <lastmod>{pt_lastmod}</lastmod>
+  </url>
+  <url>
+    <loc>{escape(en_url)}</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="{escape(pt_url)}"/>
+    <xhtml:link rel="alternate" hreflang="en" href="{escape(en_url)}"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="{escape(pt_url)}"/>
+    <lastmod>{en_lastmod}</lastmod>
+  </url>'''
+
+
 def write_sitemap(
     articles: list[dict],
     pt_dirty: bool,
     en_dirty: bool,
-    pt_case_dirty: bool,
-    en_case_dirty: bool,
-    pt_repo_control_dirty: bool,
-    en_repo_control_dirty: bool,
+    case_studies: list[tuple[str, Path, Path]],
 ) -> None:
     today = datetime.now(timezone.utc).date().isoformat()
     latest_article = (
@@ -375,21 +408,9 @@ def write_sitemap(
     en_git = git_last_modified(EN_INDEX)
     pt_lastmod = max_date(latest_article, today if pt_dirty else pt_git)
     en_lastmod = max_date(today if en_dirty else en_git)
-    pt_case_lastmod = (
-        today if pt_case_dirty else git_last_modified(PT_CASE_STUDY)
-    )
-    en_case_lastmod = (
-        today if en_case_dirty else git_last_modified(EN_CASE_STUDY)
-    )
-    pt_repo_control_lastmod = (
-        today
-        if pt_repo_control_dirty
-        else git_last_modified(PT_REPO_CONTROL_CASE_STUDY)
-    )
-    en_repo_control_lastmod = (
-        today
-        if en_repo_control_dirty
-        else git_last_modified(EN_REPO_CONTROL_CASE_STUDY)
+    case_blocks = "\n".join(
+        case_study_sitemap_block(slug, pt_path, en_path, today)
+        for slug, pt_path, en_path in case_studies
     )
 
     sitemap = f'''<?xml version="1.0" encoding="UTF-8"?>
@@ -409,34 +430,7 @@ def write_sitemap(
     <xhtml:link rel="alternate" hreflang="x-default" href="{escape(SITE_URL)}"/>
     <lastmod>{en_lastmod}</lastmod>
   </url>
-  <url>
-    <loc>{escape(PT_CASE_STUDY_URL)}</loc>
-    <xhtml:link rel="alternate" hreflang="pt-BR" href="{escape(PT_CASE_STUDY_URL)}"/>
-    <xhtml:link rel="alternate" hreflang="en" href="{escape(EN_CASE_STUDY_URL)}"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="{escape(PT_CASE_STUDY_URL)}"/>
-    <lastmod>{pt_case_lastmod}</lastmod>
-  </url>
-  <url>
-    <loc>{escape(EN_CASE_STUDY_URL)}</loc>
-    <xhtml:link rel="alternate" hreflang="pt-BR" href="{escape(PT_CASE_STUDY_URL)}"/>
-    <xhtml:link rel="alternate" hreflang="en" href="{escape(EN_CASE_STUDY_URL)}"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="{escape(PT_CASE_STUDY_URL)}"/>
-    <lastmod>{en_case_lastmod}</lastmod>
-  </url>
-  <url>
-    <loc>{escape(PT_REPO_CONTROL_CASE_STUDY_URL)}</loc>
-    <xhtml:link rel="alternate" hreflang="pt-BR" href="{escape(PT_REPO_CONTROL_CASE_STUDY_URL)}"/>
-    <xhtml:link rel="alternate" hreflang="en" href="{escape(EN_REPO_CONTROL_CASE_STUDY_URL)}"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="{escape(PT_REPO_CONTROL_CASE_STUDY_URL)}"/>
-    <lastmod>{pt_repo_control_lastmod}</lastmod>
-  </url>
-  <url>
-    <loc>{escape(EN_REPO_CONTROL_CASE_STUDY_URL)}</loc>
-    <xhtml:link rel="alternate" hreflang="pt-BR" href="{escape(PT_REPO_CONTROL_CASE_STUDY_URL)}"/>
-    <xhtml:link rel="alternate" hreflang="en" href="{escape(EN_REPO_CONTROL_CASE_STUDY_URL)}"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="{escape(PT_REPO_CONTROL_CASE_STUDY_URL)}"/>
-    <lastmod>{en_repo_control_lastmod}</lastmod>
-  </url>
+{case_blocks}
 </urlset>
 '''
     SITEMAP_PATH.write_text(sitemap, encoding="utf-8")
@@ -459,10 +453,7 @@ def main() -> None:
     devto_enabled = DEVTO_DATA_PATH.exists()
     pt_dirty = file_was_dirty(PT_INDEX)
     en_dirty = file_was_dirty(EN_INDEX)
-    pt_case_dirty = file_was_dirty(PT_CASE_STUDY)
-    en_case_dirty = file_was_dirty(EN_CASE_STUDY)
-    pt_repo_control_dirty = file_was_dirty(PT_REPO_CONTROL_CASE_STUDY)
-    en_repo_control_dirty = file_was_dirty(EN_REPO_CONTROL_CASE_STUDY)
+    case_studies = discover_case_studies()
 
     synchronize_html(PT_INDEX, "pt-BR", articles, False)
     synchronize_html(EN_INDEX, "en", articles, devto_enabled)
@@ -470,10 +461,7 @@ def main() -> None:
         articles,
         pt_dirty,
         en_dirty,
-        pt_case_dirty,
-        en_case_dirty,
-        pt_repo_control_dirty,
-        en_repo_control_dirty,
+        case_studies,
     )
 
     validate_json_ld(PT_INDEX)

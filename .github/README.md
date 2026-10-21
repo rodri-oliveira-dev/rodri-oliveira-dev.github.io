@@ -51,14 +51,14 @@ Esse último ponto funciona como um gate de drift: se catálogo, homepage, dados
 
 ### Accessibility
 
-O [`accessibility.yml`](workflows/accessibility.yml) sobe o site em um servidor HTTP local e executa Pa11y CI contra as páginas em português e inglês.
+O [`accessibility.yml`](workflows/accessibility.yml) sobe o site em um servidor HTTP local e executa Pa11y CI contra as homepages e todos os estudos de caso em português e inglês.
 
 A configuração usa WCAG 2 AA como baseline e threshold zero para os problemas considerados pelo gate. O objetivo é detectar regressões de semântica, ARIA, estrutura e outras regras automatizáveis de acessibilidade antes do merge.
 
 Arquivos relacionados:
 
 - [`../.pa11yci`](../.pa11yci) — configuração do Pa11y CI;
-- `index.html` e `en/index.html` — páginas verificadas.
+- `index.html`, `en/index.html`, `case-studies/*/index.html` e `en/case-studies/*/index.html` — páginas verificadas.
 
 Alguns ajustes de CSP são aplicados apenas ao fixture efêmero usado pelo runner local. A política CSP publicada no site não é alterada pelo workflow.
 
@@ -85,7 +85,7 @@ O relatório estruturado é produzido por [`scripts/summarize-zizmor.mjs`](scrip
 
 ### Lighthouse CI
 
-O [`lighthouse.yml`](workflows/lighthouse.yml) sobe o site localmente e executa Lighthouse CI contra `/` e `/en/`.
+O [`lighthouse.yml`](workflows/lighthouse.yml) sobe o site localmente e executa Lighthouse CI contra `/`, `/en/` e todos os pares bilíngues descobertos em `case-studies/`.
 
 Cada página é medida três vezes para reduzir variação do runner. Os valores usados para os gates são agregados pela mediana.
 
@@ -178,7 +178,7 @@ O [`indexnow.yml`](workflows/indexnow.yml) notifica o endpoint público do Index
 
 O workflow também possui execução manual e uma execução diária de fallback. Esse agendamento é independente da sincronização da newsletter: ele existe apenas para cobrir cenários em que uma alteração tenha sido mesclada por uma credencial de automação que não origine um novo evento `push` de workflow.
 
-A submissão é limitada às URLs públicas pertinentes à alteração, incluindo a homepage, a versão em inglês e o RSS quando aplicável.
+A submissão é limitada às URLs públicas pertinentes à alteração, incluindo a homepage, a versão em inglês, estudos de caso descobertos pela estrutura de diretórios e o RSS quando aplicável.
 
 ### Optimize Open Graph image
 

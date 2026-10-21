@@ -75,11 +75,16 @@ jobs:
           expected_urls = {
               "https://rodri-oliveira-dev.github.io/",
               "https://rodri-oliveira-dev.github.io/en/",
-              "https://rodri-oliveira-dev.github.io/case-studies/dotnet-observability-lab/",
-              "https://rodri-oliveira-dev.github.io/en/case-studies/dotnet-observability-lab/",
-              "https://rodri-oliveira-dev.github.io/case-studies/repo-control-center/",
-              "https://rodri-oliveira-dev.github.io/en/case-studies/repo-control-center/",
           }
+          case_pages = sorted(Path("case-studies").glob("*/index.html"))
+          english_pages = sorted(Path("en/case-studies").glob("*/index.html"))
+          pt_slugs = {page.parent.name for page in case_pages}
+          en_slugs = {page.parent.name for page in english_pages}
+          if pt_slugs != en_slugs:
+              raise SystemExit("Case-study language pairs are incomplete")
+          for slug in pt_slugs:
+              expected_urls.add(f"https://rodri-oliveira-dev.github.io/case-studies/{slug}/")
+              expected_urls.add(f"https://rodri-oliveira-dev.github.io/en/case-studies/{slug}/")
           actual_urls = {
               (entry.findtext("sm:loc", namespaces=namespace) or "").strip()
               for entry in urls
@@ -90,11 +95,9 @@ jobs:
               if not (entry.findtext("sm:lastmod", namespaces=namespace) or "").strip():
                   raise SystemExit("Sitemap URL without lastmod")
 
-          for page in (
-              "case-studies/dotnet-observability-lab/index.html",
-              "en/case-studies/dotnet-observability-lab/index.html",
-          ):
-              html = Path(page).read_text(encoding="utf-8")
+          for path in [*case_pages, *english_pages]:
+              page = path.as_posix()
+              html = path.read_text(encoding="utf-8")
               match = re.search(
                   r'<script type="application/ld\+json">\s*(\{.*?\})\s*</script>',
                   html,
@@ -122,4 +125,23 @@ jobs:
                       raise SystemExit(
                           f"{required_field} structured data field missing in {page}"
                       )
+
+              canonical = re.search(r'<link rel="canonical" href="([^"]+)">', html)
+              alternates = dict(re.findall(
+                  r'<link rel="alternate" hreflang="([^"]+)" href="([^"]+)">',
+                  html,
+              ))
+              if not canonical or canonical.group(1) not in expected_urls:
+                  raise SystemExit(f"Invalid canonical in {page}")
+              if set(alternates) != {"pt-BR", "en", "x-default"}:
+                  raise SystemExit(f"Incomplete hreflang set in {page}")
+              slug = path.parent.name
+              expected_pt = f"https://rodri-oliveira-dev.github.io/case-studies/{slug}/"
+              expected_en = f"https://rodri-oliveira-dev.github.io/en/case-studies/{slug}/"
+              if alternates != {
+                  "pt-BR": expected_pt,
+                  "en": expected_en,
+                  "x-default": expected_pt,
+              }:
+                  raise SystemExit(f"Incorrect reciprocal hreflang values in {page}")
           PY
