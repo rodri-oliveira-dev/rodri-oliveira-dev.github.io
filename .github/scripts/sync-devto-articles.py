@@ -245,7 +245,9 @@ def format_date(value: str) -> str:
 
 
 def render_article(article: dict) -> str:
-    title = html.escape(str(article["title"]).strip(), quote=True)
+    # Article titles are inserted as element text, so quotes can remain literal.
+    # Escape markup and ampersands without splitting contractions for CSpell.
+    title = html.escape(str(article["title"]).strip(), quote=False)
     url = html.escape(str(article["url"]).strip(), quote=True)
     published_at = format_date(str(article["publishedAt"]).strip())
 
