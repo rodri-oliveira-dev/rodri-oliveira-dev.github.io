@@ -85,6 +85,19 @@ class EnglishArticleSynchronizationTests(unittest.TestCase):
                 with self.assertRaises(SystemExit):
                     sync.synchronize_writing_section(document, ARTICLES)
 
+    def test_preserves_apostrophes_in_article_title_text(self):
+        article = {
+            "title": "Shouldn\u0027t <script>alert(\u0027x\u0027)</script> & friends",
+            "url": "https://dev.to/rodri-oliveira-dev/secure",
+            "publishedAt": "2026-10-07T00:00:00Z",
+        }
+        rendered = sync.render_article(article)
+        self.assertIn(
+            "<h3>Shouldn\u0027t &lt;script&gt;alert(\u0027x\u0027)&lt;/script&gt; &amp; friends</h3>",
+            rendered,
+        )
+        self.assertNotIn("&#x27;", rendered)
+
     def test_escapes_untrusted_article_titles_and_urls(self):
         articles = [{
             "title": "<script>alert('x')</script>",
