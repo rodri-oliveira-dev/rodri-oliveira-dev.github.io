@@ -27,7 +27,7 @@ O [`site-validation.yml`](workflows/site-validation.yml) é o gate estrutural pr
 
 Ele executa:
 
-- `html-validate` em `index.html`, `en/index.html` e `pt-br/index.html`;
+- `html-validate` nas homepages, no redirecionamento legado e em todos os `index.html` de `case-studies/` e `en/case-studies/`;
 - Lychee nos HTMLs e no `README.md` para detectar links inválidos;
 - CSpell para ortografia em português, inglês e vocabulário técnico conhecido;
 - `actionlint` para validar a sintaxe e a estrutura dos workflows do GitHub Actions.
@@ -98,7 +98,7 @@ Os budgets estão definidos em [`../lighthouserc.cjs`](../lighthouserc.cjs):
 | Best Practices | 95% | Blocking |
 | SEO | 95% | Blocking |
 
-Em Pull Requests, o workflow mantém um único comentário atualizado com os scores das duas páginas, os thresholds e o resultado de cada gate.
+Em Pull Requests, o workflow mantém um único comentário atualizado com os scores das homepages e de todos os estudos de caso, os thresholds e o resultado de cada gate.
 
 O resumo é produzido por [`scripts/summarize-lighthouse.mjs`](scripts/summarize-lighthouse.mjs).
 

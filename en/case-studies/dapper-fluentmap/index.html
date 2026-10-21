@@ -125,6 +125,17 @@
 using Dapper.FluentMap;
 using Dapper.FluentMap.Mapping;
 
+FluentMapper.Initialize(config =&gt; config.AddMap&lt;CustomerMap&gt;());
+FluentMapper.Validate();
+
+const string sql = """
+    SELECT CUST_NO, LEGAL_NM
+    FROM CUSTOMER
+    WHERE CUST_NO = @id
+    """;
+
+Customer customer = connection.QuerySingle&lt;Customer&gt;(sql, new { id = 42 });
+
 public sealed class Customer
 {
     public int Id { get; set; }
@@ -138,18 +149,7 @@ public sealed class CustomerMap : EntityMap&lt;Customer&gt;
         Map(customer =&gt; customer.Id).ToColumn("CUST_NO");
         Map(customer =&gt; customer.Name).ToColumn("LEGAL_NM");
     }
-}
-
-FluentMapper.Initialize(config =&gt; config.AddMap&lt;CustomerMap&gt;());
-FluentMapper.Validate();
-
-const string sql = """
-    SELECT CUST_NO, LEGAL_NM
-    FROM CUSTOMER
-    WHERE CUST_NO = @id
-    """;
-
-Customer customer = connection.QuerySingle&lt;Customer&gt;(sql, new { id = 42 });</code></pre>
+}</code></pre>
         <p class="case-study-note">The example uses the current documented API. The application and Dapper still own the connection, transaction, parameters, query, and migrations.</p>
         <div class="case-study-two-column">
           <div><h3>Materialization flow</h3></div>

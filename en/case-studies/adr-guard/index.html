@@ -109,15 +109,15 @@
         <div class="case-study-decision-grid">
           <article><h3>Structural ADR validation</h3><p><code>adr-guard check</code> validates metadata, sections, references, lifecycle, and other document contracts. A valid ADR does not prove that code conforms to it.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/adr-guard/blob/main/docs/cli-reference.md" target="_blank" rel="noreferrer">CLI reference ↗</a></article>
           <article><h3>Change impact analysis</h3><p><code>adr-guard impact</code> correlates changed files with explicit local mappings. It identifies decisions that may need review; it does not issue a compliance verdict.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/adr-guard/blob/main/docs/adr/0006-analyze-architecture-impact-from-explicit-mappings.md" target="_blank" rel="noreferrer">ADR 0006 ↗</a></article>
-          <article><h3>Drift verification</h3><p><code>adr-guard drift</code> evaluates opt-in rules associated with effective ADRs. Version 1 proves exact static project references and consumes reported external tests.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/adr-guard/blob/main/docs/adr/0007-verify-architecture-rules-from-bounded-evidence.md" target="_blank" rel="noreferrer">ADR 0007 ↗</a></article>
+          <article><h3>Drift verification</h3><p><code>adr-guard drift</code> evaluates opt-in rules associated with effective ADRs. Version 1 proves only exact static project references and consumes reported external tests.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/adr-guard/blob/main/docs/adr/0007-verify-architecture-rules-from-bounded-evidence.md" target="_blank" rel="noreferrer">ADR 0007 ↗</a></article>
           <article><h3>Shared internal Core</h3><p><code>AdrGuard.Core</code> owns parsing, validation, Git inventory, impact, and drift for the CLI and MCP host. It is not a standalone public package; UI and transport remain at executable boundaries.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/adr-guard/blob/main/docs/adr/0008-extract-an-internal-shared-core.md" target="_blank" rel="noreferrer">ADR 0008 ↗</a></article>
         </div>
         <h3>The outcome vocabulary preserves uncertainty</h3>
         <div class="case-study-outcomes">
-          <article><h3>pass</h3><p>Complete deterministic evidence proves the declared condition.</p></article>
-          <article><h3>violation</h3><p>Complete deterministic evidence proves the condition false.</p></article>
-          <article><h3>unknown</h3><p>Evidence is insufficient, missing, dynamic, conditional, invalid, or contradictory.</p></article>
-          <article><h3>not-applicable</h3><p>The referenced ADR is not effective under the configured lifecycle policy.</p></article>
+          <article><h4>pass</h4><p>Complete deterministic evidence proves the declared condition.</p></article>
+          <article><h4>violation</h4><p>Complete deterministic evidence proves the condition false.</p></article>
+          <article><h4>unknown</h4><p>Evidence is insufficient, missing, dynamic, conditional, invalid, or contradictory.</p></article>
+          <article><h4>not-applicable</h4><p>The referenced ADR is not effective under the configured lifecycle policy.</p></article>
         </div>
       </div>
     </section>

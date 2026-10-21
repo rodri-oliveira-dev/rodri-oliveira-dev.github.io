@@ -131,13 +131,14 @@ jobs:
                   r'<link rel="alternate" hreflang="([^"]+)" href="([^"]+)">',
                   html,
               ))
-              if not canonical or canonical.group(1) not in expected_urls:
-                  raise SystemExit(f"Invalid canonical in {page}")
-              if set(alternates) != {"pt-BR", "en", "x-default"}:
-                  raise SystemExit(f"Incomplete hreflang set in {page}")
               slug = path.parent.name
               expected_pt = f"https://rodri-oliveira-dev.github.io/case-studies/{slug}/"
               expected_en = f"https://rodri-oliveira-dev.github.io/en/case-studies/{slug}/"
+              expected_self = expected_en if path.parts[0] == "en" else expected_pt
+              if not canonical or canonical.group(1) != expected_self:
+                  raise SystemExit(f"Invalid canonical in {page}")
+              if set(alternates) != {"pt-BR", "en", "x-default"}:
+                  raise SystemExit(f"Incomplete hreflang set in {page}")
               if alternates != {
                   "pt-BR": expected_pt,
                   "en": expected_en,

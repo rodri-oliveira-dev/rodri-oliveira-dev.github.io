@@ -1585,7 +1585,8 @@ h1 {
   background: rgba(255, 255, 255, .012);
 }
 
-.case-study-outcomes h3 {
+.case-study-outcomes h4 {
+  margin-top: 0;
   margin-bottom: 8px;
   color: var(--accent);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
