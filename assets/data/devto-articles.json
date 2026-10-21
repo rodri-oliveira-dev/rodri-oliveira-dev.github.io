@@ -1,5 +1,17 @@
 [
   {
+    "url": "https://dev.to/rodri-oliveira-dev/architecture-decisions-shouldnt-get-lost-introducing-adr-guard-for-vs-code-3211",
+    "title": "Architecture Decisions Shouldn't Get Lost: Introducing ADR Guard for VS Code",
+    "description": "There's a question almost every developer has asked while working on a mature codebase: \"Why was it built this way?\" Sometimes the answer is buried in an old GitHub discussion. Other times, it's hidden in a Slack thread, an outdated document, or, even worse, in the memory of someone who left the company two years ago.…",
+    "publishedAt": "2026-10-21T14:00:00Z",
+    "tags": [
+      "architecture",
+      "vscode",
+      "opensource",
+      "adr"
+    ]
+  },
+  {
     "url": "https://dev.to/rodri-oliveira-dev/github-dotfiles-treating-your-development-environment-like-code-2a04",
     "title": "GitHub Dotfiles: Treating Your Development Environment Like Code",
     "description": "Most developers eventually accumulate a collection of small configuration files, aliases, scripts, shell functions, and Git preferences that make their daily work a little more comfortable. At first, they usually live directly inside ~/.bashrc , ~/.gitconfig , random folders under ~/scripts , or maybe inside a note ca…",
