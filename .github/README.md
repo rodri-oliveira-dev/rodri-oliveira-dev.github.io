@@ -57,7 +57,7 @@ A configuração usa WCAG 2 AA como baseline e threshold zero para os problemas 
 
 Arquivos relacionados:
 
-- [`../.pa11yci`](../.pa11yci) — configuração do Pa11y CI;
+- [`../.pa11yci.cjs`](../.pa11yci.cjs) — configuração do Pa11y CI e descoberta dinâmica dos estudos de caso;
 - `index.html`, `en/index.html`, `case-studies/*/index.html` e `en/case-studies/*/index.html` — páginas verificadas.
 
 Alguns ajustes de CSP são aplicados apenas ao fixture efêmero usado pelo runner local. A política CSP publicada no site não é alterada pelo workflow.
@@ -248,7 +248,7 @@ Além dos workflows, a automação depende destes arquivos:
 - [`dependabot.yml`](dependabot.yml) — atualização das GitHub Actions;
 - [`../zizmor.yml`](../zizmor.yml) — política do scanner de segurança;
 - [`../lighthouserc.cjs`](../lighthouserc.cjs) — URLs, número de runs e budgets do Lighthouse;
-- [`../.pa11yci`](../.pa11yci) — configuração de acessibilidade;
+- [`../.pa11yci.cjs`](../.pa11yci.cjs) — configuração de acessibilidade e descoberta das páginas;
 - [`scripts/render-newsletter.py`](scripts/render-newsletter.py) — renderização dos artigos;
 - [`scripts/generate-newsletter-feed.py`](scripts/generate-newsletter-feed.py) — geração do RSS;
 - [`scripts/sync-seo.py`](scripts/sync-seo.py) — sincronização de JSON-LD, RSS discovery e sitemap;
