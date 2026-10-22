@@ -6,14 +6,14 @@
     <xhtml:link rel="alternate" hreflang="pt-BR" href="https://rodri-oliveira-dev.github.io/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://rodri-oliveira-dev.github.io/en/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://rodri-oliveira-dev.github.io/"/>
-    <lastmod>2026-10-21</lastmod>
+    <lastmod>2026-10-22</lastmod>
   </url>
   <url>
     <loc>https://rodri-oliveira-dev.github.io/en/</loc>
     <xhtml:link rel="alternate" hreflang="pt-BR" href="https://rodri-oliveira-dev.github.io/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://rodri-oliveira-dev.github.io/en/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://rodri-oliveira-dev.github.io/"/>
-    <lastmod>2026-10-21</lastmod>
+    <lastmod>2026-10-22</lastmod>
   </url>
   <url>
     <loc>https://rodri-oliveira-dev.github.io/case-studies/adr-guard/</loc>
@@ -56,6 +56,20 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://rodri-oliveira-dev.github.io/en/case-studies/dotnet-observability-lab/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://rodri-oliveira-dev.github.io/case-studies/dotnet-observability-lab/"/>
     <lastmod>2026-09-28</lastmod>
+  </url>
+  <url>
+    <loc>https://rodri-oliveira-dev.github.io/case-studies/reliable-webhooks/</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://rodri-oliveira-dev.github.io/case-studies/reliable-webhooks/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rodri-oliveira-dev.github.io/en/case-studies/reliable-webhooks/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rodri-oliveira-dev.github.io/case-studies/reliable-webhooks/"/>
+    <lastmod>2026-10-22</lastmod>
+  </url>
+  <url>
+    <loc>https://rodri-oliveira-dev.github.io/en/case-studies/reliable-webhooks/</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://rodri-oliveira-dev.github.io/case-studies/reliable-webhooks/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rodri-oliveira-dev.github.io/en/case-studies/reliable-webhooks/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rodri-oliveira-dev.github.io/case-studies/reliable-webhooks/"/>
+    <lastmod>2026-10-22</lastmod>
   </url>
   <url>
     <loc>https://rodri-oliveira-dev.github.io/case-studies/repo-control-center/</loc>

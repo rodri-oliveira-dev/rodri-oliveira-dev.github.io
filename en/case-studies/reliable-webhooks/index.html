@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'none'; connect-src 'none'; frame-src 'none'; media-src 'none'; worker-src 'none'; form-action 'none'; upgrade-insecure-requests">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Reliable Webhook Delivery in Distributed Systems | ReliableWebhooks</title>
+  <meta name="description" content="ReliableWebhooks architecture case study: at-least-once delivery, leases, retry with backoff, HMAC, observability, and extensible persistence in .NET.">
+  <meta name="author" content="Rodrigo de Oliveira">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#070b14">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://rodri-oliveira-dev.github.io/en/case-studies/reliable-webhooks/">
+  <link rel="alternate" hreflang="pt-BR" href="https://rodri-oliveira-dev.github.io/case-studies/reliable-webhooks/">
+  <link rel="alternate" hreflang="en" href="https://rodri-oliveira-dev.github.io/en/case-studies/reliable-webhooks/">
+  <link rel="alternate" hreflang="x-default" href="https://rodri-oliveira-dev.github.io/case-studies/reliable-webhooks/">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="stylesheet" href="/assets/css/site.css">
+  <link rel="stylesheet" href="/assets/css/mobile-enhancements.css">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Rodrigo de Oliveira">
+  <meta property="og:title" content="Reliable Webhook Delivery in Distributed Systems">
+  <meta property="og:description" content="Leases, retries, HMAC, and extensible persistence without pretending exactly-once delivery exists.">
+  <meta property="og:url" content="https://rodri-oliveira-dev.github.io/en/case-studies/reliable-webhooks/">
+  <meta property="og:image" content="https://rodri-oliveira-dev.github.io/assets/social/rodrigo-de-oliveira-og-en.png">
+  <meta property="og:image:alt" content="Rodrigo de Oliveira — Software Architect">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="pt_BR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Reliable Webhook Delivery in Distributed Systems">
+  <meta name="twitter:description" content="ReliableWebhooks: at-least-once delivery, leases, retries, HMAC, and explicit limits.">
+  <meta name="twitter:image" content="https://rodri-oliveira-dev.github.io/assets/social/rodrigo-de-oliveira-og-en.png">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": ["Article", "TechArticle"],
+    "headline": "Reliable Webhook Delivery in Distributed Systems",
+    "description": "An architecture case study about at-least-once delivery, leases, retries, HMAC signing, observability, and extensible persistence with ReliableWebhooks.",
+    "datePublished": "2026-10-22",
+    "dateModified": "2026-10-22",
+    "image": "https://rodri-oliveira-dev.github.io/assets/social/rodrigo-de-oliveira-og-en.png",
+    "inLanguage": "en",
+    "url": "https://rodri-oliveira-dev.github.io/en/case-studies/reliable-webhooks/",
+    "author": {"@type": "Person", "name": "Rodrigo de Oliveira", "url": "https://rodri-oliveira-dev.github.io/"},
+    "about": {
+      "@type": "SoftwareSourceCode",
+      "name": "ReliableWebhooks",
+      "codeRepository": "https://github.com/rodri-oliveira-dev/ReliableWebhooks",
+      "programmingLanguage": ["C#", ".NET"],
+      "runtimePlatform": ".NET 10",
+      "license": "https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/LICENSE"
+    },
+    "keywords": ["webhooks", "at-least-once", "retry", "leases", "HMAC", "observability", ".NET", "software architecture"]
+  }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="/en/" aria-label="Rodrigo de Oliveira — portfolio"><span class="brand-symbol brand-symbol-image" aria-hidden="true"></span><span class="brand-name">Rodrigo de Oliveira</span></a>
+      <nav class="nav" aria-label="Case study navigation"><a href="#architecture">Architecture</a><a href="#scenarios">Scenarios</a><a href="#tradeoffs">Trade-offs</a><a href="#evidence">Evidence</a></nav>
+      <div class="language-switcher" role="group" aria-label="Language"><a class="lang-link active" href="/en/case-studies/reliable-webhooks/" lang="en" aria-current="page">EN</a><a class="lang-link" href="/case-studies/reliable-webhooks/" lang="pt-BR">PT</a></div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="case-study-hero">
+      <div class="container">
+        <p class="eyebrow">Architecture case study · open-source library</p>
+        <h1>Reliable Webhook Delivery in Distributed Systems</h1>
+        <p class="case-study-lead">An e-commerce platform must communicate order events even when receivers <strong>time out</strong>, return HTTP errors, become unavailable, or process the same delivery more than once.</p>
+        <div class="hero-actions"><a class="button primary" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks" target="_blank" rel="noreferrer">Open repository ↗</a><a class="button secondary" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/docs/production-usage.md" target="_blank" rel="noreferrer">Production guide ↗</a></div>
+        <p class="case-study-note">The e-commerce scenario is illustrative. The guarantees described here match the v1.0.0 API and tests; they are not claims of adoption, benchmarks, or production operation.</p>
+      </div>
+    </section>
+
+    <section class="section case-study-section">
+      <div class="container case-study-two-column">
+        <div><p class="eyebrow">Context and problem</p><h2>A direct POST cannot preserve intent when the network interrupts the conversation.</h2></div>
+        <div class="case-study-copy">
+          <p>After recording an order, sending HTTP once couples a business decision to a remote dependency. A timeout does not reveal whether the receiver processed the request; <code>5xx</code> responses may be temporary; a <code>4xx</code> normally requires correction rather than infinite retries.</p>
+          <p>If the process crashes after the receiver accepts the message but before success is persisted, a later attempt may duplicate the event. The solution must make queued work, attempts, temporary ownership, and terminal states observable without turning distributed uncertainty into an exactly-once promise.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section architecture-section">
+      <div class="container">
+        <div class="section-heading wide-heading"><p class="eyebrow">Architecture requirements</p><h2>Reliability is a set of contracts, not merely a retry policy.</h2></div>
+        <div class="case-study-constraint-grid">
+          <article><span>01</span><h3>Reliability</h3><p>With a conforming durable store, accepted work can survive the process and resume under an at-least-once model.</p></article>
+          <article><span>02</span><h3>Idempotency</h3><p>Stable IDs make enqueueing idempotent; the receiver still has to deduplicate effects.</p></article>
+          <article><span>03</span><h3>Scalability</h3><p>Bounded concurrency prevents over-claiming; leases coordinate workers that share a store.</p></article>
+          <article><span>04</span><h3>Security</h3><p>HTTPS is the default; HMAC-SHA256 authenticates the envelope when a signer and secret provider are registered.</p></article>
+          <article><span>05</span><h3>Observability</h3><p>Structured logs, <code>ActivitySource</code>, and <code>Meter</code> expose queueing, attempts, outcomes, and duration.</p></article>
+          <article><span>06</span><h3>Recovery</h3><p>An expired lease enables reclaim; retries persist their due time; terminal states stop being claimable.</p></article>
+        </div>
+        <div class="case-study-quality-list" role="group" aria-label="Prioritized quality attributes"><span>At-least-once</span><span>Idempotency</span><span>Bounded concurrency</span><span>Security</span><span>Observability</span><span>Evolvability</span></div>
+      </div>
+    </section>
+
+    <section class="section case-study-section" id="architecture">
+      <div class="container">
+        <div class="section-heading wide-heading"><p class="eyebrow">Solution architecture</p><h2>Separating intent, coordination, transport, and policy makes each guarantee explicit.</h2></div>
+        <figure class="case-study-figure">
+          <img src="/assets/diagrams/reliable-webhooks-delivery-flow.svg" alt="ReliableWebhooks flow: the application enqueues into a store, the dispatcher acquires a lease, the transport sends to the receiver, and success, retry, permanent failure, or dead letter is persisted with telemetry." width="1120" height="430">
+          <figcaption>The core defines the protocol. Actual durability comes from the application-provided <code>IWebhookDeliveryStore</code>, while effect idempotency belongs to the receiver.</figcaption>
+        </figure>
+        <ol class="case-study-flow" aria-label="Delivery flow">
+          <li><strong>1. Enqueue</strong><span><code>IWebhookEnqueueService</code> validates limits and uses a stable ID.</span></li>
+          <li><strong>2. Persistence</strong><span><code>IWebhookDeliveryStore</code> keeps the message, state, and schedule.</span></li>
+          <li><strong>3. Claim</strong><span><code>WebhookDispatcher</code> claims only due work within available capacity.</span></li>
+          <li><strong>4. Lease</strong><span>A token and expiration identify the active owner and reject stale writes.</span></li>
+          <li><strong>5. Transport</strong><span><code>IWebhookDeliveryTransport</code> represents one HTTP attempt.</span></li>
+          <li><strong>6. Transition</strong><span>Success, retry, permanent failure, or dead letter is persisted.</span></li>
+        </ol>
+        <div class="case-study-decision-grid">
+          <article><h3>Enqueue and stable identity</h3><p>The public service validates configured limits before persistence. The ID identifies the event–subscriber pair; enqueueing it again must return the existing record without replacing its payload, destination, or state.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/src/ReliableWebhooks/WebhookEnqueueService.cs" target="_blank" rel="noreferrer">Enqueue implementation ↗</a></article>
+          <article><h3>Store as a port</h3><p><code>IWebhookDeliveryStore</code> isolates storage technology but requires atomic claims, renewal, stale-owner rejection, and terminal transitions. The package ships no durable adapter.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/docs/persistence.md" target="_blank" rel="noreferrer">Persistence contract ↗</a></article>
+          <article><h3>Dispatcher and leases</h3><p>The dispatcher fills only available slots, renews a lease during an attempt, and cancels work after ownership is lost. On shutdown, it stops claiming and waits for the grace period.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/src/ReliableWebhooks/WebhookDispatcher.cs" target="_blank" rel="noreferrer">Dispatcher source ↗</a></article>
+          <article><h3>Replaceable transport</h3><p>One <code>SendAsync</code> call is one attempt. The HTTP transport classifies <code>2xx</code> as success, <code>408</code>, <code>425</code>, <code>429</code>, and <code>5xx</code> as retryable, and other statuses as permanent.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/src/ReliableWebhooks/DefaultWebhookHttpResponseClassifier.cs" target="_blank" rel="noreferrer">Default classifier ↗</a></article>
+          <article><h3>Backoff with jitter</h3><p>The default policy uses capped exponential backoff and positive jitter. A valid <code>Retry-After</code> may delay beyond the local cap; exhausting the attempt limit dead-letters the delivery.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/src/ReliableWebhooks/DefaultWebhookRetryPolicy.cs" target="_blank" rel="noreferrer">Default policy ↗</a></article>
+          <article><h3>HMAC and telemetry</h3><p>The HMAC-SHA256 signer covers timestamp, ID, event type, content type, and exact payload bytes. Instrumentation publishes stable trace and metric names without payload, signature, or destination.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/src/ReliableWebhooks/HmacSha256WebhookRequestSigner.cs" target="_blank" rel="noreferrer">HMAC signer ↗</a></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section architecture-section">
+      <div class="container">
+        <div class="section-heading wide-heading"><p class="eyebrow">Public API</p><h2>The application registers persistence, configures dispatch, and enqueues an immutable message.</h2></div>
+        <pre class="case-study-code" tabindex="0"><code><span class="code-comment">// Production: the application supplies a conforming durable store.</span>
+services.<span class="code-method">AddSingleton</span>&lt;<span class="code-type">IWebhookDeliveryStore</span>, <span class="code-type">MyDurableWebhookStore</span>&gt;();
+
+<span class="code-type">ReliableWebhooksBuilder</span> webhooks = services.<span class="code-method">AddReliableWebhooks</span>(options =&gt;
+{
+    options.Dispatcher.<span class="code-property">MaxConcurrency</span> = 8;
+    options.Dispatcher.<span class="code-property">LeaseDuration</span> = <span class="code-type">TimeSpan</span>.<span class="code-method">FromMinutes</span>(2);
+    options.Retry = <span class="code-keyword">new</span> <span class="code-type">WebhookRetryPolicyOptions</span> { <span class="code-property">MaxAttempts</span> = 5 };
+});
+webhooks.<span class="code-method">AddHostedDispatcher</span>();
+
+<span class="code-type">WebhookMessage</span> message = <span class="code-keyword">new</span>(
+    id: <span class="code-string">$"{orderCreated.EventId}:{subscriber.Id}"</span>,
+    eventType: <span class="code-string">"order.created"</span>,
+    destination: subscriber.WebhookUri,
+    payload: <span class="code-type">JsonSerializer</span>.<span class="code-method">SerializeToUtf8Bytes</span>(orderCreated),
+    contentType: <span class="code-string">"application/json"</span>);
+
+<span class="code-keyword">await</span> webhookEnqueueService.<span class="code-method">EnqueueAsync</span>(message, cancellationToken);</code></pre>
+        <p class="case-study-note"><code>AddHostedDispatcher()</code> is opt-in. An application may instead resolve <code>WebhookDispatcher</code> and own its lifecycle directly.</p>
+      </div>
+    </section>
+
+    <section class="section case-study-section" id="scenarios">
+      <div class="container">
+        <div class="section-heading wide-heading"><p class="eyebrow">Execution scenarios</p><h2>The guarantees show up in failure paths, not only in the happy path.</h2></div>
+        <div class="case-study-failure-grid">
+          <article><h3>Successful delivery</h3><p>The dispatcher acquires a lease, the transport receives <code>2xx</code>, and the store runs <code>MarkSucceededAsync</code>. <code>Succeeded</code> is terminal and is not normally claimed again.</p><p><strong>Guarantee:</strong> a success transition by the current owner; duplicates remain possible if the endpoint accepted the request but persisting success failed.</p></article>
+          <article><h3>Timeout followed by retry</h3><p>The transport returns a retryable failure. The policy calculates a due time with backoff/jitter, and the store runs <code>ScheduleRetryAsync</code>, releases the lease, and preserves the attempt count.</p><p><strong>Guarantee:</strong> another attempt after the schedule with a conforming store; a timeout does not prove the receiver did not process the request.</p></article>
+          <article><h3>Permanent failure</h3><p>A status such as <code>400</code> is permanent by default. The dispatcher calls <code>MarkPermanentlyFailedAsync</code>, and the item is not retried automatically.</p><p><strong>Guarantee:</strong> a traceable terminal state. Exhausted retryable failures become <code>DeadLettered</code>, also without automatic replay.</p></article>
+          <article><h3>Worker restart</h3><p>With a durable store, pending work remains available, and an abandoned lease can be reclaimed after expiration. The former token cannot persist a late transition.</p><p><strong>Limit:</strong> with <code>InMemoryWebhookDeliveryStore</code>, a restart loses the queue; there is no durable recovery in that mode.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section architecture-section" id="tradeoffs">
+      <div class="container">
+        <div class="section-heading wide-heading"><p class="eyebrow">Decisions and trade-offs</p><h2>The library controls the protocol; the application retains domain- and infrastructure-dependent decisions.</h2></div>
+        <div class="case-study-decision-grid">
+          <article><h3>At-least-once, not exactly-once</h3><p>Retrying after an uncertain remote outcome preserves the chance of delivery but accepts duplicates. Exactly-once over HTTP would require transaction coordination the library and receiver do not share.</p></article>
+          <article><h3>Leases, not uncoordinated execution</h3><p>Temporary ownership supports multiple workers and abandoned-work recovery. The store must provide atomic claims, an authoritative clock, and token compare-and-set semantics.</p></article>
+          <article><h3>Retry with backoff</h3><p>Spacing attempts reduces pressure on an unavailable receiver; jitter reduces synchronized retry storms. Recovery latency increases, and each policy must match the remote contract.</p></article>
+          <article><h3>Extensible persistence</h3><p>Keeping the core independent of databases and ORMs makes the library reusable. The explicit cost is an application-owned conforming durable adapter for production.</p></article>
+          <article><h3>Receiver idempotency</h3><p>A stable ID helps deduplication, but the library cannot control the remote effect. The receiver chooses an appropriate authenticated key and persists its own idempotency decision.</p></article>
+          <article><h3>Separated ports</h3><p>Store, transport, classifier, retry policy, signer, and providers can evolve independently. Composition gains flexibility, while custom implementations must preserve documented contracts.</p></article>
+        </div>
+        <section class="case-study-table-wrap" aria-label="Library and application responsibilities" tabindex="0">
+          <table class="case-study-table">
+            <caption class="visually-hidden">Responsibility split between ReliableWebhooks and the consuming application</caption>
+            <thead><tr><th>Library responsibility</th><th>Application responsibility</th></tr></thead>
+            <tbody>
+              <tr><td>Enqueue, claim, lease, attempt, and transition protocol.</td><td>Supply durable, atomic persistence appropriate for production.</td></tr>
+              <tr><td>Default HTTP transport, classification, and configurable retries.</td><td>Choose policy, limits, quotas, dead-letter operation, and any replay.</td></tr>
+              <tr><td>HMAC-SHA256 signer and secret/header provider hooks.</td><td>Manage secrets, rotation, destination authorization, and receiver verification.</td></tr>
+              <tr><td>Logs, traces, and metrics with stable public names.</td><td>Collect, export, alert, define SLOs, and protect persisted data.</td></tr>
+              <tr><td>Stable identity and idempotent enqueue in the store contract.</td><td>Make the receiver's business effects idempotent.</td></tr>
+            </tbody>
+          </table>
+        </section>
+      </div>
+    </section>
+
+    <section class="section case-study-limitations">
+      <div class="container case-study-two-column">
+        <div><p class="eyebrow">Limitations and evolution</p><h2>Reliability only extends as far as the implementation truly supports.</h2></div>
+        <div class="case-study-copy">
+          <p>The library does not guarantee exactly-once delivery, a distributed transaction with the receiver, receiver-side idempotency, automatic dead-letter replay, or a secret-rotation policy. The receiver must tolerate duplicate messages.</p>
+          <p><code>InMemoryWebhookDeliveryStore</code> is process-local and not durable. The package ships no production store: the application must implement a conforming <code>IWebhookDeliveryStore</code>, including atomicity, leasing, coordination time, state persistence, and backend-specific tests.</p>
+          <p><code>PublicNetworkWebhookDestinationPolicy</code> reduces SSRF risk for untrusted URLs but does not replace change authorization, allow-lists, egress controls, or connection-time DNS-rebinding protection. HTTPS provides confidentiality; HMAC authenticates content but does not encrypt the payload.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section case-study-section">
+      <div class="container case-study-two-column">
+        <div><p class="eyebrow">Outcomes and lessons</p><h2>The verifiable benefit is making failure, ownership, and recovery part of the model.</h2></div>
+        <div class="case-study-copy">
+          <p>Instead of hiding failures inside an HTTP loop, the design records when work exists, who may change it, when another attempt becomes eligible, and which states finish the flow. Concurrency and recovery can then be reasoned about through executable evidence.</p>
+          <p>The central lesson is about boundaries: retries do not create exactly-once, leases do not create durability, and HMAC does not create confidentiality. The architectural outcome depends on the library protocol, persistence adapter, observable operation, and an idempotent receiver working together.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section architecture-section" id="evidence">
+      <div class="container">
+        <div class="section-heading wide-heading"><p class="eyebrow">Technical evidence</p><h2>Documentation, implementation, tests, and a runnable sample available for inspection.</h2></div>
+        <div class="case-study-evidence-list">
+          <a href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/README.md" target="_blank" rel="noreferrer"><strong>README</strong><span>Scope, guarantees, quick start, and library boundaries.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/docs/production-usage.md" target="_blank" rel="noreferrer"><strong>Production guide</strong><span>DI, retries, leases, HMAC, destination security, telemetry, and troubleshooting.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/docs/persistence.md" target="_blank" rel="noreferrer"><strong>Persistence contract</strong><span>Durability, atomic claiming, ownership, clocks, and required transitions.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/tests/ReliableWebhooks.Tests/Conformance/WebhookDeliveryStoreConformanceTests.cs" target="_blank" rel="noreferrer"><strong>Conformance tests</strong><span>Idempotent enqueue, concurrency, reclaim, renewal, retry, and terminal states.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/tests/ReliableWebhooks.Tests/WebhookDispatcherTests.cs" target="_blank" rel="noreferrer"><strong>Dispatcher tests</strong><span>Success, failure, concurrency, lease renewal, shutdown, and error isolation.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/tests/ReliableWebhooks.Tests/ObservabilityTests.cs" target="_blank" rel="noreferrer"><strong>Observability tests</strong><span>Public names, logs, traces, metrics, and sensitive-data exclusion.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/tree/main/samples/ReliableWebhooks.Sample" target="_blank" rel="noreferrer"><strong>Runnable sample</strong><span>Success, retry, dead letter, signing, and diagnostics with the in-memory store.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/ReliableWebhooks" target="_blank" rel="noreferrer"><strong>Repository</strong><span>Source, documentation, tests, release, and project history.</span></a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="container footer-inner"><span>© <span id="year"></span> Rodrigo de Oliveira</span><span><a class="text-link" href="/en/">Back to portfolio</a></span></div></footer>
+  <script src="/assets/js/site.js" defer></script>
+</body>
+</html>
