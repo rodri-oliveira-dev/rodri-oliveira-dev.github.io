@@ -118,7 +118,7 @@
           <li><strong>6. Transição</strong><span>Sucesso, retry, falha permanente ou dead letter são persistidos.</span></li>
         </ol>
         <div class="case-study-decision-grid">
-          <article><h3>Enqueue e ID estável</h3><p>O serviço público valida os limites configurados antes de persistir. Enfileirar novamente o mesmo ID deve retornar o registro existente sem substituir payload, destino ou estado.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/src/ReliableWebhooks/WebhookEnqueueService.cs" target="_blank" rel="noreferrer">Implementação do enqueue ↗</a></article>
+          <article><h3>Enqueue e ID estável</h3><p>O serviço público valida os limites configurados antes de persistir. O ID identifica o par evento–subscriber; enfileirá-lo novamente deve retornar o registro existente sem substituir payload, destino ou estado.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/src/ReliableWebhooks/WebhookEnqueueService.cs" target="_blank" rel="noreferrer">Implementação do enqueue ↗</a></article>
           <article><h3>Store como porta</h3><p><code>IWebhookDeliveryStore</code> isola tecnologia de persistência, mas exige claim atômico, renovação, rejeição de owner obsoleto e transições terminais. O pacote não inclui adapter durável.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/docs/persistence.md" target="_blank" rel="noreferrer">Contrato de persistência ↗</a></article>
           <article><h3>Dispatcher e leases</h3><p>O dispatcher preenche apenas slots disponíveis, renova a lease durante a tentativa e cancela o trabalho quando perde ownership. No shutdown, para novos claims e aguarda o grace period.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/src/ReliableWebhooks/WebhookDispatcher.cs" target="_blank" rel="noreferrer">Código do dispatcher ↗</a></article>
           <article><h3>Transporte substituível</h3><p>Uma chamada a <code>SendAsync</code> é uma tentativa. O transporte HTTP classifica <code>2xx</code> como sucesso, <code>408</code>, <code>425</code>, <code>429</code> e <code>5xx</code> como retryable; demais status são permanentes.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/src/ReliableWebhooks/DefaultWebhookHttpResponseClassifier.cs" target="_blank" rel="noreferrer">Classificador padrão ↗</a></article>
@@ -143,7 +143,7 @@ services.<span class="code-method">AddSingleton</span>&lt;<span class="code-type
 webhooks.<span class="code-method">AddHostedDispatcher</span>();
 
 <span class="code-type">WebhookMessage</span> message = <span class="code-keyword">new</span>(
-    id: orderCreated.EventId,
+    id: <span class="code-string">$"{orderCreated.EventId}:{subscriber.Id}"</span>,
     eventType: <span class="code-string">"order.created"</span>,
     destination: subscriber.WebhookUri,
     payload: <span class="code-type">JsonSerializer</span>.<span class="code-method">SerializeToUtf8Bytes</span>(orderCreated),

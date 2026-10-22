@@ -118,7 +118,7 @@
           <li><strong>6. Transition</strong><span>Success, retry, permanent failure, or dead letter is persisted.</span></li>
         </ol>
         <div class="case-study-decision-grid">
-          <article><h3>Enqueue and stable identity</h3><p>The public service validates configured limits before persistence. Enqueueing the same ID again must return the existing record without replacing its payload, destination, or state.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/src/ReliableWebhooks/WebhookEnqueueService.cs" target="_blank" rel="noreferrer">Enqueue implementation ↗</a></article>
+          <article><h3>Enqueue and stable identity</h3><p>The public service validates configured limits before persistence. The ID identifies the event–subscriber pair; enqueueing it again must return the existing record without replacing its payload, destination, or state.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/src/ReliableWebhooks/WebhookEnqueueService.cs" target="_blank" rel="noreferrer">Enqueue implementation ↗</a></article>
           <article><h3>Store as a port</h3><p><code>IWebhookDeliveryStore</code> isolates storage technology but requires atomic claims, renewal, stale-owner rejection, and terminal transitions. The package ships no durable adapter.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/docs/persistence.md" target="_blank" rel="noreferrer">Persistence contract ↗</a></article>
           <article><h3>Dispatcher and leases</h3><p>The dispatcher fills only available slots, renews a lease during an attempt, and cancels work after ownership is lost. On shutdown, it stops claiming and waits for the grace period.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/src/ReliableWebhooks/WebhookDispatcher.cs" target="_blank" rel="noreferrer">Dispatcher source ↗</a></article>
           <article><h3>Replaceable transport</h3><p>One <code>SendAsync</code> call is one attempt. The HTTP transport classifies <code>2xx</code> as success, <code>408</code>, <code>425</code>, <code>429</code>, and <code>5xx</code> as retryable, and other statuses as permanent.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/src/ReliableWebhooks/DefaultWebhookHttpResponseClassifier.cs" target="_blank" rel="noreferrer">Default classifier ↗</a></article>
@@ -143,7 +143,7 @@ services.<span class="code-method">AddSingleton</span>&lt;<span class="code-type
 webhooks.<span class="code-method">AddHostedDispatcher</span>();
 
 <span class="code-type">WebhookMessage</span> message = <span class="code-keyword">new</span>(
-    id: orderCreated.EventId,
+    id: <span class="code-string">$"{orderCreated.EventId}:{subscriber.Id}"</span>,
     eventType: <span class="code-string">"order.created"</span>,
     destination: subscriber.WebhookUri,
     payload: <span class="code-type">JsonSerializer</span>.<span class="code-method">SerializeToUtf8Bytes</span>(orderCreated),
