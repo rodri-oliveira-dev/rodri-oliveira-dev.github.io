@@ -38,13 +38,39 @@ jobs:
       - name: Validate contrast tokens
         run: node .github/scripts/check-contrast.mjs
 
+      - name: Validate accessibility page discovery
+        run: |
+          node - <<'NODE'
+          const config = require("./.pa11yci.cjs");
+          const fs = require("node:fs");
+          const path = require("node:path");
+          const origin = "http://127.0.0.1:8080";
+          const expected = new Set([`${origin}/`, `${origin}/en/`]);
+          for (const root of ["case-studies", path.join("en", "case-studies")]) {
+            for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
+              if (entry.isDirectory() && fs.existsSync(path.join(root, entry.name, "index.html"))) {
+                expected.add(`${origin}/${root.split(path.sep).join("/")}/${entry.name}/`);
+              }
+            }
+          }
+          const actual = new Set(config.urls);
+          const missing = [...expected].filter((url) => !actual.has(url));
+          const unexpected = [...actual].filter((url) => !expected.has(url));
+          if (actual.size !== config.urls.length || missing.length || unexpected.length) {
+            throw new Error(`Accessibility URL drift. Missing: ${missing}; unexpected: ${unexpected}.`);
+          }
+          console.log(`Discovered ${config.urls.length} accessibility URLs.`);
+          NODE
+
       - name: Prepare local accessibility fixture
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
-          for file_name in ("index.html", "en/index.html", "case-studies/dotnet-observability-lab/index.html", "en/case-studies/dotnet-observability-lab/index.html", "case-studies/repo-control-center/index.html", "en/case-studies/repo-control-center/index.html"):
-              path = Path(file_name)
+          pages = [Path("index.html"), Path("en/index.html")]
+          pages.extend(sorted(Path("case-studies").glob("*/index.html")))
+          pages.extend(sorted(Path("en/case-studies").glob("*/index.html")))
+          for path in pages:
               content = path.read_text(encoding="utf-8")
               content = content.replace("; upgrade-insecure-requests", "")
               path.write_text(content, encoding="utf-8")
@@ -66,7 +92,7 @@ jobs:
           exit 1
 
       - name: Run WCAG 2 AA checks
-        run: npx --no-install pa11y-ci --config .pa11yci --threshold 0
+        run: npx --no-install pa11y-ci --config .pa11yci.cjs --threshold 0
 
       - name: Stop local site
         if: always()

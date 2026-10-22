@@ -1,5 +1,6 @@
 ADR
 ADRs
+adrguard
 Apigee
 Aspire
 best-effort
@@ -7,6 +8,7 @@ ciclomática
 CNPJ
 CrispyWaffle
 Dapper
+Dommel
 DDD
 dotnet
 DotNetRepoInspector
@@ -35,6 +37,7 @@ microserviço
 microserviços
 Mollema
 MSBuild
+materializers
 multipart
 Node
 nojekyll
@@ -53,10 +56,13 @@ Repo2C4
 rodri
 Rodrigo
 Roslyn
+SARIF
 serialização
 SPA
 stdio
 TechArticle
+CUST
+booleano
 Terraform
 TOML
 weme
