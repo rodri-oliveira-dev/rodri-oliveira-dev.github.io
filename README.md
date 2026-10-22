@@ -72,6 +72,8 @@ A documentação completa dos workflows, gatilhos, quality gates, relatórios em
 - `sitemap.xml` — descoberta das URLs bilíngues
 - `.nojekyll` — publicação direta pelo GitHub Pages
 
+Os estudos de caso são descobertos automaticamente por `.github/scripts/sync-seo.py` quando existe um par `case-studies/<slug>/index.html` e `en/case-studies/<slug>/index.html`. O mesmo padrão alimenta sitemap, validações e notificações, evitando listas de URLs duplicadas ao adicionar novos estudos.
+
 ## Contato
 
 - **E-mail:** [rodrigodotnet@outlook.com](mailto:rodrigodotnet@outlook.com)

@@ -100,23 +100,13 @@ jobs:
               if "sitemap.xml" in changed:
                   urls.update(sitemap_urls())
 
-              page_paths = {
-                  "case-studies/dotnet-observability-lab/index.html": (
-                      f"{site_url}/case-studies/dotnet-observability-lab/"
-                  ),
-                  "en/case-studies/dotnet-observability-lab/index.html": (
-                      f"{site_url}/en/case-studies/dotnet-observability-lab/"
-                  ),
-                  "case-studies/repo-control-center/index.html": (
-                      f"{site_url}/case-studies/repo-control-center/"
-                  ),
-                  "en/case-studies/repo-control-center/index.html": (
-                      f"{site_url}/en/case-studies/repo-control-center/"
-                  ),
-              }
-              for path, url in page_paths.items():
-                  if path in changed:
-                      urls.add(url)
+              for path in changed:
+                  page = Path(path)
+                  parts = page.parts
+                  if len(parts) == 3 and parts[0] == "case-studies" and parts[2] == "index.html":
+                      urls.add(f"{site_url}/case-studies/{parts[1]}/")
+                  elif len(parts) == 4 and parts[:2] == ("en", "case-studies") and parts[3] == "index.html":
+                      urls.add(f"{site_url}/en/case-studies/{parts[2]}/")
 
           payload = {
               "host": os.environ["SITE_HOST"],

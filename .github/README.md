@@ -27,7 +27,7 @@ O [`site-validation.yml`](workflows/site-validation.yml) é o gate estrutural pr
 
 Ele executa:
 
-- `html-validate` em `index.html`, `en/index.html` e `pt-br/index.html`;
+- `html-validate` nas homepages, no redirecionamento legado e em todos os `index.html` de `case-studies/` e `en/case-studies/`;
 - Lychee nos HTMLs e no `README.md` para detectar links inválidos;
 - CSpell para ortografia em português, inglês e vocabulário técnico conhecido;
 - `actionlint` para validar a sintaxe e a estrutura dos workflows do GitHub Actions.
@@ -51,14 +51,14 @@ Esse último ponto funciona como um gate de drift: se catálogo, homepage, dados
 
 ### Accessibility
 
-O [`accessibility.yml`](workflows/accessibility.yml) sobe o site em um servidor HTTP local e executa Pa11y CI contra as páginas em português e inglês.
+O [`accessibility.yml`](workflows/accessibility.yml) sobe o site em um servidor HTTP local e executa Pa11y CI contra as homepages e todos os estudos de caso em português e inglês.
 
 A configuração usa WCAG 2 AA como baseline e threshold zero para os problemas considerados pelo gate. O objetivo é detectar regressões de semântica, ARIA, estrutura e outras regras automatizáveis de acessibilidade antes do merge.
 
 Arquivos relacionados:
 
-- [`../.pa11yci`](../.pa11yci) — configuração do Pa11y CI;
-- `index.html` e `en/index.html` — páginas verificadas.
+- [`../.pa11yci.cjs`](../.pa11yci.cjs) — configuração do Pa11y CI e descoberta dinâmica dos estudos de caso;
+- `index.html`, `en/index.html`, `case-studies/*/index.html` e `en/case-studies/*/index.html` — páginas verificadas.
 
 Alguns ajustes de CSP são aplicados apenas ao fixture efêmero usado pelo runner local. A política CSP publicada no site não é alterada pelo workflow.
 
@@ -85,7 +85,7 @@ O relatório estruturado é produzido por [`scripts/summarize-zizmor.mjs`](scrip
 
 ### Lighthouse CI
 
-O [`lighthouse.yml`](workflows/lighthouse.yml) sobe o site localmente e executa Lighthouse CI contra `/` e `/en/`.
+O [`lighthouse.yml`](workflows/lighthouse.yml) sobe o site localmente e executa Lighthouse CI contra `/`, `/en/` e todos os pares bilíngues descobertos em `case-studies/`.
 
 Cada página é medida três vezes para reduzir variação do runner. Os valores usados para os gates são agregados pela mediana.
 
@@ -98,7 +98,7 @@ Os budgets estão definidos em [`../lighthouserc.cjs`](../lighthouserc.cjs):
 | Best Practices | 95% | Blocking |
 | SEO | 95% | Blocking |
 
-Em Pull Requests, o workflow mantém um único comentário atualizado com os scores das duas páginas, os thresholds e o resultado de cada gate.
+Em Pull Requests, o workflow mantém um único comentário atualizado com os scores das homepages e de todos os estudos de caso, os thresholds e o resultado de cada gate.
 
 O resumo é produzido por [`scripts/summarize-lighthouse.mjs`](scripts/summarize-lighthouse.mjs).
 
@@ -178,7 +178,7 @@ O [`indexnow.yml`](workflows/indexnow.yml) notifica o endpoint público do Index
 
 O workflow também possui execução manual e uma execução diária de fallback. Esse agendamento é independente da sincronização da newsletter: ele existe apenas para cobrir cenários em que uma alteração tenha sido mesclada por uma credencial de automação que não origine um novo evento `push` de workflow.
 
-A submissão é limitada às URLs públicas pertinentes à alteração, incluindo a homepage, a versão em inglês e o RSS quando aplicável.
+A submissão é limitada às URLs públicas pertinentes à alteração, incluindo a homepage, a versão em inglês, estudos de caso descobertos pela estrutura de diretórios e o RSS quando aplicável.
 
 ### Optimize Open Graph image
 
@@ -248,7 +248,7 @@ Além dos workflows, a automação depende destes arquivos:
 - [`dependabot.yml`](dependabot.yml) — atualização das GitHub Actions;
 - [`../zizmor.yml`](../zizmor.yml) — política do scanner de segurança;
 - [`../lighthouserc.cjs`](../lighthouserc.cjs) — URLs, número de runs e budgets do Lighthouse;
-- [`../.pa11yci`](../.pa11yci) — configuração de acessibilidade;
+- [`../.pa11yci.cjs`](../.pa11yci.cjs) — configuração de acessibilidade e descoberta das páginas;
 - [`scripts/render-newsletter.py`](scripts/render-newsletter.py) — renderização dos artigos;
 - [`scripts/generate-newsletter-feed.py`](scripts/generate-newsletter-feed.py) — geração do RSS;
 - [`scripts/sync-seo.py`](scripts/sync-seo.py) — sincronização de JSON-LD, RSS discovery e sitemap;

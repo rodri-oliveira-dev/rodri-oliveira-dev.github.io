@@ -39,7 +39,10 @@ jobs:
         run: npm install --no-save --ignore-scripts html-validate@11.15.0 @cspell/dict-pt-br@2.4.2
 
       - name: Validate HTML
-        run: npx --no-install html-validate index.html en/index.html pt-br/index.html case-studies/dotnet-observability-lab/index.html en/case-studies/dotnet-observability-lab/index.html case-studies/repo-control-center/index.html en/case-studies/repo-control-center/index.html
+        shell: bash
+        run: |
+          mapfile -t case_studies < <(find case-studies en/case-studies -mindepth 2 -maxdepth 2 -name index.html -print | sort)
+          npx --no-install html-validate index.html en/index.html pt-br/index.html "${case_studies[@]}"
 
       - name: Validate links
         uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2
@@ -52,14 +55,12 @@ jobs:
             --max-retries 1
             --exclude 'https://(www\.)?linkedin\.com/'
             --exclude 'https://medium\.com/'
-            --exclude '^https://rodri-oliveira-dev\.github\.io/(en/)?case-studies/(dotnet-observability-lab|repo-control-center)/?$'
+            --exclude '^https://rodri-oliveira-dev\.github\.io/(en/)?case-studies/[^/]+/?$'
             './index.html'
             './en/index.html'
             './pt-br/index.html'
-            './case-studies/dotnet-observability-lab/index.html'
-            './en/case-studies/dotnet-observability-lab/index.html'
-            './case-studies/repo-control-center/index.html'
-            './en/case-studies/repo-control-center/index.html'
+            './case-studies/**/*.html'
+            './en/case-studies/**/*.html'
             './README.md'
           fail: true
         env:
@@ -72,10 +73,8 @@ jobs:
           files: |
             index.html
             en/index.html
-            case-studies/dotnet-observability-lab/index.html
-            en/case-studies/dotnet-observability-lab/index.html
-            case-studies/repo-control-center/index.html
-            en/case-studies/repo-control-center/index.html
+            case-studies/**/*.html
+            en/case-studies/**/*.html
             README.md
           incremental_files_only: false
           strict: true

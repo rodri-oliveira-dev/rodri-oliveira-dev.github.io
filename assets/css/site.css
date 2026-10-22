@@ -1508,6 +1508,97 @@ h1 {
     var(--surface-soft);
 }
 
+.case-study-figure {
+  margin: 34px 0 0;
+}
+
+.case-study-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.case-study-figure figcaption {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.case-study-code {
+  overflow-x: auto;
+  margin: 22px 0;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: #dbeafe;
+  background: #050914;
+  font: 13px/1.65 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  tab-size: 2;
+}
+
+.case-study-code code {
+  font: inherit;
+}
+
+.case-study-table-wrap {
+  overflow-x: auto;
+  margin-top: 24px;
+}
+
+.case-study-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.case-study-table th,
+.case-study-table td {
+  padding: 16px;
+  border: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.case-study-table th {
+  color: var(--text);
+  background: rgba(125, 211, 252, .06);
+}
+
+.case-study-table td {
+  color: var(--muted);
+}
+
+.case-study-outcomes {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.case-study-outcomes article {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .012);
+}
+
+.case-study-outcomes h4 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  color: var(--accent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 15px;
+}
+
+.case-study-outcomes p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 @media (max-width: 1000px) {
   .case-study-constraint-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -1515,6 +1606,10 @@ h1 {
 
   .case-study-flow {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  .case-study-outcomes {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -1548,6 +1643,10 @@ h1 {
   .case-study-evidence-list a {
     grid-template-columns: 1fr;
     gap: 6px;
+  }
+
+  .case-study-outcomes {
+    grid-template-columns: 1fr;
   }
 }
 
