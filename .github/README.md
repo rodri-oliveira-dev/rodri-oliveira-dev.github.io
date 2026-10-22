@@ -45,6 +45,7 @@ Ele verifica que:
 - `index.html` e `en/index.html` possuem RSS autodiscovery;
 - o JSON-LD estruturado permanece válido e consistente;
 - `sitemap.xml` é XML válido e possui `lastmod` para as URLs indexáveis;
+- a geração de `lastmod` preserva datas versionadas para páginas sem alteração, sem depender do dia em que o runner executa;
 - executar [`scripts/sync-seo.py`](scripts/sync-seo.py) não produz diferenças não commitadas.
 
 Esse último ponto funciona como um gate de drift: se catálogo, homepage, dados estruturados ou sitemap ficarem fora de sincronia, o Pull Request falha antes do merge.

@@ -8,6 +8,7 @@ import re
 import subprocess
 from datetime import date, datetime, timezone
 from pathlib import Path
+import xml.etree.ElementTree as ET
 from xml.sax.saxutils import escape
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -350,6 +351,44 @@ def max_date(*values: str) -> str:
     return max(parsed).isoformat()
 
 
+def load_sitemap_lastmods() -> dict[str, str]:
+    """Read committed lastmod values before regenerating the sitemap."""
+    if not SITEMAP_PATH.exists():
+        return {}
+
+    try:
+        root = ET.parse(SITEMAP_PATH).getroot()
+    except ET.ParseError as error:
+        raise SystemExit(f"Invalid sitemap XML: {error}") from error
+
+    namespace = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+    lastmods: dict[str, str] = {}
+    for entry in root.findall("sm:url", namespace):
+        url = (entry.findtext("sm:loc", namespaces=namespace) or "").strip()
+        lastmod = (entry.findtext("sm:lastmod", namespaces=namespace) or "").strip()
+        if not url or not lastmod:
+            continue
+        try:
+            date.fromisoformat(lastmod)
+        except ValueError as error:
+            raise SystemExit(f"Invalid sitemap lastmod for {url}: {lastmod}") from error
+        lastmods[url] = lastmod
+    return lastmods
+
+
+def page_lastmod(
+    url: str,
+    path: Path,
+    today: str,
+    existing_lastmods: dict[str, str],
+) -> str:
+    """Resolve lastmod without changing clean pages when the calendar advances."""
+    if file_was_dirty(path):
+        return today
+    existing_lastmod = existing_lastmods.get(url)
+    return existing_lastmod if existing_lastmod else git_last_modified(path)
+
+
 def discover_case_studies() -> list[tuple[str, Path, Path]]:
     """Return complete bilingual case-study pairs ordered by slug."""
     pt_root = ROOT / "case-studies"
@@ -373,11 +412,12 @@ def case_study_sitemap_block(
     pt_path: Path,
     en_path: Path,
     today: str,
+    existing_lastmods: dict[str, str],
 ) -> str:
     pt_url = f"{SITE_URL}case-studies/{slug}/"
     en_url = f"{EN_URL}case-studies/{slug}/"
-    pt_lastmod = today if file_was_dirty(pt_path) else git_last_modified(pt_path)
-    en_lastmod = today if file_was_dirty(en_path) else git_last_modified(en_path)
+    pt_lastmod = page_lastmod(pt_url, pt_path, today, existing_lastmods)
+    en_lastmod = page_lastmod(en_url, en_path, today, existing_lastmods)
     return f'''  <url>
     <loc>{escape(pt_url)}</loc>
     <xhtml:link rel="alternate" hreflang="pt-BR" href="{escape(pt_url)}"/>
@@ -401,15 +441,25 @@ def write_sitemap(
     case_studies: list[tuple[str, Path, Path]],
 ) -> None:
     today = datetime.now(timezone.utc).date().isoformat()
+    existing_lastmods = load_sitemap_lastmods()
     latest_article = (
         str(articles[0]["publishedAt"]).strip() if articles else git_last_modified(PT_INDEX)
     )
-    pt_git = git_last_modified(PT_INDEX)
-    en_git = git_last_modified(EN_INDEX)
-    pt_lastmod = max_date(latest_article, today if pt_dirty else pt_git)
-    en_lastmod = max_date(today if en_dirty else en_git)
+    pt_page_lastmod = today if pt_dirty else existing_lastmods.get(SITE_URL)
+    if not pt_page_lastmod:
+        pt_page_lastmod = git_last_modified(PT_INDEX)
+    en_lastmod = today if en_dirty else existing_lastmods.get(EN_URL)
+    if not en_lastmod:
+        en_lastmod = git_last_modified(EN_INDEX)
+    pt_lastmod = max_date(latest_article, pt_page_lastmod)
     case_blocks = "\n".join(
-        case_study_sitemap_block(slug, pt_path, en_path, today)
+        case_study_sitemap_block(
+            slug,
+            pt_path,
+            en_path,
+            today,
+            existing_lastmods,
+        )
         for slug, pt_path, en_path in case_studies
     )
 
