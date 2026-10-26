@@ -149,12 +149,13 @@ class SpanishInfrastructureTests(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, "Spanish coverage is incomplete"):
                 sync.discover_case_studies(require_complete_spanish=True)
 
-    def test_current_navigation_keeps_active_language_and_no_public_es_link(self):
-        for relative_path in ("index.html", "en/index.html"):
+    def test_home_navigation_exposes_all_languages_and_marks_current_page(self):
+        for relative_path in ("index.html", "en/index.html", "es/index.html"):
             html = (sync.ROOT / relative_path).read_text(encoding="utf-8")
             self.assertIn('class="language-switcher"', html)
             self.assertIn('aria-current="page"', html)
-            self.assertNotIn('href="/es/"', html)
+            for href in ('href="/"', 'href="/en/"', 'href="/es/"'):
+                self.assertIn(href, html)
 
 
 if __name__ == "__main__":

@@ -24,9 +24,10 @@ O site utiliza URLs dedicadas e indexáveis para cada idioma:
 
 - Português (Brasil), idioma padrão: `/`
 - Inglês: `/en/`
+- Espanhol latino-americano: `/es/`
 - URL legada em português: `/pt-br/`, redirecionada para `/`
 
-As duas páginas possuem URLs canônicas, alternates com `hreflang`, metadados Open Graph e dados estruturados Schema.org. O sitemap contém as duas variantes de idioma e usa `lastmod` para sinalizar alterações relevantes.
+As três homepages possuem URLs canônicas, alternates com `hreflang`, metadados Open Graph e dados estruturados Schema.org. O sitemap contém as variantes disponíveis de cada página e usa `lastmod` para sinalizar alterações relevantes.
 
 ## RSS da newsletter
 
@@ -60,6 +61,7 @@ A documentação completa dos workflows, gatilhos, quality gates, relatórios em
 
 - `index.html` — portfólio em português e idioma padrão
 - `en/index.html` — portfólio em inglês
+- `es/index.html` — portfólio em espanhol latino-americano
 - `pt-br/index.html` — redirecionamento legado para a raiz em português
 - `case-studies/` e `en/case-studies/` — estudos de caso arquiteturais bilíngues do portfólio
 - `newsletter/feed.xml` — feed RSS 2.0 da newsletter Café com código

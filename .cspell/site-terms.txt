@@ -13,12 +13,14 @@ DDD
 dotnet
 DotNetRepoInspector
 Engineering
+Español
 eviction
 Evolutibilidade
 exactly-once
 FluentMap
 GCP
 gamificação
+gamificación
 GitHub
 HANA
 Henk
@@ -26,6 +28,8 @@ i18n
 IaC
 IAM
 inspectable
+idempotencia
+Inbox
 Intelligence
 Keycloak
 lastmod
@@ -36,6 +40,7 @@ mensageria
 microserviço
 microserviços
 Mollema
+microservicios
 MSBuild
 materializers
 multipart
@@ -47,6 +52,8 @@ Oliveira
 OpenCNPJ
 OpenSSF
 OpenTelemetry
+Observabilidad
+observabilidad
 Outbox
 PubSub
 redelivery
@@ -58,6 +65,8 @@ Rodrigo
 Roslyn
 SARIF
 serialização
+Selenium
+sept
 SPA
 stdio
 TechArticle
