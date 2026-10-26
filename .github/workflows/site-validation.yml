@@ -44,9 +44,8 @@ jobs:
       - name: Validate HTML
         shell: bash
         run: |
-          pages=(index.html en/index.html pt-br/index.html)
-          [[ -f es/index.html ]] && pages+=(es/index.html)
-          mapfile -t case_studies < <(find case-studies en/case-studies es/case-studies -mindepth 2 -maxdepth 2 -name index.html -print 2>/dev/null | sort)
+          pages=(index.html en/index.html es/index.html pt-br/index.html)
+          mapfile -t case_studies < <(find case-studies en/case-studies es/case-studies -mindepth 2 -maxdepth 2 -name index.html -print | sort)
           npx --no-install html-validate "${pages[@]}" "${case_studies[@]}"
 
       - name: Validate links
@@ -60,7 +59,8 @@ jobs:
             --max-retries 1
             --exclude 'https://(www\.)?linkedin\.com/'
             --exclude 'https://medium\.com/'
-            --exclude '^https://rodri-oliveira-dev\.github\.io/(en/)?case-studies/[^/]+/?$'
+            --exclude '^https://rodri-oliveira-dev\.github\.io/es/?$'
+            --exclude '^https://rodri-oliveira-dev\.github\.io/(?:(?:en|es)/)?case-studies/[^/]+/?$'
             './index.html'
             './en/index.html'
             './pt-br/index.html'

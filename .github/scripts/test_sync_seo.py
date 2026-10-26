@@ -116,7 +116,7 @@ class SpanishInfrastructureTests(unittest.TestCase):
         self.assertEqual(first.count('hreflang="es"'), 3)
         self.assertIn("/es/case-studies/example/", first)
 
-    def test_case_studies_allow_partial_spanish_coverage(self):
+    def test_partial_spanish_coverage_requires_explicit_migration_mode(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
             variants = {}
@@ -138,7 +138,7 @@ class SpanishInfrastructureTests(unittest.TestCase):
             spanish_page.touch()
 
             with patch.object(sync, "LANGUAGE_VARIANTS", variants):
-                discovered = sync.discover_case_studies()
+                discovered = sync.discover_case_studies(require_complete_spanish=False)
 
             by_slug = dict(discovered)
             self.assertIn("es-419", by_slug["translated"])

@@ -38,9 +38,9 @@ jobs:
         run: |
           git diff --check
 
-          if ! git diff --quiet -- index.html en/index.html es/index.html sitemap.xml; then
+          if ! git diff --quiet -- index.html en/index.html es/index.html case-studies en/case-studies es/case-studies sitemap.xml; then
             echo "SEO artifacts are out of sync. Run: python3 .github/scripts/sync-seo.py"
-            git diff -- index.html en/index.html es/index.html sitemap.xml
+            git diff -- index.html en/index.html es/index.html case-studies en/case-studies es/case-studies sitemap.xml
             exit 1
           fi
 
@@ -52,11 +52,10 @@ jobs:
           import xml.etree.ElementTree as ET
           from pathlib import Path
 
-          home_pages = [
-              path for path in (Path("index.html"), Path("en/index.html"), Path("es/index.html"))
-              if path.is_file()
-          ]
+          home_pages = [Path("index.html"), Path("en/index.html"), Path("es/index.html")]
           for path in home_pages:
+              if not path.is_file():
+                  raise SystemExit(f"Required localized homepage missing: {path}")
               page = path.as_posix()
               html = Path(page).read_text(encoding="utf-8")
               if page != "es/index.html" and 'type="application/rss+xml"' not in html:
@@ -78,11 +77,15 @@ jobs:
                       raise SystemExit(f"{required} structured data missing in {page}")
 
           root = ET.parse("sitemap.xml").getroot()
-          namespace = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+          namespace = {
+              "sm": "http://www.sitemaps.org/schemas/sitemap/0.9",
+              "xhtml": "http://www.w3.org/1999/xhtml",
+          }
           urls = root.findall("sm:url", namespace)
           expected_urls = {
               "https://rodri-oliveira-dev.github.io/",
               "https://rodri-oliveira-dev.github.io/en/",
+              "https://rodri-oliveira-dev.github.io/es/",
           }
           case_pages = sorted(Path("case-studies").glob("*/index.html"))
           english_pages = sorted(Path("en/case-studies").glob("*/index.html"))
@@ -92,15 +95,12 @@ jobs:
           if pt_slugs != en_slugs:
               raise SystemExit("Case-study language pairs are incomplete")
           es_slugs = {page.parent.name for page in spanish_pages}
-          if not es_slugs <= pt_slugs:
-              raise SystemExit("Spanish case study without a PT-BR/EN source")
-          if Path("es/index.html").is_file():
-              expected_urls.add("https://rodri-oliveira-dev.github.io/es/")
+          if pt_slugs != en_slugs or pt_slugs != es_slugs:
+              raise SystemExit("Case-study translations are incomplete")
           for slug in pt_slugs:
               expected_urls.add(f"https://rodri-oliveira-dev.github.io/case-studies/{slug}/")
               expected_urls.add(f"https://rodri-oliveira-dev.github.io/en/case-studies/{slug}/")
-              if slug in es_slugs:
-                  expected_urls.add(f"https://rodri-oliveira-dev.github.io/es/case-studies/{slug}/")
+              expected_urls.add(f"https://rodri-oliveira-dev.github.io/es/case-studies/{slug}/")
           actual_urls = {
               (entry.findtext("sm:loc", namespaces=namespace) or "").strip()
               for entry in urls
@@ -110,6 +110,28 @@ jobs:
           for entry in urls:
               if not (entry.findtext("sm:lastmod", namespaces=namespace) or "").strip():
                   raise SystemExit("Sitemap URL without lastmod")
+              loc = (entry.findtext("sm:loc", namespaces=namespace) or "").strip()
+              if "/case-studies/" in loc:
+                  slug = loc.rstrip("/").split("/")[-1]
+                  expected_sitemap_alternates = {
+                      "pt-BR": f"https://rodri-oliveira-dev.github.io/case-studies/{slug}/",
+                      "en": f"https://rodri-oliveira-dev.github.io/en/case-studies/{slug}/",
+                      "es": f"https://rodri-oliveira-dev.github.io/es/case-studies/{slug}/",
+                      "x-default": f"https://rodri-oliveira-dev.github.io/case-studies/{slug}/",
+                  }
+              else:
+                  expected_sitemap_alternates = {
+                      "pt-BR": "https://rodri-oliveira-dev.github.io/",
+                      "en": "https://rodri-oliveira-dev.github.io/en/",
+                      "es": "https://rodri-oliveira-dev.github.io/es/",
+                      "x-default": "https://rodri-oliveira-dev.github.io/",
+                  }
+              sitemap_alternates = {
+                  link.attrib.get("hreflang", ""): link.attrib.get("href", "")
+                  for link in entry.findall("xhtml:link", namespace)
+              }
+              if sitemap_alternates != expected_sitemap_alternates:
+                  raise SystemExit(f"Invalid sitemap alternates for {loc}")
 
           for path in [*case_pages, *english_pages, *spanish_pages]:
               page = path.as_posix()
@@ -163,8 +185,7 @@ jobs:
                   "en": expected_en,
                   "x-default": expected_pt,
               }
-              if slug in es_slugs:
-                  expected_alternates["es"] = expected_es
+              expected_alternates["es"] = expected_es
               if set(alternates) != set(expected_alternates):
                   raise SystemExit(f"Incomplete hreflang set in {page}")
               if alternates != expected_alternates:

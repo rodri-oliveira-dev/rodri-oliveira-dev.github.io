@@ -76,15 +76,21 @@ if (typeof document !== "undefined" && typeof window !== "undefined") (() => {
   document.documentElement.classList.add("mobile-nav-ready");
 
   const firstMenuLink = mobileNav.querySelector("a");
+  let menuFocusTimer;
 
   const setMenuOpen = (open, { focusFirst = false, restoreToggle = false } = {}) => {
+    window.clearTimeout(menuFocusTimer);
     toggle.setAttribute("aria-expanded", String(open));
     toggle.setAttribute("aria-label", open ? labels.closeNavigation : labels.openNavigation);
     mobileNav.setAttribute("aria-hidden", String(!open));
     mobileNav.classList.toggle("is-open", open);
 
     if (open && focusFirst && firstMenuLink) {
-      window.requestAnimationFrame(() => firstMenuLink.focus());
+      menuFocusTimer = window.setTimeout(() => {
+        if (toggle.getAttribute("aria-expanded") === "true") {
+          firstMenuLink.focus({ preventScroll: true });
+        }
+      }, 180);
     } else if (!open && restoreToggle) {
       toggle.focus();
     }

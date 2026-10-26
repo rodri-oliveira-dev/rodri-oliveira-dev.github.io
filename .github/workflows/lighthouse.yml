@@ -42,7 +42,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
-          pages = [path for path in (Path("index.html"), Path("en/index.html"), Path("es/index.html")) if path.is_file()]
+          pages = [Path("index.html"), Path("en/index.html"), Path("es/index.html")]
           for root in (Path("case-studies"), Path("en/case-studies"), Path("es/case-studies")):
               pages.extend(sorted(root.glob("*/index.html")))
           for path in pages:

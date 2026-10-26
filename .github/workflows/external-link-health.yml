@@ -42,9 +42,13 @@ jobs:
             --max-retries 2
             --exclude 'https://(www\.)?linkedin\.com/'
             --exclude 'https://medium\.com/'
+            --exclude '^https://rodri-oliveira-dev\.github\.io/es/?$'
+            --exclude '^https://rodri-oliveira-dev\.github\.io/(?:(?:en|es)/)?case-studies/[^/]+/?$'
             './index.html'
             './en/index.html'
             './pt-br/index.html'
+            './case-studies/**/*.html'
+            './en/case-studies/**/*.html'
             './es/**/*.html'
             './README.md'
           format: markdown

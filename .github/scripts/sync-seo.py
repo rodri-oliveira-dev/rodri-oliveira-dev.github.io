@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import argparse
 import json
 import re
 import subprocess
@@ -509,9 +508,9 @@ def page_lastmod(
 
 
 def discover_case_studies(
-    require_complete_spanish: bool = False,
+    require_complete_spanish: bool = True,
 ) -> list[tuple[str, dict[str, Path]]]:
-    """Return PT/EN pairs plus any progressively translated Spanish pages."""
+    """Return matching translations, requiring complete Spanish coverage by default."""
     pages = {
         language: {
             path.parent.name: path
@@ -677,25 +676,14 @@ def validate_json_ld(path: Path) -> None:
     json.loads(match.group(1))
 
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--require-complete-spanish",
-        action="store_true",
-        help="Fail unless the Spanish homepage and every Spanish case study exist.",
-    )
-    return parser.parse_args()
-
-
 def main() -> None:
-    args = parse_args()
     articles = load_articles()
     devto_enabled = DEVTO_DATA_PATH.exists()
     pt_dirty = file_was_dirty(PT_INDEX)
     en_dirty = file_was_dirty(EN_INDEX)
     home_variants = existing_home_variants()
     available_languages = tuple(home_variants)
-    case_studies = discover_case_studies(args.require_complete_spanish)
+    case_studies = discover_case_studies()
 
     for language, variant in home_variants.items():
         synchronize_html(

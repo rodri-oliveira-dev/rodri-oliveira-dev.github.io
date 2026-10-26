@@ -97,9 +97,9 @@ jobs:
           PY
           )
 
-          if [[ -n "$(git status --porcelain -- index.html newsletter/feed.xml assets/data/newsletter-articles.json)" ]]; then
-            echo "The English DEV sync attempted to modify Portuguese newsletter artifacts."
-            git status --short -- index.html newsletter/feed.xml assets/data/newsletter-articles.json
+          if [[ -n "$(git status --porcelain -- index.html es newsletter/feed.xml assets/data/newsletter-articles.json)" ]]; then
+            echo "The English DEV sync attempted to modify Portuguese newsletter or Spanish localization artifacts."
+            git status --short -- index.html es newsletter/feed.xml assets/data/newsletter-articles.json
             exit 1
           fi
 

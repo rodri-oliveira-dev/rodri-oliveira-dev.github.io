@@ -86,6 +86,13 @@ jobs:
           echo "article_count=${article_count}" >> "$GITHUB_OUTPUT"
           echo "feed_count=${feed_count}" >> "$GITHUB_OUTPUT"
           echo "Validated ${article_count} homepage article(s) and ${feed_count} RSS item(s)."
+
+          if [[ -n "$(git status --porcelain -- es)" ]]; then
+            echo "Newsletter sync modified Spanish localization artifacts."
+            git status --short -- es
+            exit 1
+          fi
+
           git diff --check
 
       - name: Detect generated content changes

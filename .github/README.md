@@ -27,9 +27,10 @@ O [`site-validation.yml`](workflows/site-validation.yml) é o gate estrutural pr
 
 Ele executa:
 
-- `html-validate` nas homepages, no redirecionamento legado e em todos os `index.html` de `case-studies/` e `en/case-studies/`;
+- teste de integridade i18n nas três homepages e nos cinco estudos de caso por idioma, incluindo idioma ativo, links equivalentes, canonical, hreflang, metadados, JSON-LD e recursos locais;
+- `html-validate` nas três homepages, no redirecionamento legado e em todos os estudos de caso PT/EN/ES;
 - Lychee nos HTMLs e no `README.md` para detectar links inválidos;
-- CSpell para ortografia em português, inglês e vocabulário técnico conhecido;
+- CSpell estrito para ortografia em português, inglês, espanhol e vocabulário técnico conhecido;
 - `actionlint` para validar a sintaxe e a estrutura dos workflows do GitHub Actions.
 
 O workflow roda em todo Pull Request, em todo push que chega à `main` e também pode ser executado manualmente.
@@ -42,9 +43,11 @@ O [`seo-validation.yml`](workflows/seo-validation.yml) valida os artefatos SEO g
 
 Ele verifica que:
 
-- `index.html` e `en/index.html` possuem RSS autodiscovery;
+- `index.html` e `en/index.html` possuem RSS autodiscovery, sem atribuir uma tradução inexistente à homepage espanhola;
+- as três homepages e todos os estudos possuem canonical própria e alternates recíprocos `pt-BR`, `en`, `es` e `x-default`;
 - o JSON-LD estruturado permanece válido e consistente;
-- `sitemap.xml` é XML válido e possui `lastmod` para as URLs indexáveis;
+- `sitemap.xml` contém exatamente as 18 URLs indexáveis, sem duplicação, e possui `lastmod` para todas elas;
+- os cinco slugs de estudos de caso existem nos três idiomas;
 - a geração de `lastmod` preserva datas versionadas para páginas sem alteração, sem depender do dia em que o runner executa;
 - executar [`scripts/sync-seo.py`](scripts/sync-seo.py) não produz diferenças não commitadas.
 
@@ -52,14 +55,15 @@ Esse último ponto funciona como um gate de drift: se catálogo, homepage, dados
 
 ### Accessibility
 
-O [`accessibility.yml`](workflows/accessibility.yml) sobe o site em um servidor HTTP local e executa Pa11y CI contra as homepages e todos os estudos de caso em português e inglês.
+O [`accessibility.yml`](workflows/accessibility.yml) sobe o site em um servidor HTTP local e executa Pa11y CI contra as três homepages e todos os estudos de caso em português, inglês e espanhol.
 
 A configuração usa WCAG 2 AA como baseline e threshold zero para os problemas considerados pelo gate. O objetivo é detectar regressões de semântica, ARIA, estrutura e outras regras automatizáveis de acessibilidade antes do merge.
 
 Arquivos relacionados:
 
 - [`../.pa11yci.cjs`](../.pa11yci.cjs) — configuração do Pa11y CI e descoberta dinâmica dos estudos de caso;
-- `index.html`, `en/index.html`, `case-studies/*/index.html` e `en/case-studies/*/index.html` — páginas verificadas.
+- `index.html`, `en/index.html`, `es/index.html` e os três diretórios `case-studies/` — páginas verificadas;
+- [`scripts/test-responsive.cjs`](scripts/test-responsive.cjs) — ausência de overflow, imagens quebradas ou seletor cortado em 320, 360, 390, 768, 1024 e 1440 px, além de abertura/fechamento do menu mobile por teclado nos três idiomas.
 
 Alguns ajustes de CSP são aplicados apenas ao fixture efêmero usado pelo runner local. A política CSP publicada no site não é alterada pelo workflow.
 
@@ -86,7 +90,7 @@ O relatório estruturado é produzido por [`scripts/summarize-zizmor.mjs`](scrip
 
 ### Lighthouse CI
 
-O [`lighthouse.yml`](workflows/lighthouse.yml) sobe o site localmente e executa Lighthouse CI contra `/`, `/en/` e todos os pares bilíngues descobertos em `case-studies/`.
+O [`lighthouse.yml`](workflows/lighthouse.yml) sobe o site localmente e executa Lighthouse CI contra `/`, `/en/`, `/es/` e todos os estudos de caso trilíngues descobertos.
 
 Cada página é medida três vezes para reduzir variação do runner. Os valores usados para os gates são agregados pela mediana.
 
@@ -95,7 +99,7 @@ Os budgets estão definidos em [`../lighthouserc.cjs`](../lighthouserc.cjs):
 | Categoria | Threshold | Enforcement |
 | --- | ---: | --- |
 | Performance | 80% | Warning |
-| Accessibility | 90% | Warning |
+| Accessibility | 100% | Blocking |
 | Best Practices | 95% | Blocking |
 | SEO | 95% | Blocking |
 
@@ -145,6 +149,8 @@ O processo:
 Cada execução usa uma branch derivada do `run-id`, evitando que uma nova importação sobrescreva outra importação ainda em revisão. Em uma reexecução do mesmo run, a branch correspondente é atualizada com `force-with-lease`.
 
 O workflow não faz push direto para a `main`. Como ele já atualiza catálogo, homepage, RSS, JSON-LD e sitemap no mesmo ciclo da importação, o agendamento diário do `Sync newsletter articles` foi desativado por redundância.
+
+As automações de newsletter e DEV Community preservam os idiomas de publicação: a primeira renderiza o catálogo em português apenas em `index.html`, e a segunda renderiza o feed em inglês apenas em `en/index.html`. Ambas falham se alterarem artefatos em `es/`; não há tradução automática nem criação de títulos, URLs ou idiomas espanhóis para artigos externos.
 
 O resultado detalhado da recuperação de metadados também é escrito no Job Summary.
 

@@ -4,7 +4,6 @@ const path = require("node:path");
 const localOrigin = "http://127.0.0.1:8080";
 const languageRoots = ["", "en", "es"];
 const pageUrls = languageRoots
-  .filter((root) => fs.existsSync(path.join(root, "index.html")))
   .map((root) => `${localOrigin}/${root ? `${root}/` : ""}`);
 const caseStudyUrls = languageRoots
   .map((root) => path.join(root, "case-studies"))
@@ -22,7 +21,7 @@ module.exports = {
     timeout: 30000,
     wait: 250,
     chromeLaunchConfig: {
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
     },
   },
   urls: [

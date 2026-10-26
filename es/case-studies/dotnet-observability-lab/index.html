@@ -71,7 +71,8 @@
     </div></section>
     <section class="section architecture-section"><div class="container">
       <div class="section-heading wide-heading"><p class="eyebrow">Flujo nominal</p><h2>El happy path existe, pero no es toda la arquitectura.</h2></div>
-      <!-- html-validate-disable-next prefer-native-element, no-redundant-role -- Safari/VoiceOver requires an explicit list role when list-style is none -->
+      <!-- html-validate-disable-next prefer-native-element -->
+      <!-- html-validate-disable-next no-redundant-role -- Safari/VoiceOver requires an explicit list role when list-style is none -->
       <ol role="list" class="case-study-flow"><li><strong>POST /values</strong><span>solicitud idempotente</span></li><li><strong>PostgreSQL</strong><span>valor + Outbox atómicos</span></li><li><strong>Outbox Worker</strong><span>claim + publish confirmado</span></li><li><strong>RabbitMQ</strong><span>entrega at-least-once</span></li><li><strong>Consolidation Worker</strong><span>Inbox + agregado atómicos</span></li><li><strong>GET /consolidated</strong><span>lectura posterior e independiente</span></li></ol>
       <p class="section-action"><a class="text-link" href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab/blob/main/docs/architecture/rendered.md#valuereceivedv1---accepted-write-to-independent-consolidated-read" target="_blank" rel="noreferrer">Ver flujo dinámico en LikeC4 ↗</a></p>
     </div></section>

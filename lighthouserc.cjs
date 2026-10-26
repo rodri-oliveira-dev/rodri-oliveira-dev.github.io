@@ -3,7 +3,6 @@ const path = require("node:path");
 
 const languageRoots = ["", "en", "es"];
 const pageUrls = languageRoots
-  .filter((root) => fs.existsSync(path.join(root, "index.html")))
   .map((root) => `http://127.0.0.1:8080/${root ? `${root}/` : ""}`);
 const caseStudyUrls = languageRoots
   .map((root) => path.join(root, "case-studies"))
@@ -22,7 +21,7 @@ module.exports = {
       ],
       numberOfRuns: 3,
       settings: {
-        chromeFlags: "--no-sandbox --disable-dev-shm-usage",
+        chromeFlags: "--no-sandbox --disable-dev-shm-usage --disable-gpu",
       },
     },
     assert: {
