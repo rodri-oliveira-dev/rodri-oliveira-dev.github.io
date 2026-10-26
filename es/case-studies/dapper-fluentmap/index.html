@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="es-419">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'none'; connect-src 'none'; frame-src 'none'; media-src 'none'; worker-src 'none'; form-action 'none'; upgrade-insecure-requests">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Evolución del acceso a datos sin acoplar el dominio a la base de datos heredada | Dapper FluentMap</title>
+  <meta name="description" content="Estudio de caso de Dapper FluentMap: mapeo explícito de esquemas heredados, dominio limpio, alternativas, compatibilidad entre 2.x y 3.x y límites técnicos.">
+  <meta name="author" content="Rodrigo de Oliveira">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#070b14">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://rodri-oliveira-dev.github.io/es/case-studies/dapper-fluentmap/">
+  <link rel="alternate" hreflang="pt-BR" href="https://rodri-oliveira-dev.github.io/case-studies/dapper-fluentmap/">
+  <link rel="alternate" hreflang="en" href="https://rodri-oliveira-dev.github.io/en/case-studies/dapper-fluentmap/">
+  <link rel="alternate" hreflang="es" href="https://rodri-oliveira-dev.github.io/es/case-studies/dapper-fluentmap/">
+  <link rel="alternate" hreflang="x-default" href="https://rodri-oliveira-dev.github.io/case-studies/dapper-fluentmap/">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="stylesheet" href="/assets/css/site.css">
+  <link rel="stylesheet" href="/assets/css/mobile-enhancements.css">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Rodrigo de Oliveira">
+  <meta property="og:title" content="Evolución del acceso a datos sin acoplar el dominio a la base de datos heredada">
+  <meta property="og:description" content="Mapeo explícito, contratos históricos y evolución segura de Dapper FluentMap.">
+  <meta property="og:url" content="https://rodri-oliveira-dev.github.io/es/case-studies/dapper-fluentmap/">
+  <meta property="og:image" content="https://rodri-oliveira-dev.github.io/assets/social/rodrigo-de-oliveira-og.png">
+  <meta property="og:image:alt" content="Rodrigo de Oliveira — Arquitecto de Software">
+  <meta property="og:locale" content="es_LA">
+  <meta property="og:locale:alternate" content="pt_BR">
+  <meta property="og:locale:alternate" content="en_US">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Evolución del acceso a datos sin acoplar el dominio a la base de datos heredada">
+  <meta name="twitter:description" content="Dapper FluentMap, esquema heredado, dominio limpio y compatibilidad verificable.">
+  <meta name="twitter:image" content="https://rodri-oliveira-dev.github.io/assets/social/rodrigo-de-oliveira-og.png">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": ["Article", "TechArticle"],
+    "headline": "Evolución del acceso a datos sin acoplar el dominio a la base de datos heredada",
+    "description": "Estudio de caso técnico sobre el mapeo explícito de esquemas heredados y la evolución compatible de Dapper FluentMap.",
+    "datePublished": "2026-10-21",
+    "dateModified": "2026-10-26",
+    "image": "https://rodri-oliveira-dev.github.io/assets/social/rodrigo-de-oliveira-og.png",
+    "inLanguage": "es-419",
+    "url": "https://rodri-oliveira-dev.github.io/es/case-studies/dapper-fluentmap/",
+    "author": {"@type": "Person", "name": "Rodrigo de Oliveira", "url": "https://rodri-oliveira-dev.github.io/"},
+    "about": {
+      "@type": "SoftwareSourceCode",
+      "name": "Dapper FluentMap",
+      "codeRepository": "https://github.com/rodri-oliveira-dev/Dapper-FluentMap",
+      "programmingLanguage": ["C#", ".NET"],
+      "runtimePlatform": ".NET",
+      "license": "https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/LICENSE"
+    },
+    "keywords": ["Dapper", "FluentMap", "legacy database", "data mapping", ".NET", "software architecture"]
+  }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Ir al contenido</a>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="/es/" aria-label="Rodrigo de Oliveira — portafolio"><span class="brand-symbol brand-symbol-image" aria-hidden="true"></span><span class="brand-name">Rodrigo de Oliveira</span></a>
+      <nav class="nav" aria-label="Navegación del estudio de caso"><a href="#decisions">Decisiones</a><a href="#scenario">Escenario</a><a href="#evidence">Evidencias</a></nav>
+      <div class="language-switcher" role="group" aria-label="Idioma"><a class="lang-link" href="/en/case-studies/dapper-fluentmap/" lang="en">EN</a><a class="lang-link" href="/case-studies/dapper-fluentmap/" lang="pt-BR">PT</a><a class="lang-link active" href="/es/case-studies/dapper-fluentmap/" lang="es-419" aria-current="page">ES</a></div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="case-study-hero">
+      <div class="container">
+        <p class="eyebrow">Estudio de caso arquitectónico · biblioteca de código abierto</p>
+        <h1>Evolución del acceso a datos sin acoplar el dominio a la base de datos heredada</h1>
+        <p class="case-study-lead">Una tabla <strong>CUSTOMER</strong> expone <strong>CUST_NO</strong> y <strong>LEGAL_NM</strong>; el dominio necesita expresarse como <strong>Customer.Id</strong> y <strong>Customer.Name</strong>. FluentMap hace explícita esa traducción sin agregar atributos de persistencia a la entidad.</p>
+        <div class="hero-actions"><a class="button primary" href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap" target="_blank" rel="noreferrer">Abrir repositorio ↗</a><a class="button secondary" href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/README.pt-BR.md" target="_blank" rel="noreferrer">Leer documentación ↗</a></div>
+        <p class="case-study-note">El escenario empresarial es ilustrativo. Demuestra contratos públicos de la biblioteca; no representa a un cliente, una implementación ni una mejora de rendimiento en producción.</p>
+      </div>
+    </section>
+
+    <section class="section case-study-section">
+      <div class="container case-study-two-column">
+        <div><p class="eyebrow">Contexto y motivación</p><h2>El vocabulario de la base de datos no tiene que convertirse en el vocabulario del dominio.</h2></div>
+        <div class="case-study-copy">
+          <p>Los esquemas heredados contienen abreviaturas, convenciones históricas y nombres compartidos por sistemas que no pueden renombrarse en una sola entrega. Repetir esos nombres en el modelo .NET transfiere el costo de persistencia a las reglas de negocio, las API y las pruebas.</p>
+          <p>El objetivo no es ocultar SQL ni crear un ORM completo. La consulta y la conexión siguen bajo la responsabilidad de Dapper, mientras una configuración tipada y centralizada traduce los nombres físicos a propiedades que comunican intención.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section architecture-section">
+      <div class="container">
+        <div class="section-heading wide-heading"><p class="eyebrow">Restricciones y atributos de calidad</p><h2>Modernizar el límite sin romper contratos históricos.</h2></div>
+        <div class="case-study-constraint-grid">
+          <article><span>01</span><h3>Esquema estable</h3><p>Las tablas y columnas se comparten y es posible que no sigan inmediatamente el nombre del dominio.</p></article>
+          <article><span>02</span><h3>Dominio limpio</h3><p>Las entidades no reciben atributos que les permitan conocer el mecanismo de persistencia.</p></article>
+          <article><span>03</span><h3>Compatibilidad</h3><p>La línea 3.x conserva las principales API históricas de 2.x, con diferencias documentadas y nuevas funciones de suscripción.</p></article>
+          <article><span>04</span><h3>Evidencia por capa</h3><p>La compatibilidad con Dapper, la certificación Core y la integración con Dommel son afirmaciones distintas.</p></article>
+        </div>
+        <div class="case-study-quality-list" role="group" aria-label="Atributos de calidad priorizados"><span>Mantenibilidad</span><span>Capacidad de prueba</span><span>Compatibilidad</span><span>Legibilidad</span><span>Aislamiento</span><span>Capacidad de evolución</span></div>
+        <figure class="case-study-figure">
+          <img src="/assets/diagrams/dapper-fluentmap-legacy-mapping-es.svg" alt="Flujo de la tabla CUSTOMER con CUST_NO y LEGAL_NM, a través de Dapper y EntityMap, hasta Customer con Id y Name." width="1120" height="390">
+          <figcaption>El resultado sigue proviniendo del SQL ejecutado por Dapper; el mapa define cómo las columnas materializan el objeto.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section case-study-section" id="decisions">
+      <div class="container">
+        <div class="section-heading wide-heading"><p class="eyebrow">Decisiones arquitectónicas</p><h2>El mapeo es un límite explícito, no una abstracción de todo el acceso a los datos.</h2></div>
+        <div class="case-study-decision-grid">
+          <article><h3>Mapas tipados</h3><p><code>EntityMap&lt;T&gt;</code> asocia expresiones de propiedad con columnas. El cambio de nombre de una propiedad pasa por el compilador y la configuración puede validarse al iniciar la aplicación.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/website/src/content/docs/pt-br/concepts/property-mapping.md" target="_blank" rel="noreferrer">Mapeo de propiedades ↗</a></article>
+          <article><h3>Convenciones con precedencia</h3><p>Las convenciones reducen la repetición cuando el esquema sigue estándares. Los mapas explícitos siguen siendo adecuados para excepciones y tienen precedencia documentada.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/website/src/content/docs/pt-br/concepts/mapping-precedence.md" target="_blank" rel="noreferrer">Prioridad ↗</a></article>
+          <article><h3>Configuración inmutable</h3><p>La configuración global se construye antes de las consultas simultáneas y se trata como de solo lectura. <code>FluentMapRuntime</code> permite configuraciones aisladas en API <code>QueryMapped*</code>.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/website/src/content/docs/pt-br/advanced/runtime-isolation.md" target="_blank" rel="noreferrer">Aislamiento en tiempo de ejecución ↗</a></article>
+          <article><h3>Dommel opcional</h3><p>El paquete Dommel agrega metadatos y persistencia, pero mantiene el estado global en solucionadores y constructores. Los tiempos de ejecución aislados de FluentMap no aíslan a Dommel.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/website/src/content/docs/pt-br/integrations/dommel.md" target="_blank" rel="noreferrer">Integración Dommel ↗</a></article>
+          <article><h3>Generación opt-in</h3><p>Los source generators registran mapas elegibles y materializadores para formas compatibles. No analizan SQL ni garantizan todas las formas de materialización; los casos no compatibles recurren a un fallback.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/website/src/content/docs/pt-br/integrations/source-generators.md" target="_blank" rel="noreferrer">Source generators ↗</a></article>
+          <article><h3>Diagnóstico estático</h3><p>Los analizadores detectan configuraciones observables en la compilación. El registro dinámico, la reflexión y el comportamiento dependiente del tiempo de ejecución quedan fuera de esta prueba.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/website/src/content/docs/pt-br/integrations/roslyn-analyzers.md" target="_blank" rel="noreferrer">Analizadores ↗</a></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section architecture-section" id="scenario">
+      <div class="container">
+        <div class="section-heading wide-heading"><p class="eyebrow">Implementación del escenario</p><h2>Una entidad sin atributos, un mapa en la infraestructura y una consulta Dapper normal.</h2></div>
+        <pre class="case-study-code"><code>using Dapper;
+using Dapper.FluentMap;
+using Dapper.FluentMap.Mapping;
+
+FluentMapper.Initialize(config =&gt; config.AddMap&lt;CustomerMap&gt;());
+FluentMapper.Validate();
+
+const string sql = """
+    SELECT CUST_NO, LEGAL_NM
+    FROM CUSTOMER
+    WHERE CUST_NO = @id
+    """;
+
+Customer customer = connection.QuerySingle&lt;Customer&gt;(sql, new { id = 42 });
+
+public sealed class Customer
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+}
+
+public sealed class CustomerMap : EntityMap&lt;Customer&gt;
+{
+    public CustomerMap()
+    {
+        Map(customer =&gt; customer.Id).ToColumn("CUST_NO");
+        Map(customer =&gt; customer.Name).ToColumn("LEGAL_NM");
+    }
+}</code></pre>
+        <p class="case-study-note">El ejemplo utiliza la API documentada actual. La conexión, transacción, parametrización, consulta y migraciones siguen siendo responsabilidad de la aplicación y de Dapper.</p>
+
+        <div class="case-study-two-column">
+          <div><h3>Flujo de materialización</h3></div>
+          <div class="case-study-copy"><p>El proveedor ADO.NET entrega a Dapper un lector con <code>CUST_NO</code> y <code>LEGAL_NM</code>. El mapa de tipos instalado por FluentMap resuelve estos nombres para <code>Id</code> y <code>Name</code>. Dapper crea y puebla <code>Customer</code>; FluentMap no rastrea la entidad ni cambia el SQL.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section case-study-section">
+      <div class="container">
+        <div class="section-heading wide-heading"><p class="eyebrow">Alternativas y compensaciones</p><h2>Tres enfoques válidos, con costos en diferentes lugares.</h2></div>
+        <div class="case-study-table-wrap">
+          <table class="case-study-table">
+            <thead><tr><th>Acercarse</th><th>Ejemplo</th><th>Ventaja</th><th>Costo y mejor contexto</th></tr></thead>
+            <tbody>
+              <tr><td>Alias en SQL</td><td><code>SELECT CUST_NO AS Id, LEGAL_NM AS Name</code></td><td>Sin configuración adicional; intención visible en la consulta.</td><td>Repite alias en varias consultas. Es adecuado para una lectura puntual o para SQL controlado por una sola operación.</td></tr>
+              <tr><td>Persistencia DTO</td><td><code>CustomerRow.CUST_NO</code> → <code>Customer.Id</code></td><td>Límite y transformación totalmente explícitos; DTO puede reflejar uniones y proyecciones.</td><td>Más tipos y código de conversión. Bueno cuando la forma de persistencia difiere semánticamente del agregado.</td></tr>
+              <tr><td>FluentMap explícito</td><td><code>Map(x =&gt; x.Id).ToColumn("CUST_NO")</code></td><td>Reutiliza un mapa escrito y mantiene la entidad libre de atributos.</td><td>La configuración global requiere disciplina; no elimina SQL. Es bueno cuando las entidades reaparecen en múltiples consultas con nombres físicos estables.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="section architecture-section">
+      <div class="container">
+        <div class="section-heading wide-heading"><p class="eyebrow">Evolución y mantenimiento</p><h2>Agregue capacidades sin borrar la superficie que las aplicaciones ya usan.</h2></div>
+        <div class="case-study-decision-grid">
+          <article><h3>Línea 2.x a 3.x</h3><p><code>EntityMap&lt;T&gt;</code>, <code>FluentMapper.Initialize(...)</code> y el puente del mapa tipo permanecen. Para la ruta histórica común, la migración tiende a consistir en actualizaciones, validación y pruebas de paquetes coordinadas.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/MIGRATION.pt-BR.md" target="_blank" rel="noreferrer">Guía de migración ↗</a></article>
+          <article><h3>Estado global acotado</h3><p>El uso normal de <code>Dapper.Query&lt;T&gt;()</code> emplea el type map global de Dapper. Dommel también es global. El aislamiento de <code>FluentMapRuntime</code> se aplica a las API mapeadas que reciben el runtime o pertenecen a él.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/COMPATIBILITY.md#global-state-limitations" target="_blank" rel="noreferrer">Límites globales ↗</a></article>
+          <article><h3>Matriz de proveedores</h3><p>SQLite, SQL Server, PostgreSQL, MySQL y MariaDB tienen evidencia real de Core y Dommel en la matriz actual. Oracle y Firebird tienen evidencia Core, pero no certificación Dommel.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/COMPATIBILITY.md#providers" target="_blank" rel="noreferrer">Matriz de compatibilidad ↗</a></article>
+          <article><h3>Contratos verificables</h3><p>El rango documentado actualmente es Dapper <code>[2.1.79,3.0.0)</code> y Dommel <code>[3.5.3,4.0.0)</code>. Los canarios experimentales no amplían la matriz hasta que exista una actualización intencional y revisada.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/eng/compatibility-contract.json" target="_blank" rel="noreferrer">Contrato legible por máquina ↗</a></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section case-study-limitations">
+      <div class="container case-study-two-column">
+        <div><p class="eyebrow">Limitaciones y riesgos</p><h2>FluentMap complementa a Dapper; no lo sustituye ni es un ORM completo.</h2></div>
+        <div class="case-study-copy">
+          <p>La biblioteca no gestiona conexiones, transacciones, migraciones, seguimiento ni diseño de consultas. La configuración global tardía puede entrar en conflicto con consultas simultáneas; La inicialización debe ocurrir antes de su uso y ser tratada como inmutable.</p>
+          <p>La compatibilidad esperada por Dapper/ADO.NET no equivale a una certificación de FluentMap. La certificación de Core no implica la de Dommel. Tampoco se afirma compatibilidad completa con Native AOT: la ruta estricta generada tiene cobertura acotada y las formas incompatibles pueden usar fallback.</p>
+          <p>Los benchmarks usan BenchmarkDotNet y SQLite en escenarios definidos en el repositorio. La línea base versionada incluye <code>"reportOnly": true</code>; por lo tanto, sirve como evidencia exploratoria y detector de tendencias, no como promesa general de mejora de rendimiento entre entornos, providers o workloads.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section case-study-section">
+      <div class="container case-study-two-column">
+        <div><p class="eyebrow">Aprendizajes</p><h2>La compatibilidad es una propiedad respaldada por límites, documentación y pruebas.</h2></div>
+        <div class="case-study-copy">
+          <p>El valor del mapa no está en ocultar la base de datos, sino en encontrar la traducción. Los alias, DTO y FluentMap siguen siendo opciones arquitectónicas; la frecuencia de reutilización, la diferencia semántica y la necesidad de aislamiento indican cuál cuesta menos.</p>
+          <p>En la evolución de la biblioteca, los recursos opt-in permiten ampliar la materialización, el diagnóstico y la integración sin obligar a los consumidores históricos a adoptarlo todo. Las matrices separadas y el lenguaje preciso impiden que la evidencia de las pruebas se generalice más allá de lo que realmente cubre.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section architecture-section" id="evidence">
+      <div class="container">
+        <div class="section-heading wide-heading"><p class="eyebrow">Evidencias y referencias</p><h2>API, migración, pruebas y mediciones disponibles para inspección.</h2></div>
+        <div class="case-study-evidence-list">
+          <a href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/README.pt-BR.md" target="_blank" rel="noreferrer"><strong>LÉAME en portugués</strong><span>Alcance, inicio rápido, paquetes y características actuales.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/COMPATIBILITY.md" target="_blank" rel="noreferrer"><strong>Compatibilidad</strong><span>Rangos de dependencias, proveedores, estado global, AOT y afirmaciones no respaldadas.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/MIGRATION.pt-BR.md" target="_blank" rel="noreferrer"><strong>Migración 2.x → 3.x</strong><span>API conservadas, diferencias, riesgos y lista de verificación.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/tree/main/test/Dapper.FluentMap.ProviderCompatibility.Tests" target="_blank" rel="noreferrer"><strong>Pruebas de proveedores</strong><span>Evidencia ejecutable para la matriz Core y Dommel.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/benchmarks/baselines/materialization-windows-net10.json" target="_blank" rel="noreferrer"><strong>Línea base de referencia</strong><span>Medición versionada marcada explícitamente como solo informe.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/tree/main/src" target="_blank" rel="noreferrer"><strong>Código fuente</strong><span>Core, Dommel, DI, analyzers y generators.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap" target="_blank" rel="noreferrer"><strong>Repositorio</strong><span>Documentación, pruebas, lanzamientos e historial de mantenimiento.</span></a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="container footer-inner"><span>© <span id="year"></span> Rodrigo de Oliveira</span><span><a class="text-link" href="/es/">Volver al portafolio</a></span></div></footer>
+  <script src="/assets/js/site.js" defer></script>
+</body>
+</html>

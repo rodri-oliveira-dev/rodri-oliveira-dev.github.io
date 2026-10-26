@@ -77,3 +77,9 @@ TOML
 weme
 YamlDotNet
 ZAP
+Auditabilidad
+auditables
+inicialización
+Mantenibilidad
+Operabilidad
+semánticamente

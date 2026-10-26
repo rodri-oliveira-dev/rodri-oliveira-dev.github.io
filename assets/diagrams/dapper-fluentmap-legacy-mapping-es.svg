@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 390" role="img" aria-labelledby="title desc">
+  <title id="title">Mapeo de una base de datos heredada con Dapper FluentMap</title>
+  <desc id="desc">Un resultado CUSTOMER con CUST_NO y LEGAL_NM pasa por Dapper y una configuración explícita de FluentMap hasta un objeto de dominio Customer limpio con Id y Name.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z" fill="#7dd3fc"/></marker>
+  </defs>
+  <rect width="1120" height="390" rx="24" fill="#070b14"/>
+  <g font-family="system-ui,Segoe UI,sans-serif">
+    <g fill="#111a2d" stroke="#334155">
+      <rect x="45" y="58" width="250" height="230" rx="18"/>
+      <rect x="435" y="58" width="250" height="230" rx="18"/>
+      <rect x="825" y="58" width="250" height="230" rx="18"/>
+    </g>
+    <g fill="#edf2ff" font-size="20" font-weight="700" text-anchor="middle">
+      <text x="170" y="98">Esquema heredado</text><text x="560" y="98">Límite de mapeo</text><text x="950" y="98">Modelo de dominio</text>
+    </g>
+    <g font-family="ui-monospace,Consolas,monospace" font-size="16">
+      <text x="80" y="144" fill="#a78bfa">CUSTOMER</text><text x="80" y="181" fill="#9aa8c1">CUST_NO</text><text x="80" y="215" fill="#9aa8c1">LEGAL_NM</text>
+      <text x="470" y="144" fill="#7dd3fc">EntityMap&lt;Customer&gt;</text><text x="470" y="181" fill="#9aa8c1">CUST_NO → Id</text><text x="470" y="215" fill="#9aa8c1">LEGAL_NM → Name</text>
+      <text x="860" y="144" fill="#a78bfa">Customer</text><text x="860" y="181" fill="#9aa8c1">Id</text><text x="860" y="215" fill="#9aa8c1">Name</text>
+    </g>
+    <g stroke="#7dd3fc" stroke-width="2" fill="none" marker-end="url(#arrow)"><path d="M295 173h128"/><path d="M685 173h128"/></g>
+    <g fill="#cbd5e1" font-size="13" text-anchor="middle"><text x="359" y="158">Resultado de Dapper</text><text x="749" y="158">materialización</text></g>
+    <rect x="180" y="326" width="760" height="38" rx="19" fill="#0b1220" stroke="#334155"/>
+    <text x="560" y="351" fill="#9aa8c1" font-size="14" text-anchor="middle">SQL sigue explícito · el mapeo queda en infraestructura · la entidad no tiene atributos de persistencia</text>
+  </g>
+</svg>

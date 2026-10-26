@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 360" role="img" aria-labelledby="title desc">
+  <title id="title">Flujo de verificación de ADR Guard</title>
+  <desc id="desc">Un ADR aceptado se vincula con una regla de fitness. La evidencia acotada se evalúa y produce pass, violation, unknown o not-applicable antes de aplicar una política advisory o enforce.</desc>
+  <defs>
+    <linearGradient id="panel" x1="0" x2="1">
+      <stop stop-color="#111a2d"/>
+      <stop offset="1" stop-color="#0b1220"/>
+    </linearGradient>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0 0l8 4-8 4z" fill="#7dd3fc"/>
+    </marker>
+  </defs>
+  <rect width="1120" height="360" rx="24" fill="#070b14"/>
+  <g font-family="system-ui,Segoe UI,sans-serif">
+    <g fill="url(#panel)" stroke="#334155">
+      <rect x="40" y="58" width="190" height="112" rx="16"/>
+      <rect x="265" y="58" width="190" height="112" rx="16"/>
+      <rect x="490" y="58" width="190" height="112" rx="16"/>
+      <rect x="715" y="58" width="190" height="112" rx="16"/>
+      <rect x="930" y="58" width="150" height="112" rx="16"/>
+    </g>
+    <g fill="#edf2ff" font-size="18" font-weight="700" text-anchor="middle">
+      <text x="135" y="105">ADR aceptado</text>
+      <text x="360" y="105">Regla de fitness</text>
+      <text x="585" y="97">Evidencia</text><text x="585" y="122">acotada</text>
+      <text x="810" y="105">Evaluación</text>
+      <text x="1005" y="97">Decisión de</text><text x="1005" y="122">política</text>
+    </g>
+    <g fill="#9aa8c1" font-size="13" text-anchor="middle">
+      <text x="135" y="137">decisión + ciclo de vida</text>
+      <text x="360" y="137">explícita y versionada</text>
+      <text x="585" y="146">local o reportada</text>
+      <text x="810" y="137">determinista cuando es posible</text>
+      <text x="1005" y="146">advisory / enforce</text>
+    </g>
+    <g stroke="#7dd3fc" stroke-width="2" fill="none" marker-end="url(#arrow)">
+      <path d="M230 114h27"/><path d="M455 114h27"/><path d="M680 114h27"/><path d="M905 114h17"/>
+    </g>
+    <g font-size="15" font-weight="700" text-anchor="middle">
+      <rect x="185" y="230" width="165" height="62" rx="14" fill="#10261f" stroke="#34d399"/><text x="267" y="267" fill="#a7f3d0">pass</text>
+      <rect x="380" y="230" width="165" height="62" rx="14" fill="#2a171b" stroke="#fb7185"/><text x="462" y="267" fill="#fecdd3">violation</text>
+      <rect x="575" y="230" width="165" height="62" rx="14" fill="#2a2311" stroke="#fbbf24"/><text x="657" y="267" fill="#fde68a">unknown</text>
+      <rect x="770" y="230" width="165" height="62" rx="14" fill="#172033" stroke="#94a3b8"/><text x="852" y="267" fill="#cbd5e1">not-applicable</text>
+    </g>
+    <path d="M810 170v32H560v20" fill="none" stroke="#a78bfa" stroke-width="2"/>
+    <text x="560" y="330" fill="#9aa8c1" font-size="13" text-anchor="middle">Cuatro resultados distintos preservan certeza, ciclo de vida e intención de enforcement.</text>
+  </g>
+</svg>
