@@ -45,6 +45,7 @@ jobs:
             './index.html'
             './en/index.html'
             './pt-br/index.html'
+            './es/**/*.html'
             './README.md'
           format: markdown
           output: .lychee/external-link-health.md

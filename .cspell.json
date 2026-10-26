@@ -3,7 +3,8 @@
   "language": "en-US",
   "useGitignore": true,
   "import": [
-    "./node_modules/@cspell/dict-pt-br/cspell-ext.json"
+    "./node_modules/@cspell/dict-pt-br/cspell-ext.json",
+    "./node_modules/@cspell/dict-es-es/cspell-ext.json"
   ],
   "dictionaryDefinitions": [
     {
@@ -51,6 +52,14 @@
       "filename": "en/case-studies/**/*.html",
       "language": "en-US",
       "dictionaries": [
+        "site-terms"
+      ]
+    },
+    {
+      "filename": "es/**/*.html",
+      "language": "es",
+      "dictionaries": [
+        "es-es",
         "site-terms"
       ]
     }

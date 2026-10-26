@@ -1,4 +1,34 @@
-(() => {
+const SITE_LANGUAGE_LABELS = Object.freeze({
+  "pt-BR": Object.freeze({
+    openNavigation: "Abrir navegação",
+    closeNavigation: "Fechar navegação",
+    primaryNavigation: "Navegação principal",
+  }),
+  en: Object.freeze({
+    openNavigation: "Open navigation",
+    closeNavigation: "Close navigation",
+    primaryNavigation: "Primary navigation",
+  }),
+  "es-419": Object.freeze({
+    openNavigation: "Abrir navegación",
+    closeNavigation: "Cerrar navegación",
+    primaryNavigation: "Navegación principal",
+  }),
+});
+
+const resolveSiteLanguage = (language = "") => {
+  const normalized = language.trim().toLowerCase();
+  if (normalized === "es-419" || normalized.startsWith("es-")) return "es-419";
+  if (normalized === "en" || normalized.startsWith("en-")) return "en";
+  if (normalized === "pt-br" || normalized.startsWith("pt-")) return "pt-BR";
+  return "pt-BR";
+};
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { SITE_LANGUAGE_LABELS, resolveSiteLanguage };
+}
+
+if (typeof document !== "undefined" && typeof window !== "undefined") (() => {
   const year = document.getElementById("year");
   if (year) year.textContent = new Date().getFullYear();
 
@@ -11,14 +41,13 @@
 
   if (!siteHeader || !headerInner || !desktopNav || !languageSwitcher) return;
 
-  const isPortuguese = document.documentElement.lang.toLowerCase().startsWith("pt");
-  const openLabel = isPortuguese ? "Abrir navegação" : "Open navigation";
-  const closeLabel = isPortuguese ? "Fechar navegação" : "Close navigation";
+  const language = resolveSiteLanguage(document.documentElement.lang);
+  const labels = SITE_LANGUAGE_LABELS[language];
 
   const toggle = document.createElement("button");
   toggle.type = "button";
   toggle.className = "mobile-nav-toggle";
-  toggle.setAttribute("aria-label", openLabel);
+  toggle.setAttribute("aria-label", labels.openNavigation);
   toggle.setAttribute("aria-controls", "mobile-navigation");
   toggle.setAttribute("aria-expanded", "false");
 
@@ -35,7 +64,7 @@
   mobileNav.setAttribute("aria-hidden", "true");
   mobileNav.setAttribute(
     "aria-label",
-    desktopNav.getAttribute("aria-label") || (isPortuguese ? "Navegação principal" : "Primary navigation"),
+    desktopNav.getAttribute("aria-label") || labels.primaryNavigation,
   );
 
   desktopNav.querySelectorAll("a").forEach((link) => {
@@ -50,7 +79,7 @@
 
   const setMenuOpen = (open, { focusFirst = false, restoreToggle = false } = {}) => {
     toggle.setAttribute("aria-expanded", String(open));
-    toggle.setAttribute("aria-label", open ? closeLabel : openLabel);
+    toggle.setAttribute("aria-label", open ? labels.closeNavigation : labels.openNavigation);
     mobileNav.setAttribute("aria-hidden", String(!open));
     mobileNav.classList.toggle("is-open", open);
 

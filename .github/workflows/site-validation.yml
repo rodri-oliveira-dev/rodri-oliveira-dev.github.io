@@ -35,14 +35,19 @@ jobs:
           node-version: 24
           package-manager-cache: false
 
+      - name: Test language resolution and navigation labels
+        run: node .github/scripts/test-site-i18n.cjs
+
       - name: Install validation tooling
-        run: npm install --no-save --ignore-scripts html-validate@11.15.0 @cspell/dict-pt-br@2.4.2
+        run: npm install --no-save --ignore-scripts html-validate@11.15.0 @cspell/dict-pt-br@2.4.2 @cspell/dict-es-es@3.0.9
 
       - name: Validate HTML
         shell: bash
         run: |
-          mapfile -t case_studies < <(find case-studies en/case-studies -mindepth 2 -maxdepth 2 -name index.html -print | sort)
-          npx --no-install html-validate index.html en/index.html pt-br/index.html "${case_studies[@]}"
+          pages=(index.html en/index.html pt-br/index.html)
+          [[ -f es/index.html ]] && pages+=(es/index.html)
+          mapfile -t case_studies < <(find case-studies en/case-studies es/case-studies -mindepth 2 -maxdepth 2 -name index.html -print 2>/dev/null | sort)
+          npx --no-install html-validate "${pages[@]}" "${case_studies[@]}"
 
       - name: Validate links
         uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2
@@ -61,6 +66,7 @@ jobs:
             './pt-br/index.html'
             './case-studies/**/*.html'
             './en/case-studies/**/*.html'
+            './es/**/*.html'
             './README.md'
           fail: true
         env:
@@ -75,6 +81,7 @@ jobs:
             en/index.html
             case-studies/**/*.html
             en/case-studies/**/*.html
+            es/**/*.html
             README.md
           incremental_files_only: false
           strict: true

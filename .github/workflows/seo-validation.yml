@@ -38,9 +38,9 @@ jobs:
         run: |
           git diff --check
 
-          if ! git diff --quiet -- index.html en/index.html sitemap.xml; then
+          if ! git diff --quiet -- index.html en/index.html es/index.html sitemap.xml; then
             echo "SEO artifacts are out of sync. Run: python3 .github/scripts/sync-seo.py"
-            git diff -- index.html en/index.html sitemap.xml
+            git diff -- index.html en/index.html es/index.html sitemap.xml
             exit 1
           fi
 
@@ -52,9 +52,14 @@ jobs:
           import xml.etree.ElementTree as ET
           from pathlib import Path
 
-          for page in ("index.html", "en/index.html"):
+          home_pages = [
+              path for path in (Path("index.html"), Path("en/index.html"), Path("es/index.html"))
+              if path.is_file()
+          ]
+          for path in home_pages:
+              page = path.as_posix()
               html = Path(page).read_text(encoding="utf-8")
-              if 'type="application/rss+xml"' not in html:
+              if page != "es/index.html" and 'type="application/rss+xml"' not in html:
                   raise SystemExit(f"RSS autodiscovery missing in {page}")
 
               match = re.search(
@@ -81,13 +86,21 @@ jobs:
           }
           case_pages = sorted(Path("case-studies").glob("*/index.html"))
           english_pages = sorted(Path("en/case-studies").glob("*/index.html"))
+          spanish_pages = sorted(Path("es/case-studies").glob("*/index.html"))
           pt_slugs = {page.parent.name for page in case_pages}
           en_slugs = {page.parent.name for page in english_pages}
           if pt_slugs != en_slugs:
               raise SystemExit("Case-study language pairs are incomplete")
+          es_slugs = {page.parent.name for page in spanish_pages}
+          if not es_slugs <= pt_slugs:
+              raise SystemExit("Spanish case study without a PT-BR/EN source")
+          if Path("es/index.html").is_file():
+              expected_urls.add("https://rodri-oliveira-dev.github.io/es/")
           for slug in pt_slugs:
               expected_urls.add(f"https://rodri-oliveira-dev.github.io/case-studies/{slug}/")
               expected_urls.add(f"https://rodri-oliveira-dev.github.io/en/case-studies/{slug}/")
+              if slug in es_slugs:
+                  expected_urls.add(f"https://rodri-oliveira-dev.github.io/es/case-studies/{slug}/")
           actual_urls = {
               (entry.findtext("sm:loc", namespaces=namespace) or "").strip()
               for entry in urls
@@ -98,7 +111,7 @@ jobs:
               if not (entry.findtext("sm:lastmod", namespaces=namespace) or "").strip():
                   raise SystemExit("Sitemap URL without lastmod")
 
-          for path in [*case_pages, *english_pages]:
+          for path in [*case_pages, *english_pages, *spanish_pages]:
               page = path.as_posix()
               html = path.read_text(encoding="utf-8")
               match = re.search(
@@ -137,15 +150,23 @@ jobs:
               slug = path.parent.name
               expected_pt = f"https://rodri-oliveira-dev.github.io/case-studies/{slug}/"
               expected_en = f"https://rodri-oliveira-dev.github.io/en/case-studies/{slug}/"
-              expected_self = expected_en if path.parts[0] == "en" else expected_pt
+              expected_es = f"https://rodri-oliveira-dev.github.io/es/case-studies/{slug}/"
+              expected_self = (
+                  expected_en if path.parts[0] == "en"
+                  else expected_es if path.parts[0] == "es"
+                  else expected_pt
+              )
               if not canonical or canonical.group(1) != expected_self:
                   raise SystemExit(f"Invalid canonical in {page}")
-              if set(alternates) != {"pt-BR", "en", "x-default"}:
-                  raise SystemExit(f"Incomplete hreflang set in {page}")
-              if alternates != {
+              expected_alternates = {
                   "pt-BR": expected_pt,
                   "en": expected_en,
                   "x-default": expected_pt,
-              }:
+              }
+              if slug in es_slugs:
+                  expected_alternates["es"] = expected_es
+              if set(alternates) != set(expected_alternates):
+                  raise SystemExit(f"Incomplete hreflang set in {page}")
+              if alternates != expected_alternates:
                   raise SystemExit(f"Incorrect reciprocal hreflang values in {page}")
           PY

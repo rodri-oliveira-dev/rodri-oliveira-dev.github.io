@@ -1,7 +1,13 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-const caseStudyUrls = ["case-studies", path.join("en", "case-studies")]
+const languageRoots = ["", "en", "es"];
+const pageUrls = languageRoots
+  .filter((root) => fs.existsSync(path.join(root, "index.html")))
+  .map((root) => `http://127.0.0.1:8080/${root ? `${root}/` : ""}`);
+const caseStudyUrls = languageRoots
+  .map((root) => path.join(root, "case-studies"))
+  .filter((root) => fs.existsSync(root))
   .flatMap((root) => fs.readdirSync(root, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && fs.existsSync(path.join(root, entry.name, "index.html")))
     .map((entry) => `http://127.0.0.1:8080/${root.split(path.sep).join("/")}/${entry.name}/`))
@@ -11,8 +17,7 @@ module.exports = {
   ci: {
     collect: {
       url: [
-        "http://127.0.0.1:8080/",
-        "http://127.0.0.1:8080/en/",
+        ...pageUrls,
         ...caseStudyUrls,
       ],
       numberOfRuns: 3,
