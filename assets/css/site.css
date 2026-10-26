@@ -1366,6 +1366,10 @@ h1 {
   margin-bottom: 24px;
 }
 
+.case-study-copy code {
+  overflow-wrap: anywhere;
+}
+
 .case-study-constraint-grid,
 .case-study-decision-grid,
 .case-study-failure-grid {
