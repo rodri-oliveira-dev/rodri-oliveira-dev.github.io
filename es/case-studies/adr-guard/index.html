@@ -190,6 +190,12 @@
   &lt;ProjectReference Include="../Infrastructure/Infrastructure.csproj" /&gt;
 &lt;/ItemGroup&gt;</code></pre>
         <p>Cuando reemplaza el proyecto con el accesorio infractor y repite el comando, el informe identifica la referencia y la línea como <code>violation</code>.</p>
+        <pre class="case-study-code"><code>(
+  cd docs/examples/architectural-drift
+  adr-guard drift . --rules .adrguard-fitness.json \
+    --write-baseline drift-baseline.json
+)
+# Revise la línea base antes de confirmarla</code></pre>
 
         <h3>5. Aplicar la política sin borrar matices</h3>
         <div class="case-study-table-wrap">

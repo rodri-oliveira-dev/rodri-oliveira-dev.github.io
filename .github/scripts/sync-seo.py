@@ -416,7 +416,7 @@ def structured_block(
         ),
         ensure_ascii=False,
         indent=2,
-    )
+    ).replace("<", "\\u003c")
     indented = "\n".join(f"  {line}" for line in payload.splitlines())
     return (
         f"{SEO_START}\n"

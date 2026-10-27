@@ -267,13 +267,14 @@ jobs:
           set -euo pipefail
           workflows=(site-validation.yml seo-validation.yml accessibility.yml lighthouse.yml actions-security.yml)
           declare -A run_ids
+          dispatched_at="$(date -u -d '30 seconds ago' +%Y-%m-%dT%H:%M:%SZ)"
           for workflow in "${workflows[@]}"; do
             gh workflow run "$workflow" --repo "$GH_REPO" --ref "$PR_BRANCH"
           done
           for workflow in "${workflows[@]}"; do
             run_id=""
             for _ in {1..30}; do
-              run_id="$(gh run list --repo "$GH_REPO" --workflow "$workflow" --branch "$PR_BRANCH" --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId // empty')"
+              run_id="$(gh run list --repo "$GH_REPO" --workflow "$workflow" --branch "$PR_BRANCH" --event workflow_dispatch --limit 10 --json databaseId,createdAt --jq "[.[] | select(.createdAt >= \"${dispatched_at}\")] | .[0].databaseId // empty")"
               [[ -n "$run_id" ]] && break
               sleep 2
             done

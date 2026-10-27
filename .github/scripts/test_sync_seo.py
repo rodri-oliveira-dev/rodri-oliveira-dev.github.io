@@ -1,6 +1,7 @@
 """Regression coverage for deterministic sitemap lastmod generation."""
 
 import importlib.util
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -97,6 +98,28 @@ class SpanishInfrastructureTests(unittest.TestCase):
         self.assertEqual(article["inLanguage"], "es-419")
         self.assertEqual(article["headline"], "Arquitectura & código")
         self.assertIn(sync.HASHNODE_PROFILE_URL, person["sameAs"])
+
+    def test_hashnode_title_cannot_terminate_json_ld_script(self):
+        title = "Arquitectura </script><script>alert(1)</script>"
+        articles = [{
+            "title": title,
+            "url": "https://rodri-oliveira-dev.hashnode.dev/arquitectura-segura",
+            "publishedAt": "2026-10-26T20:50:14Z",
+            "description": "Contenido original en español.",
+        }]
+
+        block = sync.structured_block(
+            "es-419", [], True, ("pt-BR", "en", "es-419"), articles
+        )
+        json_text = block.split('<script type="application/ld+json">\n', 1)[1].rsplit(
+            "\n  </script>", 1
+        )[0]
+        payload = json.loads(json_text)
+        article = next(node for node in payload["@graph"] if node["@type"] == "Article")
+
+        self.assertNotIn("</script>", json_text.lower())
+        self.assertIn("\\u003c/script>", json_text)
+        self.assertEqual(article["headline"], title)
 
     def test_hreflang_never_references_an_absent_spanish_page(self):
         html = """<head>

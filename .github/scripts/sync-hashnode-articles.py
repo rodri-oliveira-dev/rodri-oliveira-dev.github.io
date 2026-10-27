@@ -254,18 +254,18 @@ def synchronize_writing_section(document: str, articles: list[dict]) -> str:
     return document[: start + len(START)] + rendered + document[end:]
 
 
-def synchronize_homepage(articles: list[dict]) -> None:
+def render_homepage(articles: list[dict]) -> str:
     document = ES_INDEX.read_text(encoding="utf-8")
     document = synchronize_rss_discovery(document)
-    document = synchronize_writing_section(document, articles)
-    ES_INDEX.write_text(document, encoding="utf-8")
+    return synchronize_writing_section(document, articles)
 
 
 def main() -> None:
-    # Fetch and parse before writing either output, preserving the last valid state on failure.
+    # Fetch, parse, and validate both outputs before replacing either valid artifact.
     articles = parse_feed(fetch_feed())
+    homepage = render_homepage(articles)
     write_catalog(articles)
-    synchronize_homepage(articles)
+    ES_INDEX.write_text(homepage, encoding="utf-8")
     print(f"Synchronized {len(articles)} Hashnode article(s).")
     print(f"Rendered {min(4, len(articles))} article(s) into es/index.html.")
     for article in articles[:4]:

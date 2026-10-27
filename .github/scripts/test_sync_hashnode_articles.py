@@ -73,6 +73,30 @@ class HashnodeParsingTests(unittest.TestCase):
                     sync.main()
             self.assertEqual(catalog.read_text(encoding="utf-8"), '[{"title":"preservado"}]\n')
 
+    def test_homepage_validation_failure_does_not_replace_existing_catalog(self):
+        payload = (
+            "<rss><channel>"
+            + rss_item(
+                "Artículo válido",
+                "https://rodri-oliveira-dev.hashnode.dev/valido",
+                "Mon, 26 Oct 2026 10:00:00 GMT",
+            )
+            + "</channel></rss>"
+        ).encode()
+        with tempfile.TemporaryDirectory() as directory:
+            catalog = Path(directory) / "catalog.json"
+            homepage = Path(directory) / "index.html"
+            catalog.write_text('[{"title":"preservado"}]\n', encoding="utf-8")
+            homepage.write_text(HOMEPAGE.replace(sync.START, ""), encoding="utf-8")
+            with (
+                patch.object(sync, "DATA_PATH", catalog),
+                patch.object(sync, "ES_INDEX", homepage),
+                patch.object(sync, "fetch_feed", return_value=payload),
+            ):
+                with self.assertRaises(SystemExit):
+                    sync.main()
+            self.assertEqual(catalog.read_text(encoding="utf-8"), '[{"title":"preservado"}]\n')
+
 
 class HashnodeRenderingTests(unittest.TestCase):
     @staticmethod
