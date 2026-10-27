@@ -8,12 +8,14 @@ import re
 import subprocess
 from datetime import date, datetime, timezone
 from pathlib import Path
+from urllib.parse import urlsplit
 import xml.etree.ElementTree as ET
 from xml.sax.saxutils import escape
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA_PATH = ROOT / "assets/data/newsletter-articles.json"
 DEVTO_DATA_PATH = ROOT / "assets/data/devto-articles.json"
+HASHNODE_DATA_PATH = ROOT / "assets/data/hashnode-articles.json"
 PT_INDEX = ROOT / "index.html"
 EN_INDEX = ROOT / "en/index.html"
 ES_INDEX = ROOT / "es/index.html"
@@ -24,7 +26,10 @@ EN_URL = f"{SITE_URL}en/"
 ES_URL = f"{SITE_URL}es/"
 PT_FEED_URL = f"{SITE_URL}newsletter/feed.xml"
 EN_FEED_URL = "https://dev.to/feed/rodri-oliveira-dev"
+ES_FEED_URL = "https://rodri-oliveira-dev.hashnode.dev/rss.xml"
 DEV_PROFILE_URL = "https://dev.to/rodri-oliveira-dev"
+HASHNODE_PROFILE_URL = "https://hashnode.com/@rodri-oliveira-dev"
+HASHNODE_PUBLICATION_URL = "https://rodri-oliveira-dev.hashnode.dev/"
 NEWSLETTER_URL = (
     "https://www.linkedin.com/newsletters/"
     "caf%C3%A9-com-c%C3%B3digo-6880618748047314945/"
@@ -101,6 +106,13 @@ def rss_discovery(language: str, devto_enabled: bool) -> str:
             f'href="{PT_FEED_URL}">'
         )
 
+    if language == "es-419":
+        return (
+            '  <link rel="alternate" type="application/rss+xml" '
+            'title="Arquitectura en Código — RSS" '
+            f'href="{ES_FEED_URL}">'
+        )
+
     raise SystemExit(f"Idioma sem RSS configurado: {language}.")
 
 
@@ -147,6 +159,38 @@ def load_articles() -> list[dict]:
     return valid
 
 
+def load_hashnode_articles() -> list[dict]:
+    if not HASHNODE_DATA_PATH.exists():
+        return []
+    raw = json.loads(HASHNODE_DATA_PATH.read_text(encoding="utf-8"))
+    if not isinstance(raw, list):
+        raise SystemExit("hashnode-articles.json deve conter uma lista.")
+    valid: list[dict] = []
+    for article in raw:
+        if not isinstance(article, dict):
+            continue
+        title = str(article.get("title") or "").strip()
+        published_at = str(article.get("publishedAt") or "").strip()
+        url = str(article.get("url") or "").strip()
+        url_parts = urlsplit(url)
+        try:
+            parsed = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        if (
+            title
+            and url_parts.scheme == "https"
+            and url_parts.hostname == "rodri-oliveira-dev.hashnode.dev"
+            and parsed.tzinfo is not None
+        ):
+            valid.append(article)
+    valid.sort(
+        key=lambda article: (str(article["publishedAt"]), str(article["url"])),
+        reverse=True,
+    )
+    return valid
+
+
 def article_nodes(articles: list[dict]) -> tuple[list[dict], list[dict]]:
     nodes: list[dict] = []
     refs: list[dict] = []
@@ -177,12 +221,41 @@ def article_nodes(articles: list[dict]) -> tuple[list[dict], list[dict]]:
     return nodes, refs
 
 
+def hashnode_article_nodes(articles: list[dict]) -> tuple[list[dict], list[dict]]:
+    nodes: list[dict] = []
+    refs: list[dict] = []
+    for article in articles[:4]:
+        url = str(article["url"]).strip()
+        node_id = f"{url}#article"
+        node: dict = {
+            "@type": "Article",
+            "@id": node_id,
+            "url": url,
+            "headline": str(article["title"]).strip(),
+            "datePublished": str(article["publishedAt"]).strip(),
+            "inLanguage": "es-419",
+            "author": {"@id": PERSON_ID},
+            "isPartOf": {
+                "@type": "Periodical",
+                "name": "Arquitectura en Código",
+                "url": HASHNODE_PUBLICATION_URL,
+            },
+        }
+        description = str(article.get("description") or "").strip()
+        if description:
+            node["description"] = description
+        nodes.append(node)
+        refs.append({"@id": node_id})
+    return nodes, refs
+
+
 def person_node(language: str, devto_enabled: bool) -> dict:
     is_pt = language == "pt-BR"
     is_es = language == "es-419"
     same_as = [
         "https://github.com/rodri-oliveira-dev",
         "https://www.linkedin.com/in/rodri-oliveira-dev",
+        HASHNODE_PROFILE_URL,
     ]
     if not is_pt and devto_enabled:
         same_as.append(DEV_PROFILE_URL)
@@ -270,13 +343,19 @@ def structured_data(
     articles: list[dict],
     devto_enabled: bool,
     available_languages: tuple[str, ...] | None = None,
+    hashnode_articles: list[dict] | None = None,
 ) -> dict:
     is_pt = language == "pt-BR"
     is_es = language == "es-419"
     variant = LANGUAGE_VARIANTS[language]
     page_url = variant["url"]
     profile_id = variant["profile_id"]
-    article_graph, article_refs = article_nodes(articles) if is_pt else ([], [])
+    if is_pt:
+        article_graph, article_refs = article_nodes(articles)
+    elif is_es:
+        article_graph, article_refs = hashnode_article_nodes(hashnode_articles or [])
+    else:
+        article_graph, article_refs = ([], [])
     available_languages = available_languages or tuple(existing_home_variants())
 
     website = {
@@ -325,9 +404,16 @@ def structured_block(
     articles: list[dict],
     devto_enabled: bool,
     available_languages: tuple[str, ...] | None = None,
+    hashnode_articles: list[dict] | None = None,
 ) -> str:
     payload = json.dumps(
-        structured_data(language, articles, devto_enabled, available_languages),
+        structured_data(
+            language,
+            articles,
+            devto_enabled,
+            available_languages,
+            hashnode_articles,
+        ),
         ensure_ascii=False,
         indent=2,
     )
@@ -347,8 +433,15 @@ def replace_structured_data(
     articles: list[dict],
     devto_enabled: bool,
     available_languages: tuple[str, ...] | None = None,
+    hashnode_articles: list[dict] | None = None,
 ) -> str:
-    block = structured_block(language, articles, devto_enabled, available_languages)
+    block = structured_block(
+        language,
+        articles,
+        devto_enabled,
+        available_languages,
+        hashnode_articles,
+    )
 
     if SEO_START in html and SEO_END in html:
         before, remainder = html.split(SEO_START, 1)
@@ -403,9 +496,10 @@ def synchronize_html(
     articles: list[dict],
     devto_enabled: bool,
     available_languages: tuple[str, ...],
+    hashnode_articles: list[dict],
 ) -> None:
     html = path.read_text(encoding="utf-8")
-    if language in ("pt-BR", "en"):
+    if language in ("pt-BR", "en", "es-419"):
         html = ensure_rss_discovery(html, language, devto_enabled)
     if "es-419" in available_languages:
         html = synchronize_hreflang(
@@ -421,6 +515,7 @@ def synchronize_html(
         articles,
         devto_enabled,
         available_languages,
+        hashnode_articles,
     )
     path.write_text(html, encoding="utf-8")
 
@@ -678,6 +773,7 @@ def validate_json_ld(path: Path) -> None:
 
 def main() -> None:
     articles = load_articles()
+    hashnode_articles = load_hashnode_articles()
     devto_enabled = DEVTO_DATA_PATH.exists()
     pt_dirty = file_was_dirty(PT_INDEX)
     en_dirty = file_was_dirty(EN_INDEX)
@@ -692,6 +788,7 @@ def main() -> None:
             articles,
             devto_enabled if language != "pt-BR" else False,
             available_languages,
+            hashnode_articles,
         )
     for slug, paths in case_studies:
         synchronize_case_study_hreflang(slug, paths)
@@ -712,6 +809,7 @@ def main() -> None:
         print("- en/index.html: WebSite/ProfilePage/Person + DEV Community RSS discovery")
     else:
         print("- en/index.html: migration-compatible newsletter RSS discovery (DEV catalog not initialized)")
+    print("- es/index.html: WebSite/ProfilePage/Person + Hashnode Article entities + RSS discovery")
     print("- sitemap.xml: existing language variants + reciprocal hreflang + reliable lastmod")
 
 

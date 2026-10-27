@@ -58,8 +58,10 @@ jobs:
                   raise SystemExit(f"Required localized homepage missing: {path}")
               page = path.as_posix()
               html = Path(page).read_text(encoding="utf-8")
-              if page != "es/index.html" and 'type="application/rss+xml"' not in html:
+              if 'type="application/rss+xml"' not in html:
                   raise SystemExit(f"RSS autodiscovery missing in {page}")
+              if page == "es/index.html" and "https://rodri-oliveira-dev.hashnode.dev/rss.xml" not in html:
+                  raise SystemExit("Spanish RSS autodiscovery does not point to Hashnode")
 
               match = re.search(
                   r'<!-- SEO_STRUCTURED_DATA:START -->\s*<script type="application/ld\+json">\s*(\{.*?\})\s*</script>\s*<!-- SEO_STRUCTURED_DATA:END -->',

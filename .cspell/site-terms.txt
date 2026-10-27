@@ -2,6 +2,7 @@ ADR
 ADRs
 adrguard
 Apigee
+Arquitectura
 Aspire
 best-effort
 ciclomática
@@ -10,6 +11,7 @@ CrispyWaffle
 Dapper
 Dommel
 DDD
+devto
 dotnet
 DotNetRepoInspector
 Engineering
@@ -23,6 +25,8 @@ gamificação
 gamificación
 GitHub
 HANA
+Hashnode
+hashnode
 Henk
 i18n
 IaC

@@ -162,10 +162,28 @@ const redirect = read("pt-br/index.html");
 assert.match(redirect, /<meta name="robots" content="noindex,\s*follow">/);
 assert.match(redirect, new RegExp(`<link rel="canonical" href="${SITE_URL}/">`));
 
-const articleUrls = (html) => [...html.matchAll(/<a class="text-link" href="(https:\/\/www\.linkedin\.com\/pulse\/[^"]+)"/g)]
+const spanishHome = read("es/index.html");
+const portugueseWriting = read("index.html").match(/<section class="section writing-section"[\s\S]*?<\/section>/)?.[0] ?? "";
+const englishWriting = read("en/index.html").match(/<section class="section writing-section"[\s\S]*?<\/section>/)?.[0] ?? "";
+const hashnodeCatalog = JSON.parse(read("assets/data/hashnode-articles.json"));
+const renderedHashnodeUrls = [...spanishHome.matchAll(/<a class="text-link" href="(https:\/\/rodri-oliveira-dev\.hashnode\.dev\/[^"]+)"/g)]
   .map((match) => match[1]);
-assert.deepEqual(articleUrls(read("es/index.html")), articleUrls(read("index.html")), "Spanish homepage must preserve external article identities");
-assert.equal(jsonLd(read("es/index.html"))[0]["@graph"].filter((node) => node["@type"] === "Article").length, 0, "Spanish JSON-LD must not claim untranslated articles");
+assert.deepEqual(renderedHashnodeUrls, hashnodeCatalog.slice(0, 4).map((article) => article.url),
+  "Spanish homepage must render only the latest Hashnode articles");
+assert.ok(spanishHome.includes('href="https://rodri-oliveira-dev.hashnode.dev/rss.xml"'),
+  "Spanish RSS autodiscovery must point to Hashnode");
+assert.ok(!spanishHome.includes("https://www.linkedin.com/pulse/"),
+  "Spanish homepage must not render Portuguese newsletter articles");
+assert.ok(!spanishHome.includes("https://dev.to/rodri-oliveira-dev/"),
+  "Spanish homepage must not render English DEV Community articles");
+assert.equal(jsonLd(spanishHome)[0]["@graph"].filter((node) => node["@type"] === "Article").length,
+  Math.min(4, hashnodeCatalog.length), "Spanish JSON-LD must describe rendered Hashnode articles");
+assert.ok(portugueseWriting.includes("https://www.linkedin.com/pulse/"), "PT-BR writing source must remain LinkedIn");
+assert.ok(!portugueseWriting.includes("hashnode.dev/") && !portugueseWriting.includes("https://dev.to/"),
+  "PT-BR writing section must remain isolated from EN and ES sources");
+assert.ok(englishWriting.includes("https://dev.to/rodri-oliveira-dev/"), "English writing source must remain DEV Community");
+assert.ok(!englishWriting.includes("hashnode.dev/") && !englishWriting.includes("linkedin.com/pulse/"),
+  "English writing section must remain isolated from PT-BR and ES sources");
 
 const sitemapEntries = [...read("sitemap.xml").matchAll(/<url>\s*([\s\S]*?)\s*<\/url>/g)].map((match) => {
   const block = match[1];

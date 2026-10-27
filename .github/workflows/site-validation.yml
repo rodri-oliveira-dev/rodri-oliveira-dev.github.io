@@ -26,8 +26,8 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Test DEV Community synchronization boundaries
-        run: python3 -m unittest discover -s .github/scripts -p 'test_sync_devto_articles.py'
+      - name: Test external article synchronization boundaries
+        run: python3 -m unittest discover -s .github/scripts -p 'test_sync_*articles.py'
 
       - name: Set up Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0

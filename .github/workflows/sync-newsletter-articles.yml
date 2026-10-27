@@ -87,11 +87,18 @@ jobs:
           echo "feed_count=${feed_count}" >> "$GITHUB_OUTPUT"
           echo "Validated ${article_count} homepage article(s) and ${feed_count} RSS item(s)."
 
-          if [[ -n "$(git status --porcelain -- es)" ]]; then
-            echo "Newsletter sync modified Spanish localization artifacts."
-            git status --short -- es
-            exit 1
-          fi
+          python3 - <<'PY'
+          import re
+          import subprocess
+          from pathlib import Path
+
+          path = Path("es/index.html")
+          before = subprocess.check_output(["git", "show", f"HEAD:{path.as_posix()}"], text=True)
+          after = path.read_text(encoding="utf-8")
+          pattern = r"<!-- SEO_STRUCTURED_DATA:START -->.*?<!-- SEO_STRUCTURED_DATA:END -->"
+          if re.sub(pattern, "<SEO_BLOCK>", before, flags=re.S) != re.sub(pattern, "<SEO_BLOCK>", after, flags=re.S):
+              raise SystemExit("Newsletter sync changed Spanish content outside shared SEO metadata.")
+          PY
 
           git diff --check
 
@@ -99,7 +106,7 @@ jobs:
         id: changes
         shell: bash
         run: |
-          if git diff --quiet -- index.html en/index.html newsletter/feed.xml sitemap.xml; then
+          if git diff --quiet -- index.html en/index.html es/index.html newsletter/feed.xml sitemap.xml; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "Generated newsletter and SEO content already up to date."
           else
@@ -126,7 +133,7 @@ jobs:
           git switch -c "$AUTOMATION_BRANCH"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html en/index.html newsletter/feed.xml sitemap.xml
+          git add index.html en/index.html es/index.html newsletter/feed.xml sitemap.xml
           git commit -m "content: sync latest newsletter articles"
 
           if [[ -n "$remote_sha" ]]; then

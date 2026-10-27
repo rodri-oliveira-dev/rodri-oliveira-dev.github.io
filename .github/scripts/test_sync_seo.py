@@ -81,6 +81,23 @@ class SpanishInfrastructureTests(unittest.TestCase):
         self.assertEqual(profile["inLanguage"], "es-419")
         self.assertEqual(profile["url"], sync.ES_URL)
 
+    def test_spanish_rss_and_hashnode_articles_are_structured_from_catalog(self):
+        articles = [{
+            "title": "Arquitectura & código",
+            "url": "https://rodri-oliveira-dev.hashnode.dev/arquitectura",
+            "publishedAt": "2026-10-26T20:50:14Z",
+            "description": "Contenido original en español.",
+        }]
+        payload = sync.structured_data("es-419", [], True, ("pt-BR", "en", "es-419"), articles)
+        profile = next(node for node in payload["@graph"] if node["@type"] == "ProfilePage")
+        article = next(node for node in payload["@graph"] if node["@type"] == "Article")
+        person = next(node for node in payload["@graph"] if node["@type"] == "Person")
+        self.assertEqual(sync.rss_discovery("es-419", True).count(sync.ES_FEED_URL), 1)
+        self.assertEqual(profile["hasPart"], [{"@id": article["@id"]}])
+        self.assertEqual(article["inLanguage"], "es-419")
+        self.assertEqual(article["headline"], "Arquitectura & código")
+        self.assertIn(sync.HASHNODE_PROFILE_URL, person["sameAs"])
+
     def test_hreflang_never_references_an_absent_spanish_page(self):
         html = """<head>
   <link rel="alternate" hreflang="pt-BR" href="https://example.test/">

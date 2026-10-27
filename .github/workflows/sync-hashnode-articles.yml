@@ -1,0 +1,286 @@
+name: Sync Hashnode articles
+
+on:
+  schedule:
+    - cron: "45 10 * * *"
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/scripts/sync-hashnode-articles.py"
+      - ".github/workflows/sync-hashnode-articles.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-hashnode-articles
+  cancel-in-progress: false
+
+env:
+  AUTOMATION_BRANCH: automation/sync-hashnode-articles
+  WORKSPACE_ARTIFACT: hashnode-sync-workspace
+
+jobs:
+  sync_render:
+    name: Fetch, render and validate Hashnode articles
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 10
+    outputs:
+      changed: ${{ steps.changes.outputs.changed }}
+      article_count: ${{ steps.validation.outputs.article_count }}
+      rendered_count: ${{ steps.validation.outputs.rendered_count }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Synchronize Hashnode RSS
+        run: python3 .github/scripts/sync-hashnode-articles.py
+
+      - name: Synchronize SEO metadata
+        run: python3 .github/scripts/sync-seo.py
+
+      - name: Validate generated Spanish content
+        id: validation
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          read -r article_count rendered_count < <(python3 - <<'PY'
+          import json
+          import re
+          from datetime import datetime
+          from pathlib import Path
+          from urllib.parse import urlsplit
+
+          data = json.loads(Path("assets/data/hashnode-articles.json").read_text(encoding="utf-8"))
+          if not isinstance(data, list) or not data:
+              raise SystemExit("Hashnode catalog is empty or invalid.")
+
+          previous = None
+          urls = set()
+          for article in data:
+              if not isinstance(article, dict):
+                  raise SystemExit("Hashnode catalog contains a non-object item.")
+              for field in ("title", "url", "publishedAt"):
+                  if not str(article.get(field) or "").strip():
+                      raise SystemExit(f"Hashnode article is missing {field}.")
+              url = urlsplit(str(article["url"]))
+              if url.scheme != "https" or url.hostname != "rodri-oliveira-dev.hashnode.dev":
+                  raise SystemExit(f"Unexpected Hashnode article URL: {article['url']}")
+              if article["url"] in urls:
+                  raise SystemExit(f"Duplicate Hashnode article URL: {article['url']}")
+              urls.add(article["url"])
+              published = datetime.fromisoformat(str(article["publishedAt"]).replace("Z", "+00:00"))
+              if published.tzinfo is None:
+                  raise SystemExit(f"Hashnode article date lacks timezone: {article['publishedAt']}")
+              if previous is not None and published > previous:
+                  raise SystemExit("Hashnode catalog is not sorted newest first.")
+              previous = published
+
+          html = Path("es/index.html").read_text(encoding="utf-8")
+          start_marker = "<!-- HASHNODE_ARTICLES:START -->"
+          end_marker = "<!-- HASHNODE_ARTICLES:END -->"
+          if html.count(start_marker) != 1 or html.count(end_marker) != 1:
+              raise SystemExit("Hashnode article markers are missing or duplicated.")
+          block = html[html.index(start_marker):html.index(end_marker)]
+          rendered = block.count("<article>")
+          if rendered != min(4, len(data)):
+              raise SystemExit(f"Unexpected number of rendered Hashnode articles: {rendered}")
+          if block.count('target="_blank"') != rendered:
+              raise SystemExit("Not every Hashnode article has the expected external link.")
+          if "https://rodri-oliveira-dev.hashnode.dev/rss.xml" not in html:
+              raise SystemExit("Spanish RSS autodiscovery does not point to Hashnode.")
+          if re.search(r'https://www\.linkedin\.com/pulse/', block):
+              raise SystemExit("Portuguese newsletter content leaked into the Spanish article block.")
+          print(len(data), rendered)
+          PY
+          )
+
+          if [[ -n "$(git status --porcelain -- assets/data/devto-articles.json assets/data/newsletter-articles.json newsletter/feed.xml)" ]]; then
+            echo "The Hashnode sync attempted to modify another language catalog or feed."
+            git status --short -- assets/data/devto-articles.json assets/data/newsletter-articles.json newsletter/feed.xml
+            exit 1
+          fi
+
+          python3 - <<'PY'
+          import re
+          import subprocess
+          from pathlib import Path
+
+          pattern = r"<!-- SEO_STRUCTURED_DATA:START -->.*?<!-- SEO_STRUCTURED_DATA:END -->"
+          for path in (Path("index.html"), Path("en/index.html")):
+              before = subprocess.check_output(["git", "show", f"HEAD:{path.as_posix()}"], text=True)
+              after = path.read_text(encoding="utf-8")
+              if re.sub(pattern, "<SEO_BLOCK>", before, flags=re.S) != re.sub(pattern, "<SEO_BLOCK>", after, flags=re.S):
+                  raise SystemExit(f"Hashnode sync changed {path} outside shared SEO metadata.")
+          PY
+
+          git diff --check
+          echo "article_count=${article_count}" >> "$GITHUB_OUTPUT"
+          echo "rendered_count=${rendered_count}" >> "$GITHUB_OUTPUT"
+
+      - name: Detect generated content changes
+        id: changes
+        shell: bash
+        run: |
+          if git diff --quiet -- assets/data/hashnode-articles.json es/index.html index.html en/index.html sitemap.xml; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Spanish Hashnode content is already up to date."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "New or updated Hashnode content detected."
+          fi
+
+      - name: Upload rendered workspace
+        if: steps.changes.outputs.changed == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ env.WORKSPACE_ARTIFACT }}
+          path: |
+            assets/data/hashnode-articles.json
+            index.html
+            en/index.html
+            es/index.html
+            sitemap.xml
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Write no-change summary
+        if: steps.changes.outputs.changed != 'true'
+        env:
+          ARTICLE_COUNT: ${{ steps.validation.outputs.article_count }}
+          RENDERED_COUNT: ${{ steps.validation.outputs.rendered_count }}
+        run: |
+          {
+            echo "# Hashnode synchronization"
+            echo
+            echo "- **Feed:** https://rodri-oliveira-dev.hashnode.dev/rss.xml"
+            echo "- **Feed items validated:** ${ARTICLE_COUNT:-n/a}"
+            echo "- **Articles rendered on the Spanish homepage:** ${RENDERED_COUNT:-n/a}"
+            echo "- **Result:** no repository changes required"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  publish_pr:
+    name: Publish automation Pull Request
+    if: needs.sync_render.outputs.changed == 'true'
+    needs: sync_render
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      branch: ${{ steps.pull_request.outputs.branch }}
+      number: ${{ steps.pull_request.outputs.number }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download rendered workspace
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ env.WORKSPACE_ARTIFACT }}
+          path: .
+
+      - name: Publish automation branch and open or update PR
+        id: pull_request
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.AUTOMATION_PR_TOKEN || github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh auth setup-git
+          remote_sha="$(git ls-remote --heads origin "refs/heads/${AUTOMATION_BRANCH}" | awk '{print $1}')"
+          git switch -c "$AUTOMATION_BRANCH"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/data/hashnode-articles.json index.html en/index.html es/index.html sitemap.xml
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo "Hashnode synchronization completed without repository changes."
+            exit 1
+          fi
+          git commit -m "content: sync latest Hashnode articles"
+          if [[ -n "$remote_sha" ]]; then
+            git push --force-with-lease="refs/heads/${AUTOMATION_BRANCH}:${remote_sha}" origin "HEAD:refs/heads/${AUTOMATION_BRANCH}"
+          else
+            git push --set-upstream origin "HEAD:refs/heads/${AUTOMATION_BRANCH}"
+          fi
+
+          cat > /tmp/hashnode-sync-pr.md <<EOF
+          ## Resumo
+
+          Sincroniza a versão em espanhol com o RSS de Arquitectura en Código no Hashnode.
+
+          - normaliza o feed em \`assets/data/hashnode-articles.json\`;
+          - renderiza até quatro artigos em \`es/index.html\`;
+          - sincroniza RSS autodiscovery, JSON-LD e sitemap;
+          - preserva os catálogos e conteúdos editoriais de PT-BR e EN;
+          - exige revisão e merge manual após os quality gates.
+
+          Gerado por [Sync Hashnode articles](https://github.com/${GH_REPO}/actions/runs/${GITHUB_RUN_ID}).
+          EOF
+
+          pr_number="$(gh pr list --repo "$GH_REPO" --head "$AUTOMATION_BRANCH" --base main --state open --json number --jq '.[0].number // empty')"
+          if [[ -n "$pr_number" ]]; then
+            gh pr edit "$pr_number" --repo "$GH_REPO" --title "content: sync latest Hashnode articles" --body-file /tmp/hashnode-sync-pr.md
+          else
+            pr_url="$(gh pr create --repo "$GH_REPO" --base main --head "$AUTOMATION_BRANCH" --title "content: sync latest Hashnode articles" --body-file /tmp/hashnode-sync-pr.md)"
+            pr_number="$(gh pr view "$pr_url" --repo "$GH_REPO" --json number --jq '.number')"
+          fi
+          echo "branch=${AUTOMATION_BRANCH}" >> "$GITHUB_OUTPUT"
+          echo "number=${pr_number}" >> "$GITHUB_OUTPUT"
+
+  quality_gates:
+    name: Run quality gates
+    if: needs.sync_render.outputs.changed == 'true'
+    needs:
+      - sync_render
+      - publish_pr
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 30
+    permissions:
+      actions: write
+      contents: read
+
+    steps:
+      - name: Dispatch and await repository quality gates
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_BRANCH: ${{ needs.publish_pr.outputs.branch }}
+        run: |
+          set -euo pipefail
+          workflows=(site-validation.yml seo-validation.yml accessibility.yml lighthouse.yml actions-security.yml)
+          declare -A run_ids
+          for workflow in "${workflows[@]}"; do
+            gh workflow run "$workflow" --repo "$GH_REPO" --ref "$PR_BRANCH"
+          done
+          for workflow in "${workflows[@]}"; do
+            run_id=""
+            for _ in {1..30}; do
+              run_id="$(gh run list --repo "$GH_REPO" --workflow "$workflow" --branch "$PR_BRANCH" --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId // empty')"
+              [[ -n "$run_id" ]] && break
+              sleep 2
+            done
+            [[ -n "$run_id" ]] || { echo "Could not locate ${workflow} run."; exit 1; }
+            run_ids["$workflow"]="$run_id"
+          done
+          for workflow in "${workflows[@]}"; do
+            gh run watch "${run_ids[$workflow]}" --repo "$GH_REPO" --exit-status
+          done
+          echo "Quality gates passed. Pull Request remains open for manual review and merge." >> "$GITHUB_STEP_SUMMARY"

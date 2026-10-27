@@ -31,6 +31,18 @@ As três homepages e os cinco estudos de caso por idioma possuem URLs canônicas
 
 O seletor PT/EN/ES preserva a página equivalente: na homepage troca apenas o idioma da homepage e, em um estudo de caso, mantém o mesmo slug. O idioma ativo é identificado visualmente e por `aria-current="page"`.
 
+## Publicações por idioma
+
+Cada versão do portfólio mantém a identidade e o idioma da sua própria fonte editorial:
+
+| Portfólio | Origem | Catálogo/feed |
+| --- | --- | --- |
+| PT-BR (`/`) | newsletter **Café com código** no LinkedIn | `assets/data/newsletter-articles.json` e `/newsletter/feed.xml` |
+| EN (`/en/`) | DEV Community | `assets/data/devto-articles.json` e `https://dev.to/feed/rodri-oliveira-dev` |
+| ES-419 (`/es/`) | **Arquitectura en Código** no Hashnode | `assets/data/hashnode-articles.json` e `https://rodri-oliveira-dev.hashnode.dev/rss.xml` |
+
+Os sincronizadores renderizam até quatro artigos recentes somente na homepage do idioma correspondente. Não há tradução automática nem equivalência declarada entre artigos de plataformas diferentes.
+
 ## RSS da newsletter
 
 Os artigos catalogados da newsletter **Café com código** também são publicados em RSS 2.0:
@@ -57,7 +69,7 @@ O site é intencionalmente livre de dependências de runtime:
 
 O repositório possui workflows para validação estrutural, acessibilidade, segurança do GitHub Actions, Lighthouse CI, saúde de links externos, atualização de dependências e automação de conteúdo. Os gates cobrem HTML, links, ortografia PT/EN/ES, canonical/hreflang, sitemap/JSON-LD, navegação por teclado e layout responsivo.
 
-A documentação completa dos workflows, gatilhos, quality gates, relatórios em Pull Requests e arquivos de suporte está em [`.github/README.md`](.github/README.md).
+A sincronização do Hashnode roda diariamente e também pode ser iniciada manualmente em **Actions → Sync Hashnode articles → Run workflow**. Ela valida o RSS, atualiza o catálogo espanhol, a homepage, o JSON-LD e o sitemap e cria ou atualiza um único Pull Request de automação somente quando existe mudança efetiva. A documentação completa dos workflows, operação e investigação de falhas está em [`.github/README.md`](.github/README.md).
 
 ## Estrutura
 
@@ -68,6 +80,8 @@ A documentação completa dos workflows, gatilhos, quality gates, relatórios em
 - `case-studies/`, `en/case-studies/` e `es/case-studies/` — cinco estudos de caso arquiteturais em português, inglês e espanhol
 - `newsletter/feed.xml` — feed RSS 2.0 da newsletter Café com código
 - `assets/data/newsletter-articles.json` — catálogo usado pela homepage e pelo RSS
+- `assets/data/devto-articles.json` — catálogo do DEV Community usado pela homepage inglesa
+- `assets/data/hashnode-articles.json` — catálogo do Hashnode usado pela homepage espanhola
 - `assets/css/site.css` — sistema visual responsivo
 - `assets/js/site.js` — comportamento mínimo de interface
 - `assets/brand/` — identidade visual pessoal
@@ -88,7 +102,7 @@ Toda mudança de conteúdo deve considerar as três versões do site. Para adici
 4. execute `python .github/scripts/sync-seo.py` para sincronizar alternates e `sitemap.xml`;
 5. execute `python -m unittest discover -s .github/scripts -p 'test_*.py'`, `node .github/scripts/test-site-i18n.cjs` e os validadores descritos em [`.github/README.md`](.github/README.md).
 
-Uma segunda execução de `sync-seo.py` deve deixar o worktree sem alterações. O sincronizador da newsletter continua alterando apenas a homepage portuguesa e seus artefatos; o sincronizador do DEV Community continua alterando apenas a homepage inglesa. A homepage espanhola referencia essas publicações como conteúdo externo no idioma original e não cria traduções ou entidades estruturadas fictícias.
+Uma segunda execução de `sync-seo.py` deve deixar o worktree sem alterações. O sincronizador da newsletter altera apenas o conteúdo editorial português, o sincronizador do DEV Community apenas o inglês e o sincronizador do Hashnode apenas o espanhol. Alterações compartilhadas ficam restritas ao SEO determinístico, como `sameAs` e `lastmod`; nenhum fluxo traduz ou sobrescreve o catálogo de outro idioma.
 
 ## Contato
 
