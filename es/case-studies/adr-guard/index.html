@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="es-419">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'none'; connect-src 'none'; frame-src 'none'; media-src 'none'; worker-src 'none'; form-action 'none'; upgrade-insecure-requests">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>De la decisión arquitectónica a la verificación continua | ADR Guard</title>
+  <meta name="description" content="Estudio de caso de ADR Guard: ADR, reglas de fitness, evidencia determinista, architectural drift y enforcement seguro en un escenario .NET reproducible.">
+  <meta name="author" content="Rodrigo de Oliveira">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#070b14">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://rodri-oliveira-dev.github.io/es/case-studies/adr-guard/">
+  <link rel="alternate" hreflang="pt-BR" href="https://rodri-oliveira-dev.github.io/case-studies/adr-guard/">
+  <link rel="alternate" hreflang="en" href="https://rodri-oliveira-dev.github.io/en/case-studies/adr-guard/">
+  <link rel="alternate" hreflang="es" href="https://rodri-oliveira-dev.github.io/es/case-studies/adr-guard/">
+  <link rel="alternate" hreflang="x-default" href="https://rodri-oliveira-dev.github.io/case-studies/adr-guard/">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="stylesheet" href="/assets/css/site.css">
+  <link rel="stylesheet" href="/assets/css/mobile-enhancements.css">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Rodrigo de Oliveira">
+  <meta property="og:title" content="De la decisión arquitectónica a la verificación continua">
+  <meta property="og:description" content="Cómo ADR Guard conecta decisiones, reglas de fitness y evidencias sin convertir la incertidumbre en conformidad.">
+  <meta property="og:url" content="https://rodri-oliveira-dev.github.io/es/case-studies/adr-guard/">
+  <meta property="og:image" content="https://rodri-oliveira-dev.github.io/assets/social/rodrigo-de-oliveira-og.png">
+  <meta property="og:image:alt" content="Rodrigo de Oliveira — Arquitecto de Software">
+  <meta property="og:locale" content="es_LA">
+  <meta property="og:locale:alternate" content="pt_BR">
+  <meta property="og:locale:alternate" content="en_US">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="De la decisión arquitectónica a la verificación continua">
+  <meta name="twitter:description" content="ADR Guard, reglas de fitness y detección verificable de architectural drift.">
+  <meta name="twitter:image" content="https://rodri-oliveira-dev.github.io/assets/social/rodrigo-de-oliveira-og.png">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": ["Article", "TechArticle"],
+    "headline": "De la decisión arquitectónica a la verificación continua",
+    "description": "Estudio de caso técnico sobre ADR, reglas de fitness, evidencia determinista y detección de architectural drift con ADR Guard.",
+    "datePublished": "2026-10-21",
+    "dateModified": "2026-10-26",
+    "image": "https://rodri-oliveira-dev.github.io/assets/social/rodrigo-de-oliveira-og.png",
+    "inLanguage": "es-419",
+    "url": "https://rodri-oliveira-dev.github.io/es/case-studies/adr-guard/",
+    "author": {"@type": "Person", "name": "Rodrigo de Oliveira", "url": "https://rodri-oliveira-dev.github.io/"},
+    "about": {
+      "@type": "SoftwareSourceCode",
+      "name": "ADR Guard",
+      "codeRepository": "https://github.com/rodri-oliveira-dev/adr-guard",
+      "programmingLanguage": ["C#", ".NET"],
+      "license": "https://github.com/rodri-oliveira-dev/adr-guard/blob/main/LICENSE"
+    },
+    "keywords": ["Architecture Decision Records", "architectural drift", "fitness functions", ".NET", "software architecture"]
+  }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Ir al contenido</a>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="/es/" aria-label="Rodrigo de Oliveira — portafolio"><span class="brand-symbol brand-symbol-image" aria-hidden="true"></span><span class="brand-name">Rodrigo de Oliveira</span></a>
+      <nav class="nav" aria-label="Navegación del estudio de caso"><a href="#decisions">Decisiones</a><a href="#scenario">Escenario</a><a href="#evidence">Evidencias</a></nav>
+      <div class="language-switcher" role="group" aria-label="Idioma"><a class="lang-link" href="/en/case-studies/adr-guard/" lang="en">EN</a><a class="lang-link" href="/case-studies/adr-guard/" lang="pt-BR">PT</a><a class="lang-link active" href="/es/case-studies/adr-guard/" lang="es-419" aria-current="page">ES</a></div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="case-study-hero">
+      <div class="container">
+        <p class="eyebrow">Estudio de caso arquitectónico · proyecto de código abierto</p>
+        <h1>De la decisión arquitectónica a la verificación continua</h1>
+        <p class="case-study-lead">Un ADR puede explicar por qué <strong>El dominio no debe depender de la infraestructura</strong>. El próximo desafío es detectar, con evidencia verificable, cuando la implementación no respeta esta decisión.</p>
+        <div class="hero-actions"><a class="button primary" href="https://github.com/rodri-oliveira-dev/adr-guard" target="_blank" rel="noreferrer">Abrir repositorio ↗</a><a class="button secondary" href="https://github.com/rodri-oliveira-dev/adr-guard/tree/main/docs/examples/architectural-drift" target="_blank" rel="noreferrer">Ejecute el ejemplo ↗</a></div>
+        <p class="case-study-note">Este es un escenario de repositorio reproducible, no un reclamo de adopción de producción o certificación de arquitectura completa.</p>
+      </div>
+    </section>
+
+    <section class="section case-study-section">
+      <div class="container case-study-two-column">
+        <div><p class="eyebrow">Problema</p><h2>La documentación preserva el razonamiento; no preserva por sí sola la dependencia.</h2></div>
+        <div class="case-study-copy">
+          <p>A medida que el software evoluciona, una referencia agregada por conveniencia puede alterar un límite planificado. El ADR sigue siendo aceptado y legible, mientras que el gráfico del código real cuenta otra historia.</p>
+          <p>Las consecuencias aparecen después: las reglas de dominio comienzan a conocer la persistencia, las pruebas requieren infraestructura y un cambio técnico atraviesa capas que deberían evolucionar por separado. El problema no es la falta de documentación, sino la distancia entre la decisión, la evidencia y el feedback.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section architecture-section">
+      <div class="container">
+        <div class="section-heading wide-heading"><p class="eyebrow">Restricciones y atributos de calidad</p><h2>La verificación debe ser útil sin afirmar más de lo que permite la evidencia.</h2></div>
+        <div class="case-study-constraint-grid">
+          <article><span>01</span><h3>Trazabilidad</h3><p>Cada regla apunta a un ADR por identidad estable y ruta relativa, preservando el origen de la restricción.</p></article>
+          <article><span>02</span><h3>Determinismo</h3><p>La misma entrada debe producir una clasificación, huella digital, resultado e informe estables.</p></article>
+          <article><span>03</span><h3>Falla segura</h3><p>La evidencia ausente, dinámica o ambigua produce <code>unknown</code>, nunca una aprobación implícita.</p></article>
+          <article><span>04</span><h3>Compatibilidad</h3><p>Deriva, impacto y validación tienen sus propios contratos sin cambiar los formatos ya publicados.</p></article>
+        </div>
+        <div class="case-study-quality-list" role="group" aria-label="Atributos de calidad priorizados"><span>Auditabilidad</span><span>Seguridad</span><span>Reproducibilidad</span><span>Operabilidad</span><span>Capacidad de evolución</span><span>Compatibilidad</span></div>
+        <figure class="case-study-figure">
+          <img src="/assets/diagrams/adr-guard-verification-flow-es.svg" alt="Flujo desde un ADR aceptado hasta una regla de fitness, evidencia acotada, evaluación con cuatro resultados y una política advisory o enforce." width="1120" height="360">
+          <figcaption>La política se aplica después de la evaluación; los cuatro resultados no se reducen a un valor booleano.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section case-study-section" id="decisions">
+      <div class="container">
+        <div class="section-heading wide-heading"><p class="eyebrow">Decisiones arquitectónicas</p><h2>Cuatro responsabilidades, cuatro preguntas diferentes.</h2></div>
+        <div class="case-study-decision-grid">
+          <article><h3>Validación estructural de ADR</h3><p><code>adr-guard check</code> verifica metadatos, secciones, referencias, ciclo de vida y otros contratos documentales. Un ADR válido todavía no prueba que el código lo cumpla.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/adr-guard/blob/main/docs/cli-reference.pt-BR.md" target="_blank" rel="noreferrer">Referencia de la CLI ↗</a></article>
+          <article><h3>Análisis de impacto</h3><p><code>adr-guard impact</code> correlaciona los archivos modificados con asignaciones locales explícitas. El resultado indica decisiones potencialmente afectadas para su revisión; no declara cumplimiento o violación.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/adr-guard/blob/main/docs/adr/0006-analyze-architecture-impact-from-explicit-mappings.md" target="_blank" rel="noreferrer">ADR 0006 ↗</a></article>
+          <article><h3>Detección de drift</h3><p><code>adr-guard drift</code> evalúa reglas opt-in asociadas con ADR vigentes. La v1 solo comprueba referencias estáticas exactas entre proyectos y consume pruebas externas reportadas.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/adr-guard/blob/main/docs/adr/0007-verify-architecture-rules-from-bounded-evidence.md" target="_blank" rel="noreferrer">ADR 0007 ↗</a></article>
+          <article><h3>Núcleo compartido, interno</h3><p><code>AdrGuard.Core</code> se centra en el análisis, la validación, el inventario de Git, el impacto y la deriva para CLI y MCP. No es un paquete público independiente; La interfaz de usuario y el transporte permanecen en los ejecutables.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/adr-guard/blob/main/docs/adr/0008-extract-an-internal-shared-core.md" target="_blank" rel="noreferrer">ADR 0008 ↗</a></article>
+        </div>
+
+        <h3>El vocabulario de resultados preserva la incertidumbre</h3>
+        <div class="case-study-outcomes">
+          <article><h4>pass</h4><p>La evidencia determinista completa prueba la condición declarada.</p></article>
+          <article><h4>violation</h4><p>La evidencia determinista completa demuestra que la condición es falsa.</p></article>
+          <article><h4>unknown</h4><p>La evidencia es insuficiente, ausente, dinámica, condicional, inválida o contradictoria.</p></article>
+          <article><h4>not-applicable</h4><p>El ADR referenciado no está vigente según la política de ciclo de vida configurada.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section architecture-section">
+      <div class="container">
+        <div class="section-heading wide-heading"><p class="eyebrow">Componentes y contratos</p><h2>Una regla compartida, diferentes superficies.</h2></div>
+        <!-- html-validate-disable-next prefer-native-element -->
+        <!-- html-validate-disable-next no-redundant-role -- Safari/VoiceOver requires an explicit list role when list-style is none -->
+        <ol role="list" class="case-study-flow">
+          <li><strong>CLI</strong><span>Comandos, códigos de salida, texto, JSON/SARIF y escritura explícita.</span></li>
+          <li><strong>AdrGuard.Core</strong><span>Reglas deterministas internas y límites de entrada.</span></li>
+          <li><strong>Acción de GitHub</strong><span>Ejecuta la CLI y publica informes dentro del contrato de acción.</span></li>
+          <li><strong>VS Code</strong><span>Exploración, edición, diagnósticos y ejecución de la CLI como proceso.</span></li>
+          <li><strong>Servidor MCP</strong><span>Siete herramientas de solo lectura, transporte stdio y límite del workspace.</span></li>
+          <li><strong>Humano</strong><span>Aprueba ADR, selecciona reglas y revisa los cambios de referencia.</span></li>
+        </ol>
+        <p class="case-study-note">MCP no aprueba decisiones; la revisión mediante IA es opcional y advisory. La acción compuesta existente no incorpora implícitamente un modo de drift: la guía instala la herramienta e invoca el comando en un paso explícito.</p>
+      </div>
+    </section>
+
+    <section class="section case-study-section" id="scenario">
+      <div class="container">
+        <div class="section-heading wide-heading"><p class="eyebrow">Implementación reproducible</p><h2>Dominio sin referencia a Infraestructura, hasta el cambio que introduce la deriva.</h2></div>
+        <div class="case-study-two-column">
+          <div class="case-study-copy">
+            <h3>1. Registre la decisión</h3>
+            <p>El ADR aceptado establece: "El proyecto de Dominio no debe hacer referencia al proyecto de Infraestructura". La consecuencia reconoce que las referencias condicionales o expandidas dinámicamente requieren revisión humana.</p>
+          </div>
+          <div>
+            <h3>2. Configurar la regla</h3>
+            <pre class="case-study-code"><code>{
+  "schemaVersion": "1.0",
+  "rules": [{
+    "id": "domain-no-infrastructure",
+    "decision": {
+      "stableId": "ADR-1",
+      "path": "docs/adr/0001-protect-domain-boundary.md"
+    },
+    "scope": { "projects": [
+      "src/Domain/Domain.csproj",
+      "src/Infrastructure/Infrastructure.csproj"
+    ]},
+    "check": {
+      "type": "forbid-project-reference",
+      "from": "src/Domain/Domain.csproj",
+      "to": "src/Infrastructure/Infrastructure.csproj"
+    },
+    "evidence": { "source": "dotnet-project-reference" },
+    "failure": { "severity": "error", "onInconclusive": "unknown" },
+    "gate": true
+  }]
+}</code></pre>
+          </div>
+        </div>
+
+        <h3>3. Verificar la implementación inicialmente conforme</h3>
+        <pre class="case-study-code"><code>(
+  cd docs/examples/architectural-drift
+  adr-guard drift . --rules .adrguard-fitness.json --format json
+)
+# Resultado documentado por el fixture: pass</code></pre>
+        <p>El <code>Domain.csproj</code> versionado contiene únicamente el SDK y el target framework. El conjunto estático completo no contiene la dependencia prohibida.</p>
+
+        <h3>4. Introducir la referencia prohibida</h3>
+        <pre class="case-study-code"><code>&lt;ItemGroup&gt;
+  &lt;ProjectReference Include="../Infrastructure/Infrastructure.csproj" /&gt;
+&lt;/ItemGroup&gt;</code></pre>
+        <p>Cuando reemplaza el proyecto con el accesorio infractor y repite el comando, el informe identifica la referencia y la línea como <code>violation</code>.</p>
+        <pre class="case-study-code"><code>(
+  cd docs/examples/architectural-drift
+  adr-guard drift . --rules .adrguard-fitness.json \
+    --write-baseline drift-baseline.json
+)
+# Revise la línea base antes de confirmarla</code></pre>
+
+        <h3>5. Aplicar la política sin borrar matices</h3>
+        <div class="case-study-table-wrap">
+          <table class="case-study-table">
+            <thead><tr><th>Ejecución</th><th>Comportamiento documentado</th><th>lo que no significa</th></tr></thead>
+            <tbody>
+              <tr><td><code>--policy advisory</code></td><td>Política estándar; registra la infracción sin utilizar la regla como bloqueo de aplicación.</td><td>No convierte la violación en éxito.</td></tr>
+              <tr><td><code>--policy enforce</code></td><td>Una violación nueva, <code>gate: true</code>, local y determinista devuelve el código de salida 4.</td><td>No bloquea toda falla externa ni toda violación ya registrada en la línea base.</td></tr>
+              <tr><td>Resultado <code>unknown</code></td><td>Devuelve la salida 3 en ambas políticas y no puede aparecer como una marca de verificación verde.</td><td>No se convierte en <code>violation</code>.</td></tr>
+              <tr><td>evidencia externa</td><td>Mantiene la procedencia como observación reportada.</td><td>No es una atestación y nunca autoriza el bloqueo automático.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>6. Arreglar y revalidar</h3>
+        <pre class="case-study-code"><code>(
+  cd docs/examples/architectural-drift
+  adr-guard drift . --rules .adrguard-fitness.json \
+    --baseline drift-baseline.json
+)
+# Violación anterior: resolved
+# Regla actual: pass</code></pre>
+        <p>La línea base solo se crea o reemplaza mediante un comando explícito y debe revisarse como código. Al eliminar la referencia prohibida se restablece <code>pass</code>; al compararla con una línea base que contenía el finding, el historial aparece como <code>resolved</code>.</p>
+      </div>
+    </section>
+
+    <section class="section architecture-section">
+      <div class="container">
+        <div class="section-heading wide-heading"><p class="eyebrow">Alternativas y compensaciones</p><h2>El diseño elige pruebas limitadas en lugar de inferencias amplias.</h2></div>
+        <div class="case-study-decision-grid">
+          <article><h3>Revisión manual</h3><p>Es indispensable para interpretar decisiones y excepciones, pero puede no detectar drift repetitivo en cada pull request.</p><p><strong>Cuándo usarla:</strong> reglas sin representación determinista o decisiones contextuales.</p></article>
+          <article><h3>Pruebas arquitectónicas específicas</h3><p>Pueden analizar código con mayor profundidad, pero requieren implementación y mantenimiento por pila. ADR Guard sólo puede consumir el resultado como evidencia externa informada.</p><p><strong>Cuando usar:</strong> invariantes más allá del contrato estático v1.</p></article>
+          <article><h3>Evaluar MSBuild</h3><p>Resolvería más referencias condicionales, pero ejecutaría una superficie compleja y potencialmente poco confiable. v1 deliberadamente no invoca MSBuild.</p><p><strong>Elección:</strong> las condiciones y propiedades permanecen <code>unknown</code>.</p></article>
+          <article><h3>Línea base automática</h3><p>Reduciría la fricción inmediata, pero podría normalizar una regresión. La creación y actualización son acciones explícitas del responsable.</p><p><strong>Elección:</strong> historia auditable en lugar de aceptación silenciosa.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section case-study-limitations">
+      <div class="container case-study-two-column">
+        <div><p class="eyebrow">Limitaciones y riesgos</p><h2>El informe verifica una regla declarada, no toda la arquitectura.</h2></div>
+        <div class="case-study-copy">
+          <p>v1 solo inspecciona <code>ProjectReference</code> estático y exacto en archivos <code>.csproj</code> incluido explícitamente en el alcance. Las importaciones, los comodines, las propiedades, las condiciones, los archivos faltantes, el XML inseguro y los límites excedidos no son concluyentes. No hay descubrimiento de red ni ejecución arbitraria.</p>
+          <p>Una regla mal formulada puede ser determinista y aun así tergiversar la ADR. La cobertura parcial, las excepciones legítimas y los cambios en el ciclo de vida siguen requiriendo una gobernanza humana. <code>pass</code> significa que esa condición ha sido probada bajo ese contrato, no que la solución haya recibido una certificación amplia.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section case-study-section">
+      <div class="container case-study-two-column">
+        <div><p class="eyebrow">Aprendizajes y evolución</p><h2>Hacer que las decisiones sean ejecutables comienza con hacer explícitos los límites.</h2></div>
+        <div class="case-study-copy">
+          <p>La separación entre control, impacto y deriva impide que “documento válido”, “cambio relacionado” y “restricción violada” sean tratados como sinónimos. El vocabulario de los cuatro estados evita que la falta de pruebas se convierta en cumplimiento.</p>
+          <p>La extracción del Core reduce la divergencia entre CLI y MCP sin crear una nueva API pública. La evolución puede agregar nuevas comprobaciones versionadas, siempre que preserve la procedencia, la incertidumbre, la compatibilidad y la autoridad humana sobre la decisión y la línea de base.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section architecture-section" id="evidence">
+      <div class="container">
+        <div class="section-heading wide-heading"><p class="eyebrow">Evidencias y referencias</p><h2>Documentos auditables, fixtures e implementación disponibles en el repositorio.</h2></div>
+        <div class="case-study-evidence-list">
+          <a href="https://github.com/rodri-oliveira-dev/adr-guard/tree/main/docs/examples/architectural-drift" target="_blank" rel="noreferrer"><strong>Ejemplo reproducible</strong><span>ADR, manifiestos, proyectos conformes, infractores y no concluyentes.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/adr-guard/blob/main/docs/fitness-rules-v1.md" target="_blank" rel="noreferrer"><strong>Contrato de reglas de fitness v1</strong><span>Esquema, resultados, políticas, línea base y límites de seguridad.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/adr-guard/blob/main/src/AdrGuard.Core/Drift/DotNetProjectReferenceChecker.cs" target="_blank" rel="noreferrer"><strong>Comprobador de referencia del proyecto</strong><span>Implementación de resultados deterministas y no concluyentes.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/adr-guard/blob/main/docs/github-action.pt-BR.md" target="_blank" rel="noreferrer"><strong>Acción de GitHub</strong><span>Contrato real, entradas, permisos y ejemplos de CI.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/adr-guard/blob/main/docs/mcp-tools.pt-BR.md" target="_blank" rel="noreferrer"><strong>Servidor MCP</strong><span>Herramientas, esquemas y límites de solo lectura del workspace.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/adr-guard/tree/main/extensions/vscode" target="_blank" rel="noreferrer"><strong>Extensión de VS Code</strong><span>Integración editorial y diagnósticos respaldados por la CLI.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/adr-guard" target="_blank" rel="noreferrer"><strong>Código fuente</strong><span>CLI, Core, pruebas, documentación e historial del proyecto.</span></a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="container footer-inner"><span>© <span id="year"></span> Rodrigo de Oliveira</span><span><a class="text-link" href="/es/">Volver al portafolio</a></span></div></footer>
+  <script src="/assets/js/site.js" defer></script>
+</body>
+</html>

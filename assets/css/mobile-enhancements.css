@@ -31,11 +31,13 @@ html {
 
   .language-switcher {
     flex: 0 0 auto;
+    max-width: calc(100% - 56px);
   }
 
   .lang-link {
-    min-width: 44px;
+    min-width: 40px;
     min-height: 44px;
+    padding-inline: 7px;
   }
 
   .mobile-nav-ready .brand {

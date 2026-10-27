@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="es-419">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'none'; connect-src 'none'; frame-src 'none'; media-src 'none'; worker-src 'none'; form-action 'none'; upgrade-insecure-requests">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Estudio de caso | Procesamiento asíncrono confiable — Rodrigo de Oliveira</title>
+  <meta name="description" content="Estudio de caso arquitectónico de dotnet-observability-lab: restricciones, atributos de calidad, Outbox/Inbox, at-least-once, observabilidad, fallas y evidencias verificables.">
+  <meta name="author" content="Rodrigo de Oliveira"><meta name="color-scheme" content="dark"><meta name="theme-color" content="#070b14"><meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://rodri-oliveira-dev.github.io/es/case-studies/dotnet-observability-lab/">
+  <link rel="alternate" hreflang="pt-BR" href="https://rodri-oliveira-dev.github.io/case-studies/dotnet-observability-lab/">
+  <link rel="alternate" hreflang="en" href="https://rodri-oliveira-dev.github.io/en/case-studies/dotnet-observability-lab/">
+  <link rel="alternate" hreflang="es" href="https://rodri-oliveira-dev.github.io/es/case-studies/dotnet-observability-lab/">
+  <link rel="alternate" hreflang="x-default" href="https://rodri-oliveira-dev.github.io/case-studies/dotnet-observability-lab/">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="manifest" href="/site.webmanifest"><link rel="stylesheet" href="/assets/css/site.css"><link rel="stylesheet" href="/assets/css/mobile-enhancements.css">
+  <meta property="og:type" content="article"><meta property="og:site_name" content="Rodrigo de Oliveira"><meta property="og:title" content="Estudio de caso | Procesamiento asíncrono confiable"><meta property="og:description" content="Decisiones, trade-offs, fallas y evidencias públicas de dotnet-observability-lab."><meta property="og:url" content="https://rodri-oliveira-dev.github.io/es/case-studies/dotnet-observability-lab/"><meta property="og:image" content="https://rodri-oliveira-dev.github.io/assets/social/rodrigo-de-oliveira-og.png"><meta property="og:image:alt" content="Rodrigo de Oliveira — Arquitecto de Software"><meta property="og:locale" content="es_LA"><meta property="og:locale:alternate" content="pt_BR"><meta property="og:locale:alternate" content="en_US">
+  <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Estudio de caso | Procesamiento asíncrono confiable"><meta name="twitter:description" content="Decisiones, trade-offs, fallas y evidencias públicas de dotnet-observability-lab."><meta name="twitter:image" content="https://rodri-oliveira-dev.github.io/assets/social/rodrigo-de-oliveira-og.png">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org", "@type": ["Article", "TechArticle"],
+    "headline": "Procesamiento asíncrono confiable con evidencia arquitectónica verificable",
+    "description": "Estudio de caso arquitectónico de dotnet-observability-lab.",
+    "datePublished": "2026-09-28", "dateModified": "2026-10-26",
+    "image": "https://rodri-oliveira-dev.github.io/assets/social/rodrigo-de-oliveira-og.png",
+    "inLanguage": "es-419", "url": "https://rodri-oliveira-dev.github.io/es/case-studies/dotnet-observability-lab/",
+    "author": {"@type": "Person", "name": "Rodrigo de Oliveira", "url": "https://rodri-oliveira-dev.github.io/"},
+    "about": ["Software Architecture", "Distributed Systems", "Outbox Pattern", "Inbox Pattern", "OpenTelemetry"]
+  }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Ir al contenido</a>
+  <header class="site-header"><div class="container header-inner">
+    <a class="brand" href="/es/" aria-label="Rodrigo de Oliveira — portafolio"><span class="brand-symbol brand-symbol-image" aria-hidden="true"></span><span class="brand-name">Rodrigo de Oliveira</span></a>
+    <nav class="nav" aria-label="Navegación del estudio de caso"><a href="/es/">Portafolio</a><a href="#decisions">Decisiones</a><a href="#failures">Fallas</a><a href="#evidence">Evidencias</a></nav>
+    <div class="language-switcher" role="group" aria-label="Idioma"><a class="lang-link" href="/en/case-studies/dotnet-observability-lab/" lang="en">EN</a><a class="lang-link" href="/case-studies/dotnet-observability-lab/" lang="pt-BR">PT</a><a class="lang-link active" href="/es/case-studies/dotnet-observability-lab/" lang="es-419" aria-current="page">ES</a></div>
+  </div></header>
+  <main id="main">
+    <section class="case-study-hero" id="top"><div class="container">
+      <p class="eyebrow">Estudio de caso arquitectónico · laboratorio público</p>
+      <h1>Procesamiento asíncrono confiable con fallas y evidencias explícitas.</h1>
+      <p class="case-study-lead"><strong>dotnet-observability-lab</strong> es una reference architecture educativa que utilizo para hacer verificable una línea completa de razonamiento: problema → restricciones → atributos de calidad → decisiones → implementación → fallas → observabilidad → evidencias.</p>
+      <div class="hero-actions"><a class="button primary" href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab/blob/main/docs/case-study.md" target="_blank" rel="noreferrer">Abrir estudio canónico ↗</a><a class="button secondary" href="https://rodri-oliveira-dev.github.io/dotnet-observability-lab/" target="_blank" rel="noreferrer">Explorar LikeC4 ↗</a></div>
+      <p class="case-study-note">Esta página es una lectura de portafolio. La documentación técnica canónica permanece en el repositorio del laboratorio.</p>
+    </div></section>
+    <section class="section case-study-section"><div class="container case-study-two-column">
+      <div><p class="eyebrow">Problema</p><h2>Aceptar una escritura ahora, consolidarla después y seguir siendo correcto cuando algo falla.</h2></div>
+      <div class="case-study-copy"><p>Una API recibe un valor y necesita aceptarlo de forma durable e idempotente. Otro límite de servicio debe consolidar ese valor de forma asíncrona, sin llamadas HTTP entre API y sin convertir una redelivery del broker en una duplicación de negocio.</p><p>La verdadera dificultad no está en el valor decimal. Está en el intervalo entre persistir, publicar, consumir, confirmar y recuperar, incluso cuando no es posible saber con certeza si la etapa anterior terminó.</p></div>
+    </div></section>
+    <section class="section architecture-section"><div class="container">
+      <div class="section-heading wide-heading"><p class="eyebrow">Restricciones y atributos de calidad</p><h2>Las decisiones comienzan por aquello que debe seguir siendo verdadero ante una falla.</h2></div>
+      <div class="case-study-constraint-grid">
+        <article><span>01</span><h3>Sin API-to-API</h3><p>La ingesta y la consolidación son límites independientes. La lectura no debe depender de la disponibilidad de la API de escritura.</p></article>
+        <article><span>02</span><h3>Entrega at-least-once</h3><p>RabbitMQ puede realizar redelivery. Los duplicados forman parte del contrato y deben tratarse como un comportamiento normal.</p></article>
+        <article><span>03</span><h3>Estado autoritativo durable</h3><p>PostgreSQL protege la idempotencia, Outbox, Inbox y el agregado. Redis es solo un atajo best-effort.</p></article>
+        <article><span>04</span><h3>Observabilidad portable</h3><p>OpenTelemetry define traces, métricas y logs. Aspire compone y muestra el entorno local, pero no enruta el tráfico de negocio.</p></article>
+      </div>
+      <div class="case-study-quality-list" role="group" aria-label="Atributos de calidad priorizados"><span>Confiabilidad</span><span>Consistencia</span><span>Observabilidad</span><span>Operabilidad</span><span>Recuperabilidad</span><span>Capacidad de evolución</span></div>
+    </div></section>
+    <section class="section case-study-section" id="decisions"><div class="container">
+      <div class="section-heading wide-heading"><p class="eyebrow">Decisiones y trade-offs</p><h2>Los patrones aparecen como respuesta a modos de falla concretos.</h2></div>
+      <div class="case-study-decision-grid">
+        <article><h3>Mensajería asíncrona en lugar de una llamada síncrona</h3><p>RabbitMQ desacopla la disponibilidad y la latencia entre la ingesta y la consolidación.</p><p><strong>Trade-off:</strong> consistencia eventual y mayor costo operativo.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab/blob/main/docs/adr/0004-use-rabbitmq-for-asynchronous-messaging.md" target="_blank" rel="noreferrer">ADR 0004 ↗</a></article>
+        <article><h3>Transactional Outbox</h3><p>El valor y el evento pendiente se persisten en la misma transacción; un worker lo publica después con confirmación del broker.</p><p><strong>Trade-off:</strong> polling, retry, cuarentena y posibilidad de publicación repetida.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab/blob/main/src/Ingestion.Outbox.Worker/OutboxProcessor.cs" target="_blank" rel="noreferrer">Implementación ↗</a></article>
+        <article><h3>Inbox durable en el consumidor</h3><p>La identidad del mensaje y la actualización del agregado se confirman en la misma transacción PostgreSQL.</p><p><strong>Trade-off:</strong> cada mensaje único exige trabajo durable y una futura política de retención.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab/blob/main/src/Consolidation.Worker/ConsolidationProcessor.cs" target="_blank" rel="noreferrer">Implementación ↗</a></article>
+        <article><h3>At-least-once + idempotencia</h3><p>El diseño no promete exactly-once. Hace que la repetición sea segura para el efecto de negocio.</p><p><strong>Trade-off:</strong> cada consumidor debe tratar explícitamente la identidad y la duplicación.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab/blob/main/docs/events/ValueReceived.v1.md" target="_blank" rel="noreferrer">Contrato del evento ↗</a></article>
+        <article><h3>PostgreSQL autoritativo, Redis opcional</h3><p>El caché reduce el costo de la repetición HTTP, pero una caída, expiración o eviction no pueden alterar la corrección.</p><p><strong>Trade-off:</strong> los misses y las fallas todavía pueden llegar a la base de datos.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab/blob/main/docs/adr/0003-use-postgresql-for-idempotency-correctness-and-redis-as-an-optimization.md" target="_blank" rel="noreferrer">ADR 0003 ↗</a></article>
+        <article><h3>OpenTelemetry como estándar</h3><p>El contexto W3C cruza el límite asíncrono; Aspire es una de las superficies locales de inspección.</p><p><strong>Trade-off:</strong> la propagación y la instrumentación deben mantenerse explícitamente.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab/blob/main/docs/adr/0005-use-opentelemetry-as-the-observability-standard.md" target="_blank" rel="noreferrer">ADR 0005 ↗</a></article>
+      </div>
+    </div></section>
+    <section class="section architecture-section"><div class="container">
+      <div class="section-heading wide-heading"><p class="eyebrow">Flujo nominal</p><h2>El happy path existe, pero no es toda la arquitectura.</h2></div>
+      <!-- html-validate-disable-next prefer-native-element -->
+      <!-- html-validate-disable-next no-redundant-role -- Safari/VoiceOver requires an explicit list role when list-style is none -->
+      <ol role="list" class="case-study-flow"><li><strong>POST /values</strong><span>solicitud idempotente</span></li><li><strong>PostgreSQL</strong><span>valor + Outbox atómicos</span></li><li><strong>Outbox Worker</strong><span>claim + publish confirmado</span></li><li><strong>RabbitMQ</strong><span>entrega at-least-once</span></li><li><strong>Consolidation Worker</strong><span>Inbox + agregado atómicos</span></li><li><strong>GET /consolidated</strong><span>lectura posterior e independiente</span></li></ol>
+      <p class="section-action"><a class="text-link" href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab/blob/main/docs/architecture/rendered.md#valuereceivedv1---accepted-write-to-independent-consolidated-read" target="_blank" rel="noreferrer">Ver flujo dinámico en LikeC4 ↗</a></p>
+    </div></section>
+    <section class="section case-study-section" id="failures"><div class="container">
+      <div class="section-heading wide-heading"><p class="eyebrow">Fallas relevantes</p><h2>La propiedad interesante del diseño aparece cuando se rompe la ruta nominal.</h2></div>
+      <div class="case-study-failure-grid">
+        <article><h3>Solicitud HTTP duplicada</h3><p>La misma key + el mismo valor devuelve el recibo original; un uso conflictivo devuelve 409. La restricción única en PostgreSQL resuelve la carrera concurrente.</p></article>
+        <article><h3>Mensaje entregado nuevamente</h3><p>Inbox evita un segundo efecto de negocio. El mensaje puede consumirse más de una vez sin volver a incrementar el agregado.</p></article>
+        <article><h3>Broker no disponible</h3><p>La API todavía puede aceptar y persistir la escritura. Outbox mantiene el trabajo pendiente para publicarlo después.</p></article>
+        <article><h3>Redis no disponible</h3><p>El fast path desaparece, pero no la corrección. La decisión de idempotencia vuelve a PostgreSQL.</p></article>
+        <article><h3>Publish confirmado, commit no concluido</h3><p>El evento puede volver a publicarse con la misma identidad; el consumidor trata el duplicado de forma segura.</p></article>
+        <article><h3>Falla en la consolidación</h3><p>Inbox y el agregado hacen rollback juntos. No queda un marcador falso de procesamiento concluido.</p></article>
+      </div>
+      <p class="section-action"><a class="text-link" href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab/blob/main/docs/scenarios.md" target="_blank" rel="noreferrer">Ver los seis escenarios reproducibles ↗</a></p>
+    </div></section>
+    <section class="section architecture-section"><div class="container case-study-two-column">
+      <div><p class="eyebrow">Observabilidad</p><h2>El diagnóstico debe atravesar el mismo límite que atraviesa el negocio.</h2></div>
+      <div class="case-study-copy"><p>El contexto W3C iniciado en la solicitud se persiste junto con Outbox, el worker de publicación lo reinicia y se propaga mediante headers AMQP hasta el consumidor. Las métricas de baja cardinalidad diferencian aceptación, publicación, procesamiento y duplicación; los logs estructurados registran los resultados operativos relevantes.</p><p>El objetivo no es “tener dashboards”. Es poder explicar por qué una escritura todavía no apareció en el modelo de lectura y localizar el límite donde el flujo está detenido o repitiéndose.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab/blob/main/tests/Consolidation.Worker.Tests/ConsolidationProcessorTests.cs" target="_blank" rel="noreferrer">Ver pruebas de traces y métricas ↗</a></div>
+    </div></section>
+    <section class="section case-study-section" id="evidence"><div class="container">
+      <div class="section-heading wide-heading"><p class="eyebrow">Evidencias públicas</p><h2>Una afirmación arquitectónica debe apuntar a algo que pueda inspeccionarse.</h2></div>
+      <div class="case-study-evidence-list"><a href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab/blob/main/docs/case-study.md" target="_blank" rel="noreferrer"><strong>Estudio canónico</strong><span>Trazabilidad completa entre decisión, código, pruebas, documentación y CI.</span></a><a href="https://rodri-oliveira-dev.github.io/dotnet-observability-lab/" target="_blank" rel="noreferrer"><strong>LikeC4 interactivo</strong><span>Contexto, containers, componentes y flujo dinámico versionados.</span></a><a href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab/tree/main/docs/adr" target="_blank" rel="noreferrer"><strong>ADR</strong><span>Decisiones sobre Aspire, PostgreSQL, Redis, RabbitMQ y OpenTelemetry.</span></a><a href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab/tree/main/tests" target="_blank" rel="noreferrer"><strong>Pruebas</strong><span>Idempotencia, Outbox, Inbox, contratos y lectura independiente.</span></a><a href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab/actions/workflows/ingestion-integration.yml" target="_blank" rel="noreferrer"><strong>CI</strong><span>Build, pruebas, cobertura, ADR Guard, LikeC4 y guardrails arquitectónicos.</span></a></div>
+    </div></section>
+    <section class="section case-study-limitations"><div class="container case-study-two-column">
+      <div><p class="eyebrow">Límites deliberados</p><h2>Una reference architecture no es una receta de producción.</h2></div>
+      <div class="case-study-copy"><p>El laboratorio mantiene un único PostgreSQL local con bases de datos lógicas separadas, no define una plataforma de deployment de producción y no implementa en v1 una política completa de bounded retry/DLQ en el consumidor. Tampoco promete ordenamiento de eventos ni exactly-once.</p><p>Estos límites son parte de la evidencia: muestran qué se decidió, qué se simplificó con fines educativos y qué decisiones deberían reabrirse en un sistema real.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab" target="_blank" rel="noreferrer">Explorar el repositorio completo ↗</a></div>
+    </div></section>
+  </main>
+  <footer class="site-footer"><div class="container footer-inner"><span>© <span id="year"></span> Rodrigo de Oliveira</span><span><a class="text-link" href="/es/">Volver al portafolio</a></span></div></footer>
+  <script src="/assets/js/site.js" defer></script>
+</body>
+</html>

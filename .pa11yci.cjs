@@ -2,7 +2,12 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const localOrigin = "http://127.0.0.1:8080";
-const caseStudyUrls = ["case-studies", path.join("en", "case-studies")]
+const languageRoots = ["", "en", "es"];
+const pageUrls = languageRoots
+  .map((root) => `${localOrigin}/${root ? `${root}/` : ""}`);
+const caseStudyUrls = languageRoots
+  .map((root) => path.join(root, "case-studies"))
+  .filter((root) => fs.existsSync(root))
   .flatMap((root) => fs.readdirSync(root, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && fs.existsSync(path.join(root, entry.name, "index.html")))
     .map((entry) => `${localOrigin}/${root.split(path.sep).join("/")}/${entry.name}/`))
@@ -16,12 +21,11 @@ module.exports = {
     timeout: 30000,
     wait: 250,
     chromeLaunchConfig: {
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
     },
   },
   urls: [
-    `${localOrigin}/`,
-    `${localOrigin}/en/`,
+    ...pageUrls,
     ...caseStudyUrls,
   ],
 };

@@ -94,6 +94,8 @@ jobs:
                   urls.add(f"{site_url}/")
               if "en/index.html" in changed:
                   urls.add(f"{site_url}/en/")
+              if "es/index.html" in changed:
+                  urls.add(f"{site_url}/es/")
               if "newsletter/feed.xml" in changed or "assets/data/newsletter-articles.json" in changed:
                   urls.add(f"{site_url}/newsletter/feed.xml")
 
@@ -107,6 +109,8 @@ jobs:
                       urls.add(f"{site_url}/case-studies/{parts[1]}/")
                   elif len(parts) == 4 and parts[:2] == ("en", "case-studies") and parts[3] == "index.html":
                       urls.add(f"{site_url}/en/case-studies/{parts[2]}/")
+                  elif len(parts) == 4 and parts[:2] == ("es", "case-studies") and parts[3] == "index.html":
+                      urls.add(f"{site_url}/es/case-studies/{parts[2]}/")
 
           payload = {
               "host": os.environ["SITE_HOST"],

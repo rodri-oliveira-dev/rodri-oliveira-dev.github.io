@@ -139,9 +139,23 @@ jobs:
           echo "article_count=${article_count}" >> "$GITHUB_OUTPUT"
           echo "feed_count=${feed_count}" >> "$GITHUB_OUTPUT"
           echo "Validated ${article_count} homepage article(s) and ${feed_count} RSS item(s)."
+
+          python3 - <<'PY'
+          import re
+          import subprocess
+          from pathlib import Path
+
+          path = Path("es/index.html")
+          before = subprocess.check_output(["git", "show", f"HEAD:{path.as_posix()}"], text=True)
+          after = path.read_text(encoding="utf-8")
+          pattern = r"<!-- SEO_STRUCTURED_DATA:START -->.*?<!-- SEO_STRUCTURED_DATA:END -->"
+          if re.sub(pattern, "<SEO_BLOCK>", before, flags=re.S) != re.sub(pattern, "<SEO_BLOCK>", after, flags=re.S):
+              raise SystemExit("Newsletter import changed Spanish content outside shared SEO metadata.")
+          PY
+
           git diff --check
 
-          if [[ -z "$(git status --porcelain -- assets/data/newsletter-articles.json index.html en/index.html newsletter/feed.xml sitemap.xml)" ]]; then
+          if [[ -z "$(git status --porcelain -- assets/data/newsletter-articles.json index.html en/index.html es/index.html newsletter/feed.xml sitemap.xml)" ]]; then
             echo "Import completed without repository changes."
             exit 1
           fi
@@ -154,6 +168,7 @@ jobs:
             assets/data/newsletter-articles.json
             index.html
             en/index.html
+            es/index.html
             newsletter/feed.xml
             sitemap.xml
           if-no-files-found: error
@@ -206,7 +221,7 @@ jobs:
           git switch -c "$automation_branch"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/data/newsletter-articles.json index.html en/index.html newsletter/feed.xml sitemap.xml
+          git add assets/data/newsletter-articles.json index.html en/index.html es/index.html newsletter/feed.xml sitemap.xml
           git diff --cached --check
 
           if git diff --cached --quiet; then

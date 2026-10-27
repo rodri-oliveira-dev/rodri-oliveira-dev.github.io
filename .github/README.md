@@ -16,6 +16,8 @@ A estratégia é manter o site estático simples, mas protegido por verificaçõ
 | External link health | [`external-link-health.yml`](workflows/external-link-health.yml) | Semanal, manual e quando o próprio workflow muda em PR | Detectar link rot com uma verificação externa mais tolerante |
 | Import newsletter article | [`import-newsletter-article.yml`](workflows/import-newsletter-article.yml) | Manual | Importar metadados e atualizar catálogo, homepage, RSS, JSON-LD e sitemap via Pull Request |
 | Sync newsletter articles | [`sync-newsletter-articles.yml`](workflows/sync-newsletter-articles.yml) | Manual, somente fallback | Reconciliar manualmente os artefatos da newsletter caso necessário |
+| Sync DEV Community articles | [`sync-devto-articles.yml`](workflows/sync-devto-articles.yml) | Diário e manual | Sincronizar os artigos em inglês a partir do DEV Community |
+| Sync Hashnode articles | [`sync-hashnode-articles.yml`](workflows/sync-hashnode-articles.yml) | Diário e manual | Sincronizar os artigos em espanhol a partir do Hashnode |
 | Notify IndexNow | [`indexnow.yml`](workflows/indexnow.yml) | Push em `main`, diário e manual | Notificar mecanismos compatíveis com IndexNow sobre URLs públicas alteradas |
 | Optimize Open Graph image | [`optimize-og-image.yml`](workflows/optimize-og-image.yml) | Push específico em `main` e manual | Gerar e validar o WebP e propor a atualização via Pull Request |
 
@@ -27,9 +29,10 @@ O [`site-validation.yml`](workflows/site-validation.yml) é o gate estrutural pr
 
 Ele executa:
 
-- `html-validate` nas homepages, no redirecionamento legado e em todos os `index.html` de `case-studies/` e `en/case-studies/`;
+- teste de integridade i18n nas três homepages e nos cinco estudos de caso por idioma, incluindo idioma ativo, links equivalentes, canonical, hreflang, metadados, JSON-LD e recursos locais;
+- `html-validate` nas três homepages, no redirecionamento legado e em todos os estudos de caso PT/EN/ES;
 - Lychee nos HTMLs e no `README.md` para detectar links inválidos;
-- CSpell para ortografia em português, inglês e vocabulário técnico conhecido;
+- CSpell estrito para ortografia em português, inglês, espanhol e vocabulário técnico conhecido;
 - `actionlint` para validar a sintaxe e a estrutura dos workflows do GitHub Actions.
 
 O workflow roda em todo Pull Request, em todo push que chega à `main` e também pode ser executado manualmente.
@@ -42,9 +45,11 @@ O [`seo-validation.yml`](workflows/seo-validation.yml) valida os artefatos SEO g
 
 Ele verifica que:
 
-- `index.html` e `en/index.html` possuem RSS autodiscovery;
+- `index.html` e `en/index.html` possuem RSS autodiscovery, sem atribuir uma tradução inexistente à homepage espanhola;
+- as três homepages e todos os estudos possuem canonical própria e alternates recíprocos `pt-BR`, `en`, `es` e `x-default`;
 - o JSON-LD estruturado permanece válido e consistente;
-- `sitemap.xml` é XML válido e possui `lastmod` para as URLs indexáveis;
+- `sitemap.xml` contém exatamente as 18 URLs indexáveis, sem duplicação, e possui `lastmod` para todas elas;
+- os cinco slugs de estudos de caso existem nos três idiomas;
 - a geração de `lastmod` preserva datas versionadas para páginas sem alteração, sem depender do dia em que o runner executa;
 - executar [`scripts/sync-seo.py`](scripts/sync-seo.py) não produz diferenças não commitadas.
 
@@ -52,14 +57,15 @@ Esse último ponto funciona como um gate de drift: se catálogo, homepage, dados
 
 ### Accessibility
 
-O [`accessibility.yml`](workflows/accessibility.yml) sobe o site em um servidor HTTP local e executa Pa11y CI contra as homepages e todos os estudos de caso em português e inglês.
+O [`accessibility.yml`](workflows/accessibility.yml) sobe o site em um servidor HTTP local e executa Pa11y CI contra as três homepages e todos os estudos de caso em português, inglês e espanhol.
 
 A configuração usa WCAG 2 AA como baseline e threshold zero para os problemas considerados pelo gate. O objetivo é detectar regressões de semântica, ARIA, estrutura e outras regras automatizáveis de acessibilidade antes do merge.
 
 Arquivos relacionados:
 
 - [`../.pa11yci.cjs`](../.pa11yci.cjs) — configuração do Pa11y CI e descoberta dinâmica dos estudos de caso;
-- `index.html`, `en/index.html`, `case-studies/*/index.html` e `en/case-studies/*/index.html` — páginas verificadas.
+- `index.html`, `en/index.html`, `es/index.html` e os três diretórios `case-studies/` — páginas verificadas;
+- [`scripts/test-responsive.cjs`](scripts/test-responsive.cjs) — ausência de overflow, imagens quebradas ou seletor cortado em 320, 360, 390, 768, 1024 e 1440 px, além de abertura/fechamento do menu mobile por teclado nos três idiomas.
 
 Alguns ajustes de CSP são aplicados apenas ao fixture efêmero usado pelo runner local. A política CSP publicada no site não é alterada pelo workflow.
 
@@ -86,7 +92,7 @@ O relatório estruturado é produzido por [`scripts/summarize-zizmor.mjs`](scrip
 
 ### Lighthouse CI
 
-O [`lighthouse.yml`](workflows/lighthouse.yml) sobe o site localmente e executa Lighthouse CI contra `/`, `/en/` e todos os pares bilíngues descobertos em `case-studies/`.
+O [`lighthouse.yml`](workflows/lighthouse.yml) sobe o site localmente e executa Lighthouse CI contra `/`, `/en/`, `/es/` e todos os estudos de caso trilíngues descobertos.
 
 Cada página é medida três vezes para reduzir variação do runner. Os valores usados para os gates são agregados pela mediana.
 
@@ -95,7 +101,7 @@ Os budgets estão definidos em [`../lighthouserc.cjs`](../lighthouserc.cjs):
 | Categoria | Threshold | Enforcement |
 | --- | ---: | --- |
 | Performance | 80% | Warning |
-| Accessibility | 90% | Warning |
+| Accessibility | 100% | Blocking |
 | Best Practices | 95% | Blocking |
 | SEO | 95% | Blocking |
 
@@ -145,6 +151,27 @@ O processo:
 Cada execução usa uma branch derivada do `run-id`, evitando que uma nova importação sobrescreva outra importação ainda em revisão. Em uma reexecução do mesmo run, a branch correspondente é atualizada com `force-with-lease`.
 
 O workflow não faz push direto para a `main`. Como ele já atualiza catálogo, homepage, RSS, JSON-LD e sitemap no mesmo ciclo da importação, o agendamento diário do `Sync newsletter articles` foi desativado por redundância.
+
+As automações preservam os idiomas de publicação: newsletter/LinkedIn renderiza PT-BR em `index.html`, DEV Community renderiza EN em `en/index.html` e Hashnode renderiza ES-419 em `es/index.html`. Cada fluxo valida que os catálogos e feeds dos outros idiomas não foram alterados; somente metadados SEO compartilhados e determinísticos podem ser atualizados. Não há tradução automática nem equivalência entre artigos externos.
+
+### Sync Hashnode articles
+
+O [`sync-hashnode-articles.yml`](workflows/sync-hashnode-articles.yml) consulta diariamente o RSS público de **Arquitectura en Código**, na mesma frequência diária da integração DEV Community, e também aceita `workflow_dispatch`.
+
+O fluxo:
+
+1. baixa e valida RSS 2.0 ou Atom com a biblioteca padrão do Python;
+2. aceita somente URLs HTTPS de `rodri-oliveira-dev.hashnode.dev`;
+3. normaliza, deduplica e ordena título, URL, descrição, data e tags em `assets/data/hashnode-articles.json`;
+4. preserva o último catálogo válido se o feed estiver vazio, indisponível ou sem itens válidos;
+5. renderiza até quatro artigos entre os marcadores `HASHNODE_ARTICLES` de `es/index.html`;
+6. sincroniza RSS autodiscovery, JSON-LD e sitemap;
+7. encerra sem commit quando não existe diff;
+8. caso haja mudança, cria ou atualiza a branch e o único PR `automation/sync-hashnode-articles`, executa os quality gates e deixa o merge para revisão manual.
+
+Para executar manualmente, abra **Actions → Sync Hashnode articles → Run workflow**. Para investigar falhas, confira primeiro o passo de download/validação do RSS, depois o resumo do job e o diff do PR. HTTP 403 geralmente indica bloqueio ao cliente do feed; resposta vazia, XML inválido, data inválida ou URL de outra origem encerram a execução sem apagar o catálogo vigente.
+
+Ao adicionar outra fonte no futuro, mantenha um catálogo e marcadores exclusivos por idioma, valide esquema/host HTTPS antes de qualquer escrita, preserve o último estado válido e limite o workflow aos artefatos editoriais sob sua responsabilidade.
 
 O resultado detalhado da recuperação de metadados também é escrito no Job Summary.
 
@@ -252,6 +279,8 @@ Além dos workflows, a automação depende destes arquivos:
 - [`../.pa11yci.cjs`](../.pa11yci.cjs) — configuração de acessibilidade e descoberta das páginas;
 - [`scripts/render-newsletter.py`](scripts/render-newsletter.py) — renderização dos artigos;
 - [`scripts/generate-newsletter-feed.py`](scripts/generate-newsletter-feed.py) — geração do RSS;
+- [`scripts/sync-devto-articles.py`](scripts/sync-devto-articles.py) — catálogo e renderização da publicação inglesa;
+- [`scripts/sync-hashnode-articles.py`](scripts/sync-hashnode-articles.py) — catálogo e renderização da publicação espanhola;
 - [`scripts/sync-seo.py`](scripts/sync-seo.py) — sincronização de JSON-LD, RSS discovery e sitemap;
 - [`scripts/summarize-lighthouse.mjs`](scripts/summarize-lighthouse.mjs) — resumo e comentário do Lighthouse;
 - [`scripts/summarize-zizmor.mjs`](scripts/summarize-zizmor.mjs) — resumo e comentário do zizmor.

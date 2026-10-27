@@ -17,12 +17,14 @@
 * { box-sizing: border-box; }
 
 html {
+  overflow-x: clip;
   scroll-behavior: smooth;
   scroll-padding-top: 90px;
 }
 
 body {
   margin: 0;
+  overflow-x: clip;
   color: var(--text);
   background:
     radial-gradient(circle at 15% -10%, rgba(125, 211, 252, 0.13), transparent 32rem),
@@ -1350,6 +1352,10 @@ h1 {
   align-items: start;
 }
 
+.case-study-two-column > * {
+  min-width: 0;
+}
+
 .case-study-two-column h2 {
   margin-bottom: 0;
   font-size: clamp(32px, 4.6vw, 52px);
@@ -1358,12 +1364,17 @@ h1 {
 }
 
 .case-study-copy {
+  min-width: 0;
   color: var(--muted);
   font-size: 17px;
 }
 
 .case-study-copy p:last-of-type {
   margin-bottom: 24px;
+}
+
+.case-study-copy code {
+  overflow-wrap: anywhere;
 }
 
 .case-study-constraint-grid,
@@ -1443,7 +1454,7 @@ h1 {
 
 .case-study-flow {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1452,6 +1463,7 @@ h1 {
 }
 
 .case-study-flow li {
+  min-width: 0;
   min-height: 160px;
   padding: 22px;
   border-right: 1px solid var(--line);
@@ -1473,6 +1485,10 @@ h1 {
 .case-study-flow span {
   color: var(--muted);
   font-size: 12px;
+}
+
+.case-study-flow code {
+  overflow-wrap: anywhere;
 }
 
 .case-study-evidence-list {
@@ -1528,6 +1544,9 @@ h1 {
 }
 
 .case-study-code {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
   margin: 22px 0;
   padding: 22px;
@@ -1563,6 +1582,9 @@ h1 {
 }
 
 .case-study-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
   margin-top: 24px;
 }
@@ -1636,7 +1658,7 @@ h1 {
   }
 
   .case-study-flow {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .case-study-outcomes {

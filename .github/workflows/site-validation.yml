@@ -26,8 +26,8 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Test DEV Community synchronization boundaries
-        run: python3 -m unittest discover -s .github/scripts -p 'test_sync_devto_articles.py'
+      - name: Test external article synchronization boundaries
+        run: python3 -m unittest discover -s .github/scripts -p 'test_sync_*articles.py'
 
       - name: Set up Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -35,14 +35,18 @@ jobs:
           node-version: 24
           package-manager-cache: false
 
+      - name: Test language resolution and navigation labels
+        run: node .github/scripts/test-site-i18n.cjs
+
       - name: Install validation tooling
-        run: npm install --no-save --ignore-scripts html-validate@11.15.0 @cspell/dict-pt-br@2.4.2
+        run: npm install --no-save --ignore-scripts html-validate@11.15.0 @cspell/dict-pt-br@2.4.2 @cspell/dict-es-es@3.0.9
 
       - name: Validate HTML
         shell: bash
         run: |
-          mapfile -t case_studies < <(find case-studies en/case-studies -mindepth 2 -maxdepth 2 -name index.html -print | sort)
-          npx --no-install html-validate index.html en/index.html pt-br/index.html "${case_studies[@]}"
+          pages=(index.html en/index.html es/index.html pt-br/index.html)
+          mapfile -t case_studies < <(find case-studies en/case-studies es/case-studies -mindepth 2 -maxdepth 2 -name index.html -print | sort)
+          npx --no-install html-validate "${pages[@]}" "${case_studies[@]}"
 
       - name: Validate links
         uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2
@@ -55,12 +59,14 @@ jobs:
             --max-retries 1
             --exclude 'https://(www\.)?linkedin\.com/'
             --exclude 'https://medium\.com/'
-            --exclude '^https://rodri-oliveira-dev\.github\.io/(en/)?case-studies/[^/]+/?$'
+            --exclude '^https://rodri-oliveira-dev\.github\.io/es/?$'
+            --exclude '^https://rodri-oliveira-dev\.github\.io/(?:(?:en|es)/)?case-studies/[^/]+/?$'
             './index.html'
             './en/index.html'
             './pt-br/index.html'
             './case-studies/**/*.html'
             './en/case-studies/**/*.html'
+            './es/**/*.html'
             './README.md'
           fail: true
         env:
@@ -75,6 +81,7 @@ jobs:
             en/index.html
             case-studies/**/*.html
             en/case-studies/**/*.html
+            es/**/*.html
             README.md
           incremental_files_only: false
           strict: true

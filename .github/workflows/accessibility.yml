@@ -45,8 +45,11 @@ jobs:
           const fs = require("node:fs");
           const path = require("node:path");
           const origin = "http://127.0.0.1:8080";
-          const expected = new Set([`${origin}/`, `${origin}/en/`]);
-          for (const root of ["case-studies", path.join("en", "case-studies")]) {
+          const languageRoots = ["", "en", "es"];
+          const expected = new Set(languageRoots
+            .map((root) => `${origin}/${root ? `${root}/` : ""}`));
+          for (const root of languageRoots.map((language) => path.join(language, "case-studies"))) {
+            if (!fs.existsSync(root)) continue;
             for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
               if (entry.isDirectory() && fs.existsSync(path.join(root, entry.name, "index.html"))) {
                 expected.add(`${origin}/${root.split(path.sep).join("/")}/${entry.name}/`);
@@ -67,9 +70,9 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
-          pages = [Path("index.html"), Path("en/index.html")]
-          pages.extend(sorted(Path("case-studies").glob("*/index.html")))
-          pages.extend(sorted(Path("en/case-studies").glob("*/index.html")))
+          pages = [Path("index.html"), Path("en/index.html"), Path("es/index.html")]
+          for root in (Path("case-studies"), Path("en/case-studies"), Path("es/case-studies")):
+              pages.extend(sorted(root.glob("*/index.html")))
           for path in pages:
               content = path.read_text(encoding="utf-8")
               content = content.replace("; upgrade-insecure-requests", "")
@@ -93,6 +96,9 @@ jobs:
 
       - name: Run WCAG 2 AA checks
         run: npx --no-install pa11y-ci --config .pa11yci.cjs --threshold 0
+
+      - name: Validate responsive layout and keyboard navigation
+        run: node .github/scripts/test-responsive.cjs
 
       - name: Stop local site
         if: always()

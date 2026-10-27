@@ -24,9 +24,24 @@ O site utiliza URLs dedicadas e indexáveis para cada idioma:
 
 - Português (Brasil), idioma padrão: `/`
 - Inglês: `/en/`
+- Espanhol latino-americano: `/es/`
 - URL legada em português: `/pt-br/`, redirecionada para `/`
 
-As duas páginas possuem URLs canônicas, alternates com `hreflang`, metadados Open Graph e dados estruturados Schema.org. O sitemap contém as duas variantes de idioma e usa `lastmod` para sinalizar alterações relevantes.
+As três homepages e os cinco estudos de caso por idioma possuem URLs canônicas próprias, alternates recíprocos com `hreflang`, metadados Open Graph/Twitter e dados estruturados Schema.org. O HTML usa `pt-BR`, `en` e `es-419`; para descoberta do Google, o espanhol usa `hreflang="es"` e o português permanece como `x-default`.
+
+O seletor PT/EN/ES preserva a página equivalente: na homepage troca apenas o idioma da homepage e, em um estudo de caso, mantém o mesmo slug. O idioma ativo é identificado visualmente e por `aria-current="page"`.
+
+## Publicações por idioma
+
+Cada versão do portfólio mantém a identidade e o idioma da sua própria fonte editorial:
+
+| Portfólio | Origem | Catálogo/feed |
+| --- | --- | --- |
+| PT-BR (`/`) | newsletter **Café com código** no LinkedIn | `assets/data/newsletter-articles.json` e `/newsletter/feed.xml` |
+| EN (`/en/`) | DEV Community | `assets/data/devto-articles.json` e `https://dev.to/feed/rodri-oliveira-dev` |
+| ES-419 (`/es/`) | **Arquitectura en Código** no Hashnode | `assets/data/hashnode-articles.json` e `https://rodri-oliveira-dev.hashnode.dev/rss.xml` |
+
+Os sincronizadores renderizam até quatro artigos recentes somente na homepage do idioma correspondente. Não há tradução automática nem equivalência declarada entre artigos de plataformas diferentes.
 
 ## RSS da newsletter
 
@@ -52,27 +67,42 @@ O site é intencionalmente livre de dependências de runtime:
 
 ## Automação e qualidade
 
-O repositório possui workflows para validação estrutural, acessibilidade, segurança do GitHub Actions, Lighthouse CI, saúde de links externos, atualização de dependências e automação de conteúdo.
+O repositório possui workflows para validação estrutural, acessibilidade, segurança do GitHub Actions, Lighthouse CI, saúde de links externos, atualização de dependências e automação de conteúdo. Os gates cobrem HTML, links, ortografia PT/EN/ES, canonical/hreflang, sitemap/JSON-LD, navegação por teclado e layout responsivo.
 
-A documentação completa dos workflows, gatilhos, quality gates, relatórios em Pull Requests e arquivos de suporte está em [`.github/README.md`](.github/README.md).
+A sincronização do Hashnode roda diariamente e também pode ser iniciada manualmente em **Actions → Sync Hashnode articles → Run workflow**. Ela valida o RSS, atualiza o catálogo espanhol, a homepage, o JSON-LD e o sitemap e cria ou atualiza um único Pull Request de automação somente quando existe mudança efetiva. A documentação completa dos workflows, operação e investigação de falhas está em [`.github/README.md`](.github/README.md).
 
 ## Estrutura
 
 - `index.html` — portfólio em português e idioma padrão
 - `en/index.html` — portfólio em inglês
+- `es/index.html` — portfólio em espanhol latino-americano
 - `pt-br/index.html` — redirecionamento legado para a raiz em português
-- `case-studies/` e `en/case-studies/` — estudos de caso arquiteturais bilíngues do portfólio
+- `case-studies/`, `en/case-studies/` e `es/case-studies/` — cinco estudos de caso arquiteturais em português, inglês e espanhol
 - `newsletter/feed.xml` — feed RSS 2.0 da newsletter Café com código
 - `assets/data/newsletter-articles.json` — catálogo usado pela homepage e pelo RSS
+- `assets/data/devto-articles.json` — catálogo do DEV Community usado pela homepage inglesa
+- `assets/data/hashnode-articles.json` — catálogo do Hashnode usado pela homepage espanhola
 - `assets/css/site.css` — sistema visual responsivo
 - `assets/js/site.js` — comportamento mínimo de interface
 - `assets/brand/` — identidade visual pessoal
 - `favicon.svg` — ícone do site
 - `robots.txt` — política para crawlers
-- `sitemap.xml` — descoberta das URLs bilíngues
+- `sitemap.xml` — descoberta das URLs trilíngues e seus alternates recíprocos
 - `.nojekyll` — publicação direta pelo GitHub Pages
 
-Os estudos de caso são descobertos automaticamente por `.github/scripts/sync-seo.py` quando existe um par `case-studies/<slug>/index.html` e `en/case-studies/<slug>/index.html`. O mesmo padrão alimenta sitemap, validações e notificações, evitando listas de URLs duplicadas ao adicionar novos estudos.
+Os estudos de caso são descobertos automaticamente por `.github/scripts/sync-seo.py` a partir do mesmo slug em `case-studies/<slug>/index.html`, `en/case-studies/<slug>/index.html` e `es/case-studies/<slug>/index.html`. A cobertura completa nos três idiomas é obrigatória. O sincronizador preserva o `lastmod` versionado de páginas sem alteração factual e falha quando uma tradução está ausente.
+
+## Atualização de páginas localizadas
+
+Toda mudança de conteúdo deve considerar as três versões do site. Para adicionar ou atualizar uma página:
+
+1. mantenha conteúdo tecnicamente equivalente em PT-BR, EN e espanhol latino-americano, sem traduzir automaticamente artigos externos;
+2. use o mesmo slug nas três árvores e faça o seletor apontar para as páginas equivalentes;
+3. localize conteúdo, navegação, rótulos acessíveis, metadados e JSON-LD, preservando nomes próprios, tecnologias, URLs e o idioma original das fontes;
+4. execute `python .github/scripts/sync-seo.py` para sincronizar alternates e `sitemap.xml`;
+5. execute `python -m unittest discover -s .github/scripts -p 'test_*.py'`, `node .github/scripts/test-site-i18n.cjs` e os validadores descritos em [`.github/README.md`](.github/README.md).
+
+Uma segunda execução de `sync-seo.py` deve deixar o worktree sem alterações. O sincronizador da newsletter altera apenas o conteúdo editorial português, o sincronizador do DEV Community apenas o inglês e o sincronizador do Hashnode apenas o espanhol. Alterações compartilhadas ficam restritas ao SEO determinístico, como `sameAs` e `lastmod`; nenhum fluxo traduz ou sobrescreve o catálogo de outro idioma.
 
 ## Contato
 

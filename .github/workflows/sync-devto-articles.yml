@@ -97,11 +97,24 @@ jobs:
           PY
           )
 
-          if [[ -n "$(git status --porcelain -- index.html newsletter/feed.xml assets/data/newsletter-articles.json)" ]]; then
-            echo "The English DEV sync attempted to modify Portuguese newsletter artifacts."
-            git status --short -- index.html newsletter/feed.xml assets/data/newsletter-articles.json
+          if [[ -n "$(git status --porcelain -- index.html newsletter/feed.xml assets/data/newsletter-articles.json assets/data/hashnode-articles.json)" ]]; then
+            echo "The English DEV sync attempted to modify another language's editorial artifacts."
+            git status --short -- index.html newsletter/feed.xml assets/data/newsletter-articles.json assets/data/hashnode-articles.json
             exit 1
           fi
+
+          python3 - <<'PY'
+          import re
+          import subprocess
+          from pathlib import Path
+
+          path = Path("es/index.html")
+          before = subprocess.check_output(["git", "show", f"HEAD:{path.as_posix()}"], text=True)
+          after = path.read_text(encoding="utf-8")
+          pattern = r"<!-- SEO_STRUCTURED_DATA:START -->.*?<!-- SEO_STRUCTURED_DATA:END -->"
+          if re.sub(pattern, "<SEO_BLOCK>", before, flags=re.S) != re.sub(pattern, "<SEO_BLOCK>", after, flags=re.S):
+              raise SystemExit("English sync changed Spanish content outside shared SEO metadata.")
+          PY
 
           git diff --check
           echo "article_count=${article_count}" >> "$GITHUB_OUTPUT"
@@ -112,7 +125,7 @@ jobs:
         id: changes
         shell: bash
         run: |
-          if git diff --quiet -- assets/data/devto-articles.json en/index.html sitemap.xml; then
+          if git diff --quiet -- assets/data/devto-articles.json en/index.html es/index.html sitemap.xml; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "English DEV Community content is already up to date."
           else
@@ -128,6 +141,7 @@ jobs:
           path: |
             assets/data/devto-articles.json
             en/index.html
+            es/index.html
             sitemap.xml
           if-no-files-found: error
           retention-days: 1
@@ -196,7 +210,7 @@ jobs:
           git switch -c "$AUTOMATION_BRANCH"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/data/devto-articles.json en/index.html sitemap.xml
+          git add assets/data/devto-articles.json en/index.html es/index.html sitemap.xml
           git diff --cached --check
 
           if git diff --cached --quiet; then
