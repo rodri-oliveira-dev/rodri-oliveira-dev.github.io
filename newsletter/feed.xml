@@ -7,6 +7,13 @@
     <atom:link href="https://rodri-oliveira-dev.github.io/newsletter/feed.xml" rel="self" type="application/rss+xml" />
     <language>pt-BR</language>
     <item>
+      <title>Dapper FluentMap está de volta: o que mudou da versão 2.0 à 3.6?</title>
+      <link>https://www.linkedin.com/pulse/dapper-fluentmap-est%C3%A1-de-volta-o-que-mudou-da-vers%C3%A3o-20-de-oliveira-npb9f/</link>
+      <guid isPermaLink="true">https://www.linkedin.com/pulse/dapper-fluentmap-est%C3%A1-de-volta-o-que-mudou-da-vers%C3%A3o-20-de-oliveira-npb9f/</guid>
+      <pubDate>Mon, 26 Oct 2026 00:00:00 GMT</pubDate>
+      <description>Depois de seis anos sem uma nova versão estável, o Dapper FluentMap voltou a receber atualizações. Mas retomar uma biblioteca utilizada por outras aplicações envolve mais do que atualizar dependências.</description>
+    </item>
+    <item>
       <title>Dotfiles</title>
       <link>https://www.linkedin.com/pulse/dotfiles-rodrigo-de-oliveira-9hg6f/</link>
       <guid isPermaLink="true">https://www.linkedin.com/pulse/dotfiles-rodrigo-de-oliveira-9hg6f/</guid>
@@ -82,13 +89,6 @@
       <guid isPermaLink="true">https://pt.linkedin.com/pulse/bounded-context-onde-um-modelo-e-uma-linguagem-rodrigo-de-oliveira-ltrjf</guid>
       <pubDate>Mon, 03 Aug 2026 00:00:00 GMT</pubDate>
       <description>Este é o quarto artigo da série sobre Domain-Driven Design. No texto anterior, estudamos Domain, Subdomain e Core Domain e discutimos onde uma organização deve concentrar seu investimento em modelagem.</description>
-    </item>
-    <item>
-      <title>Domain, Subdomain e Core Domain: onde se deve realmente investir tempo em modelagem</title>
-      <link>https://pt.linkedin.com/pulse/domain-subdomain-e-core-onde-se-deve-realmente-tempo-em-de-oliveira-41taf</link>
-      <guid isPermaLink="true">https://pt.linkedin.com/pulse/domain-subdomain-e-core-onde-se-deve-realmente-tempo-em-de-oliveira-41taf</guid>
-      <pubDate>Mon, 27 Jul 2026 00:00:00 GMT</pubDate>
-      <description>Este é o terceiro artigo da série sobre Domain-Driven Design. No texto anterior, conversamos sobre Linguagem Ubíqua e sobre como transformar o conhecimento do negócio em software.</description>
     </item>
   </channel>
 </rss>

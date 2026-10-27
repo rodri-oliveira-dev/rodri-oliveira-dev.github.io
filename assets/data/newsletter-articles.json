@@ -1,5 +1,18 @@
 [
   {
+    "url": "https://www.linkedin.com/pulse/dapper-fluentmap-est%C3%A1-de-volta-o-que-mudou-da-vers%C3%A3o-20-de-oliveira-npb9f/",
+    "finalUrl": "https://www.linkedin.com/pulse/dapper-fluentmap-est%C3%A1-de-volta-o-que-mudou-da-vers%C3%A3o-20-de-oliveira-npb9f/",
+    "title": "Dapper FluentMap está de volta: o que mudou da versão 2.0 à 3.6?",
+    "description": "Depois de seis anos sem uma nova versão estável, o Dapper FluentMap voltou a receber atualizações. Mas retomar uma biblioteca utilizada por outras aplicações envolve mais do que atualizar dependências.",
+    "publishedAt": "2026-10-26",
+    "metadataSource": {
+      "title": "og:title",
+      "description": "og:description",
+      "publishedAt": "JSON-LD datePublished"
+    },
+    "addedAt": "2026-10-27T12:35:36+00:00"
+  },
+  {
     "url": "https://www.linkedin.com/pulse/dotfiles-rodrigo-de-oliveira-9hg6f/",
     "finalUrl": "https://www.linkedin.com/pulse/dotfiles-rodrigo-de-oliveira-9hg6f/",
     "title": "Dotfiles",
@@ -141,18 +154,5 @@
       "publishedAt": "JSON-LD datePublished"
     },
     "addedAt": "2026-08-30T23:58:12+00:00"
-  },
-  {
-    "url": "https://pt.linkedin.com/pulse/domain-subdomain-e-core-onde-se-deve-realmente-tempo-em-de-oliveira-41taf",
-    "finalUrl": "https://pt.linkedin.com/pulse/domain-subdomain-e-core-onde-se-deve-realmente-tempo-em-de-oliveira-41taf",
-    "title": "Domain, Subdomain e Core Domain: onde se deve realmente investir tempo em modelagem",
-    "description": "Este é o terceiro artigo da série sobre Domain-Driven Design. No texto anterior, conversamos sobre Linguagem Ubíqua e sobre como transformar o conhecimento do negócio em software.",
-    "publishedAt": "2026-07-27",
-    "metadataSource": {
-      "title": "og:title",
-      "description": "og:description",
-      "publishedAt": "JSON-LD datePublished"
-    },
-    "addedAt": "2026-08-30T23:58:26+00:00"
   }
 ]
