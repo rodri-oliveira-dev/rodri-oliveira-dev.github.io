@@ -166,7 +166,7 @@ public sealed class CustomerMap : EntityMap&lt;Customer&gt;
         <div class="section-heading wide-heading"><p class="eyebrow">Alternativas y compensaciones</p><h2>Tres enfoques válidos, con costos en diferentes lugares.</h2></div>
         <div class="case-study-table-wrap">
           <table class="case-study-table">
-            <thead><tr><th>Acercarse</th><th>Ejemplo</th><th>Ventaja</th><th>Costo y mejor contexto</th></tr></thead>
+            <thead><tr><th>Enfoque</th><th>Ejemplo</th><th>Ventaja</th><th>Costo y mejor contexto</th></tr></thead>
             <tbody>
               <tr><td>Alias en SQL</td><td><code>SELECT CUST_NO AS Id, LEGAL_NM AS Name</code></td><td>Sin configuración adicional; intención visible en la consulta.</td><td>Repite alias en varias consultas. Es adecuado para una lectura puntual o para SQL controlado por una sola operación.</td></tr>
               <tr><td>Persistencia DTO</td><td><code>CustomerRow.CUST_NO</code> → <code>Customer.Id</code></td><td>Límite y transformación totalmente explícitos; DTO puede reflejar uniones y proyecciones.</td><td>Más tipos y código de conversión. Bueno cuando la forma de persistencia difiere semánticamente del agregado.</td></tr>
@@ -193,7 +193,7 @@ public sealed class CustomerMap : EntityMap&lt;Customer&gt;
       <div class="container case-study-two-column">
         <div><p class="eyebrow">Limitaciones y riesgos</p><h2>FluentMap complementa a Dapper; no lo sustituye ni es un ORM completo.</h2></div>
         <div class="case-study-copy">
-          <p>La biblioteca no gestiona conexiones, transacciones, migraciones, seguimiento ni diseño de consultas. La configuración global tardía puede entrar en conflicto con consultas simultáneas; La inicialización debe ocurrir antes de su uso y ser tratada como inmutable.</p>
+          <p>La biblioteca no gestiona conexiones, transacciones, migraciones, seguimiento ni diseño de consultas. La configuración global tardía puede entrar en conflicto con consultas simultáneas; la inicialización debe ocurrir antes de su uso y ser tratada como inmutable.</p>
           <p>La compatibilidad esperada por Dapper/ADO.NET no equivale a una certificación de FluentMap. La certificación de Core no implica la de Dommel. Tampoco se afirma compatibilidad completa con Native AOT: la ruta estricta generada tiene cobertura acotada y las formas incompatibles pueden usar fallback.</p>
           <p>Los benchmarks usan BenchmarkDotNet y SQLite en escenarios definidos en el repositorio. La línea base versionada incluye <code>"reportOnly": true</code>; por lo tanto, sirve como evidencia exploratoria y detector de tendencias, no como promesa general de mejora de rendimiento entre entornos, providers o workloads.</p>
         </div>

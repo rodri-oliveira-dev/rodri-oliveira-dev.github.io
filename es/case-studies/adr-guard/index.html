@@ -178,7 +178,10 @@
         </div>
 
         <h3>3. Verificar la implementación inicialmente conforme</h3>
-        <pre class="case-study-code"><code>adr-guard drift . --rules .adrguard-fitness.json --format json
+        <pre class="case-study-code"><code>(
+  cd docs/examples/architectural-drift
+  adr-guard drift . --rules .adrguard-fitness.json --format json
+)
 # Resultado documentado por el fixture: pass</code></pre>
         <p>El <code>Domain.csproj</code> versionado contiene únicamente el SDK y el target framework. El conjunto estático completo no contiene la dependencia prohibida.</p>
 
@@ -202,8 +205,11 @@
         </div>
 
         <h3>6. Arreglar y revalidar</h3>
-        <pre class="case-study-code"><code>adr-guard drift . --rules .adrguard-fitness.json \
-  --baseline drift-baseline.json
+        <pre class="case-study-code"><code>(
+  cd docs/examples/architectural-drift
+  adr-guard drift . --rules .adrguard-fitness.json \
+    --baseline drift-baseline.json
+)
 # Violación anterior: resolved
 # Regla actual: pass</code></pre>
         <p>La línea base solo se crea o reemplaza mediante un comando explícito y debe revisarse como código. Al eliminar la referencia prohibida se restablece <code>pass</code>; al compararla con una línea base que contenía el finding, el historial aparece como <code>resolved</code>.</p>

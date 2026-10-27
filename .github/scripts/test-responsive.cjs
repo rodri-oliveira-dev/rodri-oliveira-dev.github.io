@@ -103,7 +103,10 @@ const inspectLayout = () => {
         await page.keyboard.press("Enter");
         assert.equal(await page.$eval(".mobile-nav-toggle", (toggle) => toggle.getAttribute("aria-expanded")), "true", `${url} keyboard opens menu`);
         assert.equal(await page.$eval(".mobile-nav-panel", (nav) => nav.getAttribute("aria-hidden")), "false", `${url} exposes open menu`);
-        await new Promise((resolve) => setTimeout(resolve, 250));
+        await page.waitForFunction(
+          () => document.activeElement === document.querySelector(".mobile-nav-panel a"),
+          { timeout: 2000 },
+        );
         assert.equal(await page.evaluate(() => document.activeElement === document.querySelector(".mobile-nav-panel a")), true, `${url} focuses first menu link`);
         await page.keyboard.press("Escape");
         assert.equal(await page.$eval(".mobile-nav-toggle", (toggle) => toggle.getAttribute("aria-expanded")), "false", `${url} Escape closes menu`);
