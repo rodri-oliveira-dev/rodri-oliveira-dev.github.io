@@ -1,5 +1,17 @@
 [
   {
+    "url": "https://dev.to/rodri-oliveira-dev/dapper-fluentmap-is-back-what-changed-from-version-20-to-36-em8",
+    "title": "Dapper FluentMap Is Back: What Changed from Version 2.0 to 3.6?",
+    "description": "After six years without a new stable release, Dapper FluentMap is actively maintained again. But bringing an existing library back to life involves more than updating dependencies. It means finding a way to move forward without breaking the contracts that existing applications rely on. Imagine a .NET application that…",
+    "publishedAt": "2026-10-28T13:00:00Z",
+    "tags": [
+      "dotnet",
+      "dapper",
+      "open",
+      "opensource"
+    ]
+  },
+  {
     "url": "https://dev.to/rodri-oliveira-dev/architecture-decisions-shouldnt-get-lost-introducing-adr-guard-for-vs-code-3211",
     "title": "Architecture Decisions Shouldn't Get Lost: Introducing ADR Guard for VS Code",
     "description": "There's a question almost every developer has asked while working on a mature codebase: \"Why was it built this way?\" Sometimes the answer is buried in an old GitHub discussion. Other times, it's hidden in a Slack thread, an outdated document, or, even worse, in the memory of someone who left the company two years ago.…",
