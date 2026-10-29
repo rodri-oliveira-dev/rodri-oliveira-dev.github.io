@@ -1,5 +1,16 @@
 [
   {
+    "url": "https://rodri-oliveira-dev.hashnode.dev/explorando-mcp-de-la-primera-integraci-n-a-las-decisiones-de-arquitectura",
+    "title": "Explorando MCP: de la primera integración a las decisiones de arquitectura",
+    "description": "Lo que aprendí al integrar MCP en proyectos .NET: herramientas, seguridad, pruebas y decisiones de arquitectura a partir de casos reales.",
+    "publishedAt": "2026-10-29T14:00:19Z",
+    "tags": [
+      "mcp",
+      "dotnet",
+      "AI"
+    ]
+  },
+  {
     "url": "https://rodri-oliveira-dev.hashnode.dev/dapper-fluentmap-est-de-vuelta-qu-cambi-de-la-versi-n-2-0-a-la-3-6",
     "title": "Dapper FluentMap está de vuelta: ¿qué cambió de la versión 2.0 a la 3.6?",
     "description": "Dapper FluentMap está de vuelta. Conoce las novedades de la versión 3.6, la compatibilidad con 2.0 y las consideraciones para migrar.",
