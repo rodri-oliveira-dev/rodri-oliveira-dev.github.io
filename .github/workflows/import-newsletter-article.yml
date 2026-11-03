@@ -352,6 +352,11 @@ jobs:
       pull-requests: read
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
       - name: Run repository quality gates
         id: quality
         shell: bash
@@ -372,31 +377,7 @@ jobs:
           if [[ "$AUTOMATION_TOKEN_CONFIGURED" == "true" ]]; then
             echo "Dedicated automation token detected; waiting for native pull_request checks."
 
-            checks_found=0
-            for _ in {1..30}; do
-              checks_found="$(
-                gh pr checks "$PR_NUMBER" \
-                  --repo "$GH_REPO" \
-                  --json name \
-                  --jq 'length' 2>/dev/null || echo 0
-              )"
-
-              if [[ "$checks_found" -gt 0 ]]; then
-                break
-              fi
-
-              sleep 2
-            done
-
-            if [[ "$checks_found" -eq 0 ]]; then
-              echo "No pull_request checks were detected for PR #${PR_NUMBER}."
-              exit 1
-            fi
-
-            gh pr checks "$PR_NUMBER" \
-              --repo "$GH_REPO" \
-              --watch \
-              --fail-fast
+            python3 .github/scripts/wait-newsletter-checks.py
 
             echo "mode=native" >> "$GITHUB_OUTPUT"
             exit 0
