@@ -26,9 +26,7 @@ class DescriptionImportTests(unittest.TestCase):
             [("og:description", clipped)], ""
         )
 
-        self.assertEqual(
-            value[-55:], "protocolo, experimentar algumas possibilidades…"
-        )
+        self.assertTrue(value.endswith("protocolo, experimentar algumas possibilidades…"))
         self.assertNotIn("princi", value)
         self.assertEqual(source, "og:description (prévia normalizada)")
         self.assertTrue(automatic)
