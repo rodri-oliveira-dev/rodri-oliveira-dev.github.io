@@ -1,8 +1,11 @@
 """Regression tests for fail-closed newsletter quality-gate polling."""
 
 import importlib.util
+import io
+import urllib.error
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 SCRIPT = Path(__file__).with_name("wait-newsletter-checks.py")
@@ -61,6 +64,30 @@ class NewsletterQualityGateTests(unittest.TestCase):
         payload = all_successful()
         payload["check_runs"].append(check("Site validation", conclusion="failure", run_id=0))
         self.assertEqual(monitor.evaluate_checks(payload)[0], "success")
+
+    @patch.object(monitor.time, "sleep")
+    @patch.object(monitor.urllib.request, "urlopen")
+    def test_temporary_http_503_is_retried(self, urlopen, sleep):
+        error = urllib.error.HTTPError(
+            "https://api.github.com/test", 503, "Service Unavailable", None, None
+        )
+        urlopen.side_effect = [error, io.BytesIO(b'{"check_runs": []}')]
+
+        result = monitor.api_get("test", "token")
+
+        self.assertEqual(result, {"check_runs": []})
+        self.assertEqual(urlopen.call_count, 2)
+        sleep.assert_called_once_with(monitor.POLL_SECONDS)
+
+    @patch.object(monitor.time, "sleep")
+    @patch.object(monitor.urllib.request, "urlopen")
+    def test_authentication_error_is_not_retried(self, urlopen, sleep):
+        urlopen.side_effect = urllib.error.HTTPError(
+            "https://api.github.com/test", 401, "Unauthorized", None, None
+        )
+        with self.assertRaises(urllib.error.HTTPError):
+            monitor.api_get("test", "token")
+        sleep.assert_not_called()
 
     def test_non_github_action_cannot_impersonate_required_check(self):
         payload = all_successful()
