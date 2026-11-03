@@ -1,5 +1,18 @@
 [
   {
+    "url": "https://www.linkedin.com/pulse/explorando-mcp-da-primeira-integra%C3%A7%C3%A3o-%C3%A0s-decis%C3%B5es-de-de-oliveira-bcqhf/",
+    "finalUrl": "https://www.linkedin.com/pulse/explorando-mcp-da-primeira-integra%C3%A7%C3%A3o-%C3%A0s-decis%C3%B5es-de-de-oliveira-bcqhf/",
+    "title": "Explorando MCP: da primeira integração às decisões de arquitetura",
+    "description": "Durante minhas férias, resolvi dedicar parte do tempo a estudar melhor o Model Context Protocol, ou simplesmente MCP. Eu já vinha acompanhando o assunto e tinha algumas implementações nos meus projetos open source, mas queria entender melhor o protocolo, experimentar algumas possibilidades…",
+    "publishedAt": "2026-11-03",
+    "metadataSource": {
+      "title": "og:title",
+      "description": "og:description (prévia normalizada)",
+      "publishedAt": "JSON-LD datePublished"
+    },
+    "addedAt": "2026-11-03T13:00:23+00:00"
+  },
+  {
     "url": "https://www.linkedin.com/pulse/dapper-fluentmap-est%C3%A1-de-volta-o-que-mudou-da-vers%C3%A3o-20-de-oliveira-npb9f/",
     "finalUrl": "https://www.linkedin.com/pulse/dapper-fluentmap-est%C3%A1-de-volta-o-que-mudou-da-vers%C3%A3o-20-de-oliveira-npb9f/",
     "title": "Dapper FluentMap está de volta: o que mudou da versão 2.0 à 3.6?",
@@ -141,18 +154,5 @@
       "publishedAt": "JSON-LD datePublished"
     },
     "addedAt": "2026-08-30T23:57:57+00:00"
-  },
-  {
-    "url": "https://pt.linkedin.com/pulse/bounded-context-onde-um-modelo-e-uma-linguagem-rodrigo-de-oliveira-ltrjf",
-    "finalUrl": "https://pt.linkedin.com/pulse/bounded-context-onde-um-modelo-e-uma-linguagem-rodrigo-de-oliveira-ltrjf",
-    "title": "Bounded Context: onde um modelo e uma linguagem possuem significado consistente",
-    "description": "Este é o quarto artigo da série sobre Domain-Driven Design. No texto anterior, estudamos Domain, Subdomain e Core Domain e discutimos onde uma organização deve concentrar seu investimento em modelagem.",
-    "publishedAt": "2026-08-03",
-    "metadataSource": {
-      "title": "og:title",
-      "description": "og:description",
-      "publishedAt": "JSON-LD datePublished"
-    },
-    "addedAt": "2026-08-30T23:58:12+00:00"
   }
 ]
