@@ -59,6 +59,7 @@ OpenTelemetry
 Observabilidad
 observabilidad
 Outbox
+Português
 PubSub
 redelivery
 Redis

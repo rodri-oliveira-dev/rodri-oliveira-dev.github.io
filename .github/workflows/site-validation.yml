@@ -74,8 +74,8 @@ jobs:
             './en/case-studies/**/*.html'
             './es/**/*.html'
             './README.md'
-          './README.en.md'
-          './README.es.md'
+            './README.en.md'
+            './README.es.md'
           fail: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
