@@ -36,6 +36,8 @@ jobs:
     name: Import article metadata
     runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 10
+    outputs:
+      json_action: ${{ steps.metadata.outputs.json_action }}
 
     steps:
       - name: Checkout repository
@@ -54,6 +56,7 @@ jobs:
         run: python3 .github/scripts/import-newsletter.py
 
       - name: Upload imported catalog
+        if: steps.metadata.outputs.json_action == 'inserted'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ env.WORKSPACE_ARTIFACT }}-catalog
@@ -63,6 +66,7 @@ jobs:
 
   render_validate:
     name: Render and validate newsletter content
+    if: needs.import_metadata.outputs.json_action == 'inserted'
     runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 10
     needs: import_metadata
