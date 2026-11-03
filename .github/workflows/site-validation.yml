@@ -74,6 +74,8 @@ jobs:
             './en/case-studies/**/*.html'
             './es/**/*.html'
             './README.md'
+          './README.en.md'
+          './README.es.md'
           fail: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -89,6 +91,8 @@ jobs:
             en/case-studies/**/*.html
             es/**/*.html
             README.md
+            README.en.md
+            README.es.md
           incremental_files_only: false
           strict: true
           suggestions: true
