@@ -220,6 +220,54 @@ def choose(candidates: list[tuple[str, str]], fallback: str) -> tuple[str, str, 
     return "", "não disponível", False
 
 
+
+# External metadata often contains previews cut at a character limit (for
+# example, LinkedIn's 300-character og:description). The source does not mark
+# whether the final word is complete, so use conservative length heuristics.
+def is_likely_truncated_description(value: str) -> bool:
+    return (
+        bool(value)
+        and value[-1].isalpha()
+        and (len(value) >= 280 or len(value) in {150, 160, 200, 255})
+    )
+
+
+def finish_truncated_description(value: str) -> str:
+    # Drop the possibly incomplete last token rather than publishing a typo.
+    prefix, separator, _ = value.rpartition(" ")
+    if not separator:
+        return value
+
+    prefix = prefix.rstrip(" ,;:")
+    # Avoid trailing connectors such as "possibilidades e, princi".
+    prefix = re.sub(r"\s+(?:e|ou|and|or|y|o)$", "", prefix, flags=re.IGNORECASE)
+    return f"{prefix}…" if prefix else value
+
+
+def choose_description(
+    candidates: list[tuple[str, str]], fallback: str
+) -> tuple[str, str, bool]:
+    truncated: tuple[str, str] | None = None
+    for source, raw_value in candidates:
+        value = clean(raw_value)
+        if not value:
+            continue
+        if is_likely_truncated_description(value):
+            if truncated is None:
+                truncated = (source, value)
+            continue
+        return value, source, True
+
+    if fallback:
+        return clean(fallback), "fallback manual informado", False
+
+    if truncated is not None:
+        source, value = truncated
+        return finish_truncated_description(value), f"{source} (prévia normalizada)", True
+
+    return "", "não disponível", False
+
+
 def append_summary(lines: list[str]) -> None:
     if not SUMMARY_PATH:
         return
@@ -285,7 +333,7 @@ def main() -> None:
         ],
         fallback_title,
     )
-    description, description_source, description_auto = choose(
+    description, description_source, description_auto = choose_description(
         [
             ("og:description", clean(parser.meta.get("og:description"))),
             ("JSON-LD description", jsonld_value(parser.jsonld_blocks, "description")),
