@@ -240,7 +240,7 @@ def finish_truncated_description(value: str) -> str:
 
     prefix = prefix.rstrip(" ,;:")
     # Avoid trailing connectors such as "possibilidades e, princi".
-    prefix = re.sub(r"\\s+(?:e|ou|and|or|y|o)$", "", prefix, flags=re.IGNORECASE)
+    prefix = re.sub(r"\s+(?:e|ou|and|or|y|o)$", "", prefix, flags=re.IGNORECASE)
     return f"{prefix}…" if prefix else value
 
 
