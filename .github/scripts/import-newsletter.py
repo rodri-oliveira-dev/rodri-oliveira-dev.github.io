@@ -282,11 +282,66 @@ def set_output(name: str, value: str) -> None:
         output.write(f"{name}={value}\n")
 
 
+def load_articles() -> list:
+    if not DATA_PATH.exists():
+        return []
+
+    try:
+        articles = json.loads(DATA_PATH.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"JSON existente inválido: {exc}") from exc
+    if not isinstance(articles, list):
+        raise SystemExit("O JSON existente deve conter uma lista de artigos.")
+    return articles
+
+
+def find_existing_article(
+    articles: list, url: str, final_url: str = ""
+) -> dict | None:
+    keys = {duplicate_key(candidate) for candidate in (url, final_url) if candidate}
+    return next(
+        (
+            item
+            for item in articles
+            if isinstance(item, dict)
+            and any(
+                candidate and duplicate_key(str(candidate)) in keys
+                for candidate in (item.get("url"), item.get("finalUrl"))
+            )
+        ),
+        None,
+    )
+
+
+def skip_existing_article(article: dict, url: str) -> None:
+    append_summary(
+        [
+            "# Importação de artigo da newsletter",
+            "",
+            "**Resultado:** sem alterações (artigo já cadastrado)",
+            "",
+            f"- **Artigo existente:** {article.get('title') or 'artigo já cadastrado'}",
+            f"- **URL normalizada:** {url}",
+            "",
+            "Nenhum arquivo foi alterado e nenhum Pull Request foi criado.",
+        ]
+    )
+    set_output("json_action", "duplicate")
+    print("Artigo já cadastrado; importação ignorada sem alterações.")
+
+
 def main() -> None:
     url = validate_url(os.environ.get("ARTICLE_URL", "").strip())
     fallback_title = os.environ.get("FALLBACK_TITLE", "").strip()
     fallback_description = os.environ.get("FALLBACK_DESCRIPTION", "").strip()
     fallback_published_at = os.environ.get("FALLBACK_PUBLISHED_AT", "").strip()
+
+    # An unchanged URL is a successful no-op, even if the upstream page is offline.
+    articles = load_articles()
+    existing = find_existing_article(articles, url)
+    if existing is not None:
+        skip_existing_article(existing, url)
+        return
 
     request = urllib.request.Request(
         url,
@@ -362,45 +417,13 @@ def main() -> None:
     if not title:
         raise SystemExit("Não foi possível obter o título e nenhum fallback manual foi informado.")
 
-    DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
-    if DATA_PATH.exists():
-        try:
-            articles = json.loads(DATA_PATH.read_text(encoding="utf-8"))
-        except json.JSONDecodeError as exc:
-            raise SystemExit(f"JSON existente inválido: {exc}") from exc
-        if not isinstance(articles, list):
-            raise SystemExit("O JSON existente deve conter uma lista de artigos.")
-    else:
-        articles = []
-
-    current_keys = {duplicate_key(url), duplicate_key(final_url)}
-    existing = next(
-        (
-            item
-            for item in articles
-            if isinstance(item, dict)
-            and any(
-                candidate and duplicate_key(str(candidate)) in current_keys
-                for candidate in (item.get("url"), item.get("finalUrl"))
-            )
-        ),
-        None,
-    )
+    # A redirect may resolve to an article already stored under another URL.
+    existing = find_existing_article(articles, url, final_url)
     if existing is not None:
-        append_summary(
-            [
-                "# Importação de artigo da newsletter",
-                "",
-                "**Resultado:** rejeitado",
-                "",
-                "- **Motivo:** a URL já existe no JSON.",
-                f"- **Artigo existente:** {existing.get('title') or 'artigo já cadastrado'}",
-                f"- **URL normalizada:** {url}",
-                "",
-                "Nenhum arquivo foi alterado e nenhum Pull Request foi criado.",
-            ]
-        )
-        raise SystemExit("A URL informada já está cadastrada no JSON.")
+        skip_existing_article(existing, url)
+        return
+
+    DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     articles.append(
         {
