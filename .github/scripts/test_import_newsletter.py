@@ -84,5 +84,70 @@ class DescriptionImportTests(unittest.TestCase):
         self.assertIn("normalizada", source)
 
 
+
+class DuplicateImportTests(unittest.TestCase):
+    def test_equivalent_linkedin_domains_are_duplicates(self):
+        articles = [{
+            "url": "https://www.linkedin.com/pulse/example-article/",
+            "title": "Existing article",
+        }]
+        found = newsletter.find_existing_article(
+            articles, "https://pt.linkedin.com/pulse/example-article/"
+        )
+        self.assertIs(found, articles[0])
+
+    def test_redirect_target_already_imported_is_duplicate(self):
+        articles = [{
+            "url": "https://www.linkedin.com/pulse/existing/",
+            "title": "Existing article",
+        }]
+        found = newsletter.find_existing_article(
+            articles,
+            "https://example.com/link",
+            "https://www.linkedin.com/pulse/existing/",
+        )
+        self.assertIs(found, articles[0])
+
+    def test_new_article_is_not_duplicate(self):
+        self.assertIsNone(
+            newsletter.find_existing_article([], "https://example.com/new")
+        )
+
+    def test_duplicate_import_is_noop_without_fetching_external_page(self):
+        import json
+        import tempfile
+        from unittest.mock import patch
+
+        url = "https://www.linkedin.com/pulse/already-imported/"
+        catalog = [{
+            "url": url, "finalUrl": url, "title": "Already imported",
+            "description": "Existing description", "publishedAt": "2026-11-03",
+        }]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "newsletter-articles.json"
+            path.write_text(json.dumps(catalog, ensure_ascii=False) + "\n", encoding="utf-8")
+            initial_content = path.read_bytes()
+            output_path = root / "github-output.txt"
+            summary_path = root / "summary.md"
+            with (
+                patch.object(newsletter, "DATA_PATH", path),
+                patch.object(newsletter, "OUTPUT_PATH", str(output_path)),
+                patch.object(newsletter, "SUMMARY_PATH", str(summary_path)),
+                patch.dict(newsletter.os.environ, {
+                    "ARTICLE_URL": url,
+                    "FALLBACK_TITLE": "",
+                    "FALLBACK_DESCRIPTION": "",
+                    "FALLBACK_PUBLISHED_AT": "",
+                }),
+                patch.object(newsletter.urllib.request, "urlopen", side_effect=AssertionError("Unexpected network access")),
+            ):
+                newsletter.main()
+
+            self.assertEqual(path.read_bytes(), initial_content)
+            self.assertIn("json_action=duplicate", output_path.read_text(encoding="utf-8"))
+            self.assertIn("sem alterações", summary_path.read_text(encoding="utf-8"))
+
+
 if __name__ == "__main__":
     unittest.main()
