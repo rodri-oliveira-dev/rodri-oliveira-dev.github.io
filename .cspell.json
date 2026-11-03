@@ -41,6 +41,21 @@
       ]
     },
     {
+      "filename": "README.en.md",
+      "language": "en-US",
+      "dictionaries": [
+        "site-terms"
+      ]
+    },
+    {
+      "filename": "README.es.md",
+      "language": "es,en-US",
+      "dictionaries": [
+        "es-es",
+        "site-terms"
+      ]
+    },
+    {
       "filename": "case-studies/**/*.html",
       "language": "pt_BR,en-US",
       "dictionaries": [

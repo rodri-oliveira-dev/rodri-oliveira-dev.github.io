@@ -1,6 +1,7 @@
 ADR
 ADRs
 adrguard
+América
 Apigee
 Arquitectura
 Aspire
@@ -59,6 +60,7 @@ OpenTelemetry
 Observabilidad
 observabilidad
 Outbox
+Português
 PubSub
 redelivery
 Redis
