@@ -1,5 +1,29 @@
 [
   {
+    "url": "https://dev.to/rodri-oliveira-dev/the-c4-model-how-to-communicate-complex-software-architectures-clearly-1lda",
+    "title": "The C4 Model: How to Communicate Complex Software Architectures Clearly",
+    "description": "If you've worked with software architecture, you've probably experienced something interesting: after weeks of discussing technical decisions, integrations, and responsibilities, it's finally time to present the solution, and someone asks a seemingly simple question: \"But how does all of this work together?\" It's a fa…",
+    "publishedAt": "2026-11-04T13:00:00Z",
+    "tags": [
+      "architecture",
+      "c4model",
+      "softwareengineering",
+      "systemdesign"
+    ]
+  },
+  {
+    "url": "https://dev.to/rodri-oliveira-dev/exploring-mcp-from-my-first-integration-to-architectural-decisions-36gf",
+    "title": "Exploring MCP: From My First Integration to Architectural Decisions",
+    "description": "During my vacation, I decided to spend some time learning more about the Model Context Protocol, or MCP for short. I had already been following the topic and had implemented MCP support in a few of my open-source projects. Still, I wanted to understand the protocol better, experiment with a few possibilities, and, mos…",
+    "publishedAt": "2026-11-04T13:00:00Z",
+    "tags": [
+      "ai",
+      "mcp",
+      "dotnet",
+      "opensource"
+    ]
+  },
+  {
     "url": "https://dev.to/rodri-oliveira-dev/dapper-fluentmap-is-back-what-changed-from-version-20-to-36-em8",
     "title": "Dapper FluentMap Is Back: What Changed from Version 2.0 to 3.6?",
     "description": "After six years without a new stable release, Dapper FluentMap is actively maintained again. But bringing an existing library back to life involves more than updating dependencies. It means finding a way to move forward without breaking the contracts that existing applications rely on. Imagine a .NET application that…",
