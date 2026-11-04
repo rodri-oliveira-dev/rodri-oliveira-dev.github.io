@@ -1,5 +1,17 @@
 [
   {
+    "url": "https://rodri-oliveira-dev.hashnode.dev/el-modelo-c4-c-mo-comunicar-con-claridad-arquitecturas-de-software-complejas",
+    "title": "El modelo C4: cómo comunicar con claridad arquitecturas de software complejas",
+    "description": "Descubre los cuatro niveles del modelo C4: contexto, contenedores, componentes y código. Aprende a comunicar arquitecturas de software de forma clara.",
+    "publishedAt": "2026-11-04T19:36:29Z",
+    "tags": [
+      "software architecture",
+      "C4 Model",
+      "System Design",
+      "Software Engineering"
+    ]
+  },
+  {
     "url": "https://rodri-oliveira-dev.hashnode.dev/explorando-mcp-de-la-primera-integraci-n-a-las-decisiones-de-arquitectura",
     "title": "Explorando MCP: de la primera integración a las decisiones de arquitectura",
     "description": "Lo que aprendí al integrar MCP en proyectos .NET: herramientas, seguridad, pruebas y decisiones de arquitectura a partir de casos reales.",
