@@ -50,9 +50,7 @@ microservicios
 MSBuild
 materializers
 multipart
-Nestlé
 Node
-Nordisk
 nojekyll
 NuGet
 OIDC
@@ -66,6 +64,7 @@ Outbox
 Português
 PubSub
 redelivery
+Rediseño
 Redis
 ReliableWebhooks
 Repo2C4
