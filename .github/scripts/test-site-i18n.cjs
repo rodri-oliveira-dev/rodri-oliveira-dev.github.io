@@ -200,6 +200,11 @@ for (const [index, section] of careerSections.entries()) {
   for (const indicator of ["30%", "40%", "90%"]) {
     assert.ok(section.includes(indicator), `${variants[index].key} career indicator ${indicator}`);
   }
+  for (const project of ["Bosch América Latina", "Nestlé Brasil", "Novo Nordisk"]) {
+    assert.ok(section.includes(project), `${variants[index].key} freelance project ${project}`);
+  }
+  assert.ok(section.includes('class="freelance-projects"'),
+    `${variants[index].key} identifies freelance projects independently`);
 }
 assert.ok(careerSections[0].includes("<h4>Engenheiro de Software Pleno</h4>"),
   "pt-BR official CI&T role title");

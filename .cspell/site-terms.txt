@@ -50,7 +50,9 @@ microservicios
 MSBuild
 materializers
 multipart
+Nestlé
 Node
+Nordisk
 nojekyll
 NuGet
 OIDC
