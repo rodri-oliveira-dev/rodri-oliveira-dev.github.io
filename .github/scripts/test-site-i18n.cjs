@@ -197,14 +197,24 @@ for (const [index, section] of careerSections.entries()) {
     `${variants[index].key} preserves the official CI&T role title`);
   assert.ok(section.includes("<h3>Comtel e Fernandez S/A</h3>"),
     `${variants[index].key} preserves company names`);
+  assert.ok(!section.includes('class="selected-results"'),
+    `${variants[index].key} removes selected results blocks`);
   for (const indicator of ["30%", "40%", "90%"]) {
-    assert.ok(section.includes(indicator), `${variants[index].key} career indicator ${indicator}`);
+    assert.ok(!section.includes(indicator), `${variants[index].key} removes career indicator ${indicator}`);
   }
   for (const project of ["Bosch América Latina", "Nestlé Brasil", "Novo Nordisk"]) {
     assert.ok(section.includes(project), `${variants[index].key} freelance project ${project}`);
   }
   assert.ok(section.includes('class="freelance-projects"'),
     `${variants[index].key} identifies freelance projects independently`);
+  const freelance = section.match(/<section class="freelance-projects"[\s\S]*?<\/section>/)?.[0] ?? "";
+  assert.ok(freelance, `${variants[index].key} freelance section`);
+  assert.ok(!freelance.includes("<time"), `${variants[index].key} removes freelance dates`);
+  assert.ok(!freelance.includes('class="eyebrow"'), `${variants[index].key} removes freelance label`);
+  assert.equal((freelance.match(/<li>/g) ?? []).length, 3,
+    `${variants[index].key} keeps three freelance companies`);
+  assert.equal((freelance.match(/<li><strong>[^<]+<\/strong><p>[^<]+<\/p><\/li>/g) ?? []).length, 3,
+    `${variants[index].key} describes each freelance project`);
 }
 assert.ok(careerSections[0].includes("<h4>Engenheiro de Software Pleno</h4>"),
   "pt-BR official CI&T role title");

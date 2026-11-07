@@ -26,6 +26,8 @@ const launchBrowser = () => puppeteer.launch({
 const inspectLayout = () => {
   const switcher = document.querySelector(".language-switcher");
   const rect = switcher?.getBoundingClientRect();
+  const heroArtwork = document.querySelector(".hero-artwork")?.getBoundingClientRect();
+  const heroActions = document.querySelector(".hero-actions")?.getBoundingClientRect();
   const brokenImages = [...document.images]
     .filter((image) => image.complete && image.naturalWidth === 0)
     .map((image) => image.getAttribute("src"));
@@ -55,6 +57,8 @@ const inspectLayout = () => {
     viewportWidth: window.innerWidth,
     switcherVisible: Boolean(rect && rect.width > 0 && rect.height > 0),
     switcherInsideViewport: Boolean(rect && rect.left >= -1 && rect.right <= window.innerWidth + 1),
+    heroArtworkWidth: heroArtwork?.width ?? null,
+    heroActionsWidth: heroActions?.width ?? null,
     brokenImages,
     overflowElements,
     uncontainedOverflowElements,
@@ -86,6 +90,12 @@ const inspectLayout = () => {
       assert.ok(result.switcherInsideViewport, `${url} clips the language switcher at ${width}px`);
       assert.deepEqual(result.uncontainedOverflowElements, [], `${url} has uncontained overflow at ${width}px`);
       assert.deepEqual(result.brokenImages, [], `${url} has broken images at ${width}px`);
+      if (width <= 640 && roots.map((root) => root ? `/${root}/` : "/").includes(url)) {
+        assert.ok(result.heroArtworkWidth, `${url} shows the hero artwork at ${width}px`);
+        assert.ok(result.heroActionsWidth, `${url} shows the hero actions at ${width}px`);
+        assert.ok(Math.abs(result.heroArtworkWidth - result.heroActionsWidth) <= 1,
+          `${url} aligns hero artwork (${result.heroArtworkWidth}px) and actions (${result.heroActionsWidth}px) at ${width}px`);
+      }
     }
   }
 
