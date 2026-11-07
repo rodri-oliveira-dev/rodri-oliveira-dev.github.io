@@ -1709,6 +1709,15 @@ h1 {
   max-width: 780px;
 }
 
+.hero-kicker {
+  margin-bottom: 14px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
 .hero-content h1 {
   margin-bottom: 18px;
   font-size: clamp(48px, 6.5vw, 82px);
@@ -1725,6 +1734,54 @@ h1 {
 .hero-role span {
   margin: 0 .18em;
   color: var(--muted);
+}
+
+.hero-content .hero-positioning {
+  margin-bottom: 14px;
+  color: var(--text);
+  font-size: clamp(18px, 2vw, 21px);
+}
+
+.hero-content .hero-bridge {
+  margin-bottom: 26px;
+  font-size: 16px;
+}
+
+.hero-focus {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 0 0 30px;
+  padding: 0;
+  border-block: 1px solid var(--line);
+  list-style: none;
+}
+
+.hero-focus li {
+  min-width: 0;
+  padding: 16px 16px 16px 0;
+}
+
+.hero-focus li + li {
+  padding-left: 16px;
+  border-left: 1px solid var(--line);
+}
+
+.hero-focus strong,
+.hero-focus span {
+  display: block;
+}
+
+.hero-focus strong {
+  margin-bottom: 4px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.hero-focus span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .hero-artwork {
@@ -1750,6 +1807,36 @@ h1 {
   margin: 54px 0 0;
   padding: 0;
   list-style: none;
+}
+
+.career-overview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: -8px 0 8px;
+  border-block: 1px solid var(--line);
+}
+
+.career-overview div {
+  padding: 22px 24px 22px 0;
+}
+
+.career-overview div + div {
+  padding-left: 24px;
+  border-left: 1px solid var(--line);
+}
+
+.career-overview dt {
+  margin-bottom: 5px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.career-overview dd {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .career-timeline::before {
@@ -1829,6 +1916,171 @@ h1 {
   gap: 12px;
 }
 
+.role-timeline {
+  display: grid;
+  gap: 0;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.career-role {
+  position: relative;
+  padding: 0 0 28px 28px;
+  border-left: 1px solid var(--line);
+}
+
+.career-role:last-child {
+  padding-bottom: 0;
+  border-left-color: transparent;
+}
+
+.career-role::before {
+  position: absolute;
+  top: 7px;
+  left: -5px;
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--line-strong);
+  border-radius: 50%;
+  background: var(--bg);
+  content: "";
+}
+
+.career-role-current::before {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.role-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.career-content .role-heading h4 {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(17px, 2vw, 20px);
+  line-height: 1.3;
+}
+
+.career-content .role-period {
+  margin: 0;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.career-role > p {
+  font-size: 15px;
+}
+
+.selected-results {
+  margin-top: 18px;
+  padding-left: 18px;
+  border-left: 2px solid rgba(125, 211, 252, .45);
+}
+
+.career-content .selected-results-title {
+  margin-bottom: 8px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.selected-results ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.selected-results li {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.leadership-note {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.career-content .leadership-note p {
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.freelance-projects {
+  display: grid;
+  grid-template-columns: minmax(220px, .75fr) minmax(0, 1.5fr);
+  gap: clamp(28px, 5vw, 72px);
+  margin-top: 64px;
+  padding: clamp(28px, 4vw, 42px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, .02);
+}
+
+.freelance-heading .eyebrow {
+  margin-bottom: 10px;
+}
+
+.freelance-heading h3 {
+  margin-bottom: 10px;
+  font-size: clamp(22px, 3vw, 28px);
+}
+
+.freelance-heading > p:last-child {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.freelance-list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.freelance-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.freelance-list li:first-child {
+  padding-top: 0;
+}
+
+.freelance-list li:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.freelance-list strong {
+  color: var(--text);
+  font-size: 15px;
+}
+
+.freelance-list span {
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  text-align: right;
+  white-space: nowrap;
+}
+
 .current-label {
   margin-top: -18px;
   padding: 3px 8px;
@@ -1851,6 +2103,31 @@ h1 {
 }
 
 .selected-projects .project-card p {
+  flex: 1 1 auto;
+}
+
+.supporting-projects-heading {
+  max-width: 760px;
+  margin: 66px 0 30px;
+}
+
+.supporting-projects-heading h3 {
+  margin-bottom: 12px;
+  font-size: clamp(25px, 3vw, 34px);
+  letter-spacing: -.03em;
+  line-height: 1.15;
+}
+
+.supporting-projects-heading > p:not(.eyebrow) {
+  margin-bottom: 0;
+  color: var(--muted);
+}
+
+.supporting-projects .project-card {
+  min-height: 350px;
+}
+
+.supporting-projects .project-card p {
   flex: 1 1 auto;
 }
 
@@ -1952,16 +2229,59 @@ h1 {
     grid-row: 2;
     padding-left: 18px;
   }
+
+  .freelance-projects {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 700px) {
   .selected-projects,
+  .supporting-projects,
   .contact-block .contact-links {
     grid-template-columns: 1fr;
   }
 
-  .selected-projects .project-card {
+  .selected-projects .project-card,
+  .supporting-projects .project-card {
     min-height: 0;
+  }
+
+  .hero-focus,
+  .career-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-focus li,
+  .hero-focus li + li,
+  .career-overview div,
+  .career-overview div + div {
+    padding: 14px 0;
+    border-left: 0;
+  }
+
+  .hero-focus li + li,
+  .career-overview div + div {
+    border-top: 1px solid var(--line);
+  }
+
+  .role-heading {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .career-content .role-period {
+    white-space: normal;
+  }
+
+  .freelance-list li {
+    display: grid;
+    gap: 4px;
+  }
+
+  .freelance-list span {
+    text-align: left;
+    white-space: normal;
   }
 }
 
@@ -1977,6 +2297,11 @@ h1 {
   .hero-role {
     margin-bottom: 22px;
     font-size: 17px;
+  }
+
+  .hero-kicker {
+    font-size: 11px;
+    line-height: 1.5;
   }
 
   .hero-content .hero-copy {

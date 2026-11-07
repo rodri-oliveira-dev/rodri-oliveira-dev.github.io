@@ -6,9 +6,30 @@ const { SITE_LANGUAGE_LABELS, resolveSiteLanguage } = require("../../assets/js/s
 const ROOT = path.resolve(__dirname, "../..");
 const SITE_URL = "https://rodri-oliveira-dev.github.io";
 const variants = [
-  { key: "pt-BR", root: "", htmlLang: "pt-BR", hreflang: "pt-BR", label: "Idioma" },
-  { key: "en", root: "en", htmlLang: "en", hreflang: "en", label: "Language" },
-  { key: "es-419", root: "es", htmlLang: "es-419", hreflang: "es", label: "Idioma" },
+  {
+    key: "pt-BR",
+    root: "",
+    htmlLang: "pt-BR",
+    hreflang: "pt-BR",
+    label: "Idioma",
+    seoRole: "Arquiteto de Software Sênior",
+  },
+  {
+    key: "en",
+    root: "en",
+    htmlLang: "en",
+    hreflang: "en",
+    label: "Language",
+    seoRole: "Senior Software Architect",
+  },
+  {
+    key: "es-419",
+    root: "es",
+    htmlLang: "es-419",
+    hreflang: "es",
+    label: "Idioma",
+    seoRole: "Arquitecto de Software Senior",
+  },
 ];
 
 const read = (relative) => fs.readFileSync(path.join(ROOT, relative), "utf8");
@@ -110,14 +131,19 @@ const validatePage = (variant, relative, slug = "") => {
       assert.ok(article[field], `${relative} JSON-LD ${field}`);
     }
   } else {
+    assert.ok(html.match(/<title>([^<]+)<\/title>/i)?.[1].includes(variant.seoRole), `${relative} senior title`);
+    assert.ok(meta(html, "property", "og:title").includes(variant.seoRole), `${relative} senior og:title`);
+    assert.ok(meta(html, "name", "twitter:title").includes(variant.seoRole), `${relative} senior twitter:title`);
     const graph = payloads[0]["@graph"];
     assert.ok(Array.isArray(graph), `${relative} JSON-LD graph`);
     for (const type of ["WebSite", "ProfilePage", "Person"]) {
       assert.ok(graph.some((node) => node["@type"] === type), `${relative} JSON-LD ${type}`);
     }
     const profile = graph.find((node) => node["@type"] === "ProfilePage");
+    const person = graph.find((node) => node["@type"] === "Person");
     assert.equal(profile.url, expectedUrl, `${relative} JSON-LD profile URL`);
     assert.equal(profile.inLanguage, variant.htmlLang, `${relative} JSON-LD profile language`);
+    assert.equal(person.jobTitle, "Senior Software Architect", `${relative} official JSON-LD job title`);
   }
 
   assert.ok(!/href="javascript:/i.test(html), `${relative} unsafe javascript URL`);
@@ -156,6 +182,37 @@ for (const variant of variants) {
   for (const slug of slugSets[0]) {
     assert.ok(home.includes(`href="${localHref(variant, slug)}"`), `${variant.key} homepage link to ${slug}`);
   }
+}
+
+const localizedHomes = variants.map((variant) => read(homePath(variant)));
+const careerSections = localizedHomes.map((home) =>
+  home.match(/<section class="section career-section"[\s\S]*?<\/section>/)?.[0] ?? "");
+const careerDates = careerSections.map((section) =>
+  [...section.matchAll(/<time datetime="([^"]+)"/g)].map((match) => match[1]));
+for (const [index, dates] of careerDates.entries()) {
+  assert.deepEqual(dates, careerDates[0], `${variants[index].key} career dates`);
+}
+for (const [index, section] of careerSections.entries()) {
+  assert.ok(section.includes('<h4 lang="pt-BR">Engenheiro de Software Pleno</h4>') || index === 0,
+    `${variants[index].key} preserves the official CI&T role title`);
+  assert.ok(section.includes("<h3>Comtel e Fernandez S/A</h3>"),
+    `${variants[index].key} preserves company names`);
+  for (const indicator of ["30%", "40%", "90%"]) {
+    assert.ok(section.includes(indicator), `${variants[index].key} career indicator ${indicator}`);
+  }
+  for (const project of ["Bosch América Latina", "Nestlé Brasil", "Novo Nordisk"]) {
+    assert.ok(section.includes(project), `${variants[index].key} freelance project ${project}`);
+  }
+  assert.ok(section.includes('class="freelance-projects"'),
+    `${variants[index].key} identifies freelance projects independently`);
+}
+assert.ok(careerSections[0].includes("<h4>Engenheiro de Software Pleno</h4>"),
+  "pt-BR official CI&T role title");
+for (const [index, pattern] of [
+  [/\b(?:Resultados selecionados|Trajetória profissional|Desenvolvimento e modernização|Experiências que)\b/i, "en"],
+  [/\b(?:Resultados selecionados|Trajetória profissional|Desenvolvimento e modernização|Experiências que)\b/i, "es-419"],
+].entries()) {
+  assert.doesNotMatch(careerSections[index + 1], pattern[0], `${pattern[1]} career Portuguese leakage`);
 }
 
 const redirect = read("pt-br/index.html");

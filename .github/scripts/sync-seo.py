@@ -271,23 +271,20 @@ def person_node(language: str, devto_enabled: bool) -> dict:
         "@id": PERSON_ID,
         "name": "Rodrigo de Oliveira",
         "url": SITE_URL,
-        "jobTitle": (
-            "Arquiteto de Software"
-            if is_pt
-            else "Arquitecto de Software" if is_es else "Software Architect"
-        ),
+        # Keep the official current role unchanged across localized profiles.
+        "jobTitle": "Senior Software Architect",
         "email": "mailto:rodrigodotnet@outlook.com",
         "image": f"{SITE_URL}assets/profile/rodrigo-about.webp",
         "description": (
-            "Arquiteto de Software com mais de 20 anos de experiência em sistemas "
-            "corporativos, .NET, sistemas distribuídos, integrações e cloud."
+            "Arquiteto de Software Sênior com mais de 20 anos de experiência em "
+            "modernização, .NET, sistemas distribuídos, integrações e cloud."
             if is_pt
             else (
-                "Arquitecto de Software con más de 20 años de experiencia en software "
-                "empresarial, .NET, sistemas distribuidos, integraciones y cloud."
+                "Arquitecto de Software Senior con más de 20 años de experiencia en "
+                "modernización, .NET, sistemas distribuidos, integraciones y cloud."
                 if is_es
-                else "Software Architect with more than 20 years of experience in enterprise "
-                "software, .NET, distributed systems, integrations, and cloud."
+                else "Senior Software Architect with more than 20 years of experience in "
+                "modernization, .NET, distributed systems, integrations, and cloud."
             )
         ),
         "sameAs": same_as,
@@ -363,7 +360,7 @@ def structured_data(
         "@id": WEBSITE_ID,
         "url": SITE_URL,
         "name": "Rodrigo de Oliveira",
-        "alternateName": "Rodrigo de Oliveira — Software Architect",
+        "alternateName": "Rodrigo de Oliveira — Senior Software Architect",
         "inLanguage": list(available_languages),
         "publisher": {"@id": PERSON_ID},
     }
@@ -373,12 +370,12 @@ def structured_data(
         "@id": profile_id,
         "url": page_url,
         "name": (
-            "Rodrigo de Oliveira — Arquiteto de Software"
+            "Rodrigo de Oliveira — Arquiteto de Software Sênior"
             if is_pt
             else (
-                "Rodrigo de Oliveira — Arquitecto de Software"
+                "Rodrigo de Oliveira — Arquitecto de Software Senior"
                 if is_es
-                else "Rodrigo de Oliveira — Software Architect"
+                else "Rodrigo de Oliveira — Senior Software Architect"
             )
         ),
         "inLanguage": language,

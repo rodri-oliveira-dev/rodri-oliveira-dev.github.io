@@ -67,6 +67,18 @@ class SitemapLastModifiedTests(unittest.TestCase):
 
 
 class SpanishInfrastructureTests(unittest.TestCase):
+    def test_person_uses_official_senior_role_in_every_language(self):
+        senior_terms = {
+            "pt-BR": "Sênior",
+            "en": "Senior",
+            "es-419": "Senior",
+        }
+        for language, senior_term in senior_terms.items():
+            person = sync.person_node(language, True)
+
+            self.assertEqual(person["jobTitle"], "Senior Software Architect")
+            self.assertIn(senior_term, person["description"])
+
     def test_spanish_uses_latin_american_html_language_and_seo_hreflang(self):
         variant = sync.LANGUAGE_VARIANTS["es-419"]
         payload = sync.structured_data(
