@@ -8,6 +8,7 @@ Aspire
 best-effort
 ciclomática
 CNPJ
+Comtel
 CrispyWaffle
 Dapper
 Dommel
@@ -49,7 +50,9 @@ microservicios
 MSBuild
 materializers
 multipart
+Nestlé
 Node
+Nordisk
 nojekyll
 NuGet
 OIDC
