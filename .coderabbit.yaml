@@ -11,7 +11,6 @@ tone_instructions: >-
 
 reviews:
   profile: "chill"
-  request_changes_workflow: false
   high_level_summary: true
   review_status: true
   review_details: false
