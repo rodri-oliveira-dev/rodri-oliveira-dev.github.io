@@ -48,6 +48,7 @@ Ele verifica que:
 - `index.html` e `en/index.html` possuem RSS autodiscovery, sem atribuir uma tradução inexistente à homepage espanhola;
 - as três homepages e todos os estudos possuem canonical própria e alternates recíprocos `pt-BR`, `en`, `es` e `x-default`;
 - o JSON-LD estruturado permanece válido e consistente;
+- os estudos de caso reutilizam os `@id` canônicos de `Person` e `WebSite`, identificam a página principal e mantêm uma identidade estável para o repositório descrito como `SoftwareSourceCode`;
 - `sitemap.xml` contém exatamente as 18 URLs indexáveis, sem duplicação, e possui `lastmod` para todas elas;
 - os cinco slugs de estudos de caso existem nos três idiomas;
 - a geração de `lastmod` preserva datas versionadas para páginas sem alteração, sem depender do dia em que o runner executa;
@@ -207,6 +208,31 @@ O [`indexnow.yml`](workflows/indexnow.yml) notifica o endpoint público do Index
 O workflow também possui execução manual e uma execução diária de fallback. Esse agendamento é independente da sincronização da newsletter: ele existe apenas para cobrir cenários em que uma alteração tenha sido mesclada por uma credencial de automação que não origine um novo evento `push` de workflow.
 
 A submissão é limitada às URLs públicas pertinentes à alteração, incluindo a homepage, a versão em inglês, estudos de caso descobertos pela estrutura de diretórios e o RSS quando aplicável.
+
+## Descoberta e mensuração de SEO e GEO
+
+O site publica HTML estático com conteúdo, navegação, canonical, `hreflang` e JSON-LD disponíveis sem execução de JavaScript. O `robots.txt` permite o rastreamento público e referencia o sitemap. Essa regra geral já permite Googlebot, Bingbot e OAI-SearchBot; não há uma exceção específica para GPTBot porque descoberta em busca e eventual uso para treinamento são decisões distintas, e a política atual do proprietário não exige um tratamento diferente. A finalidade de cada crawler da OpenAI deve ser reavaliada pela [documentação oficial](https://developers.openai.com/api/docs/bots) antes de qualquer mudança.
+
+Não há `llms.txt`: o projeto não depende desse arquivo para descoberta e não existe benefício demonstrado que justifique manter uma segunda representação do conteúdo. Os sinais canônicos continuam sendo o HTML visível, os dados estruturados, os links internos e o sitemap.
+
+Os arquivos de verificação do Google Search Console e do Bing Webmaster Tools já estão publicados na raiz. Eles comprovam a preparação técnica, mas este repositório não contém credenciais nem acesso aos painéis e, portanto, não registra números externos como se fossem resultados validados.
+
+### Rotina mensal de acompanhamento
+
+Use sempre o mesmo intervalo mensal e compare-o ao período anterior e, quando houver volume suficiente, ao mesmo mês do ano anterior.
+
+| Dimensão | Fonte | Procedimento | Interpretação |
+| --- | --- | --- | --- |
+| URLs indexadas | Search Console e Bing Webmaster Tools | Conferir sitemap, relatórios de indexação e inspeção das 18 URLs canônicas | **Indexação** confirma elegibilidade no índice; não comprova impressão, clique ou citação |
+| Impressões e cliques orgânicos | Relatórios de desempenho dos dois buscadores | Exportar totais e segmentar por país, idioma, página e dispositivo | **Impressão** é aparição no resultado; **clique** é visita originada nesse resultado |
+| Consultas profissionais | Dimensão de consultas | Acompanhar grupos factuais como arquitetura de software, .NET, C#, modernização, sistemas distribuídos, integrações, APIs, cloud, DDD e observabilidade, sem esperar correspondência exata em consultas anonimizadas | Tendência de descoberta por competência; não é evidência de contratação nem de domínio temático isoladamente |
+| Páginas de entrada orgânica | Dimensão de páginas | Comparar homepages e estudos de caso por impressões, cliques e CTR | Identifica quais conteúdos levam visitas; CTR deve ser lida junto com consulta e posição |
+| Citações por mecanismos de IA | Painel ou relatório oficial do provedor, quando disponível | Registrar provedor, resposta/consulta, URL citada e data; separar referência navegacional de citação usada na resposta | **Citação** não equivale a indexação nem garante uma visita |
+| Visitas provenientes de IA | Logs ou analytics já disponíveis na hospedagem, se houver | Separar referrals identificáveis, como links com origem do provedor, sem inferir tráfego não atribuído | **Visita** comprova acesso; não prova que a página foi citada ou indexada pelo provedor |
+
+Para Google, use o [relatório de desempenho do Search Console](https://support.google.com/webmasters/answer/7576553) para consultas, páginas, impressões, cliques e CTR e a inspeção de URL para confirmar o estado de indexação. No Bing Webmaster Tools, verifique Search Performance, Site Explorer/URL Inspection e o histórico de submissões do sitemap e do IndexNow. O sucesso HTTP do workflow de IndexNow confirma apenas a aceitação da notificação; não garante rastreamento ou inclusão no índice.
+
+Registre a evolução em uma planilha externa ou issue restrita com: mês, fonte, definição da métrica, valor, variação absoluta, variação percentual e observações sobre mudanças editoriais ou técnicas. Não armazene neste repositório exports com consultas potencialmente sensíveis, credenciais ou identificadores de usuários.
 
 ### Optimize Open Graph image
 
