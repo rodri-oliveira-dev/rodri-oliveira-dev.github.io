@@ -77,9 +77,11 @@ if (typeof document !== "undefined" && typeof window !== "undefined") (() => {
 
   const firstMenuLink = mobileNav.querySelector("a");
   let menuFocusTimer;
+  let menuBlurTimer;
 
   const setMenuOpen = (open, { focusFirst = false, restoreToggle = false } = {}) => {
     window.clearTimeout(menuFocusTimer);
+    window.clearTimeout(menuBlurTimer);
     toggle.setAttribute("aria-expanded", String(open));
     toggle.setAttribute("aria-label", open ? labels.closeNavigation : labels.openNavigation);
     mobileNav.setAttribute("aria-hidden", String(!open));
@@ -104,7 +106,7 @@ if (typeof document !== "undefined" && typeof window !== "undefined") (() => {
     return directContainer || target;
   };
 
-  const navigateToMobileAnchor = (link) => {
+  const navigateToMobileAnchor = (link, { focusTarget = false } = {}) => {
     const href = link.getAttribute("href");
     if (!href || !href.startsWith("#") || href.length === 1) return false;
 
@@ -127,6 +129,11 @@ if (typeof document !== "undefined" && typeof window !== "undefined") (() => {
       if (window.location.hash !== href) {
         window.history.pushState(null, "", href);
       }
+
+      if (focusTarget) {
+        target.setAttribute("tabindex", "-1");
+        target.focus({ preventScroll: true });
+      }
     });
 
     return true;
@@ -141,7 +148,7 @@ if (typeof document !== "undefined" && typeof window !== "undefined") (() => {
     const link = event.target.closest("a");
     if (!link) return;
 
-    if (mobileViewport.matches && navigateToMobileAnchor(link)) {
+    if (mobileViewport.matches && navigateToMobileAnchor(link, { focusTarget: event.detail === 0 })) {
       event.preventDefault();
       return;
     }
@@ -149,24 +156,27 @@ if (typeof document !== "undefined" && typeof window !== "undefined") (() => {
     setMenuOpen(false);
   });
 
-  mobileNav.addEventListener("focusout", (event) => {
-    if (
-      toggle.getAttribute("aria-expanded") === "true" &&
-      !mobileNav.contains(event.relatedTarget) &&
-      event.relatedTarget !== toggle
-    ) {
-      setMenuOpen(false);
-    }
-  });
+  const cancelMenuBlur = () => window.clearTimeout(menuBlurTimer);
 
-  toggle.addEventListener("focusout", (event) => {
-    if (
-      toggle.getAttribute("aria-expanded") === "true" &&
-      !mobileNav.contains(event.relatedTarget)
-    ) {
-      setMenuOpen(false);
-    }
-  });
+  const closeMenuAfterFocusLeaves = () => {
+    window.clearTimeout(menuBlurTimer);
+    menuBlurTimer = window.setTimeout(() => {
+      const focusedElement = document.activeElement;
+      const focusIsInMenu = focusedElement === toggle || mobileNav.contains(focusedElement);
+
+      if (toggle.getAttribute("aria-expanded") === "true" && !focusIsInMenu) {
+        setMenuOpen(false);
+      }
+    }, 0);
+  };
+
+  // Safari on iOS can report a null relatedTarget while focus moves during a
+  // tap. Waiting for the activation sequence to finish keeps the panel from
+  // becoming non-interactive before the link's click event is dispatched.
+  mobileNav.addEventListener("focusin", cancelMenuBlur);
+  toggle.addEventListener("focusin", cancelMenuBlur);
+  mobileNav.addEventListener("focusout", closeMenuAfterFocusLeaves);
+  toggle.addEventListener("focusout", closeMenuAfterFocusLeaves);
 
   document.addEventListener("click", (event) => {
     if (toggle.getAttribute("aria-expanded") === "true" && !siteHeader.contains(event.target)) {
