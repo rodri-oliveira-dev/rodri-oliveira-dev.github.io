@@ -181,10 +181,11 @@ jobs:
               main_page = payload.get("mainEntityOfPage", {})
               if main_page.get("@id") != page_url:
                   raise SystemExit(f"Invalid mainEntityOfPage in {page}")
-              about = payload.get("about", {})
-              repository = str(about.get("codeRepository") or "").rstrip("/")
-              if repository and about.get("@id") != f"{repository}#software-source-code":
-                  raise SystemExit(f"Invalid SoftwareSourceCode @id in {page}")
+              about = payload.get("about")
+              if isinstance(about, dict):
+                  repository = str(about.get("codeRepository") or "").rstrip("/")
+                  if repository and about.get("@id") != f"{repository}#software-source-code":
+                      raise SystemExit(f"Invalid SoftwareSourceCode @id in {page}")
 
               canonical = re.search(r'<link rel="canonical" href="([^"]+)">', html)
               alternates = dict(re.findall(

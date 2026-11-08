@@ -273,6 +273,17 @@ class CaseStudyStructuredDataTests(unittest.TestCase):
                 "url": "https://example.com/case-study/",
             })
 
+    def test_case_study_preserves_topic_list_when_no_source_entity_exists(self):
+        topics = ["Software Architecture", "Distributed Systems"]
+        payload = {
+            "url": f"{sync.SITE_URL}case-studies/example/",
+            "about": topics,
+        }
+
+        result = sync.normalize_case_study_structured_data(payload)
+
+        self.assertEqual(result["about"], topics)
+
 
 if __name__ == "__main__":
     unittest.main()
