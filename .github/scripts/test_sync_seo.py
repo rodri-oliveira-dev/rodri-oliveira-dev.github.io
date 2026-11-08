@@ -79,6 +79,34 @@ class SpanishInfrastructureTests(unittest.TestCase):
             self.assertEqual(person["jobTitle"], "Senior Software Architect")
             self.assertIn(senior_term, person["description"])
 
+    def test_person_exposes_visible_architecture_competencies_in_every_language(self):
+        expected_topics = {
+            "pt-BR": {
+                "Integração de Sistemas e APIs",
+                "Modernização de Sistemas Legados",
+                "Cloud Computing",
+                "Segurança de Software",
+                "Manutenibilidade",
+            },
+            "en": {
+                "Systems Integration and APIs",
+                "Legacy System Modernization",
+                "Cloud Computing",
+                "Software Security",
+                "Maintainability",
+            },
+            "es-419": {
+                "Integración de Sistemas y APIs",
+                "Modernización de Sistemas Legados",
+                "Cloud Computing",
+                "Seguridad de Software",
+                "Mantenibilidad",
+            },
+        }
+        for language, topics in expected_topics.items():
+            person = sync.person_node(language, True)
+            self.assertTrue(topics.issubset(set(person["knowsAbout"])))
+
     def test_spanish_uses_latin_american_html_language_and_seo_hreflang(self):
         variant = sync.LANGUAGE_VARIANTS["es-419"]
         payload = sync.structured_data(
@@ -208,6 +236,53 @@ class SpanishInfrastructureTests(unittest.TestCase):
             self.assertIn('aria-current="page"', html)
             for href in ('href="/"', 'href="/en/"', 'href="/es/"'):
                 self.assertIn(href, html)
+
+
+class CaseStudyStructuredDataTests(unittest.TestCase):
+    def test_case_study_reuses_canonical_author_and_website_entities(self):
+        page_url = f"{sync.SITE_URL}case-studies/example/"
+        repository = "https://github.com/rodri-oliveira-dev/example"
+        payload = {
+            "@context": "https://schema.org",
+            "@type": ["Article", "TechArticle"],
+            "headline": "Example",
+            "url": page_url,
+            "author": {"@type": "Person", "name": "Rodrigo de Oliveira"},
+            "about": {
+                "@type": "SoftwareSourceCode",
+                "name": "Example",
+                "codeRepository": repository,
+            },
+        }
+
+        result = sync.normalize_case_study_structured_data(payload)
+
+        self.assertEqual(result["@id"], f"{page_url}#article")
+        self.assertEqual(result["author"]["@id"], sync.PERSON_ID)
+        self.assertEqual(result["author"]["url"], sync.SITE_URL)
+        self.assertEqual(result["isPartOf"]["@id"], sync.WEBSITE_ID)
+        self.assertEqual(result["mainEntityOfPage"]["@id"], page_url)
+        self.assertEqual(
+            result["about"]["@id"],
+            f"{repository}#software-source-code",
+        )
+
+    def test_case_study_rejects_urls_outside_the_portfolio(self):
+        with self.assertRaisesRegex(SystemExit, "invalid URL"):
+            sync.normalize_case_study_structured_data({
+                "url": "https://example.com/case-study/",
+            })
+
+    def test_case_study_preserves_topic_list_when_no_source_entity_exists(self):
+        topics = ["Software Architecture", "Distributed Systems"]
+        payload = {
+            "url": f"{sync.SITE_URL}case-studies/example/",
+            "about": topics,
+        }
+
+        result = sync.normalize_case_study_structured_data(payload)
+
+        self.assertEqual(result["about"], topics)
 
 
 if __name__ == "__main__":
