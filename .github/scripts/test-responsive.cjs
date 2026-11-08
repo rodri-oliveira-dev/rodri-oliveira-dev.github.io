@@ -6,8 +6,19 @@ const puppeteer = require("puppeteer");
 const ROOT = path.resolve(__dirname, "../..");
 const ORIGIN = process.env.SITE_ORIGIN || "http://127.0.0.1:8080";
 const keyboardOnly = process.env.RESPONSIVE_KEYBOARD_ONLY === "1";
+const navigationOnly = process.env.RESPONSIVE_NAVIGATION_ONLY === "1";
 const widths = [320, 360, 390, 768, 1024, 1440];
 const roots = ["", "en", "es"];
+const mobileProfiles = [
+  {
+    name: "iPhone viewport",
+    viewport: { width: 390, height: 844, deviceScaleFactor: 1 },
+  },
+  {
+    name: "Android viewport",
+    viewport: { width: 412, height: 915, deviceScaleFactor: 1 },
+  },
+];
 const urls = roots.flatMap((root) => {
   const prefix = root ? `/${root}` : "";
   const caseRoot = path.join(ROOT, root, "case-studies");
@@ -66,8 +77,55 @@ const inspectLayout = () => {
   };
 };
 
+const assertMobileLinkNavigation = async (page, url, profileName) => {
+  const links = await page.$$eval(".mobile-nav-panel a", (elements) =>
+    elements.map((link) => link.getAttribute("href")),
+  );
+
+  assert.ok(links.length > 0, `${url} exposes mobile navigation links for ${profileName}`);
+
+  for (const [index, href] of links.entries()) {
+    if (index > 0) await page.goto(`${ORIGIN}${url}`, { waitUntil: "load" });
+    if (href === "#top") await page.evaluate(() => window.scrollTo(0, 1000));
+    await page.click(".mobile-nav-toggle");
+    assert.equal(
+      await page.$eval(".mobile-nav-toggle", (toggle) => toggle.getAttribute("aria-expanded")),
+      "true",
+      `${url} opens before selecting ${href} on ${profileName}`,
+    );
+    await page.waitForFunction(
+      () => document.activeElement === document.querySelector(".mobile-nav-panel a"),
+      { timeout: 2000 },
+    );
+
+    await page.$eval(`.mobile-nav-panel a[href="${href}"]`, (link) => link.click());
+    await page.waitForFunction(
+      (expectedHash) => window.location.hash === expectedHash &&
+        document.querySelector(".mobile-nav-toggle").getAttribute("aria-expanded") === "false",
+      { timeout: 3000 },
+      href,
+    );
+    await page.waitForFunction(
+      (targetId) => {
+        const headerBottom = document.querySelector(".site-header").getBoundingClientRect().bottom;
+        const target = document.getElementById(targetId);
+        const content = [...target.children].find((child) => child.classList.contains("container")) || target;
+        return content.getBoundingClientRect().top >= headerBottom - 1;
+      },
+      { timeout: 3000 },
+      href.slice(1),
+    );
+
+    assert.equal(
+      await page.$eval(".mobile-nav-panel", (nav) => nav.getAttribute("aria-hidden")),
+      "true",
+      `${url} closes after selecting ${href} on ${profileName}`,
+    );
+  }
+};
+
 (async () => {
-  for (const width of keyboardOnly ? [] : widths) {
+  for (const width of keyboardOnly || navigationOnly ? [] : widths) {
     for (const url of urls) {
       let result;
       let loadError;
@@ -99,7 +157,7 @@ const inspectLayout = () => {
     }
   }
 
-  for (const root of roots) {
+  for (const root of navigationOnly ? [] : roots) {
     const url = root ? `/${root}/` : "/";
     let completed = false;
     let keyboardError;
@@ -121,6 +179,16 @@ const inspectLayout = () => {
         await page.keyboard.press("Escape");
         assert.equal(await page.$eval(".mobile-nav-toggle", (toggle) => toggle.getAttribute("aria-expanded")), "false", `${url} Escape closes menu`);
         assert.equal(await page.evaluate(() => document.activeElement === document.querySelector(".mobile-nav-toggle")), true, `${url} Escape restores focus`);
+        await page.keyboard.press("Enter");
+        await page.waitForFunction(
+          () => document.activeElement === document.querySelector(".mobile-nav-panel a"),
+          { timeout: 2000 },
+        );
+        await page.keyboard.press("Tab");
+        await page.keyboard.press("Enter");
+        await page.waitForFunction(() => window.location.hash === "#career");
+        assert.equal(await page.$eval(".mobile-nav-toggle", (toggle) => toggle.getAttribute("aria-expanded")), "false", `${url} keyboard selection closes menu`);
+        assert.equal(await page.evaluate(() => document.activeElement?.id), "career", `${url} keyboard selection focuses its section`);
         completed = true;
       } catch (error) {
         if (error instanceof assert.AssertionError) throw error;
@@ -131,9 +199,67 @@ const inspectLayout = () => {
     }
     if (!completed) throw new Error(`Keyboard validation failed for ${url} after 3 attempts`, { cause: keyboardError });
   }
+
+  if (!keyboardOnly) {
+    for (const profile of mobileProfiles) {
+      for (const root of roots) {
+        const url = root ? `/${root}/` : "/";
+        let completed = false;
+        let navigationError;
+        for (let attempt = 1; attempt <= 3 && !completed; attempt += 1) {
+          let browser;
+          try {
+            browser = await launchBrowser();
+            const page = await browser.newPage();
+            await page.setViewport(profile.viewport);
+            await page.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: "reduce" }]);
+            await page.goto(`${ORIGIN}${url}`, { waitUntil: "load" });
+            await assertMobileLinkNavigation(page, url, profile.name);
+            completed = true;
+          } catch (error) {
+            if (error instanceof assert.AssertionError) throw error;
+            navigationError = error;
+          } finally {
+            await browser?.close();
+          }
+        }
+        if (!completed) {
+          throw new Error(`Mobile link validation failed for ${url} on ${profile.name}`, { cause: navigationError });
+        }
+      }
+    }
+
+    const browser = await launchBrowser();
+    try {
+      const page = await browser.newPage();
+      await page.setViewport(mobileProfiles[0].viewport);
+      await page.goto(`${ORIGIN}/`, { waitUntil: "load" });
+      await page.evaluate(() => {
+        const toggle = document.querySelector(".mobile-nav-toggle");
+        const link = document.querySelector('.mobile-nav-panel a[href="#projects"]');
+        toggle.focus();
+        toggle.click();
+        toggle.dispatchEvent(new FocusEvent("focusout", { bubbles: true, relatedTarget: null }));
+        if (toggle.getAttribute("aria-expanded") !== "true") {
+          throw new Error("Safari focusout closed the menu before click dispatch");
+        }
+        link.click();
+      });
+      await page.waitForFunction(() => window.location.hash === "#projects");
+      assert.equal(
+        await page.$eval(".mobile-nav-toggle", (toggle) => toggle.getAttribute("aria-expanded")),
+        "false",
+        "Safari null-relatedTarget sequence selects the link and closes the menu",
+      );
+    } finally {
+      await browser.close();
+    }
+  }
   console.log(keyboardOnly
     ? "Validated keyboard navigation in PT/EN/ES."
-    : `Validated ${urls.length} pages at ${widths.join(", ")}px and keyboard navigation in PT/EN/ES.`);
+    : navigationOnly
+      ? "Validated mobile link selection in PT/EN/ES."
+      : `Validated ${urls.length} pages at ${widths.join(", ")}px, keyboard navigation, and mobile link selection in PT/EN/ES.`);
 })().catch((error) => {
   console.error(error);
   process.exitCode = 1;
