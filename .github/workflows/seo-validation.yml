@@ -155,6 +155,7 @@ jobs:
                           f"{required_type} structured data type missing in {page}"
                       )
               for required_field in (
+                  "@id",
                   "headline",
                   "author",
                   "datePublished",
@@ -165,6 +166,25 @@ jobs:
                       raise SystemExit(
                           f"{required_field} structured data field missing in {page}"
                       )
+
+              page_url = payload["url"]
+              if payload["@id"] != f"{page_url}#article":
+                  raise SystemExit(f"Invalid Article @id in {page}")
+              author = payload["author"]
+              if author.get("@id") != "https://rodri-oliveira-dev.github.io/#person":
+                  raise SystemExit(f"Case study does not reuse canonical Person @id in {page}")
+              if author.get("url") != "https://rodri-oliveira-dev.github.io/":
+                  raise SystemExit(f"Case-study author profile URL is invalid in {page}")
+              website = payload.get("isPartOf", {})
+              if website.get("@id") != "https://rodri-oliveira-dev.github.io/#website":
+                  raise SystemExit(f"Case study does not reuse canonical WebSite @id in {page}")
+              main_page = payload.get("mainEntityOfPage", {})
+              if main_page.get("@id") != page_url:
+                  raise SystemExit(f"Invalid mainEntityOfPage in {page}")
+              about = payload.get("about", {})
+              repository = str(about.get("codeRepository") or "").rstrip("/")
+              if repository and about.get("@id") != f"{repository}#software-source-code":
+                  raise SystemExit(f"Invalid SoftwareSourceCode @id in {page}")
 
               canonical = re.search(r'<link rel="canonical" href="([^"]+)">', html)
               alternates = dict(re.findall(

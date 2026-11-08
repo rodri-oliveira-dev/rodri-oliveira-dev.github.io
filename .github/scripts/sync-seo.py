@@ -80,6 +80,10 @@ HREFLANG_BLOCK_PATTERN = re.compile(
     r'(?:^[ \t]*<link rel="alternate" hreflang="[^"]+" href="[^"]+">[ \t]*$\n?)+',
     re.MULTILINE,
 )
+JSON_LD_PATTERN = re.compile(
+    r'(?P<open><script type="application/ld\+json">)\s*(?P<payload>\{.*?\})\s*(?P<close></script>)',
+    re.DOTALL,
+)
 
 
 def rss_discovery(language: str, devto_enabled: bool) -> str:
@@ -294,12 +298,17 @@ def person_node(language: str, devto_enabled: bool) -> dict:
                 ".NET",
                 "C#",
                 "Sistemas Distribuídos",
+                "Integração de Sistemas e APIs",
+                "Modernização de Sistemas Legados",
                 "Domain-Driven Design",
+                "Cloud Computing",
                 "GCP",
                 "AWS",
                 "Arquitetura Orientada a Eventos",
                 "APIs",
                 "Observabilidade",
+                "Segurança de Software",
+                "Manutenibilidade",
                 "Reliability Engineering",
                 "Qualidade de Software",
             ]
@@ -309,12 +318,17 @@ def person_node(language: str, devto_enabled: bool) -> dict:
                 ".NET",
                 "C#",
                 "Sistemas Distribuidos",
+                "Integración de Sistemas y APIs",
+                "Modernización de Sistemas Legados",
                 "Domain-Driven Design",
+                "Cloud Computing",
                 "GCP",
                 "AWS",
                 "Arquitectura Orientada a Eventos",
                 "Diseño de APIs",
                 "Observabilidad",
+                "Seguridad de Software",
+                "Mantenibilidad",
                 "Ingeniería de Confiabilidad",
                 "Calidad de Software",
             ] if is_es else [
@@ -322,12 +336,17 @@ def person_node(language: str, devto_enabled: bool) -> dict:
                 ".NET",
                 "C#",
                 "Distributed Systems",
+                "Systems Integration and APIs",
+                "Legacy System Modernization",
                 "Domain-Driven Design",
+                "Cloud Computing",
                 "GCP",
                 "AWS",
                 "Event-Driven Architecture",
                 "API Design",
                 "Observability",
+                "Software Security",
+                "Maintainability",
                 "Reliability Engineering",
                 "Software Quality",
             ])
@@ -691,6 +710,55 @@ def synchronize_case_study_hreflang(
         path.write_text(synchronize_hreflang(html, urls), encoding="utf-8")
 
 
+def normalize_case_study_structured_data(payload: dict) -> dict:
+    """Connect a case study to the site's canonical author and website entities."""
+    page_url = str(payload.get("url") or "").strip()
+    if not page_url.startswith(SITE_URL):
+        raise SystemExit(f"Case-study JSON-LD has an invalid URL: {page_url!r}.")
+
+    payload["@id"] = f"{page_url}#article"
+    payload["author"] = {
+        "@type": "Person",
+        "@id": PERSON_ID,
+        "name": "Rodrigo de Oliveira",
+        "url": SITE_URL,
+    }
+    payload["isPartOf"] = {
+        "@type": "WebSite",
+        "@id": WEBSITE_ID,
+        "url": SITE_URL,
+        "name": "Rodrigo de Oliveira",
+    }
+    payload["mainEntityOfPage"] = {
+        "@type": "WebPage",
+        "@id": page_url,
+    }
+
+    about = payload.get("about")
+    if isinstance(about, dict) and about.get("@type") == "SoftwareSourceCode":
+        repository = str(about.get("codeRepository") or "").strip().rstrip("/")
+        if repository:
+            about["@id"] = f"{repository}#software-source-code"
+
+    return payload
+
+
+def synchronize_case_study_structured_data(path: Path) -> None:
+    html = path.read_text(encoding="utf-8")
+    match = JSON_LD_PATTERN.search(html)
+    if not match:
+        raise SystemExit(f"Case-study JSON-LD not found in {path.relative_to(ROOT)}.")
+
+    payload = normalize_case_study_structured_data(json.loads(match.group("payload")))
+    json_text = json.dumps(payload, ensure_ascii=False, indent=2).replace("<", "\\u003c")
+    json_text = "\n".join(f"  {line}" for line in json_text.splitlines())
+    replacement = f'{match.group("open")}\n{json_text}\n  {match.group("close")}'
+    path.write_text(
+        f"{html[:match.start()]}{replacement}{html[match.end():]}",
+        encoding="utf-8",
+    )
+
+
 def write_sitemap(
     articles: list[dict],
     pt_dirty: bool,
@@ -758,14 +826,10 @@ def write_sitemap(
 
 def validate_json_ld(path: Path) -> None:
     html = path.read_text(encoding="utf-8")
-    match = re.search(
-        rf"{re.escape(SEO_START)}\s*<script type=\"application/ld\+json\">\s*(\{{.*?\}})\s*</script>\s*{re.escape(SEO_END)}",
-        html,
-        re.DOTALL,
-    )
+    match = JSON_LD_PATTERN.search(html)
     if not match:
         raise SystemExit(f"Bloco SEO JSON-LD não encontrado em {path.relative_to(ROOT)}.")
-    json.loads(match.group(1))
+    json.loads(match.group("payload"))
 
 
 def main() -> None:
@@ -789,6 +853,8 @@ def main() -> None:
         )
     for slug, paths in case_studies:
         synchronize_case_study_hreflang(slug, paths)
+        for path in paths.values():
+            synchronize_case_study_structured_data(path)
     write_sitemap(
         articles,
         pt_dirty,
@@ -799,6 +865,9 @@ def main() -> None:
 
     for variant in home_variants.values():
         validate_json_ld(variant["index"])
+    for _, paths in case_studies:
+        for path in paths.values():
+            validate_json_ld(path)
 
     print("SEO artifacts synchronized:")
     print("- index.html: WebSite/ProfilePage/Person + latest Article entities + PT-BR RSS discovery")
@@ -807,6 +876,7 @@ def main() -> None:
     else:
         print("- en/index.html: migration-compatible newsletter RSS discovery (DEV catalog not initialized)")
     print("- es/index.html: WebSite/ProfilePage/Person + Hashnode Article entities + RSS discovery")
+    print("- case studies: canonical Article/Person/WebSite/SoftwareSourceCode entity relationships")
     print("- sitemap.xml: existing language variants + reciprocal hreflang + reliable lastmod")
 
 
