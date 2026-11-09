@@ -819,11 +819,9 @@ def write_sitemap(
     # O currículo tem somente uma versão em PT-BR: não há traduções para hreflang.
     resume_block = ""
     if RESUME_INDEX.exists():
-        resume_lastmod = page_lastmod(
-            RESUME_URL,
-            RESUME_INDEX,
-            today,
-            existing_lastmods,
+        resume_lastmod = max_date(
+            page_lastmod(RESUME_URL, RESUME_INDEX, today, existing_lastmods),
+            git_last_modified(RESUME_INDEX),
         )
         resume_block = (
             "  <url>\n"
