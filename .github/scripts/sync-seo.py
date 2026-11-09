@@ -20,8 +20,10 @@ PT_INDEX = ROOT / "index.html"
 EN_INDEX = ROOT / "en/index.html"
 ES_INDEX = ROOT / "es/index.html"
 SITEMAP_PATH = ROOT / "sitemap.xml"
+RESUME_INDEX = ROOT / "curriculo/index.html"
 
 SITE_URL = "https://rodri-oliveira-dev.github.io/"
+RESUME_URL = f"{SITE_URL}curriculo/"
 EN_URL = f"{SITE_URL}en/"
 ES_URL = f"{SITE_URL}es/"
 PT_FEED_URL = f"{SITE_URL}newsletter/feed.xml"
@@ -814,10 +816,27 @@ def write_sitemap(
         for language, url in home_urls.items()
     )
 
+    # O currículo tem somente uma versão em PT-BR: não há traduções para hreflang.
+    resume_block = ""
+    if RESUME_INDEX.exists():
+        resume_lastmod = page_lastmod(
+            RESUME_URL,
+            RESUME_INDEX,
+            today,
+            existing_lastmods,
+        )
+        resume_block = (
+            "  <url>\\n"
+            f"    <loc>{escape(RESUME_URL)}</loc>\\n"
+            f"    <lastmod>{resume_lastmod}</lastmod>\\n"
+            "  </url>"
+        )
+
     sitemap = f'''<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
 {home_blocks}
+{resume_block}
 {case_blocks}
 </urlset>
 '''
@@ -877,7 +896,7 @@ def main() -> None:
         print("- en/index.html: migration-compatible newsletter RSS discovery (DEV catalog not initialized)")
     print("- es/index.html: WebSite/ProfilePage/Person + Hashnode Article entities + RSS discovery")
     print("- case studies: canonical Article/Person/WebSite/SoftwareSourceCode entity relationships")
-    print("- sitemap.xml: existing language variants + reciprocal hreflang + reliable lastmod")
+    print("- sitemap.xml: existing language variants + PT-BR resume + reliable lastmod")
 
 
 if __name__ == "__main__":
