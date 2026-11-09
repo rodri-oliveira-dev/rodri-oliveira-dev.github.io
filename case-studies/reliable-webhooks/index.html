@@ -104,7 +104,7 @@
       <div class="container">
         <p class="eyebrow">Estudo de caso arquitetural · biblioteca open source</p>
         <h1>Entrega confiável de webhooks em sistemas distribuídos</h1>
-        <p class="case-study-lead">Uma plataforma de comércio eletrônico precisa comunicar eventos de pedidos mesmo quando destinatários apresentam <strong>timeout</strong>, erros HTTP, indisponibilidade ou recebem uma mesma entrega mais de uma vez.</p>
+        <p class="case-study-lead">Uma plataforma de comércio eletrônico precisa comunicar eventos de pedidos mesmo quando os destinatários estão indisponíveis, demoram a responder (<strong>timeout</strong>), retornam erros HTTP ou recebem o mesmo evento mais de uma vez.</p>
         <div class="hero-actions"><a class="button primary" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks" target="_blank" rel="noreferrer">Abrir repositório ↗</a><a class="button secondary" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/docs/production-usage.md" target="_blank" rel="noreferrer">Guia de produção ↗</a></div>
         <p class="case-study-note">O cenário de e-commerce é ilustrativo. As garantias descritas correspondem à API e aos testes da versão 1.0.0; não representam adoção, benchmark ou operação real em produção.</p>
       </div>
@@ -122,9 +122,9 @@
 
     <section class="section architecture-section">
       <div class="container">
-        <div class="section-heading wide-heading"><p class="eyebrow">Requisitos arquiteturais</p><h2>Confiabilidade é um conjunto de contratos, não apenas uma política de retry.</h2></div>
+        <div class="section-heading wide-heading"><p class="eyebrow">Requisitos arquiteturais</p><h2>Confiabilidade depende de vários contratos, não apenas de uma política de novas tentativas.</h2></div>
         <div class="case-study-constraint-grid">
-          <article><span>01</span><h3>Confiabilidade</h3><p>Com store durável e conforme, trabalho aceito pode sobreviver ao processo e ser retomado em modelo at-least-once.</p></article>
+          <article><span>01</span><h3>Confiabilidade</h3><p>Com uma implementação de armazenamento durável que respeite o contrato, um trabalho aceito pode sobreviver ao encerramento do processo e ser retomado em um modelo at-least-once.</p></article>
           <article><span>02</span><h3>Idempotência</h3><p>IDs estáveis tornam o enqueue idempotente; o destinatário ainda precisa evitar efeitos duplicados.</p></article>
           <article><span>03</span><h3>Escalabilidade</h3><p>Concorrência limitada evita claims além da capacidade; leases coordenam workers que compartilham o store.</p></article>
           <article><span>04</span><h3>Segurança</h3><p>HTTPS é o padrão; HMAC-SHA256 autentica o envelope quando signer e secret provider são registrados.</p></article>
@@ -153,7 +153,7 @@
         <div class="case-study-decision-grid">
           <article><h3>Enqueue e ID estável</h3><p>O serviço público valida os limites configurados antes de persistir. O ID identifica o par evento–subscriber; enfileirá-lo novamente deve retornar o registro existente sem substituir payload, destino ou estado.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/src/ReliableWebhooks/WebhookEnqueueService.cs" target="_blank" rel="noreferrer">Implementação do enqueue ↗</a></article>
           <article><h3>Store como porta</h3><p><code>IWebhookDeliveryStore</code> isola tecnologia de persistência, mas exige claim atômico, renovação, rejeição de owner obsoleto e transições terminais. O pacote não inclui adapter durável.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/docs/persistence.md" target="_blank" rel="noreferrer">Contrato de persistência ↗</a></article>
-          <article><h3>Dispatcher e leases</h3><p>O dispatcher preenche apenas slots disponíveis, renova a lease durante a tentativa e cancela o trabalho quando perde ownership. No shutdown, para novos claims e aguarda o grace period.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/src/ReliableWebhooks/WebhookDispatcher.cs" target="_blank" rel="noreferrer">Código do dispatcher ↗</a></article>
+          <article><h3>Dispatcher e leases</h3><p>O dispatcher respeita a capacidade disponível, renova a lease durante a tentativa e cancela o trabalho quando perde a posse da tarefa. No encerramento, deixa de reivindicar novos trabalhos e aguarda o período de tolerância configurado.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/src/ReliableWebhooks/WebhookDispatcher.cs" target="_blank" rel="noreferrer">Código do dispatcher ↗</a></article>
           <article><h3>Transporte substituível</h3><p>Uma chamada a <code>SendAsync</code> é uma tentativa. O transporte HTTP classifica <code>2xx</code> como sucesso, <code>408</code>, <code>425</code>, <code>429</code> e <code>5xx</code> como retryable; demais status são permanentes.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/src/ReliableWebhooks/DefaultWebhookHttpResponseClassifier.cs" target="_blank" rel="noreferrer">Classificador padrão ↗</a></article>
           <article><h3>Backoff com jitter</h3><p>A política padrão usa backoff exponencial limitado e jitter positivo. Um <code>Retry-After</code> válido pode postergar além do limite local; ao atingir o máximo de tentativas, o item vira dead letter.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/src/ReliableWebhooks/DefaultWebhookRetryPolicy.cs" target="_blank" rel="noreferrer">Política padrão ↗</a></article>
           <article><h3>HMAC e telemetria</h3><p>O signer HMAC-SHA256 cobre timestamp, ID, tipo de evento, content type e bytes exatos do payload. Instrumentação publica nomes estáveis de traces e métricas sem incluir payload, assinatura ou destino.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/src/ReliableWebhooks/HmacSha256WebhookRequestSigner.cs" target="_blank" rel="noreferrer">Signer HMAC ↗</a></article>
@@ -194,7 +194,7 @@ webhooks.<span class="code-method">AddHostedDispatcher</span>();
           <article><h3>Entrega bem-sucedida</h3><p>O dispatcher obtém uma lease, o transporte recebe <code>2xx</code> e o store executa <code>MarkSucceededAsync</code>. <code>Succeeded</code> é terminal e não volta aos claims normais.</p><p><strong>Garantia:</strong> uma transição de sucesso para o owner atual; duplicatas ainda são possíveis se o endpoint aceitou e a persistência do sucesso falhou.</p></article>
           <article><h3>Timeout seguido de retry</h3><p>O transporte retorna falha retryable. A política calcula o próximo instante com backoff/jitter e o store executa <code>ScheduleRetryAsync</code>, libera a lease e preserva o contador.</p><p><strong>Garantia:</strong> nova tentativa após o agendamento quando o store é conforme; timeout não prova que o destinatário deixou de processar.</p></article>
           <article><h3>Falha permanente</h3><p>Um status como <code>400</code> é classificado como permanente por padrão. O dispatcher chama <code>MarkPermanentlyFailedAsync</code>; o item não é repetido automaticamente.</p><p><strong>Garantia:</strong> estado terminal rastreável. Falhas retryable esgotadas terminam em <code>DeadLettered</code>, também sem replay automático.</p></article>
-          <article><h3>Worker reiniciado</h3><p>Com store durável, trabalho pendente permanece disponível e uma lease abandonada pode ser reclamada após expirar. O token anterior não pode gravar uma transição atrasada.</p><p><strong>Limite:</strong> com <code>InMemoryWebhookDeliveryStore</code>, o restart perde a fila; não existe recuperação durável nesse modo.</p></article>
+          <article><h3>Worker reiniciado</h3><p>Com store durável, trabalho pendente permanece disponível e uma lease abandonada pode ser reclamada após expirar. O token anterior não pode gravar uma transição atrasada.</p><p><strong>Limite:</strong> com <code>InMemoryWebhookDeliveryStore</code>, a reinicialização perde a fila; não existe recuperação durável nesse modo.</p></article>
         </div>
       </div>
     </section>
@@ -206,8 +206,8 @@ webhooks.<span class="code-method">AddHostedDispatcher</span>();
           <article><h3>At-least-once, não exactly-once</h3><p>Reenvio depois de resultado remoto incerto preserva a chance de entrega, mas aceita duplicidade. Exactly-once sobre HTTP exigiria coordenação transacional que a biblioteca e o destinatário não compartilham.</p></article>
           <article><h3>Leases, não execução descoordenada</h3><p>Ownership temporário permite escalar workers e recuperar abandono. Em troca, o store precisa de claim atômico, relógio autoritativo e compare-and-set do token.</p></article>
           <article><h3>Retry com backoff</h3><p>Espaçar tentativas reduz pressão sobre um destinatário indisponível; jitter reduz sincronização entre workers. A latência de recuperação cresce e cada política precisa refletir o contrato remoto.</p></article>
-          <article><h3>Persistência extensível</h3><p>Não acoplar o core a banco ou ORM mantém a biblioteca reutilizável. O custo é explícito: a aplicação implementa e opera um adapter durável conforme para produção.</p></article>
-          <article><h3>Idempotência no destinatário</h3><p>O ID estável ajuda a reconhecer duplicatas, mas a biblioteca não controla o efeito remoto. O receiver escolhe uma chave autenticada adequada e persiste sua própria decisão idempotente.</p></article>
+          <article><h3>Persistência extensível</h3><p>Não acoplar o core a banco ou ORM mantém a biblioteca reutilizável. O custo é explícito: a aplicação implementa e opera um adaptador durável que respeite o contrato para uso em produção.</p></article>
+          <article><h3>Idempotência no destinatário</h3><p>O ID estável ajuda a reconhecer duplicatas, mas a biblioteca não controla o efeito remoto. O destinatário escolhe uma chave autenticada adequada e persiste sua própria decisão idempotente.</p></article>
           <article><h3>Portas separadas</h3><p>Store, transporte, classificador, retry, signer e providers podem evoluir isoladamente. A composição ganha flexibilidade, mas implementações customizadas devem preservar os contratos documentados.</p></article>
         </div>
         <section class="case-study-table-wrap" aria-label="Responsabilidades da biblioteca e da aplicação" tabindex="0">
@@ -231,7 +231,7 @@ webhooks.<span class="code-method">AddHostedDispatcher</span>();
         <div><p class="eyebrow">Limitações e evolução</p><h2>Confiabilidade só existe até a fronteira que a implementação realmente sustenta.</h2></div>
         <div class="case-study-copy">
           <p>A biblioteca não garante exactly-once, transação distribuída com o receiver, idempotência do lado remoto, replay automático de dead letters nem política de rotação de secrets. O destinatário deve tolerar mensagens duplicadas.</p>
-          <p><code>InMemoryWebhookDeliveryStore</code> é local ao processo e não é durável. O pacote não entrega store de produção: a aplicação deve implementar um <code>IWebhookDeliveryStore</code> conforme, incluindo atomicidade, lease, relógio de coordenação, persistência de estado e testes específicos do backend.</p>
+          <p><code>InMemoryWebhookDeliveryStore</code> é local ao processo e não é durável. O pacote não inclui uma implementação de armazenamento para produção: a aplicação deve implementar um <code>IWebhookDeliveryStore</code> conforme, incluindo atomicidade, lease, relógio de coordenação, persistência de estado e testes específicos do backend.</p>
           <p>O <code>PublicNetworkWebhookDestinationPolicy</code> reduz risco de SSRF para URLs não confiáveis, mas não substitui autorização de alterações, allow-lists, controles de egress ou proteção contra DNS rebinding no momento da conexão. HTTPS protege confidencialidade; HMAC autentica conteúdo, não cifra payload.</p>
         </div>
       </div>
@@ -239,10 +239,10 @@ webhooks.<span class="code-method">AddHostedDispatcher</span>();
 
     <section class="section case-study-section">
       <div class="container case-study-two-column">
-        <div><p class="eyebrow">Resultados e aprendizados</p><h2>O ganho verificável é tornar falha, ownership e recuperação parte do modelo.</h2></div>
+        <div><p class="eyebrow">Resultados e aprendizados</p><h2>O ganho verificável é incorporar falhas, posse do trabalho e recuperação ao modelo.</h2></div>
         <div class="case-study-copy">
           <p>Em vez de esconder falhas dentro de um loop HTTP, o desenho registra quando o trabalho existe, quem pode alterá-lo, quando uma nova tentativa é elegível e quais estados encerram o fluxo. Isso permite raciocinar sobre concorrência e recuperação com evidência testável.</p>
-          <p>A principal lição é de fronteira: retries não criam exactly-once, leases não criam durabilidade e HMAC não cria confidencialidade. O resultado arquitetural depende da combinação entre protocolo da biblioteca, adapter persistente, operação observável e receiver idempotente.</p>
+          <p>A principal lição está nos limites das garantias: novas tentativas não criam exactly-once, leases não criam durabilidade e HMAC não cria confidencialidade. O resultado arquitetural depende da combinação entre o protocolo da biblioteca, um adaptador persistente, uma operação observável e um destinatário idempotente.</p>
         </div>
       </div>
     </section>
@@ -251,14 +251,14 @@ webhooks.<span class="code-method">AddHostedDispatcher</span>();
       <div class="container">
         <div class="section-heading wide-heading"><p class="eyebrow">Evidências técnicas</p><h2>Documentação, implementação, testes e exemplo executável disponíveis para inspeção.</h2></div>
         <div class="case-study-evidence-list">
-          <a href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/README.pt-BR.md" target="_blank" rel="noreferrer"><strong>README</strong><span>Escopo, garantias, quick start e fronteiras da biblioteca.</span></a>
-          <a href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/docs/production-usage.md" target="_blank" rel="noreferrer"><strong>Guia de produção</strong><span>DI, retry, leases, HMAC, segurança de destino, telemetria e troubleshooting.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/README.pt-BR.md" target="_blank" rel="noreferrer"><strong>README</strong><span>Escopo, garantias, início rápido e limites da biblioteca.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/docs/production-usage.md" target="_blank" rel="noreferrer"><strong>Guia de produção</strong><span>DI, retry, leases, HMAC, segurança de destino, telemetria e solução de problemas.</span></a>
           <a href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/docs/persistence.md" target="_blank" rel="noreferrer"><strong>Contrato de persistência</strong><span>Durabilidade, claim atômico, ownership, relógio e transições exigidas.</span></a>
-          <a href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/tests/ReliableWebhooks.Tests/Conformance/WebhookDeliveryStoreConformanceTests.cs" target="_blank" rel="noreferrer"><strong>Conformance tests</strong><span>Enqueue idempotente, concorrência, reclaim, renovação, retry e estados terminais.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/tests/ReliableWebhooks.Tests/Conformance/WebhookDeliveryStoreConformanceTests.cs" target="_blank" rel="noreferrer"><strong>Testes de conformidade</strong><span>Enqueue idempotente, concorrência, reclaim, renovação, retry e estados terminais.</span></a>
           <a href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/tests/ReliableWebhooks.Tests/WebhookDispatcherTests.cs" target="_blank" rel="noreferrer"><strong>Testes do dispatcher</strong><span>Sucesso, falhas, concorrência, lease renewal, shutdown e isolamento de erro.</span></a>
           <a href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/blob/main/tests/ReliableWebhooks.Tests/ObservabilityTests.cs" target="_blank" rel="noreferrer"><strong>Testes de observabilidade</strong><span>Nomes públicos, logs, traces, métricas e ausência de dados sensíveis.</span></a>
           <a href="https://github.com/rodri-oliveira-dev/ReliableWebhooks/tree/main/samples/ReliableWebhooks.Sample" target="_blank" rel="noreferrer"><strong>Exemplo executável</strong><span>Sucesso, retry, dead letter, assinatura e diagnóstico com store em memória.</span></a>
-          <a href="https://github.com/rodri-oliveira-dev/ReliableWebhooks" target="_blank" rel="noreferrer"><strong>Repositório</strong><span>Código-fonte, documentação, testes, release e histórico do projeto.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/ReliableWebhooks" target="_blank" rel="noreferrer"><strong>Repositório</strong><span>Código-fonte, documentação, testes, versões publicadas e histórico do projeto.</span></a>
         </div>
       </div>
     </section>

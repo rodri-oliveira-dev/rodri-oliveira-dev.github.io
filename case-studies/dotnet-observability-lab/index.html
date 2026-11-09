@@ -106,7 +106,7 @@
         <p class="eyebrow">Estudo de caso arquitetural · laboratório público</p>
         <h1>Processamento assíncrono confiável com falhas e evidências explícitas.</h1>
         <p class="case-study-lead">
-          O <strong>dotnet-observability-lab</strong> é uma reference architecture educacional que uso para tornar verificável uma linha completa de raciocínio: problema → restrições → atributos de qualidade → decisões → implementação → falhas → observabilidade → evidências.
+          O <strong>dotnet-observability-lab</strong> é uma arquitetura de referência educacional que uso para tornar verificável uma linha completa de raciocínio: problema → restrições → atributos de qualidade → decisões → implementação → falhas → observabilidade → evidências.
         </p>
         <div class="hero-actions">
           <a class="button primary" href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab/blob/main/docs/case-study.md" target="_blank" rel="noreferrer">Abrir estudo canônico ↗</a>
@@ -123,7 +123,7 @@
           <h2>Aceitar uma escrita agora, consolidá-la depois e continuar correto quando algo falha.</h2>
         </div>
         <div class="case-study-copy">
-          <p>Uma API recebe um valor e precisa aceitá-lo de forma durável e idempotente. Outro limite de serviço deve consolidar esse valor de forma assíncrona, sem chamada HTTP entre APIs e sem transformar uma redelivery do broker em duplicação de negócio.</p>
+          <p>Uma API recebe um valor e precisa aceitá-lo de forma durável e idempotente. Em outro serviço, esse valor precisa ser consolidado de forma assíncrona, sem chamada HTTP entre APIs e sem transformar uma reentrega pelo broker em duplicação do efeito de negócio.</p>
           <p>A dificuldade real não está no valor decimal. Está no intervalo entre persistir, publicar, consumir, confirmar e recuperar — inclusive quando não é possível saber com certeza se a etapa anterior terminou.</p>
         </div>
       </div>
@@ -136,9 +136,9 @@
           <h2>As decisões começam pelo que precisa continuar verdadeiro sob falha.</h2>
         </div>
         <div class="case-study-constraint-grid">
-          <article><span>01</span><h3>Sem API-to-API</h3><p>Ingestão e consolidação são limites independentes. A leitura não deve depender da disponibilidade da API de escrita.</p></article>
-          <article><span>02</span><h3>Entrega at-least-once</h3><p>RabbitMQ pode redeliver. Duplicatas fazem parte do contrato e precisam ser tratadas como comportamento normal.</p></article>
-          <article><span>03</span><h3>Estado autoritativo durável</h3><p>PostgreSQL protege idempotência, Outbox, Inbox e agregado. Redis é apenas um atalho best-effort.</p></article>
+          <article><span>01</span><h3>Sem chamadas HTTP entre APIs</h3><p>Ingestão e consolidação são limites independentes. A leitura não deve depender da disponibilidade da API de escrita.</p></article>
+          <article><span>02</span><h3>Entrega at-least-once</h3><p>O RabbitMQ pode entregar a mesma mensagem novamente. Duplicatas fazem parte do contrato e precisam ser tratadas como comportamento normal.</p></article>
+          <article><span>03</span><h3>Estado autoritativo durável</h3><p>O PostgreSQL mantém os registros duráveis de idempotência, Outbox, Inbox e do agregado. O Redis é uma otimização, sem papel na garantia de correção.</p></article>
           <article><span>04</span><h3>Observabilidade portátil</h3><p>OpenTelemetry define traces, métricas e logs. Aspire compõe e exibe o ambiente local, mas não roteia tráfego de negócio.</p></article>
         </div>
         <div class="case-study-quality-list" role="group" aria-label="Atributos de qualidade priorizados">
@@ -162,8 +162,8 @@
           </article>
           <article>
             <h3>Transactional Outbox</h3>
-            <p>Valor e evento pendente são persistidos na mesma transação; um worker publica depois com confirmação do broker.</p>
-            <p><strong>Trade-off:</strong> polling, retry, quarentena e possibilidade de publicação repetida.</p>
+            <p>O valor e o evento pendente são persistidos na mesma transação; um worker publica depois com confirmação do broker.</p>
+            <p><strong>Trade-off:</strong> consultas periódicas, novas tentativas, quarentena e possibilidade de publicação repetida.</p>
             <a class="text-link" href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab/blob/main/src/Ingestion.Outbox.Worker/OutboxProcessor.cs" target="_blank" rel="noreferrer">Implementação ↗</a>
           </article>
           <article>
@@ -174,14 +174,14 @@
           </article>
           <article>
             <h3>At-least-once + idempotência</h3>
-            <p>O desenho não promete exactly-once. Ele torna repetição segura no efeito de negócio.</p>
+            <p>O desenho não promete exactly-once. Ele permite repetir o processamento sem duplicar o efeito de negócio.</p>
             <p><strong>Trade-off:</strong> cada consumidor precisa tratar identidade e duplicação explicitamente.</p>
             <a class="text-link" href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab/blob/main/docs/events/ValueReceived.v1.md" target="_blank" rel="noreferrer">Contrato do evento ↗</a>
           </article>
           <article>
             <h3>PostgreSQL autoritativo, Redis opcional</h3>
-            <p>Cache reduz custo de repetição HTTP, mas queda, expiração ou eviction não podem alterar a correção.</p>
-            <p><strong>Trade-off:</strong> misses e falhas ainda podem tocar o banco.</p>
+            <p>O cache reduz o custo de requisições HTTP repetidas, mas sua indisponibilidade, a expiração ou a remoção de entradas não podem comprometer a correção.</p>
+            <p><strong>Trade-off:</strong> buscas sem resultado no cache e falhas ainda podem exigir acesso ao banco de dados.</p>
             <a class="text-link" href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab/blob/main/docs/adr/0003-use-postgresql-for-idempotency-correctness-and-redis-as-an-optimization.md" target="_blank" rel="noreferrer">ADR 0003 ↗</a>
           </article>
           <article>
@@ -198,7 +198,7 @@
       <div class="container">
         <div class="section-heading wide-heading">
           <p class="eyebrow">Fluxo nominal</p>
-          <h2>O happy path existe, mas não é a arquitetura inteira.</h2>
+          <h2>O fluxo de sucesso existe, mas não representa a arquitetura inteira.</h2>
         </div>
         <!-- html-validate-disable-next prefer-native-element -->
         <!-- html-validate-disable-next no-redundant-role -- Safari/VoiceOver requires an explicit list role when list-style is none -->
@@ -221,12 +221,12 @@
           <h2>A propriedade interessante do desenho aparece quando o caminho nominal quebra.</h2>
         </div>
         <div class="case-study-failure-grid">
-          <article><h3>Requisição HTTP duplicada</h3><p>Mesmo key + mesmo valor retorna o recibo original; uso conflitante retorna 409. A restrição única no PostgreSQL resolve corrida concorrente.</p></article>
+          <article><h3>Requisição HTTP duplicada</h3><p>A mesma chave com o mesmo valor retorna o recibo original; uso conflitante retorna 409. A restrição única no PostgreSQL resolve corrida concorrente.</p></article>
           <article><h3>Mensagem entregue novamente</h3><p>A Inbox impede segundo efeito de negócio. A mensagem pode ser consumida mais de uma vez sem incrementar o agregado novamente.</p></article>
           <article><h3>Broker indisponível</h3><p>A API ainda pode aceitar e persistir a escrita. O Outbox mantém trabalho pendente para publicação posterior.</p></article>
           <article><h3>Redis indisponível</h3><p>O fast path desaparece, mas a correção não. A decisão de idempotência volta ao PostgreSQL.</p></article>
           <article><h3>Publish confirmado, commit não concluído</h3><p>O evento pode ser republicado com a mesma identidade; o consumidor trata a duplicata de forma segura.</p></article>
-          <article><h3>Falha na consolidação</h3><p>Inbox e agregado fazem rollback juntos. Não fica um marcador falso de processamento concluído.</p></article>
+          <article><h3>Falha na consolidação</h3><p>A gravação na Inbox e a atualização do agregado são revertidas juntas. Não fica um marcador falso de processamento concluído.</p></article>
         </div>
         <p class="section-action"><a class="text-link" href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab/blob/main/docs/scenarios.md" target="_blank" rel="noreferrer">Ver os seis cenários reproduzíveis ↗</a></p>
       </div>
@@ -253,7 +253,7 @@
           <h2>A afirmação arquitetural precisa apontar para algo que possa ser inspecionado.</h2>
         </div>
         <div class="case-study-evidence-list">
-          <a href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab/blob/main/docs/case-study.md" target="_blank" rel="noreferrer"><strong>Estudo canônico</strong><span>Rastreabilidade completa entre decisão, código, testes, docs e CI.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab/blob/main/docs/case-study.md" target="_blank" rel="noreferrer"><strong>Estudo canônico</strong><span>Rastreabilidade completa entre decisão, código, testes, documentação e CI.</span></a>
           <a href="https://rodri-oliveira-dev.github.io/dotnet-observability-lab/" target="_blank" rel="noreferrer"><strong>LikeC4 interativo</strong><span>Contexto, containers, componentes e fluxo dinâmico versionados.</span></a>
           <a href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab/tree/main/docs/adr" target="_blank" rel="noreferrer"><strong>ADRs</strong><span>Decisões sobre Aspire, PostgreSQL, Redis, RabbitMQ e OpenTelemetry.</span></a>
           <a href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab/tree/main/tests" target="_blank" rel="noreferrer"><strong>Testes</strong><span>Idempotência, Outbox, Inbox, contratos e leitura independente.</span></a>
@@ -266,10 +266,10 @@
       <div class="container case-study-two-column">
         <div>
           <p class="eyebrow">Limites deliberados</p>
-          <h2>Reference architecture não é receita de produção.</h2>
+          <h2>Uma arquitetura de referência não é uma receita de produção.</h2>
         </div>
         <div class="case-study-copy">
-          <p>O laboratório mantém um único PostgreSQL local com bancos lógicos separados, não define plataforma de deploy de produção e não implementa no v1 uma política completa de bounded retry/DLQ no consumidor. Também não promete ordenação de eventos nem exactly-once.</p>
+          <p>O laboratório mantém um único PostgreSQL local com bancos lógicos separados, não define uma plataforma de implantação em produção e não implementa no v1 uma política completa de tentativas limitadas e fila de mensagens não processadas (DLQ) no consumidor. Também não promete ordenação de eventos nem exactly-once.</p>
           <p>Esses limites são parte da evidência: mostram o que foi decidido, o que foi simplificado para fins educacionais e quais decisões precisariam ser reabertas em um sistema real.</p>
           <a class="text-link" href="https://github.com/rodri-oliveira-dev/dotnet-observability-lab" target="_blank" rel="noreferrer">Explorar o repositório completo ↗</a>
         </div>

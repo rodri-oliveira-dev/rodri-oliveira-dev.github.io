@@ -104,10 +104,10 @@
   <main id="main">
     <section class="case-study-hero" id="top">
       <div class="container">
-        <p class="eyebrow">Estudo de caso arquitetural · engineering intelligence</p>
+        <p class="eyebrow">Estudo de caso arquitetural · inteligência de engenharia</p>
         <h1>Transformar dezenas de repositórios em um portfólio observável sem criar outro backend para operar.</h1>
         <p class="case-study-lead">
-          O <strong>Repo Control Center</strong> nasceu de um problema operacional simples: conforme o número de repositórios cresce, CI, delivery, releases, segurança, pacotes e atividade ficam espalhados demais para formar uma visão confiável do conjunto. A solução coleta essas evidências fora do navegador, explicita quando a informação está incompleta e publica um snapshot estático para consulta.
+          O <strong>Repo Control Center</strong> nasceu de um problema operacional simples: conforme o número de repositórios cresce, CI, entregas, versões, segurança, pacotes e atividade ficam espalhados demais para formar uma visão confiável do conjunto. A solução coleta essas evidências fora do navegador, explicita quando a informação está incompleta e publica um snapshot estático para consulta.
         </p>
         <div class="hero-actions">
           <a class="button primary" href="https://rodri-oliveira-dev.github.io/repo-status-dashboard/" target="_blank" rel="noreferrer">Abrir Repo Control Center ↗</a>
@@ -124,7 +124,7 @@
           <h2>O GitHub tem os sinais, mas não entrega uma visão operacional do portfólio como um sistema.</h2>
         </div>
         <div class="case-study-copy">
-          <p>Build, deployment, release, atividade, alertas, pacotes e itens abertos existem em superfícies e APIs diferentes. Abrir repositório por repositório funciona enquanto o conjunto é pequeno; depois disso, a própria busca por contexto vira custo operacional.</p>
+          <p>Compilação, implantação, versões publicadas, atividade, alertas, pacotes e itens abertos existem em superfícies e APIs diferentes. Abrir repositório por repositório funciona enquanto o conjunto é pequeno; depois disso, a própria busca por contexto vira custo operacional.</p>
           <p>O desafio não era criar mais um dashboard visual. Era construir uma linguagem comum para interpretar o estado dos projetos sem transformar ausência de dados em falha, nem exigir infraestrutura permanente apenas para agregar sinais que mudam em baixa frequência.</p>
         </div>
       </div>
@@ -137,7 +137,7 @@
           <h2>A arquitetura parte da confiança dos dados e do custo operacional aceitável.</h2>
         </div>
         <div class="case-study-constraint-grid">
-          <article><span>01</span><h3>Sem backend permanente</h3><p>A coleta roda no GitHub Actions e produz um snapshot JSON incluído no artifact do Pages.</p></article>
+          <article><span>01</span><h3>Sem backend permanente</h3><p>A coleta roda no GitHub Actions e produz um snapshot JSON incluído no artefato de publicação do GitHub Pages.</p></article>
           <article><span>02</span><h3>Sem credenciais no navegador</h3><p>A SPA consome apenas dados estáticos. Tokens e permissões ficam restritos ao ambiente de automação.</p></article>
           <article><span>03</span><h3>Dados incompletos são um estado válido</h3><p>Cada repositório informa coleta completa, parcial ou indisponível e uma confiança derivada da cobertura das fontes.</p></article>
           <article><span>04</span><h3>Falha isolada não interrompe o conjunto</h3><p>Consultas opcionais podem falhar sem impedir a publicação do restante do portfólio; a degradação permanece explícita.</p></article>
@@ -157,7 +157,7 @@
         <div class="case-study-decision-grid">
           <article>
             <h3>GitHub Actions como processo de coleta</h3>
-            <p>O collector Node.js consulta as APIs durante o workflow, pagina resultados, limita concorrência e normaliza as evidências antes da publicação.</p>
+            <p>O coletor em Node.js consulta as APIs durante o fluxo de automação, pagina resultados, limita concorrência e normaliza as evidências antes da publicação.</p>
             <p><strong>Trade-off:</strong> a atualização é periódica, não em tempo real.</p>
           </article>
           <article>
@@ -173,12 +173,12 @@
           <article>
             <h3>Confiança separada de saúde</h3>
             <p><code>complete</code>, <code>partial</code> e <code>unavailable</code> descrevem a observabilidade da coleta; a saúde do repositório permanece uma classificação distinta.</p>
-            <p><strong>Trade-off:</strong> a UI precisa comunicar incerteza em vez de resumir tudo em uma única cor.</p>
+            <p><strong>Trade-off:</strong> a interface precisa comunicar a incerteza em vez de resumir tudo em uma única cor.</p>
           </article>
           <article>
             <h3>Classificação semântica de workflows</h3>
             <p>CI, quality, security, mutation, delivery, release, Pages e maintenance têm papéis diferentes; apenas o sinal correto deve influenciar build e delivery.</p>
-            <p><strong>Trade-off:</strong> heurísticas precisam de override quando nomes não expressam intenção.</p>
+            <p><strong>Trade-off:</strong> as heurísticas precisam de exceções configuradas quando os nomes não expressam sua finalidade.</p>
           </article>
           <article>
             <h3>Segurança como evidência, não score mágico</h3>
@@ -193,7 +193,7 @@
       <div class="container">
         <div class="section-heading wide-heading">
           <p class="eyebrow">Fluxo</p>
-          <h2>Coletar, normalizar, publicar e consultar sem acoplamento runtime ao GitHub.</h2>
+          <h2>Coletar, normalizar, publicar e consultar sem que a interface dependa das APIs do GitHub durante a execução.</h2>
         </div>
         <!-- html-validate-disable-next prefer-native-element -->
         <!-- html-validate-disable-next no-redundant-role -- Safari/VoiceOver requires an explicit list role when list-style is none -->
@@ -216,11 +216,11 @@
         </div>
         <div class="case-study-failure-grid">
           <article><h3>Não é tempo real</h3><p>O cron atualiza aproximadamente a cada hora. Isso é suficiente para manutenção de portfólio, mas não substitui monitoramento operacional de produção.</p></article>
-          <article><h3>Nem toda delivery é observável</h3><p>Deploys externos ao GitHub podem não aparecer; versão fica vazia quando não existe associação confiável com a entrega.</p></article>
+          <article><h3>Nem toda entrega é observável</h3><p>Implantações realizadas fora do GitHub podem não aparecer; a versão fica vazia quando não existe associação confiável com a entrega.</p></article>
           <article><h3>Permissões afetam cobertura</h3><p>Actions, Deployments e alertas de segurança podem exigir permissões adicionais. A ausência é reportada como perda de confiança.</p></article>
           <article><h3>Snapshot não é série histórica</h3><p>As métricas de 30 dias são recalculadas no estado atual. Tendência temporal exige persistência de snapshots anteriores.</p></article>
           <article><h3>Heurística tem fronteira</h3><p>Nomes de workflows fora das convenções podem ficar desconhecidos. Configuração por repositório funciona como override explícito.</p></article>
-          <article><h3>GitHub Pages impõe limites</h3><p>Alguns headers e comportamentos de hospedagem não são controlados pela aplicação e precisam ser tratados como responsabilidade da plataforma.</p></article>
+          <article><h3>GitHub Pages impõe limites</h3><p>Alguns cabeçalhos HTTP e comportamentos de hospedagem não são controlados pela aplicação e precisam ser tratados como responsabilidade da plataforma.</p></article>
         </div>
       </div>
     </section>
@@ -229,7 +229,7 @@
       <div class="container">
         <div class="section-heading wide-heading">
           <p class="eyebrow">Evidências públicas</p>
-          <h2>O estudo pode ser validado na aplicação, no collector e nos quality gates.</h2>
+          <h2>O estudo pode ser validado na aplicação, no coletor e nas verificações de qualidade.</h2>
         </div>
         <div class="case-study-evidence-list">
           <a href="https://rodri-oliveira-dev.github.io/repo-status-dashboard/" target="_blank" rel="noreferrer"><strong>Dashboard publicado</strong><span>Visão consolidada, detalhes, filtros, saúde, cobertura e confiança.</span></a>
