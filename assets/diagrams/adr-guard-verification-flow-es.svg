@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 360" role="img" aria-labelledby="title desc">
   <title id="title">Flujo de verificación de ADR Guard</title>
-  <desc id="desc">Un ADR aceptado se vincula con una regla de fitness. La evidencia acotada se evalúa y produce pass, violation, unknown o not-applicable antes de aplicar una política advisory o enforce.</desc>
+  <desc id="desc">Un ADR aprobado se vincula con una regla verificable. Se evalúa la evidencia delimitada y se obtiene pass, violation, unknown o not-applicable antes de aplicar una política consultiva o de bloqueo.</desc>
   <defs>
     <linearGradient id="panel" x1="0" x2="1">
       <stop stop-color="#111a2d"/>
@@ -21,8 +21,8 @@
     </g>
     <g fill="#edf2ff" font-size="18" font-weight="700" text-anchor="middle">
       <text x="135" y="105">ADR aceptado</text>
-      <text x="360" y="105">Regla de fitness</text>
-      <text x="585" y="97">Evidencia</text><text x="585" y="122">acotada</text>
+      <text x="360" y="105">Regla verificable</text>
+      <text x="585" y="97">Evidencia</text><text x="585" y="122">delimitada</text>
       <text x="810" y="105">Evaluación</text>
       <text x="1005" y="97">Decisión de</text><text x="1005" y="122">política</text>
     </g>
@@ -43,6 +43,6 @@
       <rect x="770" y="230" width="165" height="62" rx="14" fill="#172033" stroke="#94a3b8"/><text x="852" y="267" fill="#cbd5e1">not-applicable</text>
     </g>
     <path d="M810 170v32H560v20" fill="none" stroke="#a78bfa" stroke-width="2"/>
-    <text x="560" y="330" fill="#9aa8c1" font-size="13" text-anchor="middle">Cuatro resultados distintos preservan certeza, ciclo de vida e intención de enforcement.</text>
+    <text x="560" y="330" fill="#9aa8c1" font-size="13" text-anchor="middle">Cuatro estados permiten distinguir el resultado, el ciclo de vida y la política aplicada.</text>
   </g>
 </svg>
