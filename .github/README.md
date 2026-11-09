@@ -32,6 +32,9 @@ O workflow [`deploy-pages.yml`](workflows/deploy-pages.yml) usa Playwright/Chrom
 
 O gerador está em [`scripts/generate-resume-pdf.mjs`](scripts/generate-resume-pdf.mjs). O PDF não é mantido como arquivo fonte no Git: seu único conteúdo editável é o HTML/CSS do currículo.
 
+O currículo é uma URL canônica indexável apenas em **pt-BR**, com metadados Open Graph/Twitter, JSON-LD `ProfilePage`/ `Person`/ `BreadcrumbList`, entrada estável no sitemap e notificações IndexNow quando HTML ou CSS muda. Ele é ligado à seção **Contato** da homepage portuguesa. Não há `hreflang` para EN/ES, porque não existem traduções. As verificações de SEO, HTML, ortografia, Lighthouse e WCAG cobrem essa página.
+
+
 ## Quality gates
 
 ### Site validation
@@ -60,7 +63,7 @@ Ele verifica que:
 - as três homepages e todos os estudos possuem canonical própria e alternates recíprocos `pt-BR`, `en`, `es` e `x-default`;
 - o JSON-LD estruturado permanece válido e consistente;
 - os estudos de caso reutilizam os `@id` canônicos de `Person` e `WebSite`, identificam a página principal e mantêm uma identidade estável para o repositório descrito como `SoftwareSourceCode`;
-- `sitemap.xml` contém exatamente as 18 URLs indexáveis, sem duplicação, e possui `lastmod` para todas elas;
+- `sitemap.xml` contém exatamente as 19 URLs indexáveis, sem duplicação, e possui `lastmod` para todas elas;
 - os cinco slugs de estudos de caso existem nos três idiomas;
 - a geração de `lastmod` preserva datas versionadas para páginas sem alteração, sem depender do dia em que o runner executa;
 - executar [`scripts/sync-seo.py`](scripts/sync-seo.py) não produz diferenças não commitadas.
@@ -69,7 +72,7 @@ Esse último ponto funciona como um gate de drift: se catálogo, homepage, dados
 
 ### Accessibility
 
-O [`accessibility.yml`](workflows/accessibility.yml) sobe o site em um servidor HTTP local e executa Pa11y CI contra as três homepages e todos os estudos de caso em português, inglês e espanhol.
+O [`accessibility.yml`](workflows/accessibility.yml) sobe o site em um servidor HTTP local e executa Pa11y CI contra as três homepages e todos os estudos de caso em português, inglês e espanhol, além do currículo em português.
 
 A configuração usa WCAG 2 AA como baseline e threshold zero para os problemas considerados pelo gate. O objetivo é detectar regressões de semântica, ARIA, estrutura e outras regras automatizáveis de acessibilidade antes do merge.
 
@@ -104,7 +107,7 @@ O relatório estruturado é produzido por [`scripts/summarize-zizmor.mjs`](scrip
 
 ### Lighthouse CI
 
-O [`lighthouse.yml`](workflows/lighthouse.yml) sobe o site localmente e executa Lighthouse CI contra `/`, `/en/`, `/es/` e todos os estudos de caso trilíngues descobertos.
+O [`lighthouse.yml`](workflows/lighthouse.yml) sobe o site localmente e executa Lighthouse CI contra `/`, `/en/`, `/es/` e todos os estudos de caso trilíngues descobertos, além de `/curriculo/`.
 
 Cada página é medida três vezes para reduzir variação do runner. Os valores usados para os gates são agregados pela mediana.
 
@@ -234,7 +237,7 @@ Use sempre o mesmo intervalo mensal e compare-o ao período anterior e, quando h
 
 | Dimensão | Fonte | Procedimento | Interpretação |
 | --- | --- | --- | --- |
-| URLs indexadas | Search Console e Bing Webmaster Tools | Conferir sitemap, relatórios de indexação e inspeção das 18 URLs canônicas | **Indexação** confirma elegibilidade no índice; não comprova impressão, clique ou citação |
+| URLs indexadas | Search Console e Bing Webmaster Tools | Conferir sitemap, relatórios de indexação e inspeção das 19 URLs canônicas | **Indexação** confirma elegibilidade no índice; não comprova impressão, clique ou citação |
 | Impressões e cliques orgânicos | Relatórios de desempenho dos dois buscadores | Exportar totais e segmentar por país, idioma, página e dispositivo | **Impressão** é aparição no resultado; **clique** é visita originada nesse resultado |
 | Consultas profissionais | Dimensão de consultas | Acompanhar grupos factuais como arquitetura de software, .NET, C#, modernização, sistemas distribuídos, integrações, APIs, cloud, DDD e observabilidade, sem esperar correspondência exata em consultas anonimizadas | Tendência de descoberta por competência; não é evidência de contratação nem de domínio temático isoladamente |
 | Páginas de entrada orgânica | Dimensão de páginas | Comparar homepages e estudos de caso por impressões, cliques e CTR | Identifica quais conteúdos levam visitas; CTR deve ser lida junto com consulta e posição |
