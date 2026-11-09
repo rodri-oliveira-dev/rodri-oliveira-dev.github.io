@@ -3,7 +3,6 @@
 import { chromium } from 'playwright';
 import { stat, readFile, mkdir } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
-import { pathToFileURL } from 'node:url';
 
 const htmlPath = resolve('curriculo/index.html');
 const pdfPath = resolve('curriculo/rodrigo-de-oliveira.pdf');
@@ -12,10 +11,13 @@ await mkdir(dirname(pdfPath), { recursive: true });
 const browser = await chromium.launch({ headless: true });
 try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
-  const response = await page.goto(pathToFileURL(htmlPath).href, { waitUntil: 'load' });
-  if (!response?.ok()) {
-    throw new Error('Não foi possível carregar o HTML do currículo.');
-  }
+  // Injeta o CSS local: não depende de um servidor ou de URLs file://.
+  const [html, css] = await Promise.all([
+    readFile(htmlPath, 'utf8'),
+    readFile(resolve('curriculo/curriculo.css'), 'utf8'),
+  ]);
+  await page.setContent(html, { waitUntil: 'domcontentloaded' });
+  await page.addStyleTag({ content: css });
   await page.evaluate(() => document.fonts.ready);
   await page.pdf({
     path: pdfPath,
