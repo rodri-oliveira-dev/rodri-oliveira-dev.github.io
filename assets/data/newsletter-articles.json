@@ -1,5 +1,18 @@
 [
   {
+    "url": "https://www.linkedin.com/pulse/modelo-c4-como-comunicar-arquiteturas-complexas-com-de-oliveira-drbkf/",
+    "finalUrl": "https://www.linkedin.com/pulse/modelo-c4-como-comunicar-arquiteturas-complexas-com-de-oliveira-drbkf/",
+    "title": "Modelo C4: como comunicar arquiteturas complexas com clareza",
+    "description": "Quem trabalha com arquitetura de software provavelmente já passou por uma situação curiosa: depois de semanas discutindo decisões técnicas, integrações e responsabilidades, chega o momento de apresentar a solução e alguém faz uma pergunta aparentemente simples: “Mas como tudo isso funciona junto?”…",
+    "publishedAt": "2026-11-09",
+    "metadataSource": {
+      "title": "og:title",
+      "description": "og:description (prévia normalizada)",
+      "publishedAt": "JSON-LD datePublished"
+    },
+    "addedAt": "2026-11-09T18:07:18+00:00"
+  },
+  {
     "url": "https://www.linkedin.com/pulse/explorando-mcp-da-primeira-integra%C3%A7%C3%A3o-%C3%A0s-decis%C3%B5es-de-de-oliveira-bcqhf/",
     "finalUrl": "https://www.linkedin.com/pulse/explorando-mcp-da-primeira-integra%C3%A7%C3%A3o-%C3%A0s-decis%C3%B5es-de-de-oliveira-bcqhf/",
     "title": "Explorando MCP: da primeira integração às decisões de arquitetura",
@@ -141,18 +154,5 @@
       "publishedAt": "JSON-LD datePublished"
     },
     "addedAt": "2026-08-30T23:57:40+00:00"
-  },
-  {
-    "url": "https://pt.linkedin.com/pulse/context-map-como-bounded-contexts-se-relacionam-sem-seus-de-oliveira-vhowf",
-    "finalUrl": "https://pt.linkedin.com/pulse/context-map-como-bounded-contexts-se-relacionam-sem-seus-de-oliveira-vhowf",
-    "title": "Context Map: como Bounded Contexts se relacionam sem destruir seus modelos",
-    "description": "Este é o quinto artigo da série sobre Domain-Driven Design. No texto anterior, estudamos Bounded Context e a importância de delimitar onde um modelo e uma linguagem possuem significado consistente.",
-    "publishedAt": "2026-08-10",
-    "metadataSource": {
-      "title": "og:title",
-      "description": "og:description",
-      "publishedAt": "JSON-LD datePublished"
-    },
-    "addedAt": "2026-08-30T23:57:57+00:00"
   }
 ]

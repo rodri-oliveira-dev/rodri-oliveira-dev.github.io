@@ -7,6 +7,13 @@
     <atom:link href="https://rodri-oliveira-dev.github.io/newsletter/feed.xml" rel="self" type="application/rss+xml" />
     <language>pt-BR</language>
     <item>
+      <title>Modelo C4: como comunicar arquiteturas complexas com clareza</title>
+      <link>https://www.linkedin.com/pulse/modelo-c4-como-comunicar-arquiteturas-complexas-com-de-oliveira-drbkf/</link>
+      <guid isPermaLink="true">https://www.linkedin.com/pulse/modelo-c4-como-comunicar-arquiteturas-complexas-com-de-oliveira-drbkf/</guid>
+      <pubDate>Mon, 09 Nov 2026 00:00:00 GMT</pubDate>
+      <description>Quem trabalha com arquitetura de software provavelmente já passou por uma situação curiosa: depois de semanas discutindo decisões técnicas, integrações e responsabilidades, chega o momento de apresentar a solução e alguém faz uma pergunta aparentemente simples: “Mas como tudo isso funciona junto?”…</description>
+    </item>
+    <item>
       <title>Explorando MCP: da primeira integração às decisões de arquitetura</title>
       <link>https://www.linkedin.com/pulse/explorando-mcp-da-primeira-integra%C3%A7%C3%A3o-%C3%A0s-decis%C3%B5es-de-de-oliveira-bcqhf/</link>
       <guid isPermaLink="true">https://www.linkedin.com/pulse/explorando-mcp-da-primeira-integra%C3%A7%C3%A3o-%C3%A0s-decis%C3%B5es-de-de-oliveira-bcqhf/</guid>
@@ -82,13 +89,6 @@
       <guid isPermaLink="true">https://pt.linkedin.com/pulse/entities-e-value-objects-identidade-igualdade-modelo-de-de-oliveira-hy4gf</guid>
       <pubDate>Mon, 17 Aug 2026 00:00:00 GMT</pubDate>
       <description>Este é o sexto artigo da série sobre Domain-Driven Design. No texto anterior, estudamos Context Map e como Bounded Contexts podem se relacionar sem destruir a independência de seus modelos.</description>
-    </item>
-    <item>
-      <title>Context Map: como Bounded Contexts se relacionam sem destruir seus modelos</title>
-      <link>https://pt.linkedin.com/pulse/context-map-como-bounded-contexts-se-relacionam-sem-seus-de-oliveira-vhowf</link>
-      <guid isPermaLink="true">https://pt.linkedin.com/pulse/context-map-como-bounded-contexts-se-relacionam-sem-seus-de-oliveira-vhowf</guid>
-      <pubDate>Mon, 10 Aug 2026 00:00:00 GMT</pubDate>
-      <description>Este é o quinto artigo da série sobre Domain-Driven Design. No texto anterior, estudamos Bounded Context e a importância de delimitar onde um modelo e uma linguagem possuem significado consistente.</description>
     </item>
   </channel>
 </rss>
