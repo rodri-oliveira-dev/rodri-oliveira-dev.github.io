@@ -3,7 +3,7 @@
   color-scheme: light;
   --ink: #17283b;
   --muted: #536477;
-  --soft: #6e7d90;
+  --soft: #5e6c7e;
   --accent: #235b8d;
   --accent-dark: #17456c;
   --line: #dae3ec;
@@ -68,7 +68,7 @@ a:focus-visible {
   letter-spacing: .02em;
 }
 
-.topbar-label span { color: #a3afbd; padding: 0 6px; }
+.topbar-label span { color: #5e6c7e; padding: 0 6px; }
 
 .topbar-actions {
   display: flex;
@@ -125,7 +125,7 @@ a:focus-visible {
   text-transform: uppercase;
 }
 
-.eyebrow span { color: #97a6b7; margin: 0 4px; }
+.eyebrow span { color: #5e6c7e; margin: 0 4px; }
 
 h1, h2, h3, h4, p { margin-top: 0; }
 
