@@ -74,7 +74,7 @@
     </div></section>
     <section class="section case-study-section"><div class="container case-study-two-column">
       <div><p class="eyebrow">Problema</p><h2>Aceptar una escritura, consolidarla después y preservar la integridad ante las fallas.</h2></div>
-      <div class="case-study-copy"><p>Una API recibe un valor y debe almacenarlo de forma persistente e idempotente. Otro servicio debe consolidarlo de manera asíncrona, sin llamadas HTTP entre las API y sin que una nueva entrega del broker duplique los efectos de negocio.</p><p>La dificultad no está en el valor decimal, sino en coordinar la persistencia, publicación, recepción, confirmación y recuperación, incluso cuando no sabemos con certeza si una etapa terminó.</p></div>
+      <div class="case-study-copy"><p>Una API recibe un valor y debe almacenarlo de forma persistente e idempotente. Otro servicio debe consolidar ese valor de manera asíncrona, sin llamadas HTTP entre las API y sin que una nueva entrega del broker duplique los efectos de negocio.</p><p>La dificultad no está en el valor decimal, sino en coordinar la persistencia, publicación, recepción, confirmación y recuperación, incluso cuando no sabemos con certeza si una etapa terminó.</p></div>
     </div></section>
     <section class="section architecture-section"><div class="container">
       <div class="section-heading wide-heading"><p class="eyebrow">Restricciones y atributos de calidad</p><h2>Las decisiones comienzan por aquello que debe seguir siendo verdadero ante una falla.</h2></div>
