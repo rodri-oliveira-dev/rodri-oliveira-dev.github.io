@@ -69,6 +69,31 @@ a:focus-visible {
 
 .topbar-label span { color: #a3afbd; padding: 0 6px; }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+}
+
+.download-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 11px;
+  color: var(--accent-dark);
+  border: 1px solid #bfd3e5;
+  border-radius: 6px;
+  background: #f4f8fc;
+  font-size: 13px;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.download-link:hover { background: #e7f2fc; }
+.download-link .contact-icon { width: 16px; height: 16px; margin: 0; }
+
 .back-link {
   font-size: 13px;
   font-weight: 600;
@@ -143,8 +168,10 @@ h1 {
   font-weight: 520;
 }
 
-.contact li { overflow-wrap: anywhere; }
-.contact a { color: inherit; }
+.contact li { display: inline-flex; align-items: flex-start; gap: 6px; overflow-wrap: anywhere; }
+.contact a { display: inline-flex; align-items: flex-start; gap: 6px; color: inherit; }
+.contact-icon { width: 14px; height: 14px; flex: 0 0 14px; margin-top: 2px; }
+.contact .contact-email-whatsapp { display: inline-flex; flex-wrap: wrap; gap: 6px 16px; }
 
 .profile {
   padding: 31px 0 34px;
@@ -348,11 +375,14 @@ h2 {
   body { font-size: 14px; }
   .topbar-inner { padding: 10px 20px; }
   .topbar-label { font-size: 12px; }
+  .topbar-actions { gap: 6px 12px; }
+  .download-link { font-size: 12px; }
   .back-link { font-size: 12px; }
   .sheet { margin: 0; padding: 32px 21px 28px; border: 0; box-shadow: none; }
   .position { font-size: 18px; }
   .positioning { font-size: 14px; }
-  .contact ul { flex-direction: column; gap: 3px; }
+  .contact ul { flex-direction: column; gap: 5px; }
+  .contact .contact-email-whatsapp { gap: 5px 12px; }
   .profile { padding: 26px 0; }
   .columns { padding-top: 28px; }
   .side-column { display: block; }
@@ -387,6 +417,7 @@ h2 {
   .position { font-size: 13pt; margin-bottom: 2mm; }
   .positioning { font-size: 9pt; margin-bottom: 3mm; }
   .contact ul { font-size: 8pt; column-gap: 5mm; row-gap: 1mm; }
+  .contact-icon { width: 11px; height: 11px; flex-basis: 11px; margin-top: 1px; }
 
   .profile { padding: 5mm 0; }
   .profile p { margin-bottom: 2mm; }
