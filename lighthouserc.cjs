@@ -17,6 +17,7 @@ module.exports = {
     collect: {
       url: [
         ...pageUrls,
+        ...(fs.existsSync('curriculo/index.html') ? ['http://127.0.0.1:8080/curriculo/'] : []),
         ...caseStudyUrls,
       ],
       numberOfRuns: 3,
