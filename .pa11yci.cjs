@@ -26,6 +26,7 @@ module.exports = {
   },
   urls: [
     ...pageUrls,
+    ...(fs.existsSync('curriculo/index.html') ? [`${localOrigin}/curriculo/`] : []),
     ...caseStudyUrls,
   ],
 };
