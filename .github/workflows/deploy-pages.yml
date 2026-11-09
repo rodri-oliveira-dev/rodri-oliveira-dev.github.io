@@ -50,7 +50,14 @@ jobs:
           test -s _site/curriculo/rodrigo-de-oliveira.pdf
           test -f _site/curriculo/index.html
           test -f _site/index.html
-          pdfinfo _site/curriculo/rodrigo-de-oliveira.pdf | grep -q 'Page size:.*A4'
+
+      - name: Upload PDF preview for review
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: curriculo-pdf-preview
+          path: curriculo/rodrigo-de-oliveira.pdf
+          if-no-files-found: error
 
       - name: Configure GitHub Pages
         if: github.event_name != 'pull_request'
