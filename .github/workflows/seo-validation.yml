@@ -96,7 +96,7 @@ jobs:
           if 'hreflang=' in resume_html:
               raise SystemExit("Currículo PT-BR não deve declarar versões traduzidas inexistentes")
           resume_match = re.search(
-              r'<script type="application/ld\\+json">\\s*(\\{.*?\\})\\s*</script>',
+              r'<script type="application/ld\+json">\s*(\{.*?\})\s*</script>',
               resume_html,
               re.DOTALL,
           )
