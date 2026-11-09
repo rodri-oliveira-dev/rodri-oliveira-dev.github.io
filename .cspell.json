@@ -26,6 +26,11 @@
       ]
     },
     {
+      "filename": "curriculo/index.html",
+      "language": "pt_BR,en-US",
+      "dictionaries": ["pt-br", "site-terms"]
+    },
+    {
       "filename": "en/index.html",
       "language": "en-US",
       "dictionaries": [
