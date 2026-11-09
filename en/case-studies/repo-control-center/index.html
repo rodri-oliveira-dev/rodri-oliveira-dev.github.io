@@ -105,9 +105,9 @@
     <section class="case-study-hero" id="top">
       <div class="container">
         <p class="eyebrow">Architectural case study · engineering intelligence</p>
-        <h1>Turn dozens of repositories into an observable portfolio without creating another backend to operate.</h1>
+        <h1>Bring dozens of repositories into one operational view without another backend to maintain.</h1>
         <p class="case-study-lead">
-          <strong>Repo Control Center</strong> started from a simple operational problem: as the number of repositories grows, CI, delivery, releases, security, packages, and activity become too scattered to form a reliable view of the whole. The solution collects evidence outside the browser, makes incomplete information explicit, and publishes a static snapshot for inspection.
+          <strong>Repo Control Center</strong> started from a simple operational problem: as the number of repositories grows, CI, deployments, releases, security, packages, and activity become scattered across too many places to assess the portfolio reliably. The solution collects evidence outside the browser, makes incomplete information explicit, and publishes a static snapshot for inspection.
         </p>
         <div class="hero-actions">
           <a class="button primary" href="https://rodri-oliveira-dev.github.io/repo-status-dashboard/" target="_blank" rel="noreferrer">Open Repo Control Center ↗</a>
@@ -121,11 +121,11 @@
       <div class="container case-study-two-column">
         <div>
           <p class="eyebrow">Problem</p>
-          <h2>GitHub has the signals, but it does not provide an operational portfolio view as one system.</h2>
+          <h2>GitHub provides the data, but not a unified operational view across repositories.</h2>
         </div>
         <div class="case-study-copy">
           <p>Builds, deployments, releases, activity, alerts, packages, and open work exist across different surfaces and APIs. Opening repositories one by one works while the set is small; beyond that point, finding context becomes operational overhead itself.</p>
-          <p>The challenge was not simply to build another visual dashboard. It was to establish a common language for repository state without turning missing data into failure, and without adding permanent infrastructure just to aggregate signals that change at a relatively low frequency.</p>
+          <p>The challenge wasn't just building another dashboard. It was defining a consistent way to interpret repository state without treating missing data as failure or adding permanent infrastructure for signals that change infrequently.</p>
         </div>
       </div>
     </section>
@@ -172,7 +172,7 @@
           </article>
           <article>
             <h3>Confidence separated from health</h3>
-            <p><code>complete</code>, <code>partial</code>, and <code>unavailable</code> describe collection observability; repository health remains a separate classification.</p>
+            <p><code>complete</code>, <code>partial</code>, and <code>unavailable</code> describe data collection coverage; repository health is classified separately.</p>
             <p><strong>Trade-off:</strong> the UI must communicate uncertainty instead of collapsing everything into one color.</p>
           </article>
           <article>
@@ -183,7 +183,7 @@
           <article>
             <h3>Security as evidence, not a magic score</h3>
             <p>Dependabot, code scanning, security workflows, and OpenSSF Scorecard remain separate signals. Lack of access lowers confidence rather than becoming a security claim.</p>
-            <p><strong>Trade-off:</strong> the result is more honest but less simplistic.</p>
+            <p><strong>Trade-off:</strong> the result is more nuanced and takes more effort to interpret.</p>
           </article>
         </div>
       </div>
@@ -216,7 +216,7 @@
         </div>
         <div class="case-study-failure-grid">
           <article><h3>Not real-time</h3><p>The current schedule refreshes roughly every hour. That is sufficient for portfolio maintenance but does not replace production monitoring.</p></article>
-          <article><h3>Not every delivery is observable</h3><p>Deployments outside GitHub may not appear; versions remain blank when no trustworthy association with delivery exists.</p></article>
+          <article><h3>Not every deployment is visible</h3><p>Deployments outside GitHub may not appear; versions remain blank when no trustworthy association with delivery exists.</p></article>
           <article><h3>Permissions affect coverage</h3><p>Actions, Deployments, and security alerts may require additional permissions. Missing access is reported as reduced confidence.</p></article>
           <article><h3>A snapshot is not a time series</h3><p>Thirty-day metrics are recomputed from the current collection window. Temporal trends require persistence of previous snapshots.</p></article>
           <article><h3>Heuristics have boundaries</h3><p>Workflow names outside conventions may remain unknown. Per-repository configuration acts as an explicit override.</p></article>
@@ -245,10 +245,10 @@
       <div class="container case-study-two-column">
         <div>
           <p class="eyebrow">Architectural reading</p>
-          <h2>Engineering observability also needs to model uncertainty.</h2>
+          <h2>Repository observability must also account for uncertainty.</h2>
         </div>
         <div class="case-study-copy">
-          <p>The central lesson is not “how to build a dashboard.” Consolidating engineering signals requires preserving the difference between absence, collection failure, negative evidence, and positive evidence. Without that distinction, a simple interface can produce an incorrect interpretation of the portfolio.</p>
+          <p>The central lesson is not “how to build a dashboard.” Consolidating engineering signals requires preserving the difference between absence, collection failure, negative evidence, and positive evidence. Without that distinction, even a clear interface can misrepresent the portfolio.</p>
           <p>By making coverage and confidence explicit, Repo Control Center treats the quality of observation itself as part of the domain — reducing false diagnoses while remaining useful when not every source is available.</p>
         </div>
       </div>

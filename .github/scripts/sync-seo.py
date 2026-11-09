@@ -285,7 +285,7 @@ def person_node(language: str, devto_enabled: bool) -> dict:
             if is_pt
             else (
                 "Arquitecto de Software Senior con más de 20 años de experiencia en "
-                "modernización, .NET, sistemas distribuidos, integraciones y cloud."
+                "modernización, .NET, sistemas distribuidos, integraciones y plataformas en la nube."
                 if is_es
                 else "Senior Software Architect with more than 20 years of experience in "
                 "modernization, .NET, distributed systems, integrations, and cloud."

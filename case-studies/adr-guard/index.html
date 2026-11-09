@@ -6,7 +6,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'none'; connect-src 'none'; frame-src 'none'; media-src 'none'; worker-src 'none'; form-action 'none'; upgrade-insecure-requests">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Da decisão arquitetural à verificação contínua | ADR Guard</title>
-  <meta name="description" content="Estudo de caso do ADR Guard: ADRs, regras de fitness, evidência determinística, architectural drift e enforcement seguro em um cenário .NET reproduzível.">
+  <meta name="description" content="Estudo de caso do ADR Guard: ADRs, regras arquiteturais verificáveis, evidências determinísticas, detecção de desvios e aplicação segura de políticas em um cenário .NET reproduzível.">
   <meta name="author" content="Rodrigo de Oliveira">
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#070b14">
@@ -23,7 +23,7 @@
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="Rodrigo de Oliveira">
   <meta property="og:title" content="Da decisão arquitetural à verificação contínua">
-  <meta property="og:description" content="Como o ADR Guard conecta decisões, regras de fitness e evidências sem transformar incerteza em conformidade.">
+  <meta property="og:description" content="Como o ADR Guard conecta decisões, regras verificáveis e evidências sem transformar incerteza em conformidade.">
   <meta property="og:url" content="https://rodri-oliveira-dev.github.io/case-studies/adr-guard/">
   <meta property="og:image" content="https://rodri-oliveira-dev.github.io/assets/social/rodrigo-de-oliveira-og-pt-br.png">
   <meta property="og:image:alt" content="Rodrigo de Oliveira — Arquiteto de Software">
@@ -166,7 +166,7 @@
           <li><strong>MCP Server</strong><span>Sete ferramentas read-only, transporte stdio e fronteira de workspace.</span></li>
           <li><strong>Humano</strong><span>Aprova ADRs, seleciona regras e revisa mudanças de baseline.</span></li>
         </ol>
-        <p class="case-study-note">O MCP não aprova decisões; revisão por IA é opcional e advisory. A Action composta existente não ganhou implicitamente um modo de drift: o guia instala a ferramenta e chama o comando em uma etapa explícita.</p>
+        <p class="case-study-note">O MCP não aprova decisões; a revisão por IA é opcional e tem caráter consultivo. A action composta existente não executa a verificação de drift automaticamente: o guia instala a ferramenta e chama o comando em uma etapa específica.</p>
       </div>
     </section>
 
@@ -242,7 +242,7 @@
       <div class="container">
         <div class="section-heading wide-heading"><p class="eyebrow">Alternativas e trade-offs</p><h2>O desenho escolhe prova estreita em vez de inferência ampla.</h2></div>
         <div class="case-study-decision-grid">
-          <article><h3>Revisão manual</h3><p>É indispensável para interpretar decisões e exceções, mas pode não perceber drift repetitivo em todo pull request.</p><p><strong>Quando usar:</strong> regras sem representação determinística ou decisões contextuais.</p></article>
+          <article><h3>Revisão manual</h3><p>É indispensável para interpretar decisões e exceções, mas pode não perceber drift repetitivo em todo pull request.</p><p><strong>Quando usar:</strong> em regras sem representação determinística ou em decisões contextuais.</p></article>
           <article><h3>Testes arquiteturais específicos</h3><p>Podem analisar código com maior profundidade, mas precisam de implementação e manutenção por stack. O ADR Guard pode consumir o resultado apenas como evidência externa reportada.</p><p><strong>Quando usar:</strong> invariantes além do contrato estático v1.</p></article>
           <article><h3>Avaliar MSBuild</h3><p>Resolveria mais referências condicionais, porém executaria uma superfície complexa e potencialmente não confiável. A v1 deliberadamente não invoca MSBuild.</p><p><strong>Escolha:</strong> condições e propriedades permanecem <code>unknown</code>.</p></article>
           <article><h3>Baseline automático</h3><p>Reduziria atrito imediato, mas poderia normalizar uma regressão. A criação e atualização são ações explícitas do responsável.</p><p><strong>Escolha:</strong> histórico auditável em vez de aceitação silenciosa.</p></article>
@@ -254,7 +254,7 @@
       <div class="container case-study-two-column">
         <div><p class="eyebrow">Limitações e riscos</p><h2>O relatório verifica uma regra declarada, não a arquitetura inteira.</h2></div>
         <div class="case-study-copy">
-          <p>A v1 inspeciona apenas <code>ProjectReference</code> estático e exato em arquivos <code>.csproj</code> incluídos explicitamente no escopo. Imports, wildcards, propriedades, condições, arquivos ausentes, XML inseguro e limites excedidos são inconclusivos. Não há descoberta de rede nem execução arbitrária.</p>
+          <p>A versão 1 inspeciona apenas <code>ProjectReference</code> estático e exato em arquivos <code>.csproj</code> incluídos explicitamente no escopo. Imports, wildcards, propriedades, condições, arquivos ausentes, XML inseguro e limites excedidos são inconclusivos. Não há descoberta de rede nem execução arbitrária.</p>
           <p>Uma regra mal formulada pode ser determinística e ainda representar mal o ADR. Cobertura parcial, exceções legítimas e mudanças de ciclo de vida continuam exigindo governança humana. <code>pass</code> significa que aquela condição foi provada sob aquele contrato — não que a solução recebeu uma certificação ampla.</p>
         </div>
       </div>
@@ -275,7 +275,7 @@
         <div class="section-heading wide-heading"><p class="eyebrow">Evidências e referências</p><h2>Documentos, fixtures e implementação auditáveis no repositório.</h2></div>
         <div class="case-study-evidence-list">
           <a href="https://github.com/rodri-oliveira-dev/adr-guard/tree/main/docs/examples/architectural-drift" target="_blank" rel="noreferrer"><strong>Exemplo reproduzível</strong><span>ADR, manifestos, projetos conforme, em violação e inconclusivo.</span></a>
-          <a href="https://github.com/rodri-oliveira-dev/adr-guard/blob/main/docs/fitness-rules-v1.md" target="_blank" rel="noreferrer"><strong>Contrato de fitness v1</strong><span>Schema, resultados, políticas, baseline e limites de segurança.</span></a>
+          <a href="https://github.com/rodri-oliveira-dev/adr-guard/blob/main/docs/fitness-rules-v1.md" target="_blank" rel="noreferrer"><strong>Contrato de fitness v1</strong><span>Esquema, resultados, políticas, baseline e limites de segurança.</span></a>
           <a href="https://github.com/rodri-oliveira-dev/adr-guard/blob/main/src/AdrGuard.Core/Drift/DotNetProjectReferenceChecker.cs" target="_blank" rel="noreferrer"><strong>Checker de ProjectReference</strong><span>Implementação dos resultados determinísticos e inconclusivos.</span></a>
           <a href="https://github.com/rodri-oliveira-dev/adr-guard/blob/main/docs/github-action.pt-BR.md" target="_blank" rel="noreferrer"><strong>GitHub Action</strong><span>Contrato real, entradas, permissões e exemplos de CI.</span></a>
           <a href="https://github.com/rodri-oliveira-dev/adr-guard/blob/main/docs/mcp-tools.pt-BR.md" target="_blank" rel="noreferrer"><strong>MCP Server</strong><span>Ferramentas read-only, schemas e fronteira de workspace.</span></a>
