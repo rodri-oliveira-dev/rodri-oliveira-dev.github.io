@@ -22,6 +22,6 @@
     <g stroke="#7dd3fc" stroke-width="2" fill="none" marker-end="url(#arrow)"><path d="M295 173h128"/><path d="M685 173h128"/></g>
     <g fill="#cbd5e1" font-size="13" text-anchor="middle"><text x="359" y="158">Resultado de Dapper</text><text x="749" y="158">materialización</text></g>
     <rect x="180" y="326" width="760" height="38" rx="19" fill="#0b1220" stroke="#334155"/>
-    <text x="560" y="351" fill="#9aa8c1" font-size="14" text-anchor="middle">Las consultas SQL siguen explícitas · el mapeo queda en infraestructura · la entidad no tiene atributos de persistencia</text>
+    <text x="560" y="351" fill="#9aa8c1" font-size="14" text-anchor="middle">SQL explícito · mapeo en infraestructura · entidad sin atributos de persistencia</text>
   </g>
 </svg>
