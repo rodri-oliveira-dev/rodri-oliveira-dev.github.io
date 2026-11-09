@@ -9,6 +9,7 @@ A estratégia é manter o site estático simples, mas protegido por verificaçõ
 | Workflow | Arquivo | Execução | Objetivo |
 | --- | --- | --- | --- |
 | Site validation | [`site-validation.yml`](workflows/site-validation.yml) | Pull Request, push em `main` e manual | Validar HTML, links, ortografia e workflows |
+| Publish site with resume PDF | [`deploy-pages.yml`](workflows/deploy-pages.yml) | PR que altera o currículo, push em `main` e manual | Gerar currículo PDF a partir de HTML/CSS e publicar o site via GitHub Pages |
 | SEO validation | [`seo-validation.yml`](workflows/seo-validation.yml) | Pull Request, push em `main` e manual | Validar JSON-LD, sitemap, RSS discovery e consistência dos artefatos SEO |
 | Accessibility | [`accessibility.yml`](workflows/accessibility.yml) | Pull Request, push em `main` e manual | Aplicar verificações automatizadas de WCAG 2 AA |
 | GitHub Actions security | [`actions-security.yml`](workflows/actions-security.yml) | Pull Request, push em `main` e manual | Auditar a segurança da automação com zizmor |
@@ -20,6 +21,19 @@ A estratégia é manter o site estático simples, mas protegido por verificaçõ
 | Sync Hashnode articles | [`sync-hashnode-articles.yml`](workflows/sync-hashnode-articles.yml) | Diário e manual | Sincronizar os artigos em espanhol a partir do Hashnode |
 | Notify IndexNow | [`indexnow.yml`](workflows/indexnow.yml) | Push em `main`, diário e manual | Notificar mecanismos compatíveis com IndexNow sobre URLs públicas alteradas |
 | Optimize Open Graph image | [`optimize-og-image.yml`](workflows/optimize-og-image.yml) | Push específico em `main` e manual | Gerar e validar o WebP e propor a atualização via Pull Request |
+
+## Currículo HTML e PDF
+
+O currículo em português está em [`../curriculo/index.html`](../curriculo/index.html), com CSS próprio em [`../curriculo/curriculo.css`](../curriculo/curriculo.css). O botão **Baixar currículo em PDF** aponta para `/curriculo/rodrigo-de-oliveira.pdf`.
+
+O workflow [`deploy-pages.yml`](workflows/deploy-pages.yml) usa Playwright/Chromium para produzir o PDF A4 a partir do HTML e do CSS e publicar um único artifact com o site inteiro. Em Pull Requests que alteram o currículo ou o próprio gerador, o PDF é gerado e validado, mas não publicado. Após merge na `main`, o workflow publica HTML e PDF juntos, sem criar commits de artefatos binários na branch protegida. Ele também pode ser executado manualmente.
+
+**Configuração necessária:** em **Settings → Pages → Build and deployment → Source**, selecionar **GitHub Actions**. Sem essa configuração, o PDF não será servido automaticamente pelo site. O ambiente `github-pages` deve permitir deploy somente da `main`. Essa opção substitui o deploy anterior direto da branch; por isso, o workflow publica o site estático completo e não apenas o PDF.
+
+O gerador está em [`scripts/generate-resume-pdf.mjs`](scripts/generate-resume-pdf.mjs). O PDF não é mantido como arquivo fonte no Git: seu único conteúdo editável é o HTML/CSS do currículo.
+
+O currículo é uma URL canônica indexável apenas em **pt-BR**, com metadados Open Graph/Twitter, JSON-LD `ProfilePage`/ `Person`/ `BreadcrumbList`, entrada estável no sitemap e notificações IndexNow quando HTML ou CSS muda. Ele é ligado à seção **Contato** da homepage portuguesa. Não há `hreflang` para EN/ES, porque não existem traduções. As verificações de SEO, HTML, ortografia, Lighthouse e WCAG cobrem essa página.
+
 
 ## Quality gates
 
@@ -49,7 +63,7 @@ Ele verifica que:
 - as três homepages e todos os estudos possuem canonical própria e alternates recíprocos `pt-BR`, `en`, `es` e `x-default`;
 - o JSON-LD estruturado permanece válido e consistente;
 - os estudos de caso reutilizam os `@id` canônicos de `Person` e `WebSite`, identificam a página principal e mantêm uma identidade estável para o repositório descrito como `SoftwareSourceCode`;
-- `sitemap.xml` contém exatamente as 18 URLs indexáveis, sem duplicação, e possui `lastmod` para todas elas;
+- `sitemap.xml` contém exatamente as 19 URLs indexáveis, sem duplicação, e possui `lastmod` para todas elas;
 - os cinco slugs de estudos de caso existem nos três idiomas;
 - a geração de `lastmod` preserva datas versionadas para páginas sem alteração, sem depender do dia em que o runner executa;
 - executar [`scripts/sync-seo.py`](scripts/sync-seo.py) não produz diferenças não commitadas.
@@ -58,7 +72,7 @@ Esse último ponto funciona como um gate de drift: se catálogo, homepage, dados
 
 ### Accessibility
 
-O [`accessibility.yml`](workflows/accessibility.yml) sobe o site em um servidor HTTP local e executa Pa11y CI contra as três homepages e todos os estudos de caso em português, inglês e espanhol.
+O [`accessibility.yml`](workflows/accessibility.yml) sobe o site em um servidor HTTP local e executa Pa11y CI contra as três homepages e todos os estudos de caso em português, inglês e espanhol, além do currículo em português.
 
 A configuração usa WCAG 2 AA como baseline e threshold zero para os problemas considerados pelo gate. O objetivo é detectar regressões de semântica, ARIA, estrutura e outras regras automatizáveis de acessibilidade antes do merge.
 
@@ -93,7 +107,7 @@ O relatório estruturado é produzido por [`scripts/summarize-zizmor.mjs`](scrip
 
 ### Lighthouse CI
 
-O [`lighthouse.yml`](workflows/lighthouse.yml) sobe o site localmente e executa Lighthouse CI contra `/`, `/en/`, `/es/` e todos os estudos de caso trilíngues descobertos.
+O [`lighthouse.yml`](workflows/lighthouse.yml) sobe o site localmente e executa Lighthouse CI contra `/`, `/en/`, `/es/` e todos os estudos de caso trilíngues descobertos, além de `/curriculo/`.
 
 Cada página é medida três vezes para reduzir variação do runner. Os valores usados para os gates são agregados pela mediana.
 
@@ -223,7 +237,7 @@ Use sempre o mesmo intervalo mensal e compare-o ao período anterior e, quando h
 
 | Dimensão | Fonte | Procedimento | Interpretação |
 | --- | --- | --- | --- |
-| URLs indexadas | Search Console e Bing Webmaster Tools | Conferir sitemap, relatórios de indexação e inspeção das 18 URLs canônicas | **Indexação** confirma elegibilidade no índice; não comprova impressão, clique ou citação |
+| URLs indexadas | Search Console e Bing Webmaster Tools | Conferir sitemap, relatórios de indexação e inspeção das 19 URLs canônicas | **Indexação** confirma elegibilidade no índice; não comprova impressão, clique ou citação |
 | Impressões e cliques orgânicos | Relatórios de desempenho dos dois buscadores | Exportar totais e segmentar por país, idioma, página e dispositivo | **Impressão** é aparição no resultado; **clique** é visita originada nesse resultado |
 | Consultas profissionais | Dimensão de consultas | Acompanhar grupos factuais como arquitetura de software, .NET, C#, modernização, sistemas distribuídos, integrações, APIs, cloud, DDD e observabilidade, sem esperar correspondência exata em consultas anonimizadas | Tendência de descoberta por competência; não é evidência de contratação nem de domínio temático isoladamente |
 | Páginas de entrada orgânica | Dimensão de páginas | Comparar homepages e estudos de caso por impressões, cliques e CTR | Identifica quais conteúdos levam visitas; CTR deve ser lida junto com consulta e posição |

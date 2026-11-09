@@ -265,13 +265,18 @@ const expectedPages = variants.flatMap((variant) => [
   pageUrl(variant),
   ...slugSets[0].map((slug) => pageUrl(variant, slug)),
 ]);
+expectedPages.push(`${SITE_URL}/curriculo/`);
+assert.ok(read("index.html").includes('href="/curriculo/"'), "Homepage must link to resume");
+assert.ok(read("curriculo/index.html").includes('<html lang="pt-BR">'), "Resume must remain in pt-BR");
 assert.equal(sitemapEntries.length, expectedPages.length, "Sitemap URL count");
 assert.deepEqual(new Set(sitemapEntries.map((entry) => entry.loc)), new Set(expectedPages), "Sitemap URL correspondence and uniqueness");
 for (const entry of sitemapEntries) {
   assert.match(entry.lastmod ?? "", /^\d{4}-\d{2}-\d{2}$/, `${entry.loc} sitemap lastmod`);
   const slug = entry.loc.includes("/case-studies/") ? entry.loc.split("/case-studies/")[1].replace(/\/$/, "") : "";
-  const expectedAlternates = Object.fromEntries(variants.map((variant) => [variant.hreflang, pageUrl(variant, slug)]));
-  expectedAlternates["x-default"] = pageUrl(variants[0], slug);
+  const expectedAlternates = entry.loc.endsWith("/curriculo/")
+    ? {}
+    : Object.fromEntries(variants.map((variant) => [variant.hreflang, pageUrl(variant, slug)]));
+  if (!entry.loc.endsWith("/curriculo/")) expectedAlternates["x-default"] = pageUrl(variants[0], slug);
   assert.deepEqual(entry.alternates, expectedAlternates, `${entry.loc} sitemap alternates`);
 }
 

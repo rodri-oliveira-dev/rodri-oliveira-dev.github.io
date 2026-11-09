@@ -38,9 +38,9 @@ jobs:
         run: |
           git diff --check
 
-          if ! git diff --quiet -- index.html en/index.html es/index.html case-studies en/case-studies es/case-studies sitemap.xml; then
+          if ! git diff --quiet -- index.html en/index.html es/index.html curriculo/index.html case-studies en/case-studies es/case-studies sitemap.xml; then
             echo "SEO artifacts are out of sync. Run: python3 .github/scripts/sync-seo.py"
-            git diff -- index.html en/index.html es/index.html case-studies en/case-studies es/case-studies sitemap.xml
+            git diff -- index.html en/index.html es/index.html curriculo/index.html case-studies en/case-studies es/case-studies sitemap.xml
             exit 1
           fi
 
@@ -78,6 +78,44 @@ jobs:
                   if required not in types:
                       raise SystemExit(f"{required} structured data missing in {page}")
 
+          # Currículo somente em pt-BR, sem hreflang para traduções inexistentes.
+          resume_url = "https://rodri-oliveira-dev.github.io/curriculo/"
+          resume_html = Path("curriculo/index.html").read_text(encoding="utf-8")
+          required_fragments = (
+              '<html lang="pt-BR">',
+              '<meta name="robots" content="index,follow,max-image-preview:large">',
+              f'<link rel="canonical" href="{resume_url}">',
+              '<meta property="og:title"',
+              f'<meta property="og:url" content="{resume_url}">',
+              '<meta property="og:image"',
+              '<meta name="twitter:card" content="summary_large_image">',
+              '<meta name="twitter:image"',
+          )
+          if any(fragment not in resume_html for fragment in required_fragments):
+              raise SystemExit("Currículo sem metadados SEO obrigatórios")
+          if 'hreflang=' in resume_html:
+              raise SystemExit("Currículo PT-BR não deve declarar versões traduzidas inexistentes")
+          resume_match = re.search(
+              r'<script type="application/ld\+json">\s*(\{.*?\})\s*</script>',
+              resume_html,
+              re.DOTALL,
+          )
+          if not resume_match:
+              raise SystemExit("Currículo sem JSON-LD")
+          resume_graph = json.loads(resume_match.group(1)).get("@graph", [])
+          resume_types = {node.get("@type") for node in resume_graph}
+          if not {"ProfilePage", "Person", "BreadcrumbList"} <= resume_types:
+              raise SystemExit("Dados estruturados do currículo incompletos")
+          resume_profile = next(node for node in resume_graph if node.get("@type") == "ProfilePage")
+          resume_person = next(node for node in resume_graph if node.get("@type") == "Person")
+          if (resume_profile.get("url") != resume_url or
+                  resume_profile.get("inLanguage") != "pt-BR" or
+                  resume_profile.get("mainEntity", {}).get("@id") !=
+                  "https://rodri-oliveira-dev.github.io/#person" or
+                  resume_person.get("@id") != "https://rodri-oliveira-dev.github.io/#person" or
+                  resume_person.get("name") != "Rodrigo de Oliveira"):
+              raise SystemExit("Entidade Person do currículo não corresponde ao portfólio")
+
           root = ET.parse("sitemap.xml").getroot()
           namespace = {
               "sm": "http://www.sitemaps.org/schemas/sitemap/0.9",
@@ -88,6 +126,7 @@ jobs:
               "https://rodri-oliveira-dev.github.io/",
               "https://rodri-oliveira-dev.github.io/en/",
               "https://rodri-oliveira-dev.github.io/es/",
+              "https://rodri-oliveira-dev.github.io/curriculo/",
           }
           case_pages = sorted(Path("case-studies").glob("*/index.html"))
           english_pages = sorted(Path("en/case-studies").glob("*/index.html"))
@@ -113,7 +152,9 @@ jobs:
               if not (entry.findtext("sm:lastmod", namespaces=namespace) or "").strip():
                   raise SystemExit("Sitemap URL without lastmod")
               loc = (entry.findtext("sm:loc", namespaces=namespace) or "").strip()
-              if "/case-studies/" in loc:
+              if loc == resume_url:
+                  expected_sitemap_alternates = {}
+              elif "/case-studies/" in loc:
                   slug = loc.rstrip("/").split("/")[-1]
                   expected_sitemap_alternates = {
                       "pt-BR": f"https://rodri-oliveira-dev.github.io/case-studies/{slug}/",
