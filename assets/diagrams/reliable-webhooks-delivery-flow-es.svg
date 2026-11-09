@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 430" role="img" aria-labelledby="title desc">
   <title id="title">Flujo de entrega de ReliableWebhooks</title>
-  <desc id="desc">Una aplicación coloca un webhook en un store de entregas. Un dispatcher lo reclama con un lease, envía un intento mediante un transporte y registra éxito, reintento, falla permanente o dead letter. La telemetría observa el flujo.</desc>
+  <desc id="desc">Una aplicación registra un webhook en un almacén de entregas. El dispatcher obtiene un lease, intenta enviarlo y registra el resultado: éxito, reintento, falla permanente o mensaje fallido. La telemetría observa el proceso.</desc>
   <defs>
     <linearGradient id="panel" x1="0" x2="1">
       <stop stop-color="#111a2d"/>
@@ -21,7 +21,7 @@
     </g>
     <g fill="#edf2ff" font-size="17" font-weight="700" text-anchor="middle">
       <text x="114" y="122">Aplicación</text>
-      <text x="327" y="114">Enqueue +</text><text x="327" y="138">store de entregas</text>
+      <text x="327" y="114">Enqueue +</text><text x="327" y="138">almacén de entregas</text>
       <text x="552" y="114">Dispatcher +</text><text x="552" y="138">lease</text>
       <text x="777" y="114">Transporte</text><text x="777" y="138">un intento HTTP</text>
       <text x="997" y="122">Receptor</text>
@@ -43,8 +43,8 @@
       <rect x="286" y="282" width="180" height="64" rx="14" fill="#172033" stroke="#7dd3fc"/><text x="376" y="319" fill="#bae6fd">Reintento programado</text>
       <rect x="480" y="282" width="180" height="64" rx="14" fill="#2a171b" stroke="#fb7185"/><text x="570" y="319" fill="#fecdd3">Falla permanente</text>
       <rect x="674" y="282" width="180" height="64" rx="14" fill="#2a2311" stroke="#fbbf24"/><text x="764" y="319" fill="#fde68a">Dead letter</text>
-      <rect x="868" y="282" width="160" height="64" rx="14" fill="#171c2d" stroke="#a78bfa"/><text x="948" y="310" fill="#ddd6fe">Logs, traces</text><text x="948" y="329" fill="#ddd6fe">y métricas</text>
+      <rect x="868" y="282" width="160" height="64" rx="14" fill="#171c2d" stroke="#a78bfa"/><text x="948" y="310" fill="#ddd6fe">Registros</text><text x="948" y="329" fill="#ddd6fe">y métricas</text>
     </g>
-    <text x="560" y="390" fill="#9aa8c1" font-size="13" text-anchor="middle">La durabilidad proviene del store de la aplicación; el protocolo no ofrece entrega exactly-once.</text>
+    <text x="560" y="390" fill="#9aa8c1" font-size="13" text-anchor="middle">La persistencia depende del almacén de la aplicación; el protocolo no garantiza exactly-once.</text>
   </g>
 </svg>
