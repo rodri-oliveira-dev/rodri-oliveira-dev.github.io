@@ -48,6 +48,7 @@ jobs:
           const languageRoots = ["", "en", "es"];
           const expected = new Set(languageRoots
             .map((root) => `${origin}/${root ? `${root}/` : ""}`));
+          if (fs.existsSync("curriculo/index.html")) expected.add(`${origin}/curriculo/`);
           for (const root of languageRoots.map((language) => path.join(language, "case-studies"))) {
             if (!fs.existsSync(root)) continue;
             for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
@@ -70,7 +71,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
-          pages = [Path("index.html"), Path("en/index.html"), Path("es/index.html")]
+          pages = [Path("index.html"), Path("en/index.html"), Path("es/index.html"), Path("curriculo/index.html")]
           for root in (Path("case-studies"), Path("en/case-studies"), Path("es/case-studies")):
               pages.extend(sorted(root.glob("*/index.html")))
           for path in pages:
