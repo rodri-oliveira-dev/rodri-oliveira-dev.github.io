@@ -30,3 +30,4 @@ Para explorar as bibliotecas, ferramentas e iniciativas open source que mantenho
 Este repositório é dedicado exclusivamente ao meu site pessoal. Ele não é um projeto open source e não recebe contribuições externas. O código, os textos e os materiais visuais são proprietários. Consulte a [licença](LICENSE) para os termos completos.
 
 Os detalhes de manutenção e publicação do site estão documentados em [Automação e GitHub Actions](.github/README.md).
+
