@@ -96,6 +96,8 @@ jobs:
                   urls.add(f"{site_url}/en/")
               if "es/index.html" in changed:
                   urls.add(f"{site_url}/es/")
+              if changed & {"curriculo/index.html", "curriculo/curriculo.css"}:
+                  urls.add(f"{site_url}/curriculo/")
               if "newsletter/feed.xml" in changed or "assets/data/newsletter-articles.json" in changed:
                   urls.add(f"{site_url}/newsletter/feed.xml")
 
