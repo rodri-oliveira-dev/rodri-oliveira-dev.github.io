@@ -21,7 +21,7 @@ concurrency:
 jobs:
   build:
     name: Generate PDF and build static site
-    runs-on: ubuntu-26.04
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 20
     steps:
       - name: Checkout repository
@@ -73,7 +73,7 @@ jobs:
     name: Deploy GitHub Pages
     if: github.event_name != 'pull_request'
     needs: build
-    runs-on: ubuntu-26.04
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 10
     permissions:
       contents: read
