@@ -826,9 +826,9 @@ def write_sitemap(
             existing_lastmods,
         )
         resume_block = (
-            "  <url>\\n"
-            f"    <loc>{escape(RESUME_URL)}</loc>\\n"
-            f"    <lastmod>{resume_lastmod}</lastmod>\\n"
+            "  <url>\n"
+            f"    <loc>{escape(RESUME_URL)}</loc>\n"
+            f"    <lastmod>{resume_lastmod}</lastmod>\n"
             "  </url>"
         )
 
