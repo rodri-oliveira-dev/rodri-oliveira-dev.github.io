@@ -100,7 +100,7 @@
       <div class="container">
         <p class="eyebrow">Architecture case study · open-source project</p>
         <h1>From Architectural Decisions to Continuous Verification</h1>
-        <p class="case-study-lead">An ADR can explain why <strong>Domain must not depend on Infrastructure</strong>. The next challenge is detecting, with verifiable evidence, when the implementation stops respecting that decision.</p>
+        <p class="case-study-lead">An ADR can explain why <strong>Domain must not depend on Infrastructure</strong>. The next challenge is using verifiable evidence to detect when the implementation no longer follows that decision.</p>
         <div class="hero-actions"><a class="button primary" href="https://github.com/rodri-oliveira-dev/adr-guard" target="_blank" rel="noreferrer">Open repository ↗</a><a class="button secondary" href="https://github.com/rodri-oliveira-dev/adr-guard/tree/main/docs/examples/architectural-drift" target="_blank" rel="noreferrer">Run the example ↗</a></div>
         <p class="case-study-note">This is a reproducible repository scenario, not a claim of production adoption or comprehensive architecture certification.</p>
       </div>
@@ -110,8 +110,8 @@
       <div class="container case-study-two-column">
         <div><p class="eyebrow">Problem</p><h2>Documentation preserves reasoning; by itself, it does not preserve a dependency boundary.</h2></div>
         <div class="case-study-copy">
-          <p>As software evolves, a convenient project reference can reverse an intended boundary. The ADR remains accepted and readable while the actual code graph tells a different story.</p>
-          <p>The consequences emerge later: domain rules learn about persistence, tests require infrastructure, and technical change crosses layers that were meant to evolve separately. The missing link is feedback between the decision and inspectable implementation evidence.</p>
+          <p>As software evolves, a seemingly convenient project reference can undermine an intended boundary. The ADR remains accepted and readable while the actual code graph tells a different story.</p>
+          <p>Over time, domain rules become coupled to persistence, tests depend on infrastructure, and changes cross layers that were meant to evolve independently. The missing link is feedback between the decision and inspectable implementation evidence.</p>
         </div>
       </div>
     </section>
@@ -123,7 +123,7 @@
           <article><span>01</span><h3>Traceability</h3><p>Each rule points to an ADR by stable identity and relative path, preserving the origin of the constraint.</p></article>
           <article><span>02</span><h3>Determinism</h3><p>The same input should produce stable ordering, fingerprints, outcomes, and reports.</p></article>
           <article><span>03</span><h3>Safe uncertainty</h3><p>Missing, dynamic, or ambiguous evidence yields <code>unknown</code>, never implicit approval.</p></article>
-          <article><span>04</span><h3>Compatibility</h3><p>Drift, impact, and structural validation have independent contracts without mutating published formats.</p></article>
+          <article><span>04</span><h3>Compatibility</h3><p>Structural validation, impact analysis, and drift checks have separate contracts while preserving existing output formats.</p></article>
         </div>
         <div class="case-study-quality-list" role="group" aria-label="Prioritized quality attributes"><span>Auditability</span><span>Security</span><span>Reproducibility</span><span>Operability</span><span>Evolvability</span><span>Compatibility</span></div>
         <figure class="case-study-figure">
@@ -139,7 +139,7 @@
         <div class="case-study-decision-grid">
           <article><h3>Structural ADR validation</h3><p><code>adr-guard check</code> validates metadata, sections, references, lifecycle, and other document contracts. A valid ADR does not prove that code conforms to it.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/adr-guard/blob/main/docs/cli-reference.md" target="_blank" rel="noreferrer">CLI reference ↗</a></article>
           <article><h3>Change impact analysis</h3><p><code>adr-guard impact</code> correlates changed files with explicit local mappings. It identifies decisions that may need review; it does not issue a compliance verdict.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/adr-guard/blob/main/docs/adr/0006-analyze-architecture-impact-from-explicit-mappings.md" target="_blank" rel="noreferrer">ADR 0006 ↗</a></article>
-          <article><h3>Drift verification</h3><p><code>adr-guard drift</code> evaluates opt-in rules associated with effective ADRs. Version 1 proves only exact static project references and consumes reported external tests.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/adr-guard/blob/main/docs/adr/0007-verify-architecture-rules-from-bounded-evidence.md" target="_blank" rel="noreferrer">ADR 0007 ↗</a></article>
+          <article><h3>Drift verification</h3><p><code>adr-guard drift</code> evaluates opt-in rules associated with effective ADRs. Version 1 verifies only exact static project references and accepts results reported by external tests.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/adr-guard/blob/main/docs/adr/0007-verify-architecture-rules-from-bounded-evidence.md" target="_blank" rel="noreferrer">ADR 0007 ↗</a></article>
           <article><h3>Shared internal Core</h3><p><code>AdrGuard.Core</code> owns parsing, validation, Git inventory, impact, and drift for the CLI and MCP host. It is not a standalone public package; UI and transport remain at executable boundaries.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/adr-guard/blob/main/docs/adr/0008-extract-an-internal-shared-core.md" target="_blank" rel="noreferrer">ADR 0008 ↗</a></article>
         </div>
         <h3>The outcome vocabulary preserves uncertainty</h3>
@@ -171,7 +171,7 @@
 
     <section class="section case-study-section" id="scenario">
       <div class="container">
-        <div class="section-heading wide-heading"><p class="eyebrow">Reproducible implementation</p><h2>Domain has no Infrastructure reference—until a change introduces drift.</h2></div>
+        <div class="section-heading wide-heading"><p class="eyebrow">Reproducible implementation</p><h2>The Domain project starts without an Infrastructure reference. A later change introduces drift.</h2></div>
         <div class="case-study-two-column">
           <div class="case-study-copy"><h3>1. Record the decision</h3><p>The accepted ADR states: “The Domain project must not reference the Infrastructure project.” Its consequences acknowledge that conditional or dynamically expanded references require human review.</p></div>
           <div><h3>2. Configure the rule</h3><pre class="case-study-code"><code>{
@@ -239,10 +239,10 @@
 
     <section class="section case-study-limitations">
       <div class="container case-study-two-column">
-        <div><p class="eyebrow">Limitations and risks</p><h2>The report verifies a declared rule, not the whole architecture.</h2></div>
+        <div><p class="eyebrow">Limitations and risks</p><h2>The report verifies a specific rule, not the architecture as a whole.</h2></div>
         <div class="case-study-copy">
           <p>Version 1 inspects only exact static <code>ProjectReference</code> relationships in explicitly scoped <code>.csproj</code> files. Imports, wildcards, properties, conditions, missing files, unsafe XML, and exceeded bounds are inconclusive. It performs no network discovery or arbitrary execution.</p>
-          <p>A poorly stated rule can be deterministic yet misrepresent its ADR. Partial coverage, legitimate exceptions, and lifecycle changes still need human governance. <code>pass</code> means that one condition was proved under one contract—not that the solution received broad certification.</p>
+          <p>A poorly stated rule can be deterministic yet misrepresent its ADR. Partial coverage, legitimate exceptions, and lifecycle changes still require human oversight. <code>pass</code> means that one condition was proved under one contract—not that the solution received broad certification.</p>
         </div>
       </div>
     </section>
@@ -251,7 +251,7 @@
       <div class="container case-study-two-column">
         <div><p class="eyebrow">Lessons and evolution</p><h2>Making decisions executable starts by making boundaries explicit.</h2></div>
         <div class="case-study-copy">
-          <p>Separating check, impact, and drift prevents “valid document,” “related change,” and “broken constraint” from becoming synonyms. Four outcome states keep missing evidence from becoming compliance.</p>
+          <p>Separating check, impact, and drift prevents “valid document,” “related change,” and “broken constraint” from becoming synonyms. Four distinct outcomes prevent missing evidence from being mistaken for compliance.</p>
           <p>Extracting Core reduces divergence between CLI and MCP without creating a public API. New versioned checks can evolve the system if they preserve provenance, uncertainty, compatibility, and human authority over decisions and baselines.</p>
         </div>
       </div>

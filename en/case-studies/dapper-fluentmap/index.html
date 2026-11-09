@@ -102,7 +102,7 @@
       <div class="container">
         <p class="eyebrow">Architecture case study · open-source library</p>
         <h1>Evolving Data Access Without Coupling the Domain to a Legacy Database</h1>
-        <p class="case-study-lead">A <strong>CUSTOMER</strong> table exposes <strong>CUST_NO</strong> and <strong>LEGAL_NM</strong>; the domain should speak in <strong>Customer.Id</strong> and <strong>Customer.Name</strong>. FluentMap makes that translation explicit without persistence attributes on the entity.</p>
+        <p class="case-study-lead">A <strong>CUSTOMER</strong> table exposes <strong>CUST_NO</strong> and <strong>LEGAL_NM</strong>; the domain model should use <strong>Customer.Id</strong> and <strong>Customer.Name</strong>. FluentMap makes that translation explicit without persistence attributes on the entity.</p>
         <div class="hero-actions"><a class="button primary" href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap" target="_blank" rel="noreferrer">Open repository ↗</a><a class="button secondary" href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/README.md" target="_blank" rel="noreferrer">Read documentation ↗</a></div>
         <p class="case-study-note">The enterprise scenario is illustrative. It demonstrates public library contracts; it is not a customer, deployment, or production performance claim.</p>
       </div>
@@ -112,7 +112,7 @@
       <div class="container case-study-two-column">
         <div><p class="eyebrow">Context and motivation</p><h2>The database vocabulary does not have to become the domain vocabulary.</h2></div>
         <div class="case-study-copy">
-          <p>Legacy schemas carry abbreviations, historical conventions, and names shared by systems that cannot all be renamed in one delivery. Repeating those names in the .NET model transfers persistence cost into business rules, APIs, and tests.</p>
+          <p>Legacy schemas contain abbreviations, historical conventions, and names shared across systems that cannot all be updated in a single release. Copying those names into the .NET model spreads database-specific concerns into business rules, APIs, and tests.</p>
           <p>The goal is not to hide SQL or create a full ORM. Dapper remains responsible for queries and connections, while a centralized, strongly typed configuration translates physical names into properties that communicate intent.</p>
         </div>
       </div>
@@ -139,7 +139,7 @@
       <div class="container">
         <div class="section-heading wide-heading"><p class="eyebrow">Architecture decisions</p><h2>Mapping is an explicit boundary, not an abstraction over all data access.</h2></div>
         <div class="case-study-decision-grid">
-          <article><h3>Typed maps</h3><p><code>EntityMap&lt;T&gt;</code> connects property expressions to columns. Property renames go through the compiler, and configuration can be validated at startup.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/website/src/content/docs/concepts/property-mapping.md" target="_blank" rel="noreferrer">Property mapping ↗</a></article>
+          <article><h3>Typed maps</h3><p><code>EntityMap&lt;T&gt;</code> connects property expressions to columns. Property renames are checked at compile time, and configuration can be validated at startup.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/website/src/content/docs/concepts/property-mapping.md" target="_blank" rel="noreferrer">Property mapping ↗</a></article>
           <article><h3>Conventions with precedence</h3><p>Conventions reduce repetition when schemas follow patterns. Explicit maps remain suitable for exceptions and follow documented precedence.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/website/src/content/docs/concepts/mapping-precedence.md" target="_blank" rel="noreferrer">Mapping precedence ↗</a></article>
           <article><h3>Immutable configuration</h3><p>Global configuration is built before concurrent queries and then treated as read-only. <code>FluentMapRuntime</code> provides isolated configuration for <code>QueryMapped*</code> APIs.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/website/src/content/docs/advanced/runtime-isolation.md" target="_blank" rel="noreferrer">Runtime isolation ↗</a></article>
           <article><h3>Optional Dommel</h3><p>The Dommel package adds metadata and persistence integration, but its resolvers and builders remain process-global. Isolated FluentMap runtimes do not isolate Dommel.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/website/src/content/docs/integrations/dommel.md" target="_blank" rel="noreferrer">Dommel integration ↗</a></article>
@@ -151,7 +151,7 @@
 
     <section class="section architecture-section" id="scenario">
       <div class="container">
-        <div class="section-heading wide-heading"><p class="eyebrow">Scenario implementation</p><h2>An attribute-free entity, an infrastructure map, and a normal Dapper query.</h2></div>
+        <div class="section-heading wide-heading"><p class="eyebrow">Scenario implementation</p><h2>An attribute-free entity, an infrastructure map, and a standard Dapper query.</h2></div>
         <pre class="case-study-code"><code>using Dapper;
 using Dapper.FluentMap;
 using Dapper.FluentMap.Mapping;
@@ -205,9 +205,9 @@ public sealed class CustomerMap : EntityMap&lt;Customer&gt;
 
     <section class="section architecture-section">
       <div class="container">
-        <div class="section-heading wide-heading"><p class="eyebrow">Evolution and maintenance</p><h2>Add capabilities without erasing the surface applications already use.</h2></div>
+        <div class="section-heading wide-heading"><p class="eyebrow">Evolution and maintenance</p><h2>Add capabilities without breaking the APIs existing applications rely on.</h2></div>
         <div class="case-study-decision-grid">
-          <article><h3>From 2.x to 3.x</h3><p><code>EntityMap&lt;T&gt;</code>, <code>FluentMapper.Initialize(...)</code>, and the Dapper type-map bridge remain. For the common historical path, migration is usually a coordinated package update followed by validation and tests.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/MIGRATION.md" target="_blank" rel="noreferrer">Migration guide ↗</a></article>
+          <article><h3>From 2.x to 3.x</h3><p><code>EntityMap&lt;T&gt;</code>, <code>FluentMapper.Initialize(...)</code>, and the Dapper type-map bridge remain. For the typical upgrade path, migration involves coordinated package updates followed by validation and tests.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/MIGRATION.md" target="_blank" rel="noreferrer">Migration guide ↗</a></article>
           <article><h3>Bounded global state</h3><p>Normal <code>Dapper.Query&lt;T&gt;()</code> uses Dapper's global type map, and Dommel is also global. <code>FluentMapRuntime</code> isolation applies to mapped APIs that accept or belong to that runtime.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/COMPATIBILITY.md#global-state-limitations" target="_blank" rel="noreferrer">Global-state limits ↗</a></article>
           <article><h3>Provider matrix</h3><p>SQLite, SQL Server, PostgreSQL, MySQL, and MariaDB have real Core and Dommel evidence in the current matrix. Oracle and Firebird have Core evidence but no Dommel certification.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/COMPATIBILITY.md#providers" target="_blank" rel="noreferrer">Compatibility matrix ↗</a></article>
           <article><h3>Verifiable contracts</h3><p>The documented ranges are Dapper <code>[2.1.79,3.0.0)</code> and Dommel <code>[3.5.3,4.0.0)</code>. Experimental canaries do not expand the matrix until it is intentionally updated and reviewed.</p><a class="text-link" href="https://github.com/rodri-oliveira-dev/Dapper-FluentMap/blob/main/eng/compatibility-contract.json" target="_blank" rel="noreferrer">Machine-readable contract ↗</a></article>
@@ -220,7 +220,7 @@ public sealed class CustomerMap : EntityMap&lt;Customer&gt;
         <div><p class="eyebrow">Limitations and risks</p><h2>FluentMap complements Dapper; it is neither a replacement nor a full ORM.</h2></div>
         <div class="case-study-copy">
           <p>The library does not manage connections, transactions, migrations, tracking, or query design. Late global configuration can conflict with concurrent queries; initialize before use and then treat configuration as immutable.</p>
-          <p>Expected Dapper/ADO.NET compatibility does not equal FluentMap certification. Core certification does not imply Dommel. Full Native AOT support is also not claimed: the strict generated path has bounded coverage, and incompatible shapes can use runtime fallback.</p>
+          <p>Expected Dapper/ADO.NET compatibility does not equal FluentMap certification. Core certification does not imply Dommel. The library also does not claim full Native AOT support: the strict generated path has bounded coverage, and incompatible shapes can use runtime fallback.</p>
           <p>Benchmarks use BenchmarkDotNet and SQLite in repository-defined scenarios. The committed baseline contains <code>"reportOnly": true</code>; it is exploratory evidence and a trend signal, not a general performance promise across environments, providers, or workloads.</p>
         </div>
       </div>
@@ -230,8 +230,8 @@ public sealed class CustomerMap : EntityMap&lt;Customer&gt;
       <div class="container case-study-two-column">
         <div><p class="eyebrow">Lessons</p><h2>Compatibility is sustained through boundaries, documentation, and tests.</h2></div>
         <div class="case-study-copy">
-          <p>A map's value is not hiding the database but locating the translation. Aliases, DTOs, and FluentMap remain architectural options; reuse frequency, semantic distance, and isolation needs indicate which one costs less.</p>
-          <p>In library evolution, opt-in capabilities expand materialization, diagnostics, and integration without forcing historical consumers to adopt everything. Separate matrices and precise language keep test evidence from being generalized beyond its actual coverage.</p>
+          <p>A map's value is not hiding the database but locating the translation. Aliases, DTOs, and FluentMap remain architectural options; how often the mapping is reused, how different the models are, and isolation requirements help determine the best trade-off.</p>
+          <p>As the library evolves, opt-in features extend materialization, diagnostics, and integration without requiring existing users to adopt them. Separate matrices and precise language keep test evidence from being generalized beyond its actual coverage.</p>
         </div>
       </div>
     </section>
