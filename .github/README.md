@@ -9,6 +9,7 @@ A estratégia é manter o site estático simples, mas protegido por verificaçõ
 | Workflow | Arquivo | Execução | Objetivo |
 | --- | --- | --- | --- |
 | Site validation | [`site-validation.yml`](workflows/site-validation.yml) | Pull Request, push em `main` e manual | Validar HTML, links, ortografia e workflows |
+| Publish site with resume PDF | [`deploy-pages.yml`](workflows/deploy-pages.yml) | PR que altera o currículo, push em `main` e manual | Gerar currículo PDF a partir de HTML/CSS e publicar o site via GitHub Pages |
 | SEO validation | [`seo-validation.yml`](workflows/seo-validation.yml) | Pull Request, push em `main` e manual | Validar JSON-LD, sitemap, RSS discovery e consistência dos artefatos SEO |
 | Accessibility | [`accessibility.yml`](workflows/accessibility.yml) | Pull Request, push em `main` e manual | Aplicar verificações automatizadas de WCAG 2 AA |
 | GitHub Actions security | [`actions-security.yml`](workflows/actions-security.yml) | Pull Request, push em `main` e manual | Auditar a segurança da automação com zizmor |
@@ -20,6 +21,16 @@ A estratégia é manter o site estático simples, mas protegido por verificaçõ
 | Sync Hashnode articles | [`sync-hashnode-articles.yml`](workflows/sync-hashnode-articles.yml) | Diário e manual | Sincronizar os artigos em espanhol a partir do Hashnode |
 | Notify IndexNow | [`indexnow.yml`](workflows/indexnow.yml) | Push em `main`, diário e manual | Notificar mecanismos compatíveis com IndexNow sobre URLs públicas alteradas |
 | Optimize Open Graph image | [`optimize-og-image.yml`](workflows/optimize-og-image.yml) | Push específico em `main` e manual | Gerar e validar o WebP e propor a atualização via Pull Request |
+
+## Currículo HTML e PDF
+
+O currículo em português está em [`../curriculo/index.html`](../curriculo/index.html), com CSS próprio em [`../curriculo/curriculo.css`](../curriculo/curriculo.css). O botão **Baixar currículo em PDF** aponta para `/curriculo/rodrigo-de-oliveira.pdf`.
+
+O workflow [`deploy-pages.yml`](workflows/deploy-pages.yml) usa Playwright/Chromium para produzir o PDF A4 a partir do HTML e do CSS e publicar um único artifact com o site inteiro. Em Pull Requests que alteram o currículo ou o próprio gerador, o PDF é gerado e validado, mas não publicado. Após merge na `main`, o workflow publica HTML e PDF juntos, sem criar commits de artefatos binários na branch protegida. Ele também pode ser executado manualmente.
+
+**Configuração necessária:** em **Settings → Pages → Build and deployment → Source**, selecionar **GitHub Actions**. Sem essa configuração, o PDF não será servido automaticamente pelo site. O ambiente `github-pages` deve permitir deploy somente da `main`. Essa opção substitui o deploy anterior direto da branch; por isso, o workflow publica o site estático completo e não apenas o PDF.
+
+O gerador está em [`scripts/generate-resume-pdf.mjs`](scripts/generate-resume-pdf.mjs). O PDF não é mantido como arquivo fonte no Git: seu único conteúdo editável é o HTML/CSS do currículo.
 
 ## Quality gates
 
