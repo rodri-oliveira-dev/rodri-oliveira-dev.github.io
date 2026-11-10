@@ -1,32 +1,41 @@
 [Português (Brasil)](README.md) | **English** | [Español (América Latina)](README.es.md)
 
-# Rodrigo de Oliveira | Personal Website
+<p align="left">
+  <a href="https://rodri-oliveira-dev.github.io/en/">
+    <img src="assets/brand/ro-architect-mark.svg" alt="Rodrigo de Oliveira's RO brand mark" width="64" />
+  </a>
+</p>
 
-**Personal website and professional portfolio of Rodrigo de Oliveira, Software Architect.**
+# Rodrigo de Oliveira
 
-This repository hosts my [personal website](https://rodri-oliveira-dev.github.io/en/). It brings together my professional background, approach to software architecture, and selected work from more than 20 years in software development.
+**Software Architect | Professional Portfolio**
 
-I see architecture as a collaborative practice shaped by business goals, organizational context, and the people who build and maintain systems. The website reflects this approach through my experience, projects, and writing.
+I started my career as a software developer. Over more than 20 years, my work has taken me through integration projects, system modernization, and a wide range of challenges before moving into software architecture.
 
-## What you'll find on the website
+Along the way, I've learned that good solutions are about more than technology. They need to reflect business priorities, the people involved, and what it takes to keep systems useful and maintainable as things change.
 
-- My professional background and career journey.
-- My approach to software architecture.
-- Selected projects, contributions, and case studies.
-- Articles, publications, and ways to get in touch.
+I created this portfolio to share the experiences and lessons that have shaped my career, and to give visitors a sense of how I approach my work.
 
-## Visit the website
+## What you'll find
 
-- [Português (Brasil)](https://rodri-oliveira-dev.github.io/)
-- [English](https://rodri-oliveira-dev.github.io/en/)
-- [Español (América Latina)](https://rodri-oliveira-dev.github.io/es/)
+- **My career journey:** the experiences, responsibilities, and turning points that shaped my path.
+- **Projects and case studies:** real challenges, decisions, and lessons learned.
+- **Articles and writing:** perspectives on software architecture and engineering.
+- **Beyond the code:** some of the interests and experiences that make up who I am.
 
-## Explore my work on GitHub
+## Explore my portfolio
 
-To explore the open-source libraries, tools, and projects I maintain, along with contributions to other developers' projects, visit **[my main GitHub profile](https://github.com/rodri-oliveira-dev)**.
+**[Visit my professional website](https://rodri-oliveira-dev.github.io/en/)** to learn more about my background, work, and writing.
 
-## About this repository
+Available in [Portuguese](https://rodri-oliveira-dev.github.io/), [English](https://rodri-oliveira-dev.github.io/en/), and [Spanish](https://rodri-oliveira-dev.github.io/es/).
 
-This repository exists solely to host my personal website. It is not an open-source project and does not accept external contributions. Its source code, written content, and visual assets are proprietary. See the [license](LICENSE) for full terms.
+---
 
-Maintenance and publishing details are available in the [GitHub Actions documentation](.github/README.md) (in Portuguese).
+If you're looking for my open-source libraries, tools, and contributions, you can also visit my [GitHub profile](https://github.com/rodri-oliveira-dev).
+
+<details>
+<summary>About this repository</summary>
+
+This repository hosts my personal website and does not accept external contributions. The source code, written content, and visual assets are proprietary. See the [license](LICENSE) for terms of use. Technical maintenance and publishing details are available in the [repository documentation](.github/README.md) (in Portuguese).
+
+</details>

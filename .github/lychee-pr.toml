@@ -1,0 +1,6 @@
+# Per-host pacing for GitHub links (Lychee v0.24.2).
+# Accepted HTTP statuses are configured per validation pass in the workflow,
+# because "accept" is a global option, not a host-specific one.
+[hosts."github.com"]
+concurrency = 1
+request_interval = "500ms"

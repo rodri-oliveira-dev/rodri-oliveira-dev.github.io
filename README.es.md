@@ -1,32 +1,41 @@
 [Português (Brasil)](README.md) | [English](README.en.md) | **Español (América Latina)**
 
-# Rodrigo de Oliveira | Sitio web personal
+<p align="left">
+  <a href="https://rodri-oliveira-dev.github.io/es/">
+    <img src="assets/brand/ro-architect-mark.svg" alt="Identidad visual RO de Rodrigo de Oliveira" width="64" />
+  </a>
+</p>
 
-**Sitio web personal y portafolio profesional de Rodrigo de Oliveira, arquitecto de software.**
+# Rodrigo de Oliveira
 
-Este repositorio aloja mi [sitio web personal](https://rodri-oliveira-dev.github.io/es/). Allí comparto mi trayectoria, mi visión de la arquitectura de software y una selección del trabajo que he realizado durante más de 20 años en el desarrollo de software.
+**Arquitecto de software | Portafolio profesional**
 
-Creo que las buenas decisiones de arquitectura deben considerar los objetivos del negocio, el contexto de la organización y a las personas que construyen y mantienen los sistemas. El sitio refleja esta perspectiva a través de mi experiencia, proyectos y publicaciones.
+Comencé mi carrera en el desarrollo de software. A lo largo de más de 20 años, he participado en proyectos de integración, modernización de sistemas y distintos desafíos que me llevaron a dedicarme a la arquitectura de software.
 
-## Qué encontrarás en el sitio
+En ese recorrido aprendí que una buena solución va más allá de la tecnología. También debe tener en cuenta las necesidades del negocio, a las personas involucradas y las condiciones reales para que los sistemas puedan evolucionar.
 
-- Mi trayectoria y experiencia profesional.
-- Mi manera de entender y practicar la arquitectura de software.
-- Proyectos, contribuciones y casos de estudio seleccionados.
-- Artículos, publicaciones y medios de contacto.
+Creé este portafolio para compartir las experiencias y los aprendizajes que han marcado mi trayectoria, y para mostrar mi manera de entender el trabajo que hago.
 
-## Visita el sitio
+## Qué encontrarás
 
-- [Português (Brasil)](https://rodri-oliveira-dev.github.io/)
-- [English](https://rodri-oliveira-dev.github.io/en/)
-- [Español (América Latina)](https://rodri-oliveira-dev.github.io/es/)
+- **Mi trayectoria:** experiencias, responsabilidades y momentos importantes de mi carrera.
+- **Proyectos y casos de estudio:** desafíos reales, decisiones y lecciones aprendidas.
+- **Artículos y publicaciones:** reflexiones sobre arquitectura e ingeniería de software.
+- **Más allá del código:** algunos intereses y experiencias que también forman parte de quien soy.
 
-## Conoce mis proyectos en GitHub
+## Conoce mi portafolio
 
-Para conocer las bibliotecas, herramientas y proyectos de código abierto que mantengo, además de mis contribuciones a la comunidad, visita **[mi perfil principal de GitHub](https://github.com/rodri-oliveira-dev)**.
+**[Visita mi sitio profesional](https://rodri-oliveira-dev.github.io/es/)** para conocer mi trayectoria, mis trabajos y mis publicaciones.
 
-## Sobre este repositorio
+Disponible en [portugués](https://rodri-oliveira-dev.github.io/), [inglés](https://rodri-oliveira-dev.github.io/en/) y [español](https://rodri-oliveira-dev.github.io/es/).
 
-Este repositorio está dedicado exclusivamente a mi sitio web personal. No es un proyecto de código abierto ni acepta contribuciones externas. Su código, contenido y materiales visuales son propietarios. Consulta la [licencia](LICENSE) para conocer los términos completos.
+---
 
-Los detalles de mantenimiento y publicación están disponibles en la [documentación de GitHub Actions](.github/README.md) (en portugués).
+Si quieres explorar mis bibliotecas, herramientas y contribuciones de código abierto, también puedes visitar mi [perfil de GitHub](https://github.com/rodri-oliveira-dev).
+
+<details>
+<summary>Sobre este repositorio</summary>
+
+Este repositorio aloja mi sitio web personal y no acepta contribuciones externas. El código, los textos y los materiales visuales son propietarios. Consulta la [licencia](LICENSE) para conocer los términos de uso. Los detalles técnicos de mantenimiento y publicación están en la [documentación del repositorio](.github/README.md) (en portugués).
+
+</details>
