@@ -17,8 +17,68 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  detect-site-changes:
+    name: Detect site changes
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    outputs:
+      changed: ${{ steps.filter.outputs.changed }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check for site changes
+        id: filter
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          # Manual runs are always allowed; unknown ranges fail open.
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ -z "$BASE_SHA" || "$BASE_SHA" =~ ^0+$ ]] ||
+             ! git cat-file -e "${BASE_SHA}^{commit}" ||
+             ! git cat-file -e "${HEAD_SHA}^{commit}"; then
+            echo "::notice::Unable to resolve comparison refs; running Lighthouse."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            diff_range="${BASE_SHA}...${HEAD_SHA}"
+          else
+            diff_range="${BASE_SHA}..${HEAD_SHA}"
+          fi
+
+          if ! changed_files="$(git diff --no-renames --name-only "$diff_range")"; then
+            echo "::notice::Unable to compute changed files; running Lighthouse."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          while IFS= read -r file; do
+            case "$file" in
+              *.html|assets/*|case-studies/*|curriculo/*|en/*|es/*|pt-br/*|newsletter/*|favicon.svg|site.webmanifest|robots.txt|sitemap.xml|.nojekyll|CNAME|lighthouserc.cjs|.github/scripts/summarize-lighthouse.mjs|.github/workflows/lighthouse.yml)
+                echo "::notice::Lighthouse input changed: $file"
+                echo "changed=true" >> "$GITHUB_OUTPUT"
+                exit 0
+                ;;
+            esac
+          done <<< "$changed_files"
+
+          echo "No website changes found; skipping Lighthouse."
+          echo "changed=false" >> "$GITHUB_OUTPUT"
+
   lighthouse:
     name: Lighthouse quality
+    needs: detect-site-changes
+    if: ${{ needs.detect-site-changes.outputs.changed == 'true' }}
     runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 15
 
