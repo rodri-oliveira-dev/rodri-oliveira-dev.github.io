@@ -54,7 +54,9 @@ jobs:
           mapfile -t case_studies < <(find case-studies en/case-studies es/case-studies -mindepth 2 -maxdepth 2 -name index.html -print | sort)
           npx --no-install html-validate "${pages[@]}" "${case_studies[@]}"
 
-      - name: Validate links
+      # Keep the general link gate strict; GitHub file links are handled
+      # separately because GitHub may return intermittent 503s to CI crawlers.
+      - name: Validate links (excluding GitHub)
         uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2
         with:
           args: >-
@@ -67,10 +69,43 @@ jobs:
             --retry-wait-time 2
             --max-concurrency 12
             --host-concurrency 2
-            --exclude 'https://(www\.)?linkedin\.com/'
-            --exclude 'https://medium\.com/'
-            --exclude '^https://rodri-oliveira-dev\.github\.io/es/?$'
-            --exclude '^https://rodri-oliveira-dev\.github\.io/(?:(?:en|es)/)?case-studies/[^/]+/?$'
+            --exclude '^https://github\\.com/'
+            --exclude 'https://(www\\.)?linkedin\\.com/'
+            --exclude 'https://medium\\.com/'
+            --exclude '^https://rodri-oliveira-dev\\.github\\.io/es/?$'
+            --exclude '^https://rodri-oliveira-dev\\.github\\.io/(?:(?:en|es)/)?case-studies/[^/]+/?$'
+            './index.html'
+            './en/index.html'
+            './pt-br/index.html'
+            './case-studies/**/*.html'
+            './en/case-studies/**/*.html'
+            './es/**/*.html'
+            './README.md'
+            './README.en.md'
+            './README.es.md'
+          fail: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Lychee's --include overrides --exclude. Only GitHub URLs are
+      # reconsidered here; 404/410 still fail, while GitHub 503 is tolerated.
+      # Scheduled External link health continues to report all 503s strictly.
+      - name: Validate GitHub links (tolerate 503)
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2
+        with:
+          args: >-
+            --config .github/lychee-pr.toml
+            --root-dir "$(pwd)"
+            --verbose
+            --no-progress
+            --timeout 30
+            --max-retries 3
+            --retry-wait-time 2
+            --max-concurrency 3
+            --host-concurrency 1
+            --accept '200..=299,503'
+            --exclude '^https?://'
+            --include '^https://github\\.com/'
             './index.html'
             './en/index.html'
             './pt-br/index.html'
