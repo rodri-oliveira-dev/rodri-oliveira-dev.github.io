@@ -7,6 +7,13 @@
     <atom:link href="https://rodri-oliveira-dev.github.io/newsletter/feed.xml" rel="self" type="application/rss+xml" />
     <language>pt-BR</language>
     <item>
+      <title>.NET 11 e C# 15: o que realmente muda para quem desenvolve aplicações?</title>
+      <link>https://www.linkedin.com/pulse/net-11-e-c-15-o-que-realmente-muda-para-quem-rodrigo-de-oliveira-zngff/</link>
+      <guid isPermaLink="true">https://www.linkedin.com/pulse/net-11-e-c-15-o-que-realmente-muda-para-quem-rodrigo-de-oliveira-zngff/</guid>
+      <pubDate>Tue, 10 Nov 2026 00:00:00 GMT</pubDate>
+      <description>A cada nova versão do .NET, temos uma quantidade considerável de novidades: melhorias de desempenho, recursos na linguagem, novas APIs e mudanças no comportamento de funcionalidades existentes.</description>
+    </item>
+    <item>
       <title>Modelo C4: como comunicar arquiteturas complexas com clareza</title>
       <link>https://www.linkedin.com/pulse/modelo-c4-como-comunicar-arquiteturas-complexas-com-de-oliveira-drbkf/</link>
       <guid isPermaLink="true">https://www.linkedin.com/pulse/modelo-c4-como-comunicar-arquiteturas-complexas-com-de-oliveira-drbkf/</guid>
@@ -82,13 +89,6 @@
       <guid isPermaLink="true">https://www.linkedin.com/pulse/primitive-obsession-e-modelo-an%C3%AAmico-quando-o-dom%C3%ADnio-de-oliveira-pdyxf</guid>
       <pubDate>Mon, 31 Aug 2026 00:00:00 GMT</pubDate>
       <description>Este é o sétimo artigo da série sobre Domain-Driven Design. No texto anterior, estudamos Entities e Value Objects e vimos como identidade, igualdade e comportamento influenciam a modelagem.</description>
-    </item>
-    <item>
-      <title>Entities e Value Objects: identidade, igualdade e comportamento no modelo de domínio</title>
-      <link>https://pt.linkedin.com/pulse/entities-e-value-objects-identidade-igualdade-modelo-de-de-oliveira-hy4gf</link>
-      <guid isPermaLink="true">https://pt.linkedin.com/pulse/entities-e-value-objects-identidade-igualdade-modelo-de-de-oliveira-hy4gf</guid>
-      <pubDate>Mon, 17 Aug 2026 00:00:00 GMT</pubDate>
-      <description>Este é o sexto artigo da série sobre Domain-Driven Design. No texto anterior, estudamos Context Map e como Bounded Contexts podem se relacionar sem destruir a independência de seus modelos.</description>
     </item>
   </channel>
 </rss>

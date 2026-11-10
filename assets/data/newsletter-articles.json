@@ -1,5 +1,18 @@
 [
   {
+    "url": "https://www.linkedin.com/pulse/net-11-e-c-15-o-que-realmente-muda-para-quem-rodrigo-de-oliveira-zngff/",
+    "finalUrl": "https://www.linkedin.com/pulse/net-11-e-c-15-o-que-realmente-muda-para-quem-rodrigo-de-oliveira-zngff/",
+    "title": ".NET 11 e C# 15: o que realmente muda para quem desenvolve aplicações?",
+    "description": "A cada nova versão do .NET, temos uma quantidade considerável de novidades: melhorias de desempenho, recursos na linguagem, novas APIs e mudanças no comportamento de funcionalidades existentes.",
+    "publishedAt": "2026-11-10",
+    "metadataSource": {
+      "title": "og:title",
+      "description": "og:description",
+      "publishedAt": "JSON-LD datePublished"
+    },
+    "addedAt": "2026-11-10T13:51:22+00:00"
+  },
+  {
     "url": "https://www.linkedin.com/pulse/modelo-c4-como-comunicar-arquiteturas-complexas-com-de-oliveira-drbkf/",
     "finalUrl": "https://www.linkedin.com/pulse/modelo-c4-como-comunicar-arquiteturas-complexas-com-de-oliveira-drbkf/",
     "title": "Modelo C4: como comunicar arquiteturas complexas com clareza",
@@ -141,18 +154,5 @@
       "publishedAt": "JSON-LD datePublished"
     },
     "addedAt": "2026-08-31T12:33:50+00:00"
-  },
-  {
-    "url": "https://pt.linkedin.com/pulse/entities-e-value-objects-identidade-igualdade-modelo-de-de-oliveira-hy4gf",
-    "finalUrl": "https://pt.linkedin.com/pulse/entities-e-value-objects-identidade-igualdade-modelo-de-de-oliveira-hy4gf",
-    "title": "Entities e Value Objects: identidade, igualdade e comportamento no modelo de domínio",
-    "description": "Este é o sexto artigo da série sobre Domain-Driven Design. No texto anterior, estudamos Context Map e como Bounded Contexts podem se relacionar sem destruir a independência de seus modelos.",
-    "publishedAt": "2026-08-17",
-    "metadataSource": {
-      "title": "og:title",
-      "description": "og:description",
-      "publishedAt": "JSON-LD datePublished"
-    },
-    "addedAt": "2026-08-30T23:57:40+00:00"
   }
 ]
