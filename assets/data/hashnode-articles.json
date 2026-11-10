@@ -1,5 +1,15 @@
 [
   {
+    "url": "https://rodri-oliveira-dev.hashnode.dev/net-11-y-c-15-qu-cambia-realmente-para-quienes-desarrollamos-software",
+    "title": "# .NET 11 y C# 15: ¿qué cambia realmente para quienes desarrollamos software?",
+    "description": "Conoce las novedades de .NET 11 y C# 15: Union Types, Runtime Async, ASP.NET Core, EF Core 11 y los riesgos que debes evaluar antes de migrar.",
+    "publishedAt": "2026-11-10T13:57:44Z",
+    "tags": [
+      "dotnet",
+      "ASP.NET"
+    ]
+  },
+  {
     "url": "https://rodri-oliveira-dev.hashnode.dev/el-modelo-c4-c-mo-comunicar-con-claridad-arquitecturas-de-software-complejas",
     "title": "El modelo C4: cómo comunicar con claridad arquitecturas de software complejas",
     "description": "Descubre los cuatro niveles del modelo C4: contexto, contenedores, componentes y código. Aprende a comunicar arquitecturas de software de forma clara.",
