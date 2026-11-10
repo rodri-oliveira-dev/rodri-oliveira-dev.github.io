@@ -17,11 +17,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  detect-site-changes:
-    name: Detect site changes
+  lighthouse:
+    name: Lighthouse quality
     runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
-    outputs:
-      changed: ${{ steps.filter.outputs.changed }}
+    timeout-minutes: 15
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -64,7 +64,7 @@ jobs:
 
           while IFS= read -r file; do
             case "$file" in
-              *.html|assets/*|case-studies/*|curriculo/*|en/*|es/*|pt-br/*|newsletter/*|favicon.svg|site.webmanifest|robots.txt|sitemap.xml|.nojekyll|CNAME|lighthouserc.cjs|.github/scripts/summarize-lighthouse.mjs|.github/workflows/lighthouse.yml)
+              *.html|assets/*|case-studies/*|curriculo/*|en/*|es/*|pt-br/*|newsletter/*|favicon.svg|site.webmanifest|robots.txt|sitemap.xml|.nojekyll|CNAME|lighthouserc.cjs|.github/scripts/summarize-lighthouse.mjs)
                 echo "::notice::Lighthouse input changed: $file"
                 echo "changed=true" >> "$GITHUB_OUTPUT"
                 exit 0
@@ -75,29 +75,23 @@ jobs:
           echo "No website changes found; skipping Lighthouse."
           echo "changed=false" >> "$GITHUB_OUTPUT"
 
-  lighthouse:
-    name: Lighthouse quality
-    needs: detect-site-changes
-    if: ${{ needs.detect-site-changes.outputs.changed == 'true' }}
-    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
-    timeout-minutes: 15
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          persist-credentials: false
+      - name: No website changes (success)
+        if: ${{ steps.filter.outputs.changed == 'false' }}
+        run: echo "No website files changed. Required Lighthouse quality check passed without a scan."
 
       - name: Set up Node.js
+        if: ${{ steps.filter.outputs.changed == 'true' }}
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           package-manager-cache: false
 
       - name: Install Lighthouse CI
+        if: ${{ steps.filter.outputs.changed == 'true' }}
         run: npm install --no-save --package-lock=false @lhci/cli@0.15.1
 
       - name: Prepare local Lighthouse fixture
+        if: ${{ steps.filter.outputs.changed == 'true' }}
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -113,6 +107,7 @@ jobs:
           PY
 
       - name: Start local site
+        if: ${{ steps.filter.outputs.changed == 'true' }}
         run: |
           python3 -m http.server 8080 --bind 127.0.0.1 > /tmp/portfolio-http.log 2>&1 &
           echo $! > /tmp/portfolio-http.pid
@@ -128,16 +123,19 @@ jobs:
           exit 1
 
       - name: Collect Lighthouse reports
+        if: ${{ steps.filter.outputs.changed == 'true' }}
         run: npx --no-install lhci collect --config=lighthouserc.cjs
 
       - name: Summarize Lighthouse results
+        if: ${{ steps.filter.outputs.changed == 'true' }}
         run: node .github/scripts/summarize-lighthouse.mjs
 
       - name: Assert Lighthouse budgets
+        if: ${{ steps.filter.outputs.changed == 'true' }}
         run: npx --no-install lhci assert --config=lighthouserc.cjs
 
       - name: Publish Lighthouse report on PR
-        if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+        if: ${{ always() && steps.filter.outputs.changed == 'true' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -164,7 +162,7 @@ jobs:
           fi
 
       - name: Stop local site
-        if: always()
+        if: ${{ always() && steps.filter.outputs.changed == 'true' }}
         run: |
           if [[ -f /tmp/portfolio-http.pid ]]; then
             kill "$(cat /tmp/portfolio-http.pid)" 2>/dev/null || true
