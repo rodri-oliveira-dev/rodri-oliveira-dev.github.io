@@ -1,5 +1,16 @@
 [
   {
+    "url": "https://dev.to/rodri-oliveira-dev/net-11-and-c-15-what-really-changes-for-developers-291m",
+    "title": ".NET 11 and C# 15: What Really Changes for Developers?",
+    "description": "Every new .NET release brings a substantial number of improvements: performance optimizations, language features, new APIs, and changes to existing behavior. The challenge isn't keeping up with every announcement. It's understanding which changes actually make a difference when developing and maintaining applications.…",
+    "publishedAt": "2026-11-10T13:48:08Z",
+    "tags": [
+      "dotnet",
+      "csharp",
+      "aspnet"
+    ]
+  },
+  {
     "url": "https://dev.to/rodri-oliveira-dev/the-c4-model-how-to-communicate-complex-software-architectures-clearly-1lda",
     "title": "The C4 Model: How to Communicate Complex Software Architectures Clearly",
     "description": "If you've worked with software architecture, you've probably experienced something interesting: after weeks of discussing technical decisions, integrations, and responsibilities, it's finally time to present the solution, and someone asks a seemingly simple question: \"But how does all of this work together?\" It's a fa…",
