@@ -1,33 +1,41 @@
 **Português (Brasil)** | [English](README.en.md) | [Español (América Latina)](README.es.md)
 
-# Rodrigo de Oliveira | Site pessoal
+<p align="left">
+  <a href="https://rodri-oliveira-dev.github.io/">
+    <img src="assets/brand/ro-architect-mark.svg" alt="Identidade visual RO, de Rodrigo de Oliveira" width="64" />
+  </a>
+</p>
 
-**Site pessoal e portfólio profissional de Rodrigo de Oliveira, Arquiteto de Software.**
+# Rodrigo de Oliveira
 
-Este repositório hospeda meu [site pessoal](https://rodri-oliveira-dev.github.io/), onde reúno minha trajetória profissional, minha visão sobre arquitetura de software e uma seleção do trabalho que desenvolvo ao longo de mais de 20 anos na área de tecnologia.
+**Arquiteto de Software | Portfólio profissional**
 
-Acredito que boas decisões de arquitetura consideram os objetivos do negócio, o contexto da organização e as pessoas que vão construir e manter as soluções. O site apresenta essa perspectiva por meio de experiências, projetos e publicações.
+Minha trajetória começou no desenvolvimento de software. Ao longo de mais de 20 anos, passei por projetos de integração, modernização de sistemas e diferentes desafios até chegar à arquitetura de software.
 
-## O que você encontra no site
+Nesse caminho, aprendi que uma boa solução não depende apenas de tecnologia. Ela precisa considerar o contexto do negócio, as pessoas envolvidas e as condições reais para evoluir e continuar fazendo sentido com o tempo.
 
-- Minha trajetória e experiência profissional.
-- Minha forma de pensar e praticar arquitetura de software.
-- Projetos, contribuições e estudos de caso selecionados.
-- Artigos, publicações e formas de entrar em contato.
+Criei este portfólio para reunir experiências e aprendizados que ajudam a contar essa história, além de mostrar como penso e atuo profissionalmente.
 
-## Visite o site
+## O que você vai encontrar
 
-- [Português (Brasil)](https://rodri-oliveira-dev.github.io/)
-- [English](https://rodri-oliveira-dev.github.io/en/)
-- [Español (América Latina)](https://rodri-oliveira-dev.github.io/es/)
+- **Minha trajetória:** experiências, responsabilidades e momentos que marcaram minha carreira.
+- **Projetos e estudos de caso:** trabalhos que mostram desafios, escolhas e aprendizados na prática.
+- **Artigos e publicações:** reflexões sobre arquitetura e engenharia de software.
+- **Além do código:** um pouco dos interesses e experiências que também fazem parte de quem sou.
 
-## Conheça meus projetos no GitHub
+## Conheça meu portfólio
 
-Para explorar as bibliotecas, ferramentas e iniciativas open source que mantenho, além de minhas contribuições para a comunidade, acesse meu **[perfil principal no GitHub](https://github.com/rodri-oliveira-dev)**.
+**[Visite meu site profissional](https://rodri-oliveira-dev.github.io/)** para explorar minha trajetória, meus trabalhos e minhas publicações.
 
-## Sobre este repositório
+Disponível em [português](https://rodri-oliveira-dev.github.io/), [inglês](https://rodri-oliveira-dev.github.io/en/) e [espanhol](https://rodri-oliveira-dev.github.io/es/).
 
-Este repositório é dedicado exclusivamente ao meu site pessoal. Ele não é um projeto open source e não recebe contribuições externas. O código, os textos e os materiais visuais são proprietários. Consulte a [licença](LICENSE) para os termos completos.
+---
 
-Os detalhes de manutenção e publicação do site estão documentados em [Automação e GitHub Actions](.github/README.md).
+Para conhecer minhas bibliotecas, ferramentas e contribuições open source, visite também meu [perfil no GitHub](https://github.com/rodri-oliveira-dev).
 
+<details>
+<summary>Sobre este repositório</summary>
+
+Este repositório mantém meu site pessoal e não recebe contribuições externas. O código, os textos e os materiais visuais são proprietários. Consulte a [licença](LICENSE) para os termos de uso. Os detalhes técnicos de manutenção e publicação estão na [documentação do repositório](.github/README.md).
+
+</details>
