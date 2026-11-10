@@ -1,0 +1,8 @@
+# GitHub can intermittently return 503 to automated link checkers, even for
+# existing public files. Limit this exception to github.com in PR validation.
+# 404/410 and all other failures still fail the gate. The scheduled external
+# link health workflow retains strict checks and reports upstream outages.
+[hosts."github.com"]
+concurrency = 1
+request_interval = "500ms"
+accept = ["200..=299", "503"]
