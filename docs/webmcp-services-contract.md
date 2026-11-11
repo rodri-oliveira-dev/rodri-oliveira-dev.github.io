@@ -1,6 +1,6 @@
 # Contrato WebMCP de serviços (v1)
 
-> **Status:** etapas 1–4 concluídas. As quatro ferramentas são registradas nas três páginas de serviços, além das seis ferramentas gerais. **Testes de contrato e consistência no CI permanecem previstos para a etapa 5; validação final para a etapa 6.**
+> **Status:** etapas 1–5 implementadas. As quatro ferramentas são registradas nas três páginas de serviços, além das seis ferramentas gerais, e contam com testes automatizados no gate `Site validation`. A etapa 6 é reservada à revisão final, documentação operacional e smoke test manual em navegador compatível.
 
 Contrato legível por máquina: [`contracts/webmcp-services.v1.json`](contracts/webmcp-services.v1.json).
 
@@ -68,7 +68,7 @@ A implementação pura e independente do DOM está em [`assets/js/webmcp-service
 
 Todas retornam `contractVersion` e `language`; sucessos incluem `sourceUrl` do idioma solicitado. Rejeições de estrutura, chaves extras e IDs malformados retornam `INVALID_INPUT`; idioma explicitamente não suportado retorna `UNSUPPORTED_LANGUAGE` no idioma da página. O schema é estrito e a validação é repetida no handler para casos em que o navegador não a aplique.
 
-As definições usam os `inputSchema`/`outputSchema` e textos de descoberta do contrato v1, sem requisições externas, efeitos colaterais ou novas dependências. A etapa 4 registra essas definições em `webmcp.js` **exclusivamente nas três páginas de serviços**. Os testes de integração e igualdade automática de HTML/dados serão ampliados na etapa 5. O contrato JSON está no estado `integrated-validation-pending` até a validação completa.
+As definições usam os `inputSchema`/`outputSchema` e textos de descoberta do contrato v1, sem requisições externas, efeitos colaterais ou novas dependências. A etapa 4 registra essas definições em `webmcp.js` **exclusivamente nas três páginas de serviços**. Os testes de integração e igualdade automática de HTML/dados serão ampliados na etapa 5. O contrato JSON está no estado `implemented-tested`, com verificações automatizadas versionadas no repositório.
 
 ## Registro condicional nas páginas de serviços (etapa 4)
 
@@ -82,6 +82,29 @@ A entrada [`assets/js/webmcp.js`](../assets/js/webmcp.js) mantém o registro das
 - **Publicação:** `.github/workflows/deploy-pages.yml` verifica os módulos adicionais no artefato e passa a executar também para alterações nos arquivos WebMCP de serviços.
 
 O registro usa a API imperativa local ao navegador, sem rede, formulários ou ações de escrita. Não há alterações na estrutura visual das três páginas. Seus `lastmod` no sitemap já estão datados de `2026-11-11`, a data desta integração.
+
+## Testes automatizados e gate de CI (etapa 5)
+
+A suíte [`.github/scripts/test-webmcp-services.mjs`](../.github/scripts/test-webmcp-services.mjs) roda no gate obrigatório `Site validation`, juntamente com os testes preexistentes do WebMCP e das páginas de serviços:
+
+```bash
+node --test .github/scripts/test-webmcp-services.mjs
+node --test .github/scripts/test-webmcp.mjs
+node .github/scripts/test-services.cjs
+```
+
+A nova suíte verifica:
+
+1. **Contrato versionado:** quatro nomes exclusivos, schemas de entrada/saída, anotações read-only, IDs estáveis, textos de descoberta nos três idiomas e fidelidade das definições à especificação JSON.
+2. **Saídas válidas:** respostas para os quatro serviços e a abordagem em todos os idiomas, com alternância de idioma por chamada. Um validador da parcela de JSON Schema utilizada pelo contrato confere `oneOf`, objetos fechados, `required`, `enum`, `const`, limites, padrões e formatos.
+3. **Erros:** entradas malformadas, propriedades extras, idiomas não suportados, IDs inválidos e `SERVICE_NOT_FOUND`, com mensagens localizadas e conformidade aos schemas de erro.
+4. **Integridade:** resultados de chamadas não modificam o catálogo congelado.
+5. **Consistência editorial:** os quatro cartões, a introdução, as três etapas de abordagem, as orientações de contato, os links e a nota de escopo coincidem com o HTML PT-BR/EN/ES-419.
+6. **Isolamento de rotas:** apenas as páginas de serviços (inclusive URLs diretas com `index.html`) habilitam as quatro ferramentas adicionais.
+7. **Registro e ciclo de vida:** simulação com processos Node.js independentes por rota, cobrindo 10 ferramentas nos serviços, 6 nas demais páginas, nenhum registro em navegadores sem a API ou em contextos inseguros, e restauração única após bfcache.
+8. **Segurança e publicação:** proteção CSP, ausência de requisições externas e verificações dos módulos obrigatórios no artefato do Pages.
+
+Esses testes usam `node:test` e ferramentas da biblioteca padrão do Node.js, sem servidor e sem dependências novas. Cobrem a lógica local e os contratos, mas não comprovam interoperabilidade em um navegador WebMCP real. Essa confirmação permanece como smoke test manual na etapa 6.
 
 ## Schemas e contrato de erros
 
@@ -141,10 +164,10 @@ Este envelope serve apenas como exemplo de invocação por um agente; não faz p
 - **PATCH:** correções editoriais sem mudança de semântica ou estrutura.
 - **MINOR:** campos opcionais novos ou extensões compatíveis para consumidores existentes.
 - **MAJOR:** remoção ou renomeação de ferramentas, campos, IDs, alterações de obrigatoriedade, semântica ou tipo. Exige atualização explícita dos consumidores/testes e revisão da estratégia de migração.
-- O arquivo JSON é a especificação verificável; este documento descreve a semântica. O código foi integrado na etapa 4, e os testes automatizados específicos serão aprofundados na etapa 5.
+- O arquivo JSON é a especificação verificável; este documento descreve a semântica. O código foi integrado na etapa 4, com testes automatizados contratados ao CI na etapa 5.
 
 Critérios para considerar o contrato implementado: quatro ferramentas disponíveis nas três páginas, saída coerente em PT-BR/EN/ES-419, `outputSchema` compatível com cada resposta, IDs constantes, tratamento de erros, ausência de efeitos colaterais e testes automatizados de igualdade entre HTML e dados expostos. O smoke test em navegador compatível complementa o CI; mocks não comprovam disponibilidade real.
 
-**Estado após a etapa 4:** ferramentas registradas condicionalmente nas páginas de serviços, implementação e catálogo versionados e publicação dos módulos assegurada. A etapa 5 cobrirá testes automáticos adicionais dos contratos, rotas, erros, ciclo de vida e sincronização com HTML. O sitemap já registra a data de atualização corrente para as três rotas.
+**Estado após a etapa 5:** integração WebMCP de serviços coberta por testes automatizados no CI para contratos, rotas, traduções, erros, ciclo de vida e sincronização com HTML. A etapa 6 consolidará a documentação e fará a verificação final. O sitemap já registra `2026-11-11` para as três rotas.
 
 Referências: [Guia WebMCP do projeto](webmcp.pt-BR.md), [API imperativa do Chrome](https://developer.chrome.com/docs/ai/webmcp/imperative-api), [especificação comunitária WebMCP](https://webmachinelearning.github.io/webmcp/).
