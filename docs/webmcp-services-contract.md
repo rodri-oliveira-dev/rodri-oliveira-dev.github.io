@@ -1,6 +1,6 @@
 # Contrato WebMCP de serviços (v1)
 
-> **Status:** etapas 1–5 implementadas. As quatro ferramentas são registradas nas três páginas de serviços, além das seis ferramentas gerais, e contam com testes automatizados no gate `Site validation`. A etapa 6 é reservada à revisão final, documentação operacional e smoke test manual em navegador compatível.
+> **Status:** etapas 1–6 implementadas e documentação consolidada em PT-BR, EN e ES-419. Os contratos e a integração são verificados pelo CI. **O smoke test com API WebMCP nativa continua uma verificação manual dependente de navegador compatível; não foi validado pelos mocks.**
 
 Contrato legível por máquina: [`contracts/webmcp-services.v1.json`](contracts/webmcp-services.v1.json).
 
@@ -156,7 +156,7 @@ Este envelope serve apenas como exemplo de invocação por um agente; não faz p
 3. Não obter dados privados, credenciais, parâmetros arbitrários de URLs ou conteúdo de outros sites. Restringir links à página pública e canais de contato já publicados.
 4. Respeitar o mesmo suporte opcional existente: contexto seguro, `document.modelContext.registerTool` disponível e cancelamento em `pagehide`, com restauração controlada após bfcache.
 5. Preservar os seis contratos existentes (`getProfile`, `getSkills`, `searchProjects`, `getProjectDetails`, `getResume`, `getContactInfo`). Não registrar nomes duplicados.
-6. Dados e mensagens nos três idiomas devem refletir suas páginas HTML. Alterações editoriais no site exigirão sincronização dos dados de serviços e testes de *drift* na etapa 5.
+6. Dados e mensagens nos três idiomas devem refletir suas páginas HTML. Alterações editoriais exigem sincronização dos dados de serviços; o teste de *drift* está implementado no gate `Site validation`.
 
 ## Versionamento e critérios de aceite
 
@@ -168,6 +168,21 @@ Este envelope serve apenas como exemplo de invocação por um agente; não faz p
 
 Critérios para considerar o contrato implementado: quatro ferramentas disponíveis nas três páginas, saída coerente em PT-BR/EN/ES-419, `outputSchema` compatível com cada resposta, IDs constantes, tratamento de erros, ausência de efeitos colaterais e testes automatizados de igualdade entre HTML e dados expostos. O smoke test em navegador compatível complementa o CI; mocks não comprovam disponibilidade real.
 
-**Estado após a etapa 5:** integração WebMCP de serviços coberta por testes automatizados no CI para contratos, rotas, traduções, erros, ciclo de vida e sincronização com HTML. A etapa 6 consolidará a documentação e fará a verificação final. O sitemap já registra `2026-11-11` para as três rotas.
+## Revisão final e critérios de publicação (etapa 6)
+
+A implementação foi revisada com os seguintes pontos de aceitação:
+
+- **Contrato:** quatro ferramentas somente leitura, com IDs e JSON Schema v1.0.0 estáveis; erros localizados e suporte a `pt-BR`, `en` e `es-419`.
+- **Isolamento:** até 10 ferramentas nas páginas de serviços e apenas as 6 gerais nas demais rotas, sem exposição adicional em contextos inseguros ou navegadores sem a API.
+- **Ciclo de vida:** registro opcional, importação sob demanda, cancelamento em `pagehide`, restauração em `pageshow.persisted` e tratamento independente de falha de registro.
+- **Conteúdo:** catálogo alinhado aos quatro serviços, três etapas de abordagem e canais públicos de contato das três páginas, sem criar preços, garantias ou interações de escrita.
+- **Manutenção:** testes automatizados do contrato e da documentação trilíngue executados no `Site validation`; módulos incluídos no artefato GitHub Pages.
+- **SEO:** as três rotas de serviços já possuem `lastmod` de `2026-11-11` no sitemap; alterações apenas nestes documentos técnicos não exigem nova data para as páginas HTML.
+- **Compatibilidade real:** um teste manual em Chrome WebMCP compatível ainda é recomendável antes de depender operacionalmente das ferramentas. O CI usa simulações e **não confirma a API nativa em um navegador real**.
+
+Guias de operação e smoke test: [português](webmcp.pt-BR.md), [inglês](webmcp.en.md) e [espanhol](webmcp.es-419.md).
+
+O contrato e a documentação não substituem uma proposta comercial, nem indicam disponibilidade automática para atender novos projetos. Não há necessidade de criar serviços de backend, tokens, formulários ou autorizações de terceiros para estas ferramentas de consulta.
+
 
 Referências: [Guia WebMCP do projeto](webmcp.pt-BR.md), [API imperativa do Chrome](https://developer.chrome.com/docs/ai/webmcp/imperative-api), [especificação comunitária WebMCP](https://webmachinelearning.github.io/webmcp/).
