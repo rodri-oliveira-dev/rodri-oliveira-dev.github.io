@@ -122,7 +122,7 @@ function cards(sectionHtml, className) {
 test("versioned contract, catalogs and tool definitions are consistent", () => {
   assert.equal(contract.contractId, "portfolio-services-webmcp");
   assert.equal(contract.contractVersion, SERVICES_CONTRACT_VERSION);
-  assert.equal(contract.status, "integrated-validation-pending");
+  assert.equal(contract.status, "implemented-tested");
   assert.deepEqual(contract.supportedLanguages, [...SERVICES_SUPPORTED_LANGUAGES]);
   assert.deepEqual(contract.pageUrls, SERVICES_PAGE_URLS);
   assert.deepEqual(contract.serviceIds, [...SERVICES_SERVICE_IDS]);
