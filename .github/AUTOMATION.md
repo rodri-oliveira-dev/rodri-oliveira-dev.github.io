@@ -16,6 +16,23 @@ A integração com agentes de navegador é feita por módulos JavaScript locais,
 
 As três versões (português, inglês e espanhol latino-americano) registram ferramentas WebMCP em navegadores compatíveis. A ativação em navegador de teste e a diferença entre CI com mocks e teste real estão descritas nos guias.
 
+## Página de serviços em português, inglês e espanhol
+
+As páginas `/servicos/`, `/en/services/` e `/es/servicios/` utilizam o mesmo CSS `assets/css/servicos.css` e apresentam quatro frentes de atuação, a abordagem de trabalho, três experiências independentes anteriores e quatro estudos de caso públicos por idioma. As experiências históricas não representam contratos vigentes, endossos das empresas ou resultados atribuídos aos estudos de caso open source.
+
+O conteúdo segue o modelo estático do site, sem formulário ou backend. Cada página possui canonical própria, `hreflang` recíproco (`pt-BR`, `en`, `es`, `x-default`), metadados sociais e JSON-LD `WebPage`/`Service`/`BreadcrumbList` vinculados aos identificadores estáveis de `Person` e `WebSite`. O gerador `.github/scripts/sync-seo.py` deriva as quatro categorias de serviço diretamente dos títulos visíveis e atualiza o sitemap com as três rotas, sem inventar preços, avaliações ou ofertas.
+
+### Quality gates específicos
+
+- `node .github/scripts/test-services.cjs`: verifica conteúdo, hierarquia e landmarks, links de idioma, projetos independentes, estudos de caso, URLs locais, canonical/hreflang, JSON-LD, sitemap e cobertura dos workflows.
+- `Site validation`: executa o teste dedicado, `html-validate`, Lychee e CSpell nas três páginas.
+- `Accessibility`: executa Pa11y (WCAG 2 AA) e verifica layout responsivo em 320, 360, 390, 768, 1024 e 1440 px, além de menu mobile por teclado, âncoras e navegação para outras rotas.
+- `Lighthouse CI`: mede também as três páginas de serviços, com os mesmos budgets das demais páginas: desempenho ≥ 80% (aviso), acessibilidade 100% (bloqueante), boas práticas ≥ 95% (bloqueante) e SEO ≥ 95% (bloqueante).
+- `Publish site with resume PDF`: testa a presença dos HTMLs PT/EN/ES e de `assets/css/servicos.css` no artefato de GitHub Pages.
+- `SEO validation`: verifica a sincronização determinística e o vínculo do schema com conteúdo realmente publicado.
+
+Para manutenção, edite as três traduções no mesmo PR e execute `python3 .github/scripts/sync-seo.py` após alterações nos títulos, descrições ou categorias de serviço. Revise o diff gerado de HTML e sitemap antes do commit. Alterações em navegação devem manter o acesso `Serviços / Services / Servicios` nas três homepages e testar que o menu móvel segue os links corretamente.
+
 ## Visão geral
 
 | Workflow | Arquivo | Execução | Objetivo |
@@ -56,7 +73,7 @@ O [`site-validation.yml`](workflows/site-validation.yml) é o gate estrutural pr
 Ele executa:
 
 - teste de integridade i18n nas três homepages e nos cinco estudos de caso por idioma, incluindo idioma ativo, links equivalentes, canonical, hreflang, metadados, JSON-LD e recursos locais;
-- `html-validate` nas três homepages, no redirecionamento legado e em todos os estudos de caso PT/EN/ES;
+- `html-validate` nas três homepages, nas três páginas de serviços, no redirecionamento legado e em todos os estudos de caso PT/EN/ES;
 - Lychee nos HTMLs e no `README.md` para detectar links inválidos;
 - CSpell estrito para ortografia em português, inglês, espanhol e vocabulário técnico conhecido;
 - `actionlint` para validar a sintaxe e a estrutura dos workflows do GitHub Actions.
@@ -75,7 +92,7 @@ Ele verifica que:
 - as três homepages e todos os estudos possuem canonical própria e alternates recíprocos `pt-BR`, `en`, `es` e `x-default`;
 - o JSON-LD estruturado permanece válido e consistente;
 - os estudos de caso reutilizam os `@id` canônicos de `Person` e `WebSite`, identificam a página principal e mantêm uma identidade estável para o repositório descrito como `SoftwareSourceCode`;
-- `sitemap.xml` contém exatamente as 19 URLs indexáveis, sem duplicação, e possui `lastmod` para todas elas;
+- `sitemap.xml` contém exatamente as 22 URLs indexáveis (incluindo três serviços), sem duplicação, e possui `lastmod` para todas elas;
 - os cinco slugs de estudos de caso existem nos três idiomas;
 - a geração de `lastmod` preserva datas versionadas para páginas sem alteração, sem depender do dia em que o runner executa;
 - executar [`scripts/sync-seo.py`](scripts/sync-seo.py) não produz diferenças não commitadas.
@@ -84,7 +101,7 @@ Esse último ponto funciona como um gate de drift: se catálogo, homepage, dados
 
 ### Accessibility
 
-O [`accessibility.yml`](workflows/accessibility.yml) sobe o site em um servidor HTTP local e executa Pa11y CI contra as três homepages e todos os estudos de caso em português, inglês e espanhol, além do currículo em português.
+O [`accessibility.yml`](workflows/accessibility.yml) sobe o site em um servidor HTTP local e executa Pa11y CI contra as três homepages e todos os estudos de caso em português, inglês e espanhol, além do currículo em português e das três páginas de serviços.
 
 A configuração usa WCAG 2 AA como baseline e threshold zero para os problemas considerados pelo gate. O objetivo é detectar regressões de semântica, ARIA, estrutura e outras regras automatizáveis de acessibilidade antes do merge.
 
@@ -119,7 +136,7 @@ O relatório estruturado é produzido por [`scripts/summarize-zizmor.mjs`](scrip
 
 ### Lighthouse CI
 
-O [`lighthouse.yml`](workflows/lighthouse.yml) sobe o site localmente e executa Lighthouse CI contra `/`, `/en/`, `/es/` e todos os estudos de caso trilíngues descobertos, além de `/curriculo/`.
+O [`lighthouse.yml`](workflows/lighthouse.yml) sobe o site localmente e executa Lighthouse CI contra `/`, `/en/`, `/es/` e todos os estudos de caso trilíngues descobertos, além de `/curriculo/` e das três páginas de serviços.
 
 Cada página é medida três vezes para reduzir variação do runner. Os valores usados para os gates são agregados pela mediana.
 

@@ -28,7 +28,10 @@
     {
       "filename": "curriculo/index.html",
       "language": "pt_BR,en-US",
-      "dictionaries": ["pt-br", "site-terms"]
+      "dictionaries": [
+        "pt-br",
+        "site-terms"
+      ]
     },
     {
       "filename": "en/index.html",
@@ -80,6 +83,21 @@
       "language": "es,en-US",
       "dictionaries": [
         "es-es",
+        "site-terms"
+      ]
+    },
+    {
+      "filename": "servicos/**/*.html",
+      "language": "pt_BR,en-US",
+      "dictionaries": [
+        "pt-br",
+        "site-terms"
+      ]
+    },
+    {
+      "filename": "en/services/**/*.html",
+      "language": "en-US",
+      "dictionaries": [
         "site-terms"
       ]
     }

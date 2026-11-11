@@ -4,6 +4,11 @@ const path = require("node:path");
 const languageRoots = ["", "en", "es"];
 const pageUrls = languageRoots
   .map((root) => `http://127.0.0.1:8080/${root ? `${root}/` : ""}`);
+const servicePageUrls = [
+  `http://127.0.0.1:8080/servicos/`,
+  `http://127.0.0.1:8080/en/services/`,
+  `http://127.0.0.1:8080/es/servicios/`,
+];
 const caseStudyUrls = languageRoots
   .map((root) => path.join(root, "case-studies"))
   .filter((root) => fs.existsSync(root))
@@ -17,6 +22,7 @@ module.exports = {
     collect: {
       url: [
         ...pageUrls,
+        ...servicePageUrls,
         ...(fs.existsSync('curriculo/index.html') ? ['http://127.0.0.1:8080/curriculo/'] : []),
         ...caseStudyUrls,
       ],
