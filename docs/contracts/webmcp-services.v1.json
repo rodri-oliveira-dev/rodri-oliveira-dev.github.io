@@ -1,7 +1,7 @@
 {
   "contractId": "portfolio-services-webmcp",
   "contractVersion": "1.0.0",
-  "status": "integrated-validation-pending",
+  "status": "implemented-tested",
   "supportedLanguages": [
     "pt-BR",
     "en",
