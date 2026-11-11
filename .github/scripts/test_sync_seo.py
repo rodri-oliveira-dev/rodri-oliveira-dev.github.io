@@ -288,6 +288,7 @@ class CaseStudyStructuredDataTests(unittest.TestCase):
 
 class ServicePageSeoTests(unittest.TestCase):
     def sample_html(self, language: str) -> str:
+        """Provide minimal service-page markup for localized SEO assertions."""
         url = sync.SERVICE_URLS[language]
         return f'''<!doctype html>
 <html lang="{language}">
@@ -306,6 +307,7 @@ class ServicePageSeoTests(unittest.TestCase):
 </html>'''
 
     def test_schema_reuses_person_and_site_without_unverified_offers(self):
+        """Verify service schema uses canonical identities and no fabricated offers."""
         for language in sync.SERVICE_PAGES:
             payload = sync.service_structured_data(language, self.sample_html(language))
             graph = {node["@type"]: node for node in payload["@graph"]}
@@ -317,6 +319,7 @@ class ServicePageSeoTests(unittest.TestCase):
             self.assertNotIn("offers", graph["Service"])
 
     def test_hreflang_is_reciprocal_and_generation_is_idempotent(self):
+        """Ensure all locale links are reciprocal and serialization is stable."""
         with tempfile.TemporaryDirectory() as temporary_directory:
             for language in sync.SERVICE_PAGES:
                 page = Path(temporary_directory) / language / "index.html"
@@ -335,8 +338,10 @@ class ServicePageSeoTests(unittest.TestCase):
                 self.assertIn('hreflang="x-default"', generated)
                 self.assertEqual(generated.count("SEO_SERVICES_STRUCTURED_DATA:START"), 1)
 
+    @patch.object(sync, "git_last_modified", return_value="2026-11-11")
     @patch.object(sync, "page_lastmod", return_value="2026-11-11")
-    def test_sitemap_contains_three_reciprocal_urls(self, _lastmod):
+    def test_sitemap_contains_three_reciprocal_urls(self, _lastmod, _git):
+        """Check sitemap entry count and language alternates for all services."""
         result = sync.service_sitemap_blocks(sync.SERVICE_PAGES, "2026-11-11", {})
         self.assertEqual(result.count("<url>"), 3)
         self.assertEqual(result.count('hreflang="es"'), 3)
@@ -344,7 +349,38 @@ class ServicePageSeoTests(unittest.TestCase):
         for url in sync.SERVICE_URLS.values():
             self.assertIn(f"<loc>{url}</loc>", result)
 
+    @patch.object(sync, "git_last_modified", return_value="2026-11-12")
+    @patch.object(sync, "file_was_dirty", return_value=False)
+    def test_service_lastmod_advances_after_committed_page_change(self, _dirty, _git):
+        """Use the latest committed page date when sitemap entries are older."""
+        lastmods = {url: "2026-11-10" for url in sync.SERVICE_URLS.values()}
+
+        result = sync.service_sitemap_blocks(sync.SERVICE_PAGES, "2026-11-13", lastmods)
+
+        self.assertEqual(result.count("<lastmod>2026-11-12</lastmod>"), 3)
+
+    @patch.object(sync, "git_last_modified", return_value="2026-11-09")
+    @patch.object(sync, "file_was_dirty", return_value=False)
+    def test_service_lastmod_preserves_newer_sitemap_date(self, _dirty, _git):
+        """Avoid regressing lastmod if the stored sitemap date is already newer."""
+        lastmods = {url: "2026-11-11" for url in sync.SERVICE_URLS.values()}
+
+        result = sync.service_sitemap_blocks(sync.SERVICE_PAGES, "2026-11-13", lastmods)
+
+        self.assertEqual(result.count("<lastmod>2026-11-11</lastmod>"), 3)
+
+    @patch.object(sync, "git_last_modified", return_value="2026-11-10")
+    @patch.object(sync, "file_was_dirty", return_value=True)
+    def test_service_lastmod_uses_today_for_local_changes(self, _dirty, _git):
+        """Use the generation date when service pages have uncommitted edits."""
+        lastmods = {url: "2026-11-09" for url in sync.SERVICE_URLS.values()}
+
+        result = sync.service_sitemap_blocks(sync.SERVICE_PAGES, "2026-11-13", lastmods)
+
+        self.assertEqual(result.count("<lastmod>2026-11-13</lastmod>"), 3)
+
     def test_incomplete_translations_are_rejected(self):
+        """Reject any missing service translation rather than indexing partial pages."""
         with tempfile.TemporaryDirectory() as temporary_directory:
             pt = Path(temporary_directory) / "servicos/index.html"
             pt.parent.mkdir(parents=True)
