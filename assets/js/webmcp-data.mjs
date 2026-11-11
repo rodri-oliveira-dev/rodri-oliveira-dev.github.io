@@ -1,5 +1,5 @@
 // Public information already presented in the portfolio homepages.
-// Stage 4 will add drift checks against the visible PT/EN project cards.
+// CI checks project descriptions, tags, links and skills against the visible PT/EN/ES HTML.
 export const SITE_URL = "https://rodri-oliveira-dev.github.io";
 
 export const PROJECTS = Object.freeze([
@@ -11,6 +11,7 @@ export const PROJECTS = Object.freeze([
     descriptions: {
       "pt-BR": "Ferramenta para criar, validar e organizar registros de decisões arquiteturais (ADRs). Inclui CLI, integração com GitHub Actions e extensão para VS Code.",
       en: "A tool for creating, validating, and organizing Architecture Decision Records (ADRs). It includes a CLI, GitHub Actions integration, and a VS Code extension.",
+      "es-419": "Herramienta para crear, validar y organizar registros de decisiones de arquitectura (ADR). Incluye una CLI, integración con GitHub Actions y una extensión para VS Code.",
     },
   },
   {
@@ -21,6 +22,7 @@ export const PROJECTS = Object.freeze([
     descriptions: {
       "pt-BR": "Biblioteca de mapeamento fluente para Dapper, criada originalmente por Henk Mollema. Hoje sou responsável por sua manutenção, com foco em compatibilidade, testes e versionamento.",
       en: "A fluent mapping library for Dapper, originally created by Henk Mollema. I now maintain the project, focusing on compatibility, testing, and versioning.",
+      "es-419": "Biblioteca de mapeo fluido para Dapper, creada originalmente por Henk Mollema. Actualmente mantengo el proyecto, con especial atención a la compatibilidad, las pruebas y la gestión de versiones.",
     },
   },
   {
@@ -31,6 +33,7 @@ export const PROJECTS = Object.freeze([
     descriptions: {
       "pt-BR": "Biblioteca .NET para entrega confiável de webhooks, com políticas de retry, controle de concorrência, leases, assinatura HMAC e observabilidade. Projetada para cenários de entrega at-least-once e persistência extensível.",
       en: "A .NET library for reliable webhook delivery with retry policies, bounded concurrency, leases, HMAC signing, and observability. Designed for at-least-once delivery and extensible persistence.",
+      "es-419": "Biblioteca .NET para la entrega confiable de webhooks, con políticas de reintento, control de concurrencia, leases, firma HMAC y observabilidad. Diseñada para entregas de al menos una vez (at-least-once) y mecanismos de persistencia extensibles.",
     },
   },
   {
@@ -41,6 +44,7 @@ export const PROJECTS = Object.freeze([
     descriptions: {
       "pt-BR": "Dashboard desenvolvido em Angular para acompanhar meus repositórios GitHub, reunindo informações sobre pipelines, segurança, releases, atividade e versões de tecnologias.",
       en: "An Angular dashboard for monitoring my GitHub repositories, bringing together information about pipelines, security, releases, activity, and technology versions.",
+      "es-419": "Panel de control desarrollado en Angular para supervisar mis repositorios de GitHub. Reúne información sobre procesos de CI, seguridad, versiones publicadas, actividad y versiones de las tecnologías utilizadas.",
     },
   },
   {
@@ -51,6 +55,7 @@ export const PROJECTS = Object.freeze([
     descriptions: {
       "pt-BR": "Laboratório .NET para estudar processamento assíncrono, mensageria, idempotência, observabilidade e recuperação de falhas, utilizando padrões como Outbox e Inbox.",
       en: "A .NET lab for exploring asynchronous processing, messaging, idempotency, observability, and failure recovery using patterns such as Outbox and Inbox.",
+      "es-419": "Laboratorio .NET para estudiar procesamiento asíncrono, mensajería, idempotencia, observabilidad y recuperación ante fallas, utilizando patrones como Outbox e Inbox.",
     },
   },
 ]);
@@ -65,6 +70,11 @@ export const PROFILES = Object.freeze({
     name: "Rodrigo de Oliveira",
     role: "Senior Software Architect",
     summary: "Senior Software Architect with more than 20 years of experience in modernization, .NET, distributed systems, integrations, and cloud.",
+  },
+  "es-419": {
+    name: "Rodrigo de Oliveira",
+    role: "Arquitecto de Software Senior",
+    summary: "Arquitecto de Software Senior con más de 20 años de experiencia en modernización, .NET, sistemas distribuidos, integraciones y plataformas en la nube.",
   },
 });
 
@@ -85,6 +95,14 @@ export const SKILLS = Object.freeze({
     "Software Security", "Maintainability", "Reliability Engineering",
     "Software Quality",
   ],
+  "es-419": [
+    "Arquitectura de Software", ".NET", "C#", "Sistemas Distribuidos",
+    "Integración de Sistemas y APIs", "Modernización de Sistemas Legados",
+    "Domain-Driven Design", "Cloud Computing", "GCP", "AWS",
+    "Arquitectura Orientada a Eventos", "Diseño de APIs", "Observabilidad",
+    "Seguridad de Software", "Mantenibilidad", "Ingeniería de Confiabilidad",
+    "Calidad de Software",
+  ],
 });
 
 export function projectSummary(project, language) {
@@ -92,10 +110,11 @@ export function projectSummary(project, language) {
     id: project.id,
     name: project.name,
     description: project.descriptions[language],
-    technologies: project.technologies.map((tag) =>
-      language === "en" && tag === "Resiliência" ? "Resilience" : tag
-    ),
+    technologies: project.technologies.map((tag) => {
+      if (tag !== "Resiliência") return tag;
+      return language === "en" ? "Resilience" : language === "es-419" ? "Resiliencia" : tag;
+    }),
     repositoryUrl: project.repository,
-    caseStudyUrl: `${SITE_URL}${language === "en" ? "/en" : ""}/case-studies/${project.id}/`,
+    caseStudyUrl: `${SITE_URL}${language === "en" ? "/en" : language === "es-419" ? "/es" : ""}/case-studies/${project.id}/`,
   };
 }

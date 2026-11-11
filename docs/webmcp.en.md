@@ -1,16 +1,16 @@
 # Portfolio WebMCP integration (English)
 
-**English** | [Português (Brasil)](webmcp.pt-BR.md)
+**English** | [Português (Brasil)](webmcp.pt-BR.md) | [Español (América Latina)](webmcp.es-419.md)
 
 ## Purpose and scope
 
 The site exposes six **read-only** tools through the experimental [WebMCP Imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api). Tools are registered inside a compatible browser tab using `document.modelContext.registerTool`. This is not a REST endpoint or a remote MCP server; the visual site remains unchanged.
 
-- Supported languages: `pt-BR` and `en`. Tool descriptions follow the page locale, while individual calls may request either response language.
-- Pages: Portuguese and English homepages, five case studies in each language, and the Portuguese resume. Spanish pages do not register WebMCP tools.
+- Supported languages: `pt-BR`, `en`, and `es-419`. Tool descriptions follow the page locale, while individual calls may request either response language.
+- Pages: Portuguese, English and Spanish homepages, five case studies in each language, and the Portuguese resume.
 - Data: the portfolio's published professional information and its five featured projects; no external requests, credentials, analytics, or state changes.
 - Compatibility: if the WebMCP API is missing, or the page lacks a secure context, no tools are registered and the regular site still works.
-- Resume: the published HTML and PDF are **Portuguese only**. An English tool response is not an English resume.
+- Resume: the published HTML and PDF are **Portuguese only**. An English or Spanish tool response is not a translated resume.
 
 **WebMCP is experimental.** It does not replace SEO, structured data, canonical links, sitemap, or standard HTML navigation, and it does not ensure an AI agent will discover or recommend the site. Availability varies by browser, version, experimental flags and permissions. **No origin-trial token is configured in this repository.**
 
@@ -44,7 +44,7 @@ Tool names and JSON property names are stable in English. Descriptions and human
 ### Locale and error contract
 
 - Omitting `language` uses the current HTML page's `lang` value (`pt-BR` or `en`).
-- Passing `language: "pt-BR"` or `language: "en"` overrides the page locale for that call.
+- Passing `language: "pt-BR"`, `language: "en"`, or `language: "es-419"` overrides the page locale for that call.
 - Passing an unsupported language explicitly returns `UNSUPPORTED_LANGUAGE` rather than silently falling back.
 - Invalid types, unexpected arguments and out-of-range inputs return `INVALID_INPUT`.
 - An unknown project ID returns `PROJECT_NOT_FOUND` and a list of `availableIds`.
@@ -74,7 +74,7 @@ node --test .github/scripts/test-webmcp.mjs
 node .github/scripts/test-site-i18n.cjs
 ```
 
-The first command checks tool names and schemas, read-only annotations, Portuguese/English results and errors, searching and validation, registration lifecycle, CSP, and **content drift** against the five visible project cards on both language homepages. It requires no external packages or network calls. The existing `Site validation` workflow runs these tests with Node.js 24 for PRs and pushes to `main`.
+The first command checks tool names and schemas, read-only annotations, Portuguese/English results and errors, searching and validation, registration lifecycle, CSP, and **content drift** against the five visible project cards on all three language homepages. It requires no external packages or network calls. The existing `Site validation` workflow runs these tests with Node.js 24 for PRs and pushes to `main`.
 
 The GitHub Pages build verifies all WebMCP modules are present in the `_site` static artifact. **Mocked tests do not prove real-browser compatibility.** Use the manual smoke test below in addition to CI.
 
@@ -105,8 +105,8 @@ const output = await ctx.executeTool(search, {
 console.log(output);
 ```
 
-6. Repeat on `/en/` with `language: "pt-BR"`. Verify the localized errors `UNSUPPORTED_LANGUAGE`, `INVALID_INPUT` and `PROJECT_NOT_FOUND` as well.
-7. Open `/es/` and confirm it does not register the six portfolio tools. Navigate away from a PT/EN page to check the former page's registered tools are released (the page's signal is aborted on `pagehide`).
+6. Repeat on `/en/` with `language: "pt-BR"` and on `/es/` with `language: "es-419"`. Verify the localized errors `UNSUPPORTED_LANGUAGE`, `INVALID_INPUT` and `PROJECT_NOT_FOUND` as well.
+7. Verify that all six tools are registered on PT/EN/ES pages. Navigate away to check that the former page's tools are released (its signal is aborted on `pagehide`).
 
 If `getTools()` or `executeTool()` is not available in your browser's DevTools, use the [Model Context Tool Inspector](https://developer.chrome.com/docs/ai/webmcp) or the browser's equivalent inspector instead. Do not publish keys or change production settings just to run the smoke test. Enabling a local flag does not make WebMCP universally available to external agents.
 

@@ -2,7 +2,7 @@
  * User-facing WebMCP discovery text and response messages.
  * Tool names and JSON result keys are intentionally stable across locales.
  */
-export const SUPPORTED_LANGUAGES = Object.freeze(["pt-BR", "en"]);
+export const SUPPORTED_LANGUAGES = Object.freeze(["pt-BR", "en", "es-419"]);
 export const DEFAULT_LANGUAGE = "pt-BR";
 
 export function pageLanguage(language) {
@@ -26,14 +26,14 @@ export const MESSAGES = Object.freeze({
       getContactInfo: "Consulta os canais públicos de contato profissional publicados no portfólio.",
     }),
     parameters: Object.freeze({
-      language: "Idioma da resposta: pt-BR ou en. Se omitido, utiliza o idioma desta página.",
+      language: "Idioma da resposta: pt-BR, en ou es-419. Se omitido, utiliza o idioma desta página.",
       query: "Palavra-chave opcional no nome, na descrição ou nas tecnologias do projeto.",
       technology: "Tecnologia opcional, por exemplo: .NET, Angular ou RabbitMQ.",
       limit: "Número máximo de resultados; o padrão é 5.",
       projectId: "Identificador retornado pela ferramenta searchProjects.",
     }),
     invalidInput: "Parâmetros inválidos para",
-    invalidLanguage: "Idioma não suportado. Use pt-BR ou en.",
+    invalidLanguage: "Idioma não suportado. Use pt-BR, en ou es-419.",
     projectNotFound: "Nenhum projeto em destaque corresponde ao identificador informado.",
     resumeNote: "O currículo publicado está disponível apenas em português do Brasil.",
   }),
@@ -47,15 +47,36 @@ export const MESSAGES = Object.freeze({
       getContactInfo: "Retrieve the public professional contact channels published on the portfolio.",
     }),
     parameters: Object.freeze({
-      language: "Response language: pt-BR or en. Defaults to this page's language.",
+      language: "Response language: pt-BR, en or es-419. Defaults to this page's language.",
       query: "Optional keyword in a project name, description, or technologies.",
       technology: "Optional technology, such as .NET, Angular, or RabbitMQ.",
       limit: "Maximum number of matches; defaults to 5.",
       projectId: "Project identifier returned by searchProjects.",
     }),
     invalidInput: "Invalid arguments for",
-    invalidLanguage: "Unsupported language. Use pt-BR or en.",
+    invalidLanguage: "Unsupported language. Use pt-BR, en or es-419.",
     projectNotFound: "No featured project matches the supplied identifier.",
     resumeNote: "The published resume is available only in Brazilian Portuguese.",
+  }),
+  "es-419": Object.freeze({
+    tools: Object.freeze({
+      getProfile: "Consulta el perfil profesional público de Rodrigo de Oliveira, arquitecto de software.",
+      getSkills: "Enumera las competencias técnicas y de arquitectura publicadas en el portafolio.",
+      searchProjects: "Busca los cinco proyectos de código abierto destacados por palabra clave o tecnología; sin filtros, muestra todos.",
+      getProjectDetails: "Consulta la descripción, tecnologías, repositorio y estudio de caso de un proyecto destacado.",
+      getResume: "Obtiene los enlaces del currículum público en HTML y PDF. El currículum publicado está en portugués de Brasil.",
+      getContactInfo: "Consulta los canales públicos de contacto profesional del portafolio.",
+    }),
+    parameters: Object.freeze({
+      language: "Idioma de la respuesta: pt-BR, en o es-419. Si se omite, se usa el idioma de esta página.",
+      query: "Palabra clave opcional en el nombre, la descripción o las tecnologías del proyecto.",
+      technology: "Tecnología opcional, por ejemplo: .NET, Angular o RabbitMQ.",
+      limit: "Número máximo de resultados; el valor predeterminado es 5.",
+      projectId: "Identificador devuelto por la herramienta searchProjects.",
+    }),
+    invalidInput: "Parámetros no válidos para",
+    invalidLanguage: "Idioma no admitido. Usa pt-BR, en o es-419.",
+    projectNotFound: "Ningún proyecto destacado corresponde al identificador indicado.",
+    resumeNote: "El currículum publicado solo está disponible en portugués de Brasil.",
   }),
 });

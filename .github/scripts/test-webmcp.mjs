@@ -12,7 +12,7 @@ import { createWebMCPRegistry } from "../../assets/js/webmcp.js";
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const read = (relative) => readFileSync(path.join(ROOT, relative), "utf8");
 const NAMES = ["getProfile", "getSkills", "searchProjects", "getProjectDetails", "getResume", "getContactInfo"];
-const PAGE = { "pt-BR": "index.html", en: "en/index.html" };
+const PAGE = { "pt-BR": "index.html", en: "en/index.html", "es-419": "es/index.html" };
 const tools = (language) => createPortfolioTools(language);
 const call = (language, name, input = {}) => tools(language).find((tool) => tool.name === name).execute(input);
 
@@ -80,16 +80,17 @@ test("tool names, schemas and safety annotations remain stable", () => {
 test("localized tool descriptions, schema hints, errors and language resolver", () => {
   assert.equal(DEFAULT_LANGUAGE, "pt-BR");
   assert.equal(pageLanguage("en"), "en");
-  assert.equal(pageLanguage("es-419"), DEFAULT_LANGUAGE);
+  assert.equal(pageLanguage("es-419"), "es-419");
+  assert.equal(pageLanguage("fr"), DEFAULT_LANGUAGE);
   assert.equal(resolveLanguage(undefined, "en"), "en");
   assert.equal(resolveLanguage("pt-BR", "en"), "pt-BR");
   assert.equal(resolveLanguage("fr", "en"), null);
   assert.equal(resolveLanguage(null, "en"), null);
   for (const name of NAMES) {
-    assert.notEqual(MESSAGES["pt-BR"].tools[name], MESSAGES.en.tools[name], name);
+    assert.equal(new Set(SUPPORTED_LANGUAGES.map((lang) => MESSAGES[lang].tools[name])).size, 3, name);
   }
   for (const field of ["language", "query", "technology", "limit", "projectId"]) {
-    assert.notEqual(MESSAGES["pt-BR"].parameters[field], MESSAGES.en.parameters[field]);
+    assert.equal(new Set(SUPPORTED_LANGUAGES.map((lang) => MESSAGES[lang].parameters[field])).size, 3, field);
   }
 });
 
@@ -110,6 +111,8 @@ test("every tool defaults to page language and accepts an explicit override", ()
   }
   assert.equal(call("pt-BR", "getProfile", { language: "en" }).role, "Senior Software Architect");
   assert.equal(call("en", "getProfile", { language: "pt-BR" }).role, "Arquiteto de Software Sênior");
+  assert.equal(call("en", "getProfile", { language: "es-419" }).role, "Arquitecto de Software Senior");
+  assert.equal(call("es-419", "getProfile", { language: "en" }).role, "Senior Software Architect");
   assert.deepEqual(call("en", "getResume").availableLanguages, ["pt-BR"]);
 });
 
@@ -119,6 +122,9 @@ test("search is multilingual, accent-insensitive and applies limits", () => {
   assert.equal(call("en", "searchProjects", { technology: ".NET" }).total, 4);
   assert.equal(call("en", "searchProjects", { technology: "Resiliência" }).total, 1);
   assert.equal(call("pt-BR", "searchProjects", { technology: "resilience" }).total, 1);
+  assert.equal(call("pt-BR", "searchProjects", { technology: "resiliencia" }).total, 1);
+  assert.equal(call("es-419", "searchProjects", { technology: "Resiliencia" }).total, 1);
+  assert.equal(call("en", "searchProjects", { query: "mensajería" }).total, 1);
   assert.ok(call("en", "searchProjects", { query: "observabilidade" }).total >= 1);
   assert.ok(call("pt-BR", "searchProjects", { query: "observability" }).total >= 1);
   const limited = call("pt-BR", "searchProjects", { limit: 2 });
@@ -209,7 +215,7 @@ test("page loading and existing CSP remain unchanged and safe", () => {
     }
   }
   assert.ok(read("curriculo/index.html").includes('src="/assets/js/webmcp.js"'));
-  assert.ok(!read("es/index.html").includes('src="/assets/js/webmcp.js"'));
+  assert.ok(read("es/index.html").includes('src="/assets/js/webmcp.js"'));
   for (const relative of [
     "assets/js/webmcp.js", "assets/js/webmcp-tools.mjs",
     "assets/js/webmcp-data.mjs", "assets/js/webmcp-i18n.mjs",
@@ -242,7 +248,8 @@ test("registry handles feature detection, abort and registration failures", asyn
   listeners.get("pagehide")();
   assert.ok(signal.aborted);
   await assert.rejects(registry.registerTool(tools("pt-BR")[0]), /no longer active/);
-  assert.equal(createWebMCPRegistry({ documentElement: { lang: "es-419" }, modelContext: document.modelContext }, window), null);
+  assert.equal(createWebMCPRegistry({ documentElement: { lang: "es-419" }, modelContext: document.modelContext }, window).language, "es-419");
+  assert.equal(createWebMCPRegistry({ documentElement: { lang: "fr" }, modelContext: document.modelContext }, window), null);
   assert.equal(createWebMCPRegistry(document, { ...window, isSecureContext: false }), null);
   assert.equal(createWebMCPRegistry({ documentElement: { lang: "en" } }, window), null);
   assert.equal(createWebMCPRegistry(undefined, undefined), null);
@@ -275,33 +282,40 @@ test("browser module automatically registers six tools in the presence of WebMCP
 });
 
 
-test("bilingual WebMCP guides and Pages packaging contract stay discoverable", () => {
+test("trilingual WebMCP guides and Pages packaging contract stay discoverable", () => {
   const pt = read("docs/webmcp.pt-BR.md");
   const en = read("docs/webmcp.en.md");
+  const es = read("docs/webmcp.es-419.md");
   const readmePt = read("README.md");
   const readmeEn = read("README.en.md");
+  const readmeEs = read("README.es.md");
   const automation = read(".github/AUTOMATION.md");
   const deploy = read(".github/workflows/deploy-pages.yml");
 
   for (const name of NAMES) {
     assert.ok(pt.includes(name), "PT documentation must cover " + name);
     assert.ok(en.includes(name), "EN documentation must cover " + name);
+    assert.ok(es.includes(name), "ES documentation must cover " + name);
   }
   for (const language of SUPPORTED_LANGUAGES) {
-    assert.ok(pt.includes(language) && en.includes(language));
+    assert.ok(pt.includes(language) && en.includes(language) && es.includes(language));
   }
   assert.ok(readmePt.includes("docs/webmcp.pt-BR.md"));
   assert.ok(readmeEn.includes("docs/webmcp.en.md"));
+  assert.ok(readmeEs.includes("docs/webmcp.es-419.md"));
   assert.ok(automation.includes("../docs/webmcp.pt-BR.md"));
   assert.ok(automation.includes("../docs/webmcp.en.md"));
+  assert.ok(automation.includes("../docs/webmcp.es-419.md"));
   assert.ok(pt.includes("node --test .github/scripts/test-webmcp.mjs"));
   assert.ok(en.includes("node --test .github/scripts/test-webmcp.mjs"));
+  assert.ok(es.includes("node --test .github/scripts/test-webmcp.mjs"));
 
   for (const name of ["webmcp.js", "webmcp-tools.mjs", "webmcp-data.mjs", "webmcp-i18n.mjs"]) {
     assert.ok(deploy.includes("test -f _site/assets/js/" + name),
       "Pages artifact must include " + name);
   }
-  for (const doc of ["webmcp.pt-BR.md", "webmcp.en.md"]) {
+  for (const doc of ["webmcp.pt-BR.md", "webmcp.en.md", "webmcp.es-419.md"]) {
     assert.ok(deploy.includes("test -f _site/docs/" + doc));
   }
+  assert.ok(deploy.includes("test -f _site/es/index.html"));
 });

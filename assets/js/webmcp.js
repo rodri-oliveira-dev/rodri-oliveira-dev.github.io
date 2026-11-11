@@ -2,7 +2,7 @@ import { createPortfolioTools } from "./webmcp-tools.mjs";
 import { SUPPORTED_LANGUAGES } from "./webmcp-i18n.mjs";
 
 /**
- * Optional WebMCP bootstrap for the Portuguese and English pages.
+ * Optional WebMCP bootstrap for the Portuguese, English and Spanish pages.
  * Read-only tools are registered only when the experimental API is available.
  * Creates a browser-local tool registry when WebMCP is available.
  * Unsupported browsers and other locales keep their existing behavior.

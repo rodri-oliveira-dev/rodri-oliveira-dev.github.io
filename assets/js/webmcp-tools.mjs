@@ -62,7 +62,7 @@ function callLanguage(input, page, name, allowed) {
 }
 
 function urlFor(language) {
-  return SITE_URL + (language === "en" ? "/en/" : "/");
+  return SITE_URL + (language === "en" ? "/en/" : language === "es-419" ? "/es/" : "/");
 }
 
 /**
@@ -118,14 +118,12 @@ export function createPortfolioTools(pageLocale = "pt-BR") {
 
         const query = normalized(input.query);
         const technology = normalized(input.technology);
-        // A multilingual agent can use either language when filtering, regardless
-        // of the requested output language.
+        // Filter using every supported locale, independent of the output language.
         const matches = PROJECTS.filter((project) => {
-          const pt = projectSummary(project, "pt-BR");
-          const en = projectSummary(project, "en");
-          const tags = [...pt.technologies, ...en.technologies].map(normalized);
+          const localized = SUPPORTED_LANGUAGES.map((code) => projectSummary(project, code));
+          const tags = localized.flatMap((item) => item.technologies).map(normalized);
           const searchable = normalized([
-            project.name, pt.description, en.description, ...tags,
+            project.name, ...localized.map((item) => item.description), ...tags,
           ].join(" "));
           return (!query || searchable.includes(query)) &&
             (!technology || tags.some((tag) => tag.includes(technology)));

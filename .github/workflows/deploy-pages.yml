@@ -58,6 +58,8 @@ jobs:
           test -f _site/assets/js/webmcp-i18n.mjs
           test -f _site/docs/webmcp.pt-BR.md
           test -f _site/docs/webmcp.en.md
+          test -f _site/docs/webmcp.es-419.md
+          test -f _site/es/index.html
 
       - name: Upload PDF preview for review
         if: github.event_name == 'pull_request'

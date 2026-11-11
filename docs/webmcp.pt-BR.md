@@ -1,16 +1,16 @@
 # WebMCP do portfólio (pt-BR)
 
-[English](webmcp.en.md) | **Português (Brasil)**
+[English](webmcp.en.md) | **Português (Brasil)** | [Español (América Latina)](webmcp.es-419.md)
 
 ## Objetivo e escopo
 
 O site expõe seis ferramentas **somente de leitura** por meio da [API imperativa WebMCP](https://developer.chrome.com/docs/ai/webmcp/imperative-api). A integração funciona no navegador quando `document.modelContext.registerTool` está disponível; não é uma API REST, não inicia servidor MCP nem altera as páginas para visitantes.
 
-- Idiomas suportados: `pt-BR` e `en`. A descrição das ferramentas acompanha o idioma da página; cada execução pode solicitar outro idioma.
-- Cobertura: homepage PT/EN, cinco estudos de caso em cada idioma e currículo em português. A versão espanhola não registra ferramentas.
+- Idiomas suportados: `pt-BR`, `en` e `es-419`. A descrição das ferramentas acompanha o idioma da página; cada execução pode solicitar outro idioma.
+- Cobertura: homepages PT/EN/ES, cinco estudos de caso em cada idioma e currículo em português.
 - Dados: informações **públicas** do portfólio e cinco projetos em destaque, sem chamadas HTTP, credenciais, analytics ou alterações de estado.
 - Compatibilidade: sem WebMCP ou sem contexto seguro, o site funciona normalmente e não registra ferramentas.
-- Currículo: a página HTML e o PDF publicados são apenas em português. A tradução de resposta em inglês não implica currículo traduzido.
+- Currículo: a página HTML e o PDF publicados são apenas em português. Respostas em inglês ou espanhol não implicam currículo traduzido.
 
 O WebMCP é **experimental**. Ele não substitui SEO, JSON-LD, sitemap nem os links HTML; não garante indexação, descoberta ou recomendações por agentes. O suporte depende do navegador/cliente, versão e eventuais permissões/flags. Este repositório **não configura token de origin trial**.
 
@@ -44,7 +44,7 @@ Todos os nomes das ferramentas e das propriedades JSON são estáveis em inglês
 ### Contrato de idioma e erros
 
 - `language` é opcional. Quando ausente, usa `<html lang="pt-BR">` ou `<html lang="en">` da página atual.
-- `language: "en"` e `language: "pt-BR"` podem ser usados independentemente do idioma da página.
+- `language: "en"`, `language: "pt-BR"` e `language: "es-419"` podem ser usados independentemente do idioma da página.
 - Qualquer idioma explicitamente diferente retorna `UNSUPPORTED_LANGUAGE` (sem fallback silencioso).
 - Parâmetros não permitidos, tipos incorretos e limites violados retornam `INVALID_INPUT`.
 - `getProjectDetails` retorna `PROJECT_NOT_FOUND` com `availableIds` quando o projeto não existe.
@@ -105,8 +105,8 @@ const output = await ctx.executeTool(search, {
 console.log(output);
 ```
 
-6. Repita em `/en/` com `language: "pt-BR"`. Valide também erros `UNSUPPORTED_LANGUAGE`, `INVALID_INPUT` e `PROJECT_NOT_FOUND`.
-7. Abra `/es/`: não devem aparecer as seis ferramentas desta integração. Feche/navegue para fora de uma página PT/EN e confirme que o ciclo de vida cancela os registros anteriores (o `AbortSignal` é abortado em `pagehide`).
+6. Repita em `/en/` com `language: "pt-BR"` e em `/es/` com `language: "es-419"`. Valide também erros `UNSUPPORTED_LANGUAGE`, `INVALID_INPUT` e `PROJECT_NOT_FOUND`.
+7. Confirme que as seis ferramentas aparecem nas três versões do site. Feche/navegue para fora de uma página PT/EN/ES e verifique o cancelamento dos registros anteriores (`AbortSignal` em `pagehide`).
 
 Se o navegador não expuser `getTools()` ou `executeTool()` à página/DevTools, use o [Model Context Tool Inspector](https://developer.chrome.com/docs/ai/webmcp) ou a ferramenta equivalente do navegador compatível. Não exponha tokens, nem realize alterações em produção para habilitar o teste. O funcionamento da flag não implica disponibilidade universal a agentes externos.
 
