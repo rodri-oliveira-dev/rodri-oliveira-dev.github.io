@@ -2,6 +2,27 @@ import { createPortfolioTools } from "./webmcp-tools.mjs";
 import { SUPPORTED_LANGUAGES } from "./webmcp-i18n.mjs";
 
 /**
+ * Service-specific tools are exposed only on the three canonical service pages.
+ * They are lazy-loaded to avoid adding weight to the rest of the portfolio.
+ * The optional index.html suffix also supports local preview URLs.
+ */
+const SERVICE_PAGE_PATHS = Object.freeze({
+  "pt-BR": "/servicos/",
+  en: "/en/services/",
+  "es-419": "/es/servicios/",
+});
+
+export function isServicesPage(doc = globalThis.document, view = globalThis.window) {
+  const canonicalPath = SERVICE_PAGE_PATHS[doc?.documentElement?.lang];
+  const pathname = doc?.location?.pathname ?? view?.location?.pathname;
+  return Boolean(canonicalPath) && (
+    pathname === canonicalPath ||
+    pathname === canonicalPath + "index.html" ||
+    pathname === canonicalPath.slice(0, -1)
+  );
+}
+
+/**
  * Create an optional browser-local WebMCP registry for a supported page.
  * A pagehide aborts its registered tools; restoring the document from the
  * back/forward cache re-registers the same tools with a fresh AbortSignal.
@@ -25,12 +46,16 @@ export function createWebMCPRegistry(doc = globalThis.document, view = globalThi
 
   /** Register a tool using the current page-lifecycle signal. */
   const registerTool = (tool) => {
-    if (disposed || controller.signal.aborted) {
+    if (disposed) {
       return Promise.reject(new Error("WebMCP registry is no longer active."));
     }
-    const result = modelContext.registerTool(tool, { signal: controller.signal });
+    // Keep late-loaded definitions for restoration if a pagehide happened
+    // while the services module was still being imported.
     definitions.set(tool.name, tool);
-    return result;
+    if (controller.signal.aborted) {
+      return Promise.reject(new Error("WebMCP registry is no longer active."));
+    }
+    return modelContext.registerTool(tool, { signal: controller.signal });
   };
 
   /** Unregister tools when leaving the page, including on bfcache entry. */
@@ -71,15 +96,36 @@ export function createWebMCPRegistry(doc = globalThis.document, view = globalThi
   view.addEventListener("pagehide", onPageHide);
   view.addEventListener("pageshow", onPageShow);
 
-  return Object.freeze({ language, registerTool, dispose });
+  return Object.freeze({ language, servicesPage: isServicesPage(doc, view), registerTool, dispose });
+}
+
+/**
+ * General tools remain available everywhere. Only the localized services
+ * pages register the additional four read-only tools. An unavailable services
+ * module cannot prevent registration of the general portfolio tools.
+ */
+async function registerPageTools(registry) {
+  const registrations = createPortfolioTools(registry.language).map((tool) =>
+    Promise.resolve().then(() => registry.registerTool(tool))
+  );
+
+  if (registry.servicesPage) {
+    try {
+      const { createServiceTools } = await import("./webmcp-services.mjs");
+      registrations.push(...createServiceTools(registry.language).map((tool) =>
+        Promise.resolve().then(() => registry.registerTool(tool))
+      ));
+    } catch (error) {
+      // Report the failure while allowing the six existing tools to work.
+      registrations.push(Promise.reject(error));
+    }
+  }
+
+  return Promise.allSettled(registrations);
 }
 
 // Register only on supported browsers. A failed tool must not affect the page.
 export const webMCPRegistry = createWebMCPRegistry();
 export const webMCPRegistrations = webMCPRegistry
-  ? Promise.allSettled(
-      createPortfolioTools(webMCPRegistry.language).map((tool) =>
-        Promise.resolve().then(() => webMCPRegistry.registerTool(tool))
-      )
-    )
+  ? registerPageTools(webMCPRegistry)
   : Promise.resolve([]);
