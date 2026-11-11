@@ -265,7 +265,12 @@ const expectedPages = variants.flatMap((variant) => [
   pageUrl(variant),
   ...slugSets[0].map((slug) => pageUrl(variant, slug)),
 ]);
-expectedPages.push(`${SITE_URL}/curriculo/`);
+const serviceUrls = [
+  `${SITE_URL}/servicos/`,
+  `${SITE_URL}/en/services/`,
+  `${SITE_URL}/es/servicios/`,
+];
+expectedPages.push(...serviceUrls, `${SITE_URL}/curriculo/`);
 assert.ok(read("index.html").includes('href="/curriculo/"'), "Homepage must link to resume");
 assert.ok(read("curriculo/index.html").includes('<html lang="pt-BR">'), "Resume must remain in pt-BR");
 assert.equal(sitemapEntries.length, expectedPages.length, "Sitemap URL count");
@@ -273,11 +278,15 @@ assert.deepEqual(new Set(sitemapEntries.map((entry) => entry.loc)), new Set(expe
 for (const entry of sitemapEntries) {
   assert.match(entry.lastmod ?? "", /^\d{4}-\d{2}-\d{2}$/, `${entry.loc} sitemap lastmod`);
   const slug = entry.loc.includes("/case-studies/") ? entry.loc.split("/case-studies/")[1].replace(/\/$/, "") : "";
-  const expectedAlternates = entry.loc.endsWith("/curriculo/")
+  const isResume = entry.loc.endsWith("/curriculo/");
+  const isServices = serviceUrls.includes(entry.loc);
+  const expectedAlternates = isResume
     ? {}
-    : Object.fromEntries(variants.map((variant) => [variant.hreflang, pageUrl(variant, slug)]));
-  if (!entry.loc.endsWith("/curriculo/")) expectedAlternates["x-default"] = pageUrl(variants[0], slug);
+    : isServices
+      ? { "pt-BR": serviceUrls[0], en: serviceUrls[1], es: serviceUrls[2] }
+      : Object.fromEntries(variants.map((variant) => [variant.hreflang, pageUrl(variant, slug)]));
+  if (!isResume) expectedAlternates["x-default"] = isServices ? serviceUrls[0] : pageUrl(variants[0], slug);
   assert.deepEqual(entry.alternates, expectedAlternates, `${entry.loc} sitemap alternates`);
 }
 
-console.log(`Validated 3 homepages, ${slugSets[0].length * 3} localized case studies, legacy redirect, metadata, navigation, local resources, and sitemap.`);
+console.log(`Validated 3 homepages, 3 service pages in sitemap, ${slugSets[0].length * 3} localized case studies, legacy redirect, metadata, navigation, local resources, and sitemap.`);

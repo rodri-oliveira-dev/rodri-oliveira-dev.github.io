@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import re
+from html import unescape
 import subprocess
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -21,8 +22,17 @@ EN_INDEX = ROOT / "en/index.html"
 ES_INDEX = ROOT / "es/index.html"
 SITEMAP_PATH = ROOT / "sitemap.xml"
 RESUME_INDEX = ROOT / "curriculo/index.html"
-
+SERVICE_PAGES = {
+    "pt-BR": ROOT / "servicos/index.html",
+    "en": ROOT / "en/services/index.html",
+    "es-419": ROOT / "es/servicios/index.html",
+}
 SITE_URL = "https://rodri-oliveira-dev.github.io/"
+SERVICE_URLS = {
+    "pt-BR": f"{SITE_URL}servicos/",
+    "en": f"{SITE_URL}en/services/",
+    "es-419": f"{SITE_URL}es/servicios/",
+}
 RESUME_URL = f"{SITE_URL}curriculo/"
 EN_URL = f"{SITE_URL}en/"
 ES_URL = f"{SITE_URL}es/"
@@ -538,6 +548,155 @@ def synchronize_html(
     path.write_text(html, encoding="utf-8")
 
 
+
+
+def existing_service_variants() -> dict[str, Path]:
+    """Return complete service translations, or fail on partial coverage."""
+    existing = {language: path for language, path in SERVICE_PAGES.items() if path.is_file()}
+    if existing and len(existing) != len(SERVICE_PAGES):
+        missing = sorted(set(SERVICE_PAGES) - set(existing))
+        raise SystemExit(f"Service-page translations are incomplete: {missing}.")
+    return existing
+
+
+def service_structured_data(language: str, html: str) -> dict:
+    """Describe the actual published professional page, without fabricated offers."""
+    title = re.search(r"<title>(.*?)</title>", html, re.DOTALL)
+    description = re.search(r'<meta name="description" content="([^"]+)">', html)
+    heading = re.search(r"<h1[^>]*>(.*?)</h1>", html, re.DOTALL)
+    services = re.findall(
+        r'<article class="services-card">.*?<h3>(.*?)</h3>',
+        html, re.DOTALL,
+    )
+    if not all((title, description, heading)) or len(services) != 4:
+        raise SystemExit(f"Invalid service-page SEO source content: {language}.")
+
+    def plain(value: str) -> str:
+        """Remove inline HTML and decode entities from public headings."""
+        return unescape(re.sub(r"<[^>]+>", "", value)).strip()
+
+    url = SERVICE_URLS[language]
+    page_id = f"{url}#webpage"
+    service_id = f"{url}#service"
+    breadcrumb_id = f"{url}#breadcrumb"
+    page_title = plain(title.group(1))
+    page_description = unescape(description.group(1)).strip()
+    service_name = plain(heading.group(1))
+    labels = {
+        "pt-BR": ("Início", "Serviços"),
+        "en": ("Home", "Services"),
+        "es-419": ("Inicio", "Servicios"),
+    }
+    home_label, service_label = labels[language]
+    return {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "WebPage",
+                "@id": page_id,
+                "url": url,
+                "name": page_title,
+                "description": page_description,
+                "inLanguage": language,
+                "isPartOf": {"@id": WEBSITE_ID},
+                "mainEntity": {"@id": service_id},
+                "breadcrumb": {"@id": breadcrumb_id},
+            },
+            {
+                "@type": "Service",
+                "@id": service_id,
+                "name": service_name,
+                "description": page_description,
+                "serviceType": [plain(item) for item in services],
+                "provider": {"@id": PERSON_ID},
+                "mainEntityOfPage": {"@id": page_id},
+            },
+            {
+                "@type": "BreadcrumbList",
+                "@id": breadcrumb_id,
+                "itemListElement": [
+                    {
+                        "@type": "ListItem",
+                        "position": 1,
+                        "name": home_label,
+                        "item": LANGUAGE_VARIANTS[language]["url"],
+                    },
+                    {
+                        "@type": "ListItem",
+                        "position": 2,
+                        "name": service_label,
+                        "item": url,
+                    },
+                ],
+            },
+        ],
+    }
+
+
+def synchronize_service_page(language: str, path: Path) -> None:
+    """Synchronize localized service hreflang and content-backed JSON-LD."""
+    html = path.read_text(encoding="utf-8")
+    urls = {code: SERVICE_URLS[code] for code in SERVICE_PAGES}
+
+    if HREFLANG_BLOCK_PATTERN.search(html):
+        html = synchronize_hreflang(html, urls)
+    else:
+        canonical = f'  <link rel="canonical" href="{SERVICE_URLS[language]}">'
+        if html.count(canonical) != 1:
+            raise SystemExit(f"Service canonical missing or duplicated: {language}.")
+        alternates = "\n".join(
+            f'  <link rel="alternate" hreflang="{LANGUAGE_VARIANTS[code]["hreflang"]}" href="{url}">'
+            for code, url in urls.items()
+        )
+        alternates += (
+            f'\n  <link rel="alternate" hreflang="x-default" '
+            f'href="{SERVICE_URLS["pt-BR"]}">'
+        )
+        html = html.replace(canonical, canonical + "\n" + alternates, 1)
+
+    payload = service_structured_data(language, html)
+    rendered = json.dumps(payload, ensure_ascii=False, indent=2).replace("<", "\\u003c")
+    indented = "\n".join("  " + line for line in rendered.splitlines())
+    start = "  <!-- SEO_SERVICES_STRUCTURED_DATA:START -->"
+    end = "  <!-- SEO_SERVICES_STRUCTURED_DATA:END -->"
+    block = (
+        f'{start}\n  <script type="application/ld+json">\n'
+        f'{indented}\n  </script>\n{end}'
+    )
+    if start in html and end in html:
+        before, remainder = html.split(start, 1)
+        _, after = remainder.split(end, 1)
+        html = before + block + after
+    else:
+        html = html.replace("</head>", block + "\n</head>", 1)
+    path.write_text(html, encoding="utf-8")
+
+
+def service_sitemap_blocks(
+    paths: dict[str, Path],
+    today: str,
+    existing_lastmods: dict[str, str],
+) -> str:
+    """Build reciprocal service entries with lastmod from Git and existing sitemap."""
+    if not paths:
+        return ""
+    alternate_links = "\n".join(
+        f'    <xhtml:link rel="alternate" hreflang="{LANGUAGE_VARIANTS[code]["hreflang"]}" href="{escape(SERVICE_URLS[code])}"/>'
+        for code in paths
+    )
+    alternate_links += (
+        f'\n    <xhtml:link rel="alternate" hreflang="x-default" '
+        f'href="{escape(SERVICE_URLS["pt-BR"])}"/>'
+    )
+    return "\n".join(
+        f'''  <url>
+    <loc>{escape(SERVICE_URLS[code])}</loc>
+{alternate_links}
+    <lastmod>{max_date(page_lastmod(SERVICE_URLS[code], path, today, existing_lastmods), git_last_modified(path))}</lastmod>
+  </url>'''
+        for code, path in paths.items()
+    )
+
 def git_last_modified(path: Path) -> str:
     relative = path.relative_to(ROOT).as_posix()
     try:
@@ -816,6 +975,10 @@ def write_sitemap(
         for language, url in home_urls.items()
     )
 
+    services_block = service_sitemap_blocks(
+        existing_service_variants(), today, existing_lastmods
+    )
+
     # O currículo tem somente uma versão em PT-BR: não há traduções para hreflang.
     resume_block = ""
     if RESUME_INDEX.exists():
@@ -835,6 +998,7 @@ def write_sitemap(
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
 {home_blocks}
 {resume_block}
+{services_block}
 {case_blocks}
 </urlset>
 '''
@@ -868,6 +1032,8 @@ def main() -> None:
             available_languages,
             hashnode_articles,
         )
+    for language, path in existing_service_variants().items():
+        synchronize_service_page(language, path)
     for slug, paths in case_studies:
         synchronize_case_study_hreflang(slug, paths)
         for path in paths.values():
@@ -885,6 +1051,8 @@ def main() -> None:
     for _, paths in case_studies:
         for path in paths.values():
             validate_json_ld(path)
+    for path in existing_service_variants().values():
+        validate_json_ld(path)
 
     print("SEO artifacts synchronized:")
     print("- index.html: WebSite/ProfilePage/Person + latest Article entities + PT-BR RSS discovery")
@@ -894,7 +1062,8 @@ def main() -> None:
         print("- en/index.html: migration-compatible newsletter RSS discovery (DEV catalog not initialized)")
     print("- es/index.html: WebSite/ProfilePage/Person + Hashnode Article entities + RSS discovery")
     print("- case studies: canonical Article/Person/WebSite/SoftwareSourceCode entity relationships")
-    print("- sitemap.xml: existing language variants + PT-BR resume + reliable lastmod")
+    print("- service pages: reciprocal hreflang + WebPage/Service/BreadcrumbList")
+    print("- sitemap.xml: homepage, services, case studies, resume + reliable lastmod")
 
 
 if __name__ == "__main__":
