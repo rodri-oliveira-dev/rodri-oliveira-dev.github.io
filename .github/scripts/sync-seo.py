@@ -572,6 +572,7 @@ def service_structured_data(language: str, html: str) -> dict:
         raise SystemExit(f"Invalid service-page SEO source content: {language}.")
 
     def plain(value: str) -> str:
+        """Remove inline HTML and decode entities from public headings."""
         return unescape(re.sub(r"<[^>]+>", "", value)).strip()
 
     url = SERVICE_URLS[language]
@@ -676,7 +677,7 @@ def service_sitemap_blocks(
     today: str,
     existing_lastmods: dict[str, str],
 ) -> str:
-    """Add one reciprocal sitemap entry for each published language."""
+    """Build reciprocal service entries with lastmod from Git and existing sitemap."""
     if not paths:
         return ""
     alternate_links = "\n".join(
@@ -691,7 +692,7 @@ def service_sitemap_blocks(
         f'''  <url>
     <loc>{escape(SERVICE_URLS[code])}</loc>
 {alternate_links}
-    <lastmod>{page_lastmod(SERVICE_URLS[code], path, today, existing_lastmods)}</lastmod>
+    <lastmod>{max_date(page_lastmod(SERVICE_URLS[code], path, today, existing_lastmods), git_last_modified(path))}</lastmod>
   </url>'''
         for code, path in paths.items()
     )
