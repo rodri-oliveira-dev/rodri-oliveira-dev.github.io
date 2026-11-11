@@ -7,16 +7,19 @@ const READ_ONLY = Object.freeze({
   openWorldHint: false,
 });
 
+/** Build a read-only tool definition with a stable public contract. */
 function definition(name, description, inputSchema, execute) {
   return { name, description, inputSchema, annotations: READ_ONLY, execute };
 }
 
+/** Normalize user search terms for accent-insensitive matching. */
 function normalized(value) {
   return typeof value === "string"
     ? value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase()
     : "";
 }
 
+/** Build a strict JSON Schema with an optional language override. */
 function schema(text, properties = {}, required = []) {
   return {
     type: "object",
@@ -33,10 +36,12 @@ function schema(text, properties = {}, required = []) {
   };
 }
 
+/** Encode an error as a localized, serializable tool response. */
 function failure(language, code, message) {
   return { language, error: { code, message } };
 }
 
+/** Report invalid tool arguments without throwing across the browser API. */
 function inputError(language, name) {
   return failure(language, "INVALID_INPUT", MESSAGES[language].invalidInput + " " + name + ".");
 }
@@ -61,6 +66,7 @@ function callLanguage(input, page, name, allowed) {
     : { error: failure(page, "UNSUPPORTED_LANGUAGE", MESSAGES[page].invalidLanguage) };
 }
 
+/** Map a supported locale to its published portfolio homepage. */
 function urlFor(language) {
   return SITE_URL + (language === "en" ? "/en/" : language === "es-419" ? "/es/" : "/");
 }

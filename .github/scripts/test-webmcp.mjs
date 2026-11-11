@@ -16,6 +16,7 @@ const PAGE = { "pt-BR": "index.html", en: "en/index.html", "es-419": "es/index.h
 const tools = (language) => createPortfolioTools(language);
 const call = (language, name, input = {}) => tools(language).find((tool) => tool.name === name).execute(input);
 
+/** Assert that a failed tool call returns a localized, serializable error. */
 function expectError(output, code, language) {
   assert.equal(output.error?.code, code);
   assert.equal(output.language, language);
@@ -23,11 +24,13 @@ function expectError(output, code, language) {
   assert.doesNotThrow(() => JSON.stringify(output));
 }
 
+/** Normalize project-card HTML into the same plain text used by WebMCP. */
 function cleanHtml(fragment) {
   return fragment.replace(/<wbr\s*\/?>/gi, "").replace(/<[^>]*>/g, "")
     .replace(/&amp;/g, "&").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
 }
 
+/** Extract published project cards for a locale and detect content drift. */
 function htmlCards(relative) {
   const html = read(relative);
   const section = html.match(/<section class="section projects-section" id="projects">([\s\S]*?)<\/section>/);
@@ -47,6 +50,7 @@ function htmlCards(relative) {
   });
 }
 
+/** Read the homepage Person JSON-LD to compare public profile fields. */
 function seoPerson(relative) {
   const match = read(relative).match(/<script type="application\/ld\+json">\s*([\s\S]*?)\s*<\/script>/);
   assert.ok(match, relative + " must contain JSON-LD");
@@ -209,7 +213,7 @@ test("page loading and existing CSP remain unchanged and safe", () => {
     assert.ok(html.includes("connect-src 'none'"));
     assert.ok(html.includes("script-src 'self'"));
     for (const project of PROJECTS) {
-      const relative = (language === "en" ? "en/" : "") +
+      const relative = (language === "en" ? "en/" : language === "es-419" ? "es/" : "") +
         "case-studies/" + project.id + "/index.html";
       assert.ok(read(relative).includes('src="/assets/js/webmcp.js"'), relative);
     }
@@ -248,6 +252,35 @@ test("registry handles feature detection, abort and registration failures", asyn
   listeners.get("pagehide")();
   assert.ok(signal.aborted);
   await assert.rejects(registry.registerTool(tools("pt-BR")[0]), /no longer active/);
+
+  // A normal pageshow must not restore tools after pagehide.
+  listeners.get("pageshow")({ persisted: false });
+  assert.equal(registered.length, NAMES.length);
+
+  // Returning through the bfcache restores all six tools with a new signal.
+  listeners.get("pageshow")({ persisted: true });
+  assert.equal(registered.length, NAMES.length * 2);
+  assert.deepEqual(registered.slice(6).map((item) => item.tool.name), NAMES);
+  const restoredSignal = registered[6].options.signal;
+  assert.notEqual(restoredSignal, signal);
+  assert.ok(!restoredSignal.aborted);
+  assert.ok(registered.slice(6).every((item) => item.options.signal === restoredSignal));
+
+  // Duplicate pageshow events must not register the same tools twice.
+  listeners.get("pageshow")({ persisted: true });
+  assert.equal(registered.length, NAMES.length * 2);
+
+  // A second trip through the bfcache must work with another fresh signal.
+  listeners.get("pagehide")();
+  assert.ok(restoredSignal.aborted);
+  listeners.get("pageshow")({ persisted: true });
+  assert.equal(registered.length, NAMES.length * 3);
+  assert.notEqual(registered[12].options.signal, restoredSignal);
+  assert.deepEqual(registered.slice(12).map((item) => item.tool.name), NAMES);
+
+  registry.dispose();
+  assert.ok(registered[12].options.signal.aborted);
+  await assert.rejects(registry.registerTool(tools("pt-BR")[0]), /no longer active/);
   assert.equal(createWebMCPRegistry({ documentElement: { lang: "es-419" }, modelContext: document.modelContext }, window).language, "es-419");
   assert.equal(createWebMCPRegistry({ documentElement: { lang: "fr" }, modelContext: document.modelContext }, window), null);
   assert.equal(createWebMCPRegistry(document, { ...window, isSecureContext: false }), null);
@@ -263,15 +296,20 @@ test("registry handles feature detection, abort and registration failures", asyn
 
 test("browser module automatically registers six tools in the presence of WebMCP", () => {
   const runner = [
-    "const registrations = []; let onExit;",
+    "const registrations = []; const handlers = new Map();",
     "globalThis.document = { documentElement: { lang: 'en' }, modelContext: {",
     " registerTool(tool, options) { registrations.push({ name: tool.name, signal: options.signal }); return Promise.resolve(); } } };",
-    "globalThis.window = { isSecureContext: true, addEventListener(_name, callback) { onExit = callback; } };",
+    "globalThis.window = { isSecureContext: true, addEventListener(name, callback) { handlers.set(name, callback); } };",
     "const entry = await import('./assets/js/webmcp.js');",
     "const outcomes = await entry.webMCPRegistrations;",
-    "const before = registrations[0].signal.aborted; onExit();",
-    "process.stdout.write(JSON.stringify({ names: registrations.map((r) => r.name),",
-    " statuses: outcomes.map((r) => r.status), before, after: registrations[0].signal.aborted }));",
+    "const before = registrations[0].signal.aborted; handlers.get('pagehide')();",
+    "const after = registrations[0].signal.aborted;",
+    "handlers.get('pageshow')({ persisted: false }); const nonCachedCount = registrations.length;",
+    "handlers.get('pageshow')({ persisted: true }); await Promise.resolve();",
+    "const restored = registrations.slice(6).map((r) => r.name);",
+    "const freshSignal = registrations[6].signal !== registrations[0].signal && !registrations[6].signal.aborted;",
+    "process.stdout.write(JSON.stringify({ names: registrations.slice(0, 6).map((r) => r.name),",
+    " statuses: outcomes.map((r) => r.status), before, after, nonCachedCount, restored, freshSignal }));",
   ].join("\n");
   const result = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "--eval", runner],
     { cwd: ROOT, encoding: "utf8" }));
@@ -279,6 +317,9 @@ test("browser module automatically registers six tools in the presence of WebMCP
   assert.deepEqual(result.statuses, NAMES.map(() => "fulfilled"));
   assert.equal(result.before, false);
   assert.equal(result.after, true);
+  assert.equal(result.nonCachedCount, NAMES.length);
+  assert.deepEqual(result.restored, NAMES);
+  assert.equal(result.freshSignal, true);
 });
 
 

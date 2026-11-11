@@ -5,6 +5,7 @@
 export const SUPPORTED_LANGUAGES = Object.freeze(["pt-BR", "en", "es-419"]);
 export const DEFAULT_LANGUAGE = "pt-BR";
 
+/** Use a supported page locale, falling back to Brazilian Portuguese. */
 export function pageLanguage(language) {
   return SUPPORTED_LANGUAGES.includes(language) ? language : DEFAULT_LANGUAGE;
 }

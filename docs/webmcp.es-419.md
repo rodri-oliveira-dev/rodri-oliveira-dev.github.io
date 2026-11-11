@@ -18,7 +18,7 @@ El sitio ofrece seis herramientas **de solo lectura** mediante la [API imperativ
 
 | Archivo | Responsabilidad |
 | --- | --- |
-| [`assets/js/webmcp.js`](../assets/js/webmcp.js) | Detectar WebMCP, registrar herramientas y cancelar el registro al salir de la página |
+| [`assets/js/webmcp.js`](../assets/js/webmcp.js) | Detectar WebMCP, registrar herramientas, cancelarlas al salir y restaurarlas tras volver desde bfcache |
 | [`assets/js/webmcp-tools.mjs`](../assets/js/webmcp-tools.mjs) | Definiciones, esquemas JSON Schema, validación de entradas y resultados |
 | [`assets/js/webmcp-data.mjs`](../assets/js/webmcp-data.mjs) | Información pública de proyectos, perfil y competencias |
 | [`assets/js/webmcp-i18n.mjs`](../assets/js/webmcp-i18n.mjs) | Descripciones, parámetros, mensajes de error y selección de idioma |
@@ -102,7 +102,7 @@ const result = await ctx.executeTool(search, {
 console.log(result);
 ```
 
-6. Repite desde `/en/` y `/` con `language: "es-419"`. Comprueba también `INVALID_INPUT`, `UNSUPPORTED_LANGUAGE` y `PROJECT_NOT_FOUND`. Al salir de una página se aborta el `AbortSignal` de su registro.
+6. Repite desde `/en/` y `/` con `language: "es-419"`. Comprueba también `INVALID_INPUT`, `UNSUPPORTED_LANGUAGE` y `PROJECT_NOT_FOUND`. Al salir de una página se aborta el `AbortSignal` de su registro. Al regresar mediante el historial, si el navegador restaura el documento desde bfcache (`pageshow.persisted`), las seis herramientas se registran de nuevo con una señal nueva.
 
 Algunos navegadores no exponen `getTools()` y `executeTool()` directamente en DevTools. En ese caso utiliza el inspector WebMCP disponible para esa versión. Una flag local no activa automáticamente WebMCP para todos los agentes externos.
 

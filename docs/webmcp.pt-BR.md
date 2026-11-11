@@ -18,9 +18,9 @@ O WebMCP é **experimental**. Ele não substitui SEO, JSON-LD, sitemap nem os li
 
 | Arquivo | Responsabilidade |
 | --- | --- |
-| [`assets/js/webmcp.js`](../assets/js/webmcp.js) | Detecta suporte/idioma, registra ferramentas e cancela o registro em `pagehide` |
+| [`assets/js/webmcp.js`](../assets/js/webmcp.js) | Detecta suporte/idioma, cancela registros em `pagehide` e restaura ferramentas após retorno pelo bfcache |
 | [`assets/js/webmcp-tools.mjs`](../assets/js/webmcp-tools.mjs) | Contratos JSON Schema, validação de entrada e operações somente de leitura |
-| [`assets/js/webmcp-data.mjs`](../assets/js/webmcp-data.mjs) | Catálogo público de projetos, perfil e competências nos dois idiomas |
+| [`assets/js/webmcp-data.mjs`](../assets/js/webmcp-data.mjs) | Catálogo público de projetos, perfil e competências em português, inglês e espanhol |
 | [`assets/js/webmcp-i18n.mjs`](../assets/js/webmcp-i18n.mjs) | Descrições, parâmetros, erros e seleção de idioma |
 | [`.github/scripts/test-webmcp.mjs`](../.github/scripts/test-webmcp.mjs) | Testes de contrato, compatibilidade, segurança e consistência com o HTML |
 | [`.github/workflows/site-validation.yml`](../.github/workflows/site-validation.yml) | Executa os testes WebMCP em PRs e pushes na `main` |
@@ -43,12 +43,12 @@ Todos os nomes das ferramentas e das propriedades JSON são estáveis em inglês
 
 ### Contrato de idioma e erros
 
-- `language` é opcional. Quando ausente, usa `<html lang="pt-BR">` ou `<html lang="en">` da página atual.
+- `language` é opcional. Quando ausente, utiliza o `lang` da página: `pt-BR` em `/`, `en` em `/en/` e `es-419` em `/es/`.
 - `language: "en"`, `language: "pt-BR"` e `language: "es-419"` podem ser usados independentemente do idioma da página.
 - Qualquer idioma explicitamente diferente retorna `UNSUPPORTED_LANGUAGE` (sem fallback silencioso).
 - Parâmetros não permitidos, tipos incorretos e limites violados retornam `INVALID_INPUT`.
 - `getProjectDetails` retorna `PROJECT_NOT_FOUND` com `availableIds` quando o projeto não existe.
-- `searchProjects` é case-insensitive e ignora acentos; reconhece termos em ambos os idiomas mesmo que a saída seja em outro idioma.
+- `searchProjects` é case-insensitive e ignora acentos; reconhece termos nos três idiomas, mesmo que a saída esteja em outro idioma.
 - `limit` varia de 1 a 5 (padrão 5); `query` tem no máximo 120 caracteres e `technology` 80.
 - Os retornos são objetos JSON serializáveis. Ao chamar `executeTool()`, alguns navegadores retornam sua representação serializada como string.
 
@@ -74,7 +74,7 @@ node --test .github/scripts/test-webmcp.mjs
 node .github/scripts/test-site-i18n.cjs
 ```
 
-O primeiro comando verifica schemas, saídas PT/EN, filtros, erros, ciclo de vida/`AbortSignal`, política CSP e *drift* entre os registros públicos e o conteúdo dos cinco cartões de projeto nas páginas HTML. Não depende de rede nem instala pacotes. O gate `Site validation` executa os dois comandos no GitHub Actions com Node.js 24.
+O primeiro comando verifica schemas, saídas PT/EN/ES, filtros, erros, ciclo de vida/`AbortSignal` e restauração pelo bfcache, política CSP e *drift* entre os registros públicos e o conteúdo dos cinco cartões de projeto nas páginas HTML. Não depende de rede nem instala pacotes. O gate `Site validation` executa os dois comandos no GitHub Actions com Node.js 24.
 
 O build do Pages garante a presença dos quatro módulos WebMCP no artefato `_site`. **Testes com mocks não comprovam suporte em navegadores reais.** O smoke test manual abaixo complementa o CI.
 
@@ -83,7 +83,7 @@ O build do Pages garante a presença dos quatro módulos WebMCP no artefato `_si
 1. Abra uma versão do Chrome que disponibilize a API experimental, acesse `chrome://flags/#enable-webmcp-testing`, habilite a flag e reinicie. A disponibilidade da flag e os requisitos de versão podem mudar; consulte [Chrome Developers: WebMCP](https://developer.chrome.com/docs/ai/webmcp).
 2. Faça checkout da branch do PR. Na raiz, execute `python3 -m http.server 8000` e abra `http://localhost:8000/` (origem local considerada contexto seguro). Para testar a versão em inglês, abra `http://localhost:8000/en/`. Não abra o HTML diretamente via `file://`.
 3. No DevTools Console, verifique `"modelContext" in document`. Se for `false`, o navegador não habilitou WebMCP; isso não caracteriza falha do site.
-4. Na página PT/EN, execute:
+4. Em uma página PT/EN/ES, execute:
 
 ```javascript
 const ctx = document.modelContext;
@@ -106,12 +106,12 @@ console.log(output);
 ```
 
 6. Repita em `/en/` com `language: "pt-BR"` e em `/es/` com `language: "es-419"`. Valide também erros `UNSUPPORTED_LANGUAGE`, `INVALID_INPUT` e `PROJECT_NOT_FOUND`.
-7. Confirme que as seis ferramentas aparecem nas três versões do site. Feche/navegue para fora de uma página PT/EN/ES e verifique o cancelamento dos registros anteriores (`AbortSignal` em `pagehide`).
+7. Confirme que as seis ferramentas aparecem nas três versões. Navegue para fora da página e verifique que `pagehide` cancela os registros. Ao voltar pelo histórico, caso a página seja restaurada do bfcache (`pageshow.persisted`), as seis ferramentas devem ser registradas novamente com um novo `AbortSignal`.
 
 Se o navegador não expuser `getTools()` ou `executeTool()` à página/DevTools, use o [Model Context Tool Inspector](https://developer.chrome.com/docs/ai/webmcp) ou a ferramenta equivalente do navegador compatível. Não exponha tokens, nem realize alterações em produção para habilitar o teste. O funcionamento da flag não implica disponibilidade universal a agentes externos.
 
 ## Manutenção
 
-Ao modificar um cartão de projeto em `index.html` ou `en/index.html`, atualize `assets/js/webmcp-data.mjs` no mesmo PR. Os testes impedem a divergência de título, descrição, tecnologias ou URLs. Mudanças em competências/identidade também devem preservar consistência com o JSON-LD público. Para novas ferramentas, mantenha descrições PT/EN, JSON Schema estrito, operações somente de leitura e testes de saída/erro.
+Ao modificar um cartão de projeto em `index.html`, `en/index.html` ou `es/index.html`, atualize `assets/js/webmcp-data.mjs` no mesmo PR. Os testes impedem a divergência de título, descrição, tecnologias ou URLs. Mudanças em competências/identidade também devem preservar consistência com o JSON-LD público. Para novas ferramentas, mantenha descrições PT-BR/EN/ES-419, JSON Schema estrito, operações somente de leitura e testes de saída/erro.
 
 Referências: [WebMCP no Chrome](https://developer.chrome.com/docs/ai/webmcp), [API imperativa](https://developer.chrome.com/docs/ai/webmcp/imperative-api), [especificação comunitária](https://webmachinelearning.github.io/webmcp/).

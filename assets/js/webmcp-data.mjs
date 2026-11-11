@@ -105,6 +105,7 @@ export const SKILLS = Object.freeze({
   ],
 });
 
+/** Return a published project summary with locale-specific descriptions, tags and case-study links. */
 export function projectSummary(project, language) {
   return {
     id: project.id,
