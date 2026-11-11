@@ -364,6 +364,27 @@ test("browser registration, absence of support, lifecycle and restoration are is
   }
 });
 
+test("trilingual guides document all service tools, schemas and browser smoke tests", () => {
+  for (const file of [
+    "docs/webmcp.pt-BR.md", "docs/webmcp.en.md", "docs/webmcp.es-419.md",
+  ]) {
+    const guide = read(file);
+    for (const name of TOOL_NAMES) {
+      assert.ok(guide.includes(name), file + " missing tool " + name);
+    }
+    assert.ok(guide.includes("webmcp-services-contract.md"), file + " contract link");
+    assert.ok(guide.includes("webmcp-services.v1.json"), file + " schema link");
+    assert.ok(guide.includes("node --test .github/scripts/test-webmcp-services.mjs"),
+      file + " test command");
+    assert.ok(guide.includes("architecture-review"), file + " service ID");
+    assert.ok(guide.includes("document.modelContext"), file + " browser API");
+    assert.ok(guide.includes("context.executeTool(details"), file + " smoke test");
+    assert.ok(guide.includes("getTools()"), file + " discovery API");
+  }
+  assert.ok(read(".github/AUTOMATION.md").includes("test-webmcp-services.mjs"));
+  assert.ok(read("docs/webmcp-services-contract.md").includes("implemented-tested"));
+});
+
 test("CSP, read-only behavior and Pages bundle checks remain enforced", () => {
   const deployment = read(".github/workflows/deploy-pages.yml");
   for (const module of ["webmcp.js", "webmcp-services.mjs", "webmcp-services-data.mjs"]) {
