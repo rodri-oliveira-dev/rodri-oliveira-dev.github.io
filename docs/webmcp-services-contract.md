@@ -1,6 +1,6 @@
 # Contrato WebMCP de serviços (v1)
 
-> **Status:** contrato definido (etapa 1) e catálogo multilíngue modelado (etapa 2). **As quatro ferramentas ainda não estão implementadas nem registradas no navegador**. As ferramentas gerais existentes continuam inalteradas.
+> **Status:** contrato definido (etapa 1), catálogo multilíngue modelado (etapa 2) e handlers das quatro ferramentas implementados (etapa 3). **As ferramentas de serviços ainda não são registradas no navegador**; isso será feito na etapa 4. As seis ferramentas gerais existentes continuam inalteradas.
 
 Contrato legível por máquina: [`contracts/webmcp-services.v1.json`](contracts/webmcp-services.v1.json).
 
@@ -56,6 +56,19 @@ A implementação utilizará [`assets/js/webmcp-services-data.mjs`](../assets/js
 Os objetos e arrays exportados são congelados recursivamente para evitar mutação acidental durante as consultas. O módulo não contém preços, disponibilidade, dados privados, nomes de clientes no catálogo de serviços, compromissos de entrega ou coleta de informações dos visitantes.
 
 **Sincronização obrigatória nas próximas etapas:** para uma alteração editorial nas três páginas de serviços, atualizar o catálogo em conjunto. A etapa 5 adicionará testes automatizados de consistência e cobertura contratual; a etapa 3 transformará os dados em resultados conformes a `outputSchema`. Este arquivo de dados isolado **não torna o WebMCP de serviços disponível aos agentes**.
+
+## Handlers das ferramentas (etapa 3)
+
+A implementação pura e independente do DOM está em [`assets/js/webmcp-services.mjs`](../assets/js/webmcp-services.mjs). Ela exporta `createServiceTools(pageLocale = "pt-BR")`, que constrói quatro definições `{ name, title, description, inputSchema, outputSchema, annotations, execute }`. As descrições de descoberta seguem o idioma da página; cada `execute` aceita um idioma de resposta independente.
+
+- `getServices`: retorna as quatro frentes de atuação e a observação editorial sobre o escopo.
+- `getServiceDetails`: localiza um dos quatro IDs estáveis; retorna dados do serviço, exemplos não vinculantes de resultados e nota condicionando-os ao escopo. IDs válidos mas inexistentes recebem `SERVICE_NOT_FOUND` e `availableIds`.
+- `getEngagementProcess`: retorna a introdução e as três etapas publicadas da abordagem.
+- `getConsultingContact`: retorna o e-mail, link `mailto:` localizado, LinkedIn e orientação pública de contato, **sem enviar mensagens**.
+
+Todas retornam `contractVersion` e `language`; sucessos incluem `sourceUrl` do idioma solicitado. Rejeições de estrutura, chaves extras e IDs malformados retornam `INVALID_INPUT`; idioma explicitamente não suportado retorna `UNSUPPORTED_LANGUAGE` no idioma da página. O schema é estrito e a validação é repetida no handler para casos em que o navegador não a aplique.
+
+As definições usam os `inputSchema`/`outputSchema` e textos de descoberta do contrato v1, sem requisições externas, efeitos colaterais ou novas dependências. **Não há importação nem registro dessas quatro definições em `webmcp.js` neste momento**. Os testes de integração, igualdade automática de HTML/dados e registro no navegador serão introduzidos nas etapas 4 e 5. O contrato JSON permanece com estado `proposed-not-implemented` enquanto o registro público ainda não estiver pronto.
 
 ## Schemas e contrato de erros
 
