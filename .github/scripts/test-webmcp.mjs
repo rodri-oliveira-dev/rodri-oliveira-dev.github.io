@@ -158,7 +158,7 @@ test("invalid inputs always return actionable, localized errors", () => {
   }
 });
 
-test("project catalog is synchronized with HTML content in both languages", () => {
+test("project catalog is synchronized with HTML content in all three languages", () => {
   for (const language of SUPPORTED_LANGUAGES) {
     const relative = PAGE[language];
     const cards = htmlCards(relative);
@@ -191,7 +191,7 @@ test("profile, skills, contact and resume match published HTML and JSON-LD", () 
     assert.ok(homepage.includes('href="mailto:' + contact.email + '"'));
     assert.ok(homepage.includes('href="' + contact.linkedInUrl + '"'));
     assert.ok(homepage.includes('href="' + contact.githubUrl + '"'));
-    assert.equal(profile.websiteUrl, SITE_URL + (language === "en" ? "/en/" : "/"));
+    assert.equal(profile.websiteUrl, SITE_URL + (language === "en" ? "/en/" : language === "es-419" ? "/es/" : "/"));
     assert.equal(contact.websiteUrl, profile.websiteUrl);
   }
   const resume = call("en", "getResume");
