@@ -38,9 +38,9 @@ jobs:
         run: |
           git diff --check
 
-          if ! git diff --quiet -- index.html en/index.html es/index.html curriculo/index.html case-studies en/case-studies es/case-studies sitemap.xml; then
+          if ! git diff --quiet -- index.html en/index.html es/index.html curriculo/index.html case-studies en/case-studies es/case-studies servicos en/services es/servicios sitemap.xml; then
             echo "SEO artifacts are out of sync. Run: python3 .github/scripts/sync-seo.py"
-            git diff -- index.html en/index.html es/index.html curriculo/index.html case-studies en/case-studies es/case-studies sitemap.xml
+            git diff -- index.html en/index.html es/index.html curriculo/index.html case-studies en/case-studies es/case-studies servicos en/services es/servicios sitemap.xml
             exit 1
           fi
 
@@ -116,6 +116,76 @@ jobs:
                   resume_person.get("name") != "Rodrigo de Oliveira"):
               raise SystemExit("Entidade Person do currículo não corresponde ao portfólio")
 
+
+          # Service pages reuse the canonical Person/WebSite graph and must
+          # reciprocate all language alternates before being indexed.
+          service_pages = {
+              "pt-BR": Path("servicos/index.html"),
+              "en": Path("en/services/index.html"),
+              "es-419": Path("es/servicios/index.html"),
+          }
+          service_urls = {
+              "pt-BR": "https://rodri-oliveira-dev.github.io/servicos/",
+              "en": "https://rodri-oliveira-dev.github.io/en/services/",
+              "es-419": "https://rodri-oliveira-dev.github.io/es/servicios/",
+          }
+          expected_service_alternates = {
+              "pt-BR": service_urls["pt-BR"],
+              "en": service_urls["en"],
+              "es": service_urls["es-419"],
+              "x-default": service_urls["pt-BR"],
+          }
+          for language, path in service_pages.items():
+              if not path.is_file():
+                  raise SystemExit(f"Services translation missing: {path}")
+              html = path.read_text(encoding="utf-8")
+              url = service_urls[language]
+              if f'<html lang="{language}">' not in html:
+                  raise SystemExit(f"Incorrect service-page language: {path}")
+              if f'<link rel="canonical" href="{url}">' not in html:
+                  raise SystemExit(f"Incorrect service-page canonical: {path}")
+              alternates = dict(re.findall(
+                  r'<link rel="alternate" hreflang="([^"]+)" href="([^"]+)">',
+                  html,
+              ))
+              if alternates != expected_service_alternates:
+                  raise SystemExit(f"Service-page hreflang mismatch: {path}")
+
+              match = re.search(
+                  r'<!-- SEO_SERVICES_STRUCTURED_DATA:START -->\s*'
+                  r'<script type="application/ld\+json">\s*(\{.*?\})\s*</script>\s*'
+                  r'<!-- SEO_SERVICES_STRUCTURED_DATA:END -->',
+                  html, re.DOTALL,
+              )
+              if not match:
+                  raise SystemExit(f"Services JSON-LD missing: {path}")
+              graph = json.loads(match.group(1)).get("@graph", [])
+              types = {node.get("@type") for node in graph}
+              if types != {"WebPage", "Service", "BreadcrumbList"}:
+                  raise SystemExit(f"Unexpected services schema types: {path}")
+              nodes = {node["@type"]: node for node in graph}
+              page_node = nodes["WebPage"]
+              service_node = nodes["Service"]
+              breadcrumb = nodes["BreadcrumbList"]
+              if (
+                  page_node.get("@id") != f"{url}#webpage"
+                  or page_node.get("url") != url
+                  or page_node.get("inLanguage") != language
+                  or page_node.get("isPartOf", {}).get("@id") !=
+                     "https://rodri-oliveira-dev.github.io/#website"
+                  or page_node.get("mainEntity", {}).get("@id") != f"{url}#service"
+                  or service_node.get("@id") != f"{url}#service"
+                  or service_node.get("provider", {}).get("@id") !=
+                     "https://rodri-oliveira-dev.github.io/#person"
+                  or service_node.get("mainEntityOfPage", {}).get("@id") !=
+                     f"{url}#webpage"
+                  or len(service_node.get("serviceType", [])) != 4
+                  or breadcrumb.get("@id") != f"{url}#breadcrumb"
+                  or [item.get("position") for item in
+                      breadcrumb.get("itemListElement", [])] != [1, 2]
+              ):
+                  raise SystemExit(f"Inconsistent services JSON-LD entities: {path}")
+
           root = ET.parse("sitemap.xml").getroot()
           namespace = {
               "sm": "http://www.sitemaps.org/schemas/sitemap/0.9",
@@ -127,6 +197,9 @@ jobs:
               "https://rodri-oliveira-dev.github.io/en/",
               "https://rodri-oliveira-dev.github.io/es/",
               "https://rodri-oliveira-dev.github.io/curriculo/",
+              "https://rodri-oliveira-dev.github.io/servicos/",
+              "https://rodri-oliveira-dev.github.io/en/services/",
+              "https://rodri-oliveira-dev.github.io/es/servicios/",
           }
           case_pages = sorted(Path("case-studies").glob("*/index.html"))
           english_pages = sorted(Path("en/case-studies").glob("*/index.html"))
@@ -154,6 +227,17 @@ jobs:
               loc = (entry.findtext("sm:loc", namespaces=namespace) or "").strip()
               if loc == resume_url:
                   expected_sitemap_alternates = {}
+              elif loc in {
+                  "https://rodri-oliveira-dev.github.io/servicos/",
+                  "https://rodri-oliveira-dev.github.io/en/services/",
+                  "https://rodri-oliveira-dev.github.io/es/servicios/",
+              }:
+                  expected_sitemap_alternates = {
+                      "pt-BR": "https://rodri-oliveira-dev.github.io/servicos/",
+                      "en": "https://rodri-oliveira-dev.github.io/en/services/",
+                      "es": "https://rodri-oliveira-dev.github.io/es/servicios/",
+                      "x-default": "https://rodri-oliveira-dev.github.io/servicos/",
+                  }
               elif "/case-studies/" in loc:
                   slug = loc.rstrip("/").split("/")[-1]
                   expected_sitemap_alternates = {
