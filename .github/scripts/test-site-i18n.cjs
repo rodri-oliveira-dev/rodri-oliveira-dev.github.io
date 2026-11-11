@@ -184,6 +184,33 @@ for (const variant of variants) {
   }
 }
 
+const serviceRoutes = [
+  { route: "/servicos/", label: "Serviços", file: "servicos/index.html" },
+  { route: "/en/services/", label: "Services", file: "en/services/index.html" },
+  { route: "/es/servicios/", label: "Servicios", file: "es/servicios/index.html" },
+];
+for (const [index, variant] of variants.entries()) {
+  const { route, label, file } = serviceRoutes[index];
+  const home = read(homePath(variant));
+  const serviceHtml = read(file);
+  const nav = home.match(/<nav class="nav"[^>]*>([\s\S]*?)<\/nav>/)?.[1] ?? "";
+  const freelancer = home.match(/<section class="freelance-projects"[\s\S]*?<\/section>/)?.[0] ?? "";
+  assert.ok(nav.includes(`href="${route}">${label}</a>`),
+    `${variant.key} services link missing from desktop/mobile source nav`);
+  assert.equal((nav.match(/<a /g) ?? []).length, 7,
+    `${variant.key} expected seven primary navigation items`);
+  assert.ok(freelancer.includes(`class="freelance-services-link"><a href="${route}"`),
+    `${variant.key} freelancer section must link to services`);
+  assert.equal((freelancer.match(/<li>/g) ?? []).length, 3,
+    `${variant.key} three historical freelance projects remain`);
+  assert.equal(serviceHtml.match(/<html lang="([^"]+)"/)?.[1], variant.htmlLang,
+    `${variant.key} linked service page language`);
+  assert.ok(serviceHtml.includes(`href="${localHref(variant)}"`),
+    `${variant.key} service page must link back to localized homepage`);
+}
+assert.match(read("assets/js/site.js"), /desktopNav\.querySelectorAll\("a"\)/,
+  "Mobile navigation must clone every desktop link");
+
 const localizedHomes = variants.map((variant) => read(homePath(variant)));
 const careerSections = localizedHomes.map((home) =>
   home.match(/<section class="section career-section"[\s\S]*?<\/section>/)?.[0] ?? "");

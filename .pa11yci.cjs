@@ -5,6 +5,11 @@ const localOrigin = "http://127.0.0.1:8080";
 const languageRoots = ["", "en", "es"];
 const pageUrls = languageRoots
   .map((root) => `${localOrigin}/${root ? `${root}/` : ""}`);
+const servicePageUrls = [
+  `${localOrigin}/servicos/`,
+  `${localOrigin}/en/services/`,
+  `${localOrigin}/es/servicios/`,
+];
 const caseStudyUrls = languageRoots
   .map((root) => path.join(root, "case-studies"))
   .filter((root) => fs.existsSync(root))
@@ -26,6 +31,7 @@ module.exports = {
   },
   urls: [
     ...pageUrls,
+    ...servicePageUrls,
     ...(fs.existsSync('curriculo/index.html') ? [`${localOrigin}/curriculo/`] : []),
     ...caseStudyUrls,
   ],

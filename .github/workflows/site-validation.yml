@@ -44,6 +44,9 @@ jobs:
       - name: Test language resolution and navigation labels
         run: node .github/scripts/test-site-i18n.cjs
 
+      - name: Test services content, links and accessibility contracts
+        run: node .github/scripts/test-services.cjs
+
       - name: Test WebMCP tools, localization, security and HTML consistency
         run: node --test .github/scripts/test-webmcp.mjs
 
@@ -53,7 +56,7 @@ jobs:
       - name: Validate HTML
         shell: bash
         run: |
-          pages=(index.html en/index.html es/index.html pt-br/index.html curriculo/index.html)
+          pages=(index.html en/index.html es/index.html pt-br/index.html curriculo/index.html servicos/index.html en/services/index.html es/servicios/index.html)
           mapfile -t case_studies < <(find case-studies en/case-studies es/case-studies -mindepth 2 -maxdepth 2 -name index.html -print | sort)
           npx --no-install html-validate "${pages[@]}" "${case_studies[@]}"
 
@@ -81,6 +84,9 @@ jobs:
             './index.html'
             './en/index.html'
             './pt-br/index.html'
+            './servicos/index.html'
+            './en/services/index.html'
+            './es/servicios/index.html'
             './case-studies/**/*.html'
             './en/case-studies/**/*.html'
             './es/**/*.html'
@@ -113,6 +119,9 @@ jobs:
             './index.html'
             './en/index.html'
             './pt-br/index.html'
+            './servicos/index.html'
+            './en/services/index.html'
+            './es/servicios/index.html'
             './case-studies/**/*.html'
             './en/case-studies/**/*.html'
             './es/**/*.html'
@@ -130,6 +139,8 @@ jobs:
           files: |
             index.html
             curriculo/index.html
+            servicos/**/*.html
+            en/services/**/*.html
             en/index.html
             case-studies/**/*.html
             en/case-studies/**/*.html

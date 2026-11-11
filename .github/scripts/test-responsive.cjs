@@ -9,6 +9,7 @@ const keyboardOnly = process.env.RESPONSIVE_KEYBOARD_ONLY === "1";
 const navigationOnly = process.env.RESPONSIVE_NAVIGATION_ONLY === "1";
 const widths = [320, 360, 390, 768, 1024, 1440];
 const roots = ["", "en", "es"];
+const servicePaths = ["/servicos/", "/en/services/", "/es/servicios/"];
 const mobileProfiles = [
   {
     name: "iPhone viewport",
@@ -27,7 +28,7 @@ const urls = roots.flatMap((root) => {
     .map((entry) => entry.name)
     .sort();
   return [`${prefix}/`, ...slugs.map((slug) => `${prefix}/case-studies/${slug}/`)];
-});
+}).concat(servicePaths);
 
 const launchBrowser = () => puppeteer.launch({
   headless: true,
@@ -97,6 +98,22 @@ const assertMobileLinkNavigation = async (page, url, profileName) => {
       () => document.activeElement === document.querySelector(".mobile-nav-panel a"),
       { timeout: 2000 },
     );
+
+    if (href.startsWith("/")) {
+      // Services is a route, not an in-page anchor: wait for a full navigation.
+      await Promise.all([
+        page.waitForNavigation({ waitUntil: "load", timeout: 10000 }),
+        page.$eval(`.mobile-nav-panel a[href="${href}"]`, (link) => link.click()),
+      ]);
+      assert.equal(new URL(page.url()).pathname, href,
+        `${url} navigates to ${href} on ${profileName}`);
+      assert.equal(
+        await page.$eval(".mobile-nav-toggle", (toggle) => toggle.getAttribute("aria-expanded")),
+        "false",
+        `${url} loads ${href} with its mobile menu closed`,
+      );
+      continue;
+    }
 
     await page.$eval(`.mobile-nav-panel a[href="${href}"]`, (link) => link.click());
     await page.waitForFunction(
@@ -251,6 +268,36 @@ const assertMobileLinkNavigation = async (page, url, profileName) => {
         "false",
         "Safari null-relatedTarget sequence selects the link and closes the menu",
       );
+    } finally {
+      await browser.close();
+    }
+  }
+  // Check service-page anchor navigation through the mobile menu.
+  if (!navigationOnly) {
+    const browser = await launchBrowser();
+    try {
+      for (const servicePath of servicePaths) {
+        const page = await browser.newPage();
+        try {
+          await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1 });
+          await page.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: "reduce" }]);
+          await page.goto(`${ORIGIN}${servicePath}`, { waitUntil: "load" });
+          await page.focus(".mobile-nav-toggle");
+          await page.keyboard.press("Enter");
+          await page.waitForFunction(() =>
+            document.activeElement === document.querySelector(".mobile-nav-panel a"),
+          );
+          await page.keyboard.press("Enter");
+          await page.waitForFunction(() => window.location.hash === "#atuacao");
+          assert.equal(
+            await page.$eval(".mobile-nav-toggle", (el) => el.getAttribute("aria-expanded")),
+            "false",
+            `${servicePath} closes the mobile menu after the section link`,
+          );
+        } finally {
+          await page.close();
+        }
+      }
     } finally {
       await browser.close();
     }

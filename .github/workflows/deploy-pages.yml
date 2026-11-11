@@ -4,6 +4,10 @@ on:
   pull_request:
     paths:
       - 'curriculo/**'
+      - 'servicos/**'
+      - 'en/services/**'
+      - 'es/servicios/**'
+      - 'assets/css/servicos.css'
       - '.github/scripts/generate-resume-pdf.mjs'
       - '.github/workflows/deploy-pages.yml'
   push:
@@ -60,6 +64,11 @@ jobs:
           test -f _site/docs/webmcp.en.md
           test -f _site/docs/webmcp.es-419.md
           test -f _site/es/index.html
+          # Ensure all three localized service pages and their stylesheet are deployed.
+          test -f _site/servicos/index.html
+          test -f _site/en/services/index.html
+          test -f _site/es/servicios/index.html
+          test -f _site/assets/css/servicos.css
 
       - name: Upload PDF preview for review
         if: github.event_name == 'pull_request'
