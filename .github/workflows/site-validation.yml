@@ -76,7 +76,148 @@ jobs:
             --exclude 'https://(www\.)?linkedin\.com/'
             --exclude 'https://medium\.com/'
             --exclude '^https://rodri-oliveira-dev\.github\.io/es/?$'
-            --exclude '^https://rodri-oliveira-dev\.github\.io/(?:(?:en|es)/)?case-studies/[^/]+/?$'
+            --exclude '^https://rodri-oliveira-dev\.github\.io/(?:(?:en|es)/)?case-studies/[^/]+/?
+            './index.html'
+            './en/index.html'
+            './pt-br/index.html'
+            './case-studies/**/*.html'
+            './en/case-studies/**/*.html'
+            './es/**/*.html'
+            './README.md'
+            './README.en.md'
+            './README.es.md'
+          fail: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Lychee's --include overrides --exclude. Only GitHub URLs are
+      # reconsidered here; 404/410 still fail, while GitHub 503 is tolerated.
+      # Scheduled External link health continues to report all 503s strictly.
+      - name: Validate GitHub links (tolerate 503)
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2
+        with:
+          args: >-
+            --config .github/lychee-pr.toml
+            --root-dir "$(pwd)"
+            --verbose
+            --no-progress
+            --timeout 30
+            --max-retries 3
+            --retry-wait-time 2
+            --max-concurrency 3
+            --host-concurrency 1
+            --accept '200..=299,503'
+            --exclude '^https?://'
+            --include '^https://github\.com/'
+            './index.html'
+            './en/index.html'
+            './pt-br/index.html'
+            './case-studies/**/*.html'
+            './en/case-studies/**/*.html'
+            './es/**/*.html'
+            './README.md'
+            './README.en.md'
+            './README.es.md'
+          fail: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check spelling
+        uses: streetsidesoftware/cspell-action@ce1816e4ce36532956ac6e983737392774b6e169 # v9.2.0
+        with:
+          config: .cspell.json
+          files: |
+            index.html
+            curriculo/index.html
+            en/index.html
+            case-studies/**/*.html
+            en/case-studies/**/*.html
+            es/**/*.html
+            README.md
+            README.en.md
+            README.es.md
+          incremental_files_only: false
+          strict: true
+          suggestions: true
+          inline: error
+          report: all
+
+      - name: Validate GitHub Actions workflows
+        uses: docker://rhysd/actionlint:1.7.12
+        with:
+          args: -color
+
+            --exclude '^https://rodri-oliveira-dev\.github\.io/(?:servicos|en/services|es/servicios)/?
+            './index.html'
+            './en/index.html'
+            './pt-br/index.html'
+            './case-studies/**/*.html'
+            './en/case-studies/**/*.html'
+            './es/**/*.html'
+            './README.md'
+            './README.en.md'
+            './README.es.md'
+          fail: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Lychee's --include overrides --exclude. Only GitHub URLs are
+      # reconsidered here; 404/410 still fail, while GitHub 503 is tolerated.
+      # Scheduled External link health continues to report all 503s strictly.
+      - name: Validate GitHub links (tolerate 503)
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2
+        with:
+          args: >-
+            --config .github/lychee-pr.toml
+            --root-dir "$(pwd)"
+            --verbose
+            --no-progress
+            --timeout 30
+            --max-retries 3
+            --retry-wait-time 2
+            --max-concurrency 3
+            --host-concurrency 1
+            --accept '200..=299,503'
+            --exclude '^https?://'
+            --include '^https://github\.com/'
+            './index.html'
+            './en/index.html'
+            './pt-br/index.html'
+            './case-studies/**/*.html'
+            './en/case-studies/**/*.html'
+            './es/**/*.html'
+            './README.md'
+            './README.en.md'
+            './README.es.md'
+          fail: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check spelling
+        uses: streetsidesoftware/cspell-action@ce1816e4ce36532956ac6e983737392774b6e169 # v9.2.0
+        with:
+          config: .cspell.json
+          files: |
+            index.html
+            curriculo/index.html
+            en/index.html
+            case-studies/**/*.html
+            en/case-studies/**/*.html
+            es/**/*.html
+            README.md
+            README.en.md
+            README.es.md
+          incremental_files_only: false
+          strict: true
+          suggestions: true
+          inline: error
+          report: all
+
+      - name: Validate GitHub Actions workflows
+        uses: docker://rhysd/actionlint:1.7.12
+        with:
+          args: -color
+
             './index.html'
             './en/index.html'
             './pt-br/index.html'
