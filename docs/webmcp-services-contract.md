@@ -1,6 +1,6 @@
 # Contrato WebMCP de serviços (v1)
 
-> **Status:** definido para implementação, **ainda não registrado no navegador**. Esta é a etapa 1 do plano de evolução; as ferramentas públicas existentes continuam inalteradas.
+> **Status:** contrato definido (etapa 1) e catálogo multilíngue modelado (etapa 2). **As quatro ferramentas ainda não estão implementadas nem registradas no navegador**. As ferramentas gerais existentes continuam inalteradas.
 
 Contrato legível por máquina: [`contracts/webmcp-services.v1.json`](contracts/webmcp-services.v1.json).
 
@@ -41,6 +41,21 @@ Todos os retornos bem-sucedidos incluem `contractVersion: "1.0.0"`, `language` e
 A ordem pública desses serviços é a mesma do HTML. Os identificadores de etapas, na ordem apresentada, são `context`, `alternatives` e `next-steps`, correspondendo a **compreender o cenário**, **explicitar trade-offs** e **definir próximos passos**, com traduções próprias nas outras páginas.
 
 Os campos `potentialOutputs` e `scopeNote` **não estabelecem entregas garantidas**: podem mencionar somente exemplos já publicados, como recomendações priorizadas e decisões documentadas, sempre condicionados ao escopo acordado. Não inventar preços, disponibilidade, certificações, projetos de clientes, prazos, métricas ou resultados.
+
+## Catálogo multilíngue preparado (etapa 2)
+
+A implementação utilizará [`assets/js/webmcp-services-data.mjs`](../assets/js/webmcp-services-data.mjs), um módulo ES nativo **sem registro de ferramentas, acesso ao DOM ou operações de rede**. Ele contém os dados de serviços nas três línguas, extraídos do texto visível das páginas:
+
+- `SERVICES_CONTRACT_VERSION`, `SERVICES_SUPPORTED_LANGUAGES` e `SERVICES_PAGE_URLS`: metadados alinhados ao contrato JSON.
+- `SERVICES_SERVICE_IDS` e `SERVICES_PROCESS_STEP_IDS`: identificadores e ordenação estáveis, iguais em todos os idiomas.
+- `SERVICES_CATALOG[language].services`: quatro cartões com `id`, `title` e `description`, correspondendo aos títulos e parágrafos do HTML.
+- `engagementNote`, `potentialOutputs` e `scopeNote`: contexto e **exemplos condicionais** de entregas, não promessas específicas por serviço.
+- `process.introduction` e `process.steps`: introdução e três etapas publicadas em `#abordagem`.
+- `contact.emailUrl` e `contact.guidance`: URL `mailto:` localizada e orientação de contato visível; e-mail e LinkedIn são constantes públicas compartilhadas.
+
+Os objetos e arrays exportados são congelados recursivamente para evitar mutação acidental durante as consultas. O módulo não contém preços, disponibilidade, dados privados, nomes de clientes no catálogo de serviços, compromissos de entrega ou coleta de informações dos visitantes.
+
+**Sincronização obrigatória nas próximas etapas:** para uma alteração editorial nas três páginas de serviços, atualizar o catálogo em conjunto. A etapa 5 adicionará testes automatizados de consistência e cobertura contratual; a etapa 3 transformará os dados em resultados conformes a `outputSchema`. Este arquivo de dados isolado **não torna o WebMCP de serviços disponível aos agentes**.
 
 ## Schemas e contrato de erros
 
