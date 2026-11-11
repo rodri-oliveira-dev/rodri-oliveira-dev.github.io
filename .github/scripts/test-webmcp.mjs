@@ -273,3 +273,35 @@ test("browser module automatically registers six tools in the presence of WebMCP
   assert.equal(result.before, false);
   assert.equal(result.after, true);
 });
+
+
+test("bilingual WebMCP guides and Pages packaging contract stay discoverable", () => {
+  const pt = read("docs/webmcp.pt-BR.md");
+  const en = read("docs/webmcp.en.md");
+  const readmePt = read("README.md");
+  const readmeEn = read("README.en.md");
+  const automation = read(".github/AUTOMATION.md");
+  const deploy = read(".github/workflows/deploy-pages.yml");
+
+  for (const name of NAMES) {
+    assert.ok(pt.includes(name), "PT documentation must cover " + name);
+    assert.ok(en.includes(name), "EN documentation must cover " + name);
+  }
+  for (const language of SUPPORTED_LANGUAGES) {
+    assert.ok(pt.includes(language) && en.includes(language));
+  }
+  assert.ok(readmePt.includes("docs/webmcp.pt-BR.md"));
+  assert.ok(readmeEn.includes("docs/webmcp.en.md"));
+  assert.ok(automation.includes("../docs/webmcp.pt-BR.md"));
+  assert.ok(automation.includes("../docs/webmcp.en.md"));
+  assert.ok(pt.includes("node --test .github/scripts/test-webmcp.mjs"));
+  assert.ok(en.includes("node --test .github/scripts/test-webmcp.mjs"));
+
+  for (const name of ["webmcp.js", "webmcp-tools.mjs", "webmcp-data.mjs", "webmcp-i18n.mjs"]) {
+    assert.ok(deploy.includes("test -f _site/assets/js/" + name),
+      "Pages artifact must include " + name);
+  }
+  for (const doc of ["webmcp.pt-BR.md", "webmcp.en.md"]) {
+    assert.ok(deploy.includes("test -f _site/docs/" + doc));
+  }
+});

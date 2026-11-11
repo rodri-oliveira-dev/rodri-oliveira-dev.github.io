@@ -4,6 +4,17 @@ Este diretório concentra a automação de CI, qualidade, segurança e manutenç
 
 A estratégia é manter o site estático simples, mas protegido por verificações automatizadas que cubram integridade do conteúdo, acessibilidade, segurança dos workflows, qualidade percebida, saúde de links externos e manutenção das próprias GitHub Actions.
 
+## WebMCP experimental (pt-BR e en)
+
+A integração com agentes de navegador é feita por módulos JavaScript locais, somente leitura, sem backend. O registro das ferramentas depende de `document.modelContext` e de contexto seguro; navegadores sem suporte continuam usando o site normalmente.
+
+- [Guia WebMCP em português](../docs/webmcp.pt-BR.md)
+- [WebMCP guide in English](../docs/webmcp.en.md)
+- Teste versionado: `node --test .github/scripts/test-webmcp.mjs` (executado automaticamente no gate `Site validation`).
+- Publicação: `deploy-pages.yml` verifica os módulos JavaScript no artefato estático, sem configurar token experimental.
+
+A versão espanhola não registra ferramentas WebMCP. A ativação em navegador de teste e a diferença entre CI com mocks e teste real estão descritas nos guias.
+
 ## Visão geral
 
 | Workflow | Arquivo | Execução | Objetivo |
