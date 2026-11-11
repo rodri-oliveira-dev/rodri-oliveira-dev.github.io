@@ -36,6 +36,6 @@ If you're looking for my open-source libraries, tools, and contributions, you ca
 <details>
 <summary>About this repository</summary>
 
-This repository hosts my personal website and does not accept external contributions. The source code, written content, and visual assets are proprietary. See the [license](LICENSE) for terms of use. Technical maintenance and publishing details are available in the [repository documentation](.github/AUTOMATION.md) (in Portuguese).
+This repository hosts my personal website and does not accept external contributions. The source code, written content, and visual assets are proprietary. See the [license](LICENSE) for terms of use. Technical maintenance and publishing details are available in the [repository documentation](.github/AUTOMATION.md) (in Portuguese). The experimental WebMCP integration is documented in [English](docs/webmcp.en.md), [Brazilian Portuguese](docs/webmcp.pt-BR.md), and [Spanish](docs/webmcp.es-419.md).
 
 </details>

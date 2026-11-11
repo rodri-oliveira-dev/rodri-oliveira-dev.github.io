@@ -36,6 +36,6 @@ Si quieres explorar mis bibliotecas, herramientas y contribuciones de código ab
 <details>
 <summary>Sobre este repositorio</summary>
 
-Este repositorio aloja mi sitio web personal y no acepta contribuciones externas. El código, los textos y los materiales visuales son propietarios. Consulta la [licencia](LICENSE) para conocer los términos de uso. Los detalles técnicos de mantenimiento y publicación están en la [documentación del repositorio](.github/AUTOMATION.md) (en portugués).
+Este repositorio aloja mi sitio web personal y no acepta contribuciones externas. El código, los textos y los materiales visuales son propietarios. Consulta la [licencia](LICENSE) para conocer los términos de uso. Los detalles técnicos de mantenimiento y publicación están en la [documentación del repositorio](.github/AUTOMATION.md) (en portugués). La integración experimental WebMCP está documentada en [español](docs/webmcp.es-419.md), [portugués](docs/webmcp.pt-BR.md) e [inglés](docs/webmcp.en.md).
 
 </details>

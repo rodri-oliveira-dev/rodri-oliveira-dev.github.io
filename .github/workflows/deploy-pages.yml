@@ -50,6 +50,16 @@ jobs:
           test -s _site/curriculo/rodrigo-de-oliveira.pdf
           test -f _site/curriculo/index.html
           test -f _site/index.html
+          # Keep all client-side WebMCP modules in the GitHub Pages artifact.
+          # Missing modules would break the dependency chain after publish.
+          test -f _site/assets/js/webmcp.js
+          test -f _site/assets/js/webmcp-tools.mjs
+          test -f _site/assets/js/webmcp-data.mjs
+          test -f _site/assets/js/webmcp-i18n.mjs
+          test -f _site/docs/webmcp.pt-BR.md
+          test -f _site/docs/webmcp.en.md
+          test -f _site/docs/webmcp.es-419.md
+          test -f _site/es/index.html
 
       - name: Upload PDF preview for review
         if: github.event_name == 'pull_request'
