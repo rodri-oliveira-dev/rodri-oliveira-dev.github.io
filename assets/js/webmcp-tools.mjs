@@ -1,15 +1,10 @@
 import { PROJECTS, PROFILES, SITE_URL, SKILLS, projectSummary } from "./webmcp-data.mjs";
+import { MESSAGES, SUPPORTED_LANGUAGES, pageLanguage, resolveLanguage } from "./webmcp-i18n.mjs";
 
 const READ_ONLY = Object.freeze({
   readOnlyHint: true,
   idempotentHint: true,
   openWorldHint: false,
-});
-
-const EMPTY_INPUT = Object.freeze({
-  type: "object",
-  properties: {},
-  additionalProperties: false,
 });
 
 function definition(name, description, inputSchema, execute) {
@@ -22,123 +17,177 @@ function normalized(value) {
     : "";
 }
 
-function invalidInput(field) {
-  return { error: { code: "INVALID_INPUT", message: `Invalid ${field} argument.` } };
+function schema(text, properties = {}, required = []) {
+  return {
+    type: "object",
+    properties: {
+      language: {
+        type: "string",
+        enum: [...SUPPORTED_LANGUAGES],
+        description: text.parameters.language,
+      },
+      ...properties,
+    },
+    ...(required.length ? { required } : {}),
+    additionalProperties: false,
+  };
+}
+
+function failure(language, code, message) {
+  return { language, error: { code, message } };
+}
+
+function inputError(language, name) {
+  return failure(language, "INVALID_INPUT", MESSAGES[language].invalidInput + " " + name + ".");
 }
 
 /**
- * Read-only tools for the five public case studies and the published portfolio.
- * Locale is initially selected from the current page; language negotiation
- * and translated discovery descriptions are part of stage 3.
+ * Resolve a tool call's requested response language. A missing argument uses
+ * the page language, while an explicit unsupported value produces an error.
  */
-export function createPortfolioTools(language = "pt-BR") {
-  const locale = language === "en" ? "en" : "pt-BR";
-  const listProjects = () => PROJECTS.map((project) => projectSummary(project, locale));
+function callLanguage(input, page, name, allowed) {
+  if (
+    input === null ||
+    typeof input !== "object" ||
+    Array.isArray(input) ||
+    Object.keys(input).some((key) => !allowed.includes(key))
+  ) {
+    return { error: inputError(page, name) };
+  }
+
+  const language = resolveLanguage(input.language, page);
+  return language
+    ? { language }
+    : { error: failure(page, "UNSUPPORTED_LANGUAGE", MESSAGES[page].invalidLanguage) };
+}
+
+function urlFor(language) {
+  return SITE_URL + (language === "en" ? "/en/" : "/");
+}
+
+/**
+ * Read-only tools for the five featured open-source projects. Descriptions and
+ * schemas use the page locale; each call may override the response locale.
+ */
+export function createPortfolioTools(pageLocale = "pt-BR") {
+  const page = pageLanguage(pageLocale);
+  const text = MESSAGES[page];
+  const common = (name, allowed, execute) => (input = {}) => {
+    const resolution = callLanguage(input, page, name, ["language", ...allowed]);
+    return resolution.error ?? execute(input, resolution.language);
+  };
 
   return [
     definition(
       "getProfile",
-      "Get the public professional profile of software architect Rodrigo de Oliveira.",
-      EMPTY_INPUT,
-      () => ({
-        language: locale,
-        ...PROFILES[locale],
+      text.tools.getProfile,
+      schema(text),
+      common("getProfile", [], (_, language) => ({
+        language,
+        ...PROFILES[language],
         experienceYearsMinimum: 20,
-        websiteUrl: locale === "en" ? `${SITE_URL}/en/` : `${SITE_URL}/`,
-      })
+        websiteUrl: urlFor(language),
+      }))
     ),
     definition(
       "getSkills",
-      "List Rodrigo de Oliveira's publicly documented software architecture and engineering skills.",
-      EMPTY_INPUT,
-      () => ({
-        language: locale,
-        skills: [...SKILLS[locale]],
-        sourceUrl: locale === "en" ? `${SITE_URL}/en/` : `${SITE_URL}/`,
-      })
+      text.tools.getSkills,
+      schema(text),
+      common("getSkills", [], (_, language) => ({
+        language,
+        skills: [...SKILLS[language]],
+        sourceUrl: urlFor(language),
+      }))
     ),
     definition(
       "searchProjects",
-      "Search the five featured open-source projects by keyword and/or technology; omit filters to list all.",
-      {
-        type: "object",
-        properties: {
-          query: { type: "string", maxLength: 120, description: "Optional keyword in name or description." },
-          technology: { type: "string", maxLength: 80, description: "Optional technology name." },
-          limit: { type: "integer", minimum: 1, maximum: 5, description: "Maximum number of projects, default 5." },
-        },
-        additionalProperties: false,
-      },
-      (input = {}) => {
-        if (!input || typeof input !== "object" || Array.isArray(input)) return invalidInput("search");
-        if ((input.query !== undefined && typeof input.query !== "string")
-          || (input.technology !== undefined && typeof input.technology !== "string")
-          || (input.limit !== undefined && (!Number.isInteger(input.limit) || input.limit < 1 || input.limit > 5))) {
-          return invalidInput("search");
+      text.tools.searchProjects,
+      schema(text, {
+        query: { type: "string", maxLength: 120, description: text.parameters.query },
+        technology: { type: "string", maxLength: 80, description: text.parameters.technology },
+        limit: { type: "integer", minimum: 1, maximum: 5, description: text.parameters.limit },
+      }),
+      common("searchProjects", ["query", "technology", "limit"], (input, language) => {
+        if (
+          (input.query !== undefined && (typeof input.query !== "string" || input.query.length > 120)) ||
+          (input.technology !== undefined && (typeof input.technology !== "string" || input.technology.length > 80)) ||
+          (input.limit !== undefined && (!Number.isInteger(input.limit) || input.limit < 1 || input.limit > 5))
+        ) {
+          return inputError(language, "searchProjects");
         }
-        const keyword = normalized(input.query);
+
+        const query = normalized(input.query);
         const technology = normalized(input.technology);
-        const matches = listProjects().filter((project) => {
-          const tags = project.technologies.map(normalized);
-          const searchable = normalized(`${project.name} ${project.description} ${tags.join(" ")}`);
-          return (!keyword || searchable.includes(keyword))
-            && (!technology || tags.some((tag) => tag.includes(technology)));
+        // A multilingual agent can use either language when filtering, regardless
+        // of the requested output language.
+        const matches = PROJECTS.filter((project) => {
+          const pt = projectSummary(project, "pt-BR");
+          const en = projectSummary(project, "en");
+          const tags = [...pt.technologies, ...en.technologies].map(normalized);
+          const searchable = normalized([
+            project.name, pt.description, en.description, ...tags,
+          ].join(" "));
+          return (!query || searchable.includes(query)) &&
+            (!technology || tags.some((tag) => tag.includes(technology)));
         });
+
         return {
-          language: locale,
+          language,
           total: matches.length,
-          projects: matches.slice(0, input.limit ?? 5),
+          projects: matches.slice(0, input.limit ?? 5).map((project) => projectSummary(project, language)),
         };
-      }
+      })
     ),
     definition(
       "getProjectDetails",
-      "Get the public description, technology tags, repository, and case-study URL for a featured project.",
-      {
-        type: "object",
-        properties: {
-          projectId: { type: "string", description: "A project slug returned by searchProjects.", maxLength: 80 },
+      text.tools.getProjectDetails,
+      schema(text, {
+        projectId: {
+          type: "string",
+          maxLength: 80,
+          description: text.parameters.projectId,
         },
-        required: ["projectId"],
-        additionalProperties: false,
-      },
-      (input = {}) => {
-        if (!input || typeof input !== "object" || Array.isArray(input)) return invalidInput("projectId");
-        if (typeof input.projectId !== "string" || input.projectId.length > 80) {
-          return invalidInput("projectId");
+      }, ["projectId"]),
+      common("getProjectDetails", ["projectId"], (input, language) => {
+        if (
+          typeof input.projectId !== "string" ||
+          input.projectId.length > 80 ||
+          !input.projectId.trim()
+        ) {
+          return inputError(language, "getProjectDetails");
         }
         const project = PROJECTS.find((item) => item.id === normalized(input.projectId));
         return project
-          ? { language: locale, project: projectSummary(project, locale) }
-          : { error: { code: "PROJECT_NOT_FOUND", message: "No featured project matches that ID." },
-              availableIds: PROJECTS.map((item) => item.id) };
-      }
+          ? { language, project: projectSummary(project, language) }
+          : {
+              ...failure(language, "PROJECT_NOT_FOUND", MESSAGES[language].projectNotFound),
+              availableIds: PROJECTS.map((item) => item.id),
+            };
+      })
     ),
     definition(
       "getResume",
-      "Find the public HTML and PDF resume. The available resume is in Brazilian Portuguese.",
-      EMPTY_INPUT,
-      () => ({
-        language: locale,
+      text.tools.getResume,
+      schema(text),
+      common("getResume", [], (_, language) => ({
+        language,
         availableLanguages: ["pt-BR"],
-        htmlUrl: `${SITE_URL}/curriculo/`,
-        pdfUrl: `${SITE_URL}/curriculo/rodrigo-de-oliveira.pdf`,
-        note: locale === "en"
-          ? "The published resume is available in Brazilian Portuguese only; no English translation is claimed."
-          : "O currículo publicado está disponível apenas em português do Brasil.",
-      })
+        htmlUrl: SITE_URL + "/curriculo/",
+        pdfUrl: SITE_URL + "/curriculo/rodrigo-de-oliveira.pdf",
+        note: MESSAGES[language].resumeNote,
+      }))
     ),
     definition(
       "getContactInfo",
-      "Get the professional contact channels already published on the portfolio.",
-      EMPTY_INPUT,
-      () => ({
-        language: locale,
+      text.tools.getContactInfo,
+      schema(text),
+      common("getContactInfo", [], (_, language) => ({
+        language,
         email: "rodrigodotnet@outlook.com",
         linkedInUrl: "https://www.linkedin.com/in/rodri-oliveira-dev",
         githubUrl: "https://github.com/rodri-oliveira-dev",
-        websiteUrl: locale === "en" ? `${SITE_URL}/en/` : `${SITE_URL}/`,
-      })
+        websiteUrl: urlFor(language),
+      }))
     ),
   ];
 }

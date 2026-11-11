@@ -1,12 +1,9 @@
 import { createPortfolioTools } from "./webmcp-tools.mjs";
+import { SUPPORTED_LANGUAGES } from "./webmcp-i18n.mjs";
 
 /**
  * Optional WebMCP bootstrap for the Portuguese and English pages.
  * Read-only tools are registered only when the experimental API is available.
- */
-const SUPPORTED_LANGUAGES = Object.freeze(["pt-BR", "en"]);
-
-/**
  * Creates a browser-local tool registry when WebMCP is available.
  * Unsupported browsers and other locales keep their existing behavior.
  */
@@ -43,7 +40,7 @@ export const webMCPRegistry = createWebMCPRegistry();
 export const webMCPRegistrations = webMCPRegistry
   ? Promise.allSettled(
       createPortfolioTools(webMCPRegistry.language).map((tool) =>
-        webMCPRegistry.registerTool(tool)
+        Promise.resolve().then(() => webMCPRegistry.registerTool(tool))
       )
     )
   : Promise.resolve([]);
