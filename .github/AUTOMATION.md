@@ -4,6 +4,10 @@ Este diretório concentra a automação de CI, qualidade, segurança e manutenç
 
 A estratégia é manter o site estático simples, mas protegido por verificações automatizadas que cubram integridade do conteúdo, acessibilidade, segurança dos workflows, qualidade percebida, saúde de links externos e manutenção das próprias GitHub Actions.
 
+## Instruções para agentes e skills
+
+Agentes que modificam este repositório devem seguir o `AGENTS.md` da raiz, incluindo a regra obrigatória de atualizar `sitemap.xml` (datas `lastmod` das URLs afetadas) em toda mudança efetiva do site. As instruções especializadas ficam em `.github/skills/`, cobrindo SEO, idiomas, serviços, estudos de caso, acessibilidade, importação de conteúdo, WebMCP, currículo e workflows. Mudanças somente em documentação interna não alteram artificialmente o sitemap.
+
 ## WebMCP experimental (pt-BR, en e es-419)
 
 A integração com agentes de navegador é feita por módulos JavaScript locais, somente leitura, sem backend. O registro das ferramentas depende de `document.modelContext` e de contexto seguro; navegadores sem suporte continuam usando o site normalmente.
