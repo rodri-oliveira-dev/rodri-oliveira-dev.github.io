@@ -8,6 +8,9 @@ on:
       - 'en/services/**'
       - 'es/servicios/**'
       - 'assets/css/servicos.css'
+      - 'assets/js/webmcp.js'
+      - 'assets/js/webmcp-services.mjs'
+      - 'assets/js/webmcp-services-data.mjs'
       - '.github/scripts/generate-resume-pdf.mjs'
       - '.github/workflows/deploy-pages.yml'
   push:
@@ -60,6 +63,8 @@ jobs:
           test -f _site/assets/js/webmcp-tools.mjs
           test -f _site/assets/js/webmcp-data.mjs
           test -f _site/assets/js/webmcp-i18n.mjs
+          test -f _site/assets/js/webmcp-services.mjs
+          test -f _site/assets/js/webmcp-services-data.mjs
           test -f _site/docs/webmcp.pt-BR.md
           test -f _site/docs/webmcp.en.md
           test -f _site/docs/webmcp.es-419.md
