@@ -1,32 +1,15 @@
-const fs = require("node:fs");
-const path = require("node:path");
+const { discoverLighthousePages } = require("./.github/scripts/lighthouse-pages.cjs");
 
-const languageRoots = ["", "en", "es"];
-const pageUrls = languageRoots
-  .map((root) => `http://127.0.0.1:8080/${root ? `${root}/` : ""}`);
-const servicePageUrls = [
-  `http://127.0.0.1:8080/servicos/`,
-  `http://127.0.0.1:8080/en/services/`,
-  `http://127.0.0.1:8080/es/servicios/`,
-];
-const caseStudyUrls = languageRoots
-  .map((root) => path.join(root, "case-studies"))
-  .filter((root) => fs.existsSync(root))
-  .flatMap((root) => fs.readdirSync(root, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && fs.existsSync(path.join(root, entry.name, "index.html")))
-    .map((entry) => `http://127.0.0.1:8080/${root.split(path.sep).join("/")}/${entry.name}/`))
-  .sort();
+const configuredUrls = process.env.LHCI_URLS
+  ? JSON.parse(process.env.LHCI_URLS)
+  : discoverLighthousePages().map((page) => page.url);
+const numberOfRuns = Number.parseInt(process.env.LHCI_NUMBER_OF_RUNS ?? "3", 10);
 
 module.exports = {
   ci: {
     collect: {
-      url: [
-        ...pageUrls,
-        ...servicePageUrls,
-        ...(fs.existsSync('curriculo/index.html') ? ['http://127.0.0.1:8080/curriculo/'] : []),
-        ...caseStudyUrls,
-      ],
-      numberOfRuns: 3,
+      url: configuredUrls,
+      numberOfRuns,
       settings: {
         chromeFlags: "--no-sandbox --disable-dev-shm-usage --disable-gpu",
       },

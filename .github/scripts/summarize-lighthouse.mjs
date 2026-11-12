@@ -5,6 +5,7 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const lighthouseConfig = require("../../lighthouserc.cjs");
 const assertions = lighthouseConfig?.ci?.assert?.assertions ?? {};
+const numberOfRuns = lighthouseConfig?.ci?.collect?.numberOfRuns ?? 3;
 const directory = ".lighthouseci";
 const marker = "<!-- lighthouse-ci-report -->";
 
@@ -112,7 +113,7 @@ const lines = [
   "",
   `**Quality gate:** ${overall}`,
   "",
-  "Scores below are the median of 3 Lighthouse runs per page.",
+  `Scores below are the median of ${numberOfRuns} Lighthouse runs per page.`,
   "",
   "| Page | Performance | Accessibility | Best Practices | SEO |",
   "| --- | ---: | ---: | ---: | ---: |",

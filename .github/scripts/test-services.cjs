@@ -180,9 +180,10 @@ test("sitemap lists all three pages with reciprocal alternate URLs", () => {
 test("WCAG, Lighthouse, responsive, HTML and spelling gates include the service pages", () => {
   const pa11y = require(path.join(ROOT, ".pa11yci.cjs"));
   const lighthouse = require(path.join(ROOT, "lighthouserc.cjs"));
+  const { discoverLighthousePages } = require(path.join(ROOT, ".github/scripts/lighthouse-pages.cjs"));
   const site = read(".github/workflows/site-validation.yml");
   const accessibility = read(".github/workflows/accessibility.yml");
-  const lighthouseWorkflow = read(".github/workflows/lighthouse.yml");
+  const lighthousePages = discoverLighthousePages(ROOT);
   const responsive = read(".github/scripts/test-responsive.cjs");
   for (const variant of languages) {
     const servicePath = variant.route.slice(1);
@@ -191,7 +192,7 @@ test("WCAG, Lighthouse, responsive, HTML and spelling gates include the service 
     assert.ok(lighthouse.ci.collect.url.includes(localUrl), variant.file + " Lighthouse URL");
     assert.ok(site.includes(variant.file), variant.file + " HTML/cspell coverage");
     assert.ok(accessibility.includes('Path("' + variant.file + '")'), variant.file + " WCAG fixture");
-    assert.ok(lighthouseWorkflow.includes('Path("' + variant.file + '")'),
+    assert.ok(lighthousePages.some((page) => page.file === variant.file),
       variant.file + " Lighthouse fixture");
     assert.ok(responsive.includes('"' + variant.route + '"'),
       variant.file + " viewport coverage");

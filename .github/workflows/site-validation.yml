@@ -47,6 +47,9 @@ jobs:
       - name: Test services content, links and accessibility contracts
         run: node .github/scripts/test-services.cjs
 
+      - name: Test incremental Lighthouse page selection
+        run: node --test .github/scripts/test-select-lighthouse-pages.mjs
+
       - name: Test WebMCP tools, localization, security and HTML consistency
         run: node --test .github/scripts/test-webmcp.mjs
 
