@@ -69,7 +69,7 @@ def main() -> int:
     metadata = subprocess.run(
         ["pdfinfo", str(PDF)], check=True, capture_output=True, text=True
     ).stdout
-    match = re.search(r"^Pages:\\s*(\\d+)\\s*$", metadata, re.MULTILINE)
+    match = re.search(r"^Pages:\s*(\d+)\s*$", metadata, re.MULTILINE)
     if not match:
         raise AssertionError("Não foi possível determinar o número de páginas do PDF.")
     pages = int(match.group(1))
