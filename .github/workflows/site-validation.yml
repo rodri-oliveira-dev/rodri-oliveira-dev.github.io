@@ -50,6 +50,9 @@ jobs:
       - name: Test WebMCP tools, localization, security and HTML consistency
         run: node --test .github/scripts/test-webmcp.mjs
 
+      - name: Test WebMCP services contracts and browser registration
+        run: node --test .github/scripts/test-webmcp-services.mjs
+
       - name: Install validation tooling
         run: npm install --no-save --ignore-scripts html-validate@11.15.0 @cspell/dict-pt-br@2.4.2 @cspell/dict-es-es@3.0.9
 

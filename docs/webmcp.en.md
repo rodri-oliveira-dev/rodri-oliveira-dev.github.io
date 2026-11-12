@@ -4,11 +4,11 @@
 
 ## Purpose and scope
 
-The site exposes six **read-only** tools through the experimental [WebMCP Imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api). Tools are registered inside a compatible browser tab using `document.modelContext.registerTool`. This is not a REST endpoint or a remote MCP server; the visual site remains unchanged.
+The site exposes six general **read-only** tools plus four additional service-specific tools through the experimental [WebMCP Imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api). Tools are registered inside a compatible browser tab using `document.modelContext.registerTool`. This is not a REST endpoint or a remote MCP server; the visual site remains unchanged.
 
 - Supported languages: `pt-BR`, `en`, and `es-419`. Tool descriptions follow the page locale, while individual calls may request any of the three response languages.
-- Pages: Portuguese, English and Spanish homepages, five case studies in each language, and the Portuguese resume.
-- Data: the portfolio's published professional information and its five featured projects; no external requests, credentials, analytics, or state changes.
+- Pages: Portuguese, English and Spanish homepages, five case studies per language, the Portuguese resume, and `/servicos/`, `/en/services/`, `/es/servicios/`.
+- Data: published professional information, five featured projects and four consulting services; no external requests, credentials, analytics, or state changes.
 - Compatibility: if the WebMCP API is missing, or the page lacks a secure context, no tools are registered and the regular site still works.
 - Resume: the published HTML and PDF are **Portuguese only**. An English or Spanish tool response is not a translated resume.
 
@@ -22,11 +22,16 @@ The site exposes six **read-only** tools through the experimental [WebMCP Impera
 | [`assets/js/webmcp-tools.mjs`](../assets/js/webmcp-tools.mjs) | Tool definitions, JSON Schema input contracts, validation and read-only operations |
 | [`assets/js/webmcp-data.mjs`](../assets/js/webmcp-data.mjs) | Public projects, profile and skills in Portuguese, English and Spanish |
 | [`assets/js/webmcp-i18n.mjs`](../assets/js/webmcp-i18n.mjs) | Tool descriptions, parameter help, localized errors and language negotiation |
+| [`assets/js/webmcp-services.mjs`](../assets/js/webmcp-services.mjs) | Four read-only services tools, strict schemas and localized errors |
+| [`assets/js/webmcp-services-data.mjs`](../assets/js/webmcp-services-data.mjs) | Public service catalog and engagement approach in three locales |
+| [`docs/contracts/webmcp-services.v1.json`](contracts/webmcp-services.v1.json) | Versioned JSON Schema contract v1.0.0 |
+| [`docs/webmcp-services-contract.md`](webmcp-services-contract.md) | Full contract semantics, maintenance and versioning |
+| [`.github/scripts/test-webmcp-services.mjs`](../.github/scripts/test-webmcp-services.mjs) | Contract, HTML parity, locale and simulated-browser lifecycle tests |
 | [`.github/scripts/test-webmcp.mjs`](../.github/scripts/test-webmcp.mjs) | Contract, localization, lifecycle and HTML content-parity tests |
 | [`.github/workflows/site-validation.yml`](../.github/workflows/site-validation.yml) | Runs tests in PR and `main` CI |
 | [`.github/workflows/deploy-pages.yml`](../.github/workflows/deploy-pages.yml) | Checks WebMCP modules are included in the GitHub Pages artifact |
 
-Each covered HTML page loads only `/assets/js/webmcp.js`. The integration uses native ES Modules and requires no bundler or npm package. The published CSP remains restrictive (`script-src 'self'`; `connect-src 'none'`).
+Each covered HTML page loads only `/assets/js/webmcp.js`. On the three services routes, the entry point lazy-loads `webmcp-services.mjs` and registers up to ten tools; other pages retain only the six general tools. The integration uses native ES Modules and requires no bundler or npm package. The published CSP remains restrictive (`script-src 'self'`; `connect-src 'none'`).
 
 ## Public tools
 
@@ -38,6 +43,17 @@ Each covered HTML page loads only `/assets/js/webmcp.js`. The integration uses n
 | `getProjectDetails` | `projectId`, `language?` | One featured project's public details |
 | `getResume` | `language?` | HTML/PDF links and the actual available language, `pt-BR` |
 | `getContactInfo` | `language?` | Public email, LinkedIn, GitHub and website URLs |
+
+### Additional tools on the services pages only
+
+| Tool | Arguments | Output |
+| --- | --- | --- |
+| `getServices` | `language?` | Four professional services and engagement scope note |
+| `getServiceDetails` | `serviceId`, `language?` | One service and possible outputs subject to the agreed scope |
+| `getEngagementProcess` | `language?` | Introduction and three published work stages |
+| `getConsultingContact` | `language?` | Public email, LinkedIn and initial outreach guidance |
+
+These read-only tools cannot send messages, process client data or create agreements. Service IDs are `architecture-review`, `dotnet-modernization`, `apis-distributed-systems` and `technical-decision-support`. An unknown service returns `SERVICE_NOT_FOUND` and `availableIds`. For full JSON schemas and examples, see the [v1 services contract](webmcp-services-contract.md).
 
 Tool names and JSON property names are stable in English. Descriptions and human-facing messages are localized.
 
@@ -71,12 +87,35 @@ From the repository root:
 
 ```bash
 node --test .github/scripts/test-webmcp.mjs
+node --test .github/scripts/test-webmcp-services.mjs
 node .github/scripts/test-site-i18n.cjs
 ```
 
-The first command checks tool names and schemas, read-only annotations, Portuguese/English/Spanish results and errors, searching and validation, registration and bfcache restoration, CSP, and **content drift** against the five visible project cards on all three language homepages. It requires no external packages or network calls. The existing `Site validation` workflow runs these tests with Node.js 24 for PRs and pushes to `main`.
+The first suite verifies the six general tools. The services suite checks four versioned tool contracts, all three locales, output schemas and errors, route-specific registration, browser lifecycle/bfcache simulation, and HTML/content parity across the three service pages. Both are dependency-free and run in the `Site validation` workflow with Node.js 24.
 
-The GitHub Pages build verifies all WebMCP modules are present in the `_site` static artifact. **Mocked tests do not prove real-browser compatibility.** Use the manual smoke test below in addition to CI.
+The GitHub Pages build verifies the general and services WebMCP modules are present in the `_site` static artifact. **Mocked tests do not prove real-browser compatibility.** Use the manual smoke test below in addition to CI.
+
+## Additional manual smoke test for services pages
+
+On a compatible Chrome version with experimental WebMCP enabled, visit `http://localhost:8000/servicos/`, `http://localhost:8000/en/services/` and `http://localhost:8000/es/servicios/` after starting the local server described below.
+
+After each page loads, open DevTools:
+
+```javascript
+const context = document.modelContext;
+const registered = await context.getTools();
+console.log(registered.map((tool) => tool.name).sort());
+const details = registered.find((tool) => tool.name === "getServiceDetails");
+const result = await context.executeTool(details, {
+  serviceId: "architecture-review",
+  language: "en"
+});
+console.log(result);
+```
+
+Each services page should expose **ten tools** (six general plus four services tools). The details call should describe the architecture review in English. On `/`, `/en/` and `/es/`, expect **six general tools** only. Also exercise `getServices`, `getEngagementProcess`, `getConsultingContact` and a nonexistent service ID (`SERVICE_NOT_FOUND`). Verify that leaving a services page unregisters its tools and a bfcache restore re-registers them without duplicates.
+
+**This is a manual native-browser acceptance test, not evidence supplied by the mock-based CI suite.** Browser flags, APIs and inspectors are experimental and version-dependent; consult the current official Chrome guidance.
 
 ## Manual smoke test in a compatible browser
 
@@ -112,6 +151,6 @@ If `getTools()` or `executeTool()` is not available in your browser's DevTools, 
 
 ## Maintenance
 
-When changing a featured project in `index.html`, `en/index.html` or `es/index.html`, update `assets/js/webmcp-data.mjs` in the same PR. CI blocks drift in title, description, tags, repository URL or case-study link. Keep profile/skills consistent with the public JSON-LD. New tools must remain read-only, have discovery descriptions in PT-BR, EN and ES-419, strict JSON Schema parameters and tests covering results and errors.
+When changing a featured project in `index.html`, `en/index.html` or `es/index.html`, update `assets/js/webmcp-data.mjs` in the same PR. CI blocks drift in title, description, tags, repository URL or case-study link. Keep profile/skills consistent with the public JSON-LD. When the services HTML changes, update `assets/js/webmcp-services-data.mjs` in the same PR and run `node --test .github/scripts/test-webmcp-services.mjs`. Keep the versioned contract consistent and update sitemap `lastmod` for changes to site content. New tools must remain read-only, with PT-BR/EN/ES-419 descriptions, strict JSON Schemas and result/error tests.
 
 References: [WebMCP overview](https://developer.chrome.com/docs/ai/webmcp), [Imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api), [community draft specification](https://webmachinelearning.github.io/webmcp/).

@@ -16,9 +16,10 @@ A integração com agentes de navegador é feita por módulos JavaScript locais,
 - [WebMCP guide in English](../docs/webmcp.en.md)
 - [Guía de WebMCP en español](../docs/webmcp.es-419.md)
 - Teste versionado: `node --test .github/scripts/test-webmcp.mjs` (executado automaticamente no gate `Site validation`).
+- Teste de serviços: `node --test .github/scripts/test-webmcp-services.mjs` cobre os quatro contratos de serviços, paridade editorial PT-BR/EN/ES-419, rotas, simulação do registro e bfcache no mesmo gate.
 - Publicação: `deploy-pages.yml` verifica os módulos JavaScript no artefato estático, sem configurar token experimental.
 
-As três versões (português, inglês e espanhol latino-americano) registram ferramentas WebMCP em navegadores compatíveis. A ativação em navegador de teste e a diferença entre CI com mocks e teste real estão descritas nos guias.
+Nas páginas de serviços, o WebMCP adiciona quatro ferramentas somente de leitura às seis ferramentas gerais, totalizando dez ferramentas. Em outras páginas permanecem seis. As três versões (português, inglês e espanhol latino-americano) registram ferramentas WebMCP em navegadores compatíveis. A ativação em navegador de teste e a diferença entre CI com mocks e teste real estão descritas nos guias.
 
 ## Página de serviços em português, inglês e espanhol
 
