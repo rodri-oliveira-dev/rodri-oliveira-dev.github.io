@@ -154,17 +154,32 @@ deve ser especificado um workflow dedicado de CI; não se deve adicionar scanner
 
 ### 5.2 Configuração versionada
 
-Na etapa 2, criar `.sonarcloud.properties`, formato usado pela Automatic
+Na etapa 2, foi criado `.sonarcloud.properties`, formato usado pela Automatic
 Analysis, contendo apenas:
 
-- raiz de fontes no repositório;
-- diretório de testes e inclusões precisas para os padrões de teste existentes;
-- exclusões justificadas desta especificação;
-- codificação UTF-8, se necessária.
+- `sonar.projectKey=rodri-oliveira-dev_rodri-oliveira-dev.github.io`;
+- `sonar.organization=rodri-oliveira-dev`;
+- `sonar.sources=.` para preservar todos os arquivos suportados a partir da raiz;
+- `sonar.tests=.github/scripts` com inclusões restritas a `test_*.py`,
+  `test-*.cjs` e `test-*.mjs`;
+- exclusões somente para os quatro artefatos HTML/XML suportados que são gerados
+  ou usados para comprovação de propriedade;
+- `sonar.sourceEncoding=UTF-8`.
+
+Não foram configurados sufixos de linguagem: os analisadores padrão já detectam
+JavaScript, CSS e HTML, e sobrescrever os defaults aumentaria a manutenção. Não
+foi criado `sonar-project.properties`, pois esse arquivo pertence à estratégia
+com scanner/CI e introduzi-lo junto de Automatic Analysis tornaria ambíguo o
+método escolhido.
 
 Não duplicar configurações entre a interface e o arquivo. Parâmetros de escopo
 devem ficar versionados; definição de código novo, Quality Gate e método de
 análise ficam no SonarCloud.
+
+A API disponível não expôs a confirmação administrativa do método. Antes da
+etapa 3, um administrador deve abrir **Project Settings > Analysis Method** e
+confirmar que **Automatic Analysis** está habilitado e que CI-based analysis não
+está configurada. Nenhum valor externo foi presumido ou alterado nesta etapa.
 
 ### 5.3 Quality Gate e código novo
 
@@ -249,12 +264,25 @@ Formatos que o scanner já ignora não precisam de padrões redundantes em
 suportados que hoje são indexados, principalmente XML e HTML gerados ou de
 verificação.
 
+Por isso, a configuração implementada aplica explicitamente apenas:
+
+- `sitemap.xml`;
+- `newsletter/feed.xml`;
+- `google03f812d1021f07e7.html`;
+- `BingSiteAuth.xml`.
+
+Mídias, SVG, JSON, TXT, Markdown e documentação permanecem documentados como fora
+do escopo, mas não receberam padrões redundantes porque não apareceram como
+código analisado no snapshot inicial. Não há diretório de dependências
+versionado; dependências locais ignoradas pelo Git também são ignoradas pelo
+scanner por padrão.
+
 ## 7. Arquivos e configurações afetados nas próximas etapas
 
 | Item | Ação prevista | Etapa |
 | --- | --- | --- |
 | `docs/sonarcloud-integration.md` | Criar a especificação e registrar evidências posteriores. | 1–4 |
-| `.sonarcloud.properties` | Criar escopo, testes e exclusões para Automatic Analysis. | 2 |
+| `.sonarcloud.properties` | Criado com identidade, escopo, testes, exclusões mínimas e UTF-8. | 2 |
 | SonarCloud: Analysis Method | Confirmar Automatic Analysis; não habilitar CI em paralelo. | 2 |
 | SonarCloud: New Code e Quality Gate | Configurar e validar `Sonar way`. | 2–3 |
 | GitHub repository ruleset `main` | Adicionar o check Sonar comprovado, preservando os checks atuais. | 3 |
@@ -277,6 +305,7 @@ Analysis.
 | Ausência de cobertura | Não inventar métrica nem adicionar dependência nesta integração. |
 | PRs de forks sem secrets | Automatic Analysis evita disponibilizar token; se houver migração para CI, redesenhar a ameaça antes de executar scanner autenticado. |
 | Mudança externa no SonarCloud ou ruleset | Registrar data, responsável e evidência no PR, pois não aparece integralmente no diff Git. |
+| `.sonarcloud.properties` incluído pelo `rsync` do Pages | O arquivo contém somente identificadores públicos e escopo, sem segredo. Avaliar sua exclusão do artefato quando alterações de workflow forem permitidas. |
 
 Decisões:
 
@@ -298,6 +327,17 @@ Decisões:
 - [x] Nenhum workflow, dependência, arquivo publicado ou sitemap alterado.
 - [x] Apenas esta especificação adicionada à branch e ao PR da integração.
 
+### Etapa 2
+
+- [x] `.sonarcloud.properties` criado para Automatic Analysis.
+- [x] Projeto e organização identificados sem token ou credencial.
+- [x] Raiz de fontes preservada, sem limitar linguagens suportadas.
+- [x] Testes classificados por inclusões precisas e mantidos na análise.
+- [x] Exclusões restritas a artefatos gerados ou de verificação.
+- [x] Nenhum workflow, Quality Gate, relatório de cobertura ou regra alterado.
+- [x] Nenhuma página HTML, recurso visual ou entrada do sitemap modificado.
+- [ ] Método Automatic Analysis confirmado manualmente por administrador.
+
 ### Integração completa
 
 - [ ] Método de análise confirmado e único.
@@ -314,10 +354,11 @@ Decisões:
 
 ### Etapa 2 — configuração controlada
 
-1. Confirmar o método em `Analysis Method` e interromper se divergir da estratégia.
-2. Configurar definição de código novo e confirmar `Sonar way`.
-3. Criar `.sonarcloud.properties` com escopo, testes e exclusões mínimas.
-4. Enviar novo commit à mesma branch e ao mesmo PR.
+1. `.sonarcloud.properties` criado com escopo, testes e exclusões mínimas.
+2. Confirmação administrativa do método permanece como ação manual documentada.
+3. Definição de código novo e confirmação de `Sonar way` permanecem externas ao
+   repositório e não foram alteradas nesta etapa.
+4. A configuração será enviada à mesma branch e ao mesmo PR.
 
 ### Etapa 3 — validação de PR e proteção
 
