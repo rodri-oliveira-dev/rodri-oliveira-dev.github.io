@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Confere a sequência linear do texto extraído do currículo em PDF.
 
-A versão impressa deve manter a ordem do DOM, sem intercalar o rodapé
-ou seções laterais às experiências profissionais. Requer pdftotext (Poppler).
+A versão impressa deve manter uma sequência textual linear, sem intercalar o
+rodapé ou seções laterais às experiências profissionais. Os modos padrão e
+-layout representam extração textual de leitura; -raw expõe a ordem interna
+de gravação dos objetos e não é critério de ordem lógica. Requer Poppler.
 """
 from pathlib import Path
 import re
@@ -33,10 +35,10 @@ def normalized(value: str) -> str:
     return re.sub(r"\s+", " ", unicodedata.normalize("NFKC", value)).casefold()
 
 
-def verify(raw: bool) -> None:
+def verify(layout: bool) -> None:
     args = ["pdftotext"]
-    if raw:
-        args.append("-raw")
+    if layout:
+        args.append("-layout")
     args.extend(["-enc", "UTF-8", "-nopgbrk", str(PDF), "-"])
     result = subprocess.run(args, check=True, capture_output=True, text=True)
     content = normalized(result.stdout)
@@ -47,7 +49,7 @@ def verify(raw: bool) -> None:
             positions = [(name, content.find(normalized(name))) for name in SECTIONS]
             raise AssertionError(
                 f"Seção ausente ou fora de ordem no pdftotext "
-                f"({'raw' if raw else 'padrão'}): {label}. "
+                f"({'layout' if layout else 'padrão'}): {label}. "
                 f"Posições encontradas: {positions}. "
                 f"Contexto após seção anterior: {content[max(0, cursor-180):cursor+600]!r}"
             )
@@ -59,9 +61,9 @@ def main() -> int:
         raise FileNotFoundError(f"PDF não encontrado: {PDF}")
     if shutil.which("pdftotext") is None:
         raise RuntimeError("Instale poppler-utils para executar a validação do PDF.")
-    verify(raw=False)
-    verify(raw=True)
-    print("Ordem de leitura do PDF validada em extrações padrão e raw.")
+    verify(layout=False)
+    verify(layout=True)
+    print("Ordem de leitura do PDF validada em extrações padrão e layout.")
     return 0
 
 
