@@ -176,10 +176,11 @@ Não duplicar configurações entre a interface e o arquivo. Parâmetros de esco
 devem ficar versionados; definição de código novo, Quality Gate e método de
 análise ficam no SonarCloud.
 
-A API disponível não expôs a confirmação administrativa do método. Antes da
-etapa 3, um administrador deve abrir **Project Settings > Analysis Method** e
-confirmar que **Automatic Analysis** está habilitado e que CI-based analysis não
-está configurada. Nenhum valor externo foi presumido ou alterado nesta etapa.
+A API disponível não expôs a confirmação administrativa do método. A pendência
+permaneceu na etapa 3: antes de qualquer migração para CI ou de tornar um check
+Sonar obrigatório, um administrador deve abrir **Project Settings > Analysis
+Method** e confirmar que **Automatic Analysis** está habilitado e que CI-based
+analysis não está configurada. Nenhum valor externo foi presumido ou alterado.
 
 ### 5.3 Quality Gate e código novo
 
@@ -193,6 +194,23 @@ está configurada. Nenhum valor externo foi presumido ou alterado nesta etapa.
   requisito, tratá-la em iniciativa separada com geração e importação verificável,
   sem declarar os testes atuais como cobertura executada.
 
+Na etapa 3, a API confirmou que `Sonar way` é o Quality Gate padrão e integrado
+da organização. As condições publicadas para código novo são:
+
+- security rating A;
+- reliability rating A;
+- maintainability rating A;
+- cobertura mínima de 80%;
+- duplicação máxima de 3%;
+- 100% dos Security Hotspots revisados.
+
+Isso não confirma que o projeto já tenha uma avaliação calculada: a `main` e o
+PR 117 retornaram `NOT_COMPUTED`, sem condições, e o status de projeto retornou
+`NONE`. A associação efetiva do projeto, a definição de código novo e o
+comportamento da condição de cobertura sem relatório instrumentado devem ser
+confirmados no painel antes de transformar o resultado em check obrigatório.
+Não foi criada cobertura artificial nem alterado o gate padrão.
+
 ### 5.4 Pull Requests, `main` e proteção
 
 Automatic Analysis deve analisar eventos de PR e mudanças na `main`. O mesmo PR
@@ -203,6 +221,11 @@ check ao repository ruleset da `main`.
 O check não deve ser tornado obrigatório antes da comprovação, pois um nome
 incorreto ou um evento que não publique status bloquearia todos os merges. A
 análise pós-merge da `main` deverá ser verificada na conclusão da etapa 4.
+
+Na etapa 3, o PR 117 continuou sem análise registrada no SonarCloud e sem check
+Sonar no GitHub. O PR permanece draft e contém apenas configuração e
+documentação; não há evidência suficiente para atribuir a ausência a uma causa
+específica. O repository ruleset não foi alterado.
 
 ### 5.5 Reutilização dos mecanismos existentes
 
@@ -217,6 +240,28 @@ maintainability e duplicação. Permanecem nos workflows atuais:
 
 Não serão copiados comandos desses workflows para a análise Sonar. O resultado
 do Sonar será um check adicional e ortogonal.
+
+### 5.6 Decisão da etapa 3 sobre GitHub Actions
+
+Não foi criado `.github/workflows/sonarcloud.yml`. A estratégia permanece
+**Automatic Analysis**, pelos seguintes motivos:
+
+1. já existe uma análise bem-sucedida da `main` sem scanner, workflow ou
+   `SONAR_TOKEN` no GitHub;
+2. `.sonarcloud.properties` é a configuração versionada escolhida para esse
+   método;
+3. a configuração administrativa remota continua inacessível pela API
+   disponível, portanto não é possível afirmar que Automatic Analysis esteja
+   desabilitada;
+4. a documentação oficial proíbe executar CI-based analysis simultaneamente com
+   Automatic Analysis, pois o scanner por CI falharia;
+5. um workflow acrescentaria secret, consumo de runner e manutenção sem benefício
+   demonstrado para este site estático.
+
+Consequentemente, não existem eventos de GitHub Actions, permissões,
+concorrência, timeout ou action SonarSource novos nesta etapa. Também não é
+necessário criar `SONAR_TOKEN` enquanto Automatic Analysis for a estratégia
+vigente.
 
 ## 6. Escopo de arquivos
 
@@ -283,9 +328,10 @@ scanner por padrão.
 | --- | --- | --- |
 | `docs/sonarcloud-integration.md` | Criar a especificação e registrar evidências posteriores. | 1–4 |
 | `.sonarcloud.properties` | Criado com identidade, escopo, testes, exclusões mínimas e UTF-8. | 2 |
-| SonarCloud: Analysis Method | Confirmar Automatic Analysis; não habilitar CI em paralelo. | 2 |
-| SonarCloud: New Code e Quality Gate | Configurar e validar `Sonar way`. | 2–3 |
-| GitHub repository ruleset `main` | Adicionar o check Sonar comprovado, preservando os checks atuais. | 3 |
+| `.github/workflows/sonarcloud.yml` | Não criado: CI duplicaria a estratégia escolhida sem confirmação de que Automatic Analysis está desabilitada. | 3 |
+| SonarCloud: Analysis Method | Confirmação manual pendente; não habilitar CI em paralelo. | 2–3 |
+| SonarCloud: New Code e Quality Gate | `Sonar way` identificado como padrão; associação, código novo e cálculo permanecem pendentes. | 2–3 |
+| GitHub repository ruleset `main` | Preservado sem mudanças; check Sonar ainda não foi comprovado. | 3 |
 
 Nenhum workflow existente precisa ser modificado na estratégia recomendada. Um
 novo workflow e `sonar-project.properties` são alternativas de contingência,
@@ -338,6 +384,19 @@ Decisões:
 - [x] Nenhuma página HTML, recurso visual ou entrada do sitemap modificado.
 - [ ] Método Automatic Analysis confirmado manualmente por administrador.
 
+### Etapa 3
+
+- [x] Workflows, gatilhos, permissões, timeouts e checks obrigatórios revisados.
+- [x] Ruleset da `main` confirmado com os cinco checks existentes e preservado.
+- [x] `Sonar way` identificado como Quality Gate padrão da organização.
+- [x] Estados da `main` e do PR consultados: `NOT_COMPUTED`, sem condições.
+- [x] Ausência de `SONAR_TOKEN` confirmada pela listagem de nomes dos secrets.
+- [x] Workflow Sonar não criado para evitar análise paralela e secret desnecessário.
+- [x] Nenhum workflow, regra de proteção ou conteúdo publicado modificado.
+- [ ] Automatic Analysis e integração GitHub confirmadas por administrador.
+- [ ] Definição de código novo e associação do Quality Gate confirmadas no painel.
+- [ ] Primeira análise e decoração de PR observadas com resultado calculado.
+
 ### Integração completa
 
 - [ ] Método de análise confirmado e único.
@@ -362,10 +421,11 @@ Decisões:
 
 ### Etapa 3 — validação de PR e proteção
 
-1. Confirmar análise, arquivos indexados, Quality Gate e decoração deste PR.
-2. Triar falhas reais sem desabilitar regras nem excluir código legítimo.
-3. Após estabilidade, adicionar o nome exato do check ao ruleset da `main`.
-4. Registrar no documento as configurações externas efetivamente aplicadas.
+1. A estratégia Automatic Analysis foi preservada e nenhum workflow foi criado.
+2. Quality Gate, análises, secrets e ruleset foram consultados sem alteração.
+3. A análise e a decoração deste PR ainda não foram publicadas pelo SonarCloud.
+4. Confirmações administrativas e qualquer proteção adicional foram adiadas;
+   nenhuma ação externa foi declarada como concluída sem evidência.
 
 ### Etapa 4 — aceite final
 
