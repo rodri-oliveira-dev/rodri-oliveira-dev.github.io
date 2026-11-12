@@ -405,8 +405,8 @@ Decisões:
 - [ ] Quality Gate calculado na `main` e em PR.
 - [ ] Decoração e check do PR publicados com nome estável.
 - [ ] Check Sonar adicionado ao ruleset sem remover os cinco checks existentes.
-- [ ] Nenhuma credencial exposta e nenhum secret disponível ao site publicado.
-- [ ] Todos os gates existentes permanecem verdes.
+- [x] Nenhuma credencial exposta e nenhum secret disponível ao site publicado.
+- [x] Todos os gates existentes permanecem verdes.
 - [ ] Análise da `main` validada após o merge.
 
 ## 10. Plano resumido das etapas 2, 3 e 4
@@ -464,6 +464,11 @@ especificação.
 - não há mecanismo de análise duplicado nem `SONAR_TOKEN` no repositório;
 - o build do Pages exclui os dois arquivos internos da integração;
 - nenhum HTML, CSS, JavaScript, catálogo ou sitemap foi alterado.
+
+No commit `e7cd9ef`, os checks `Generate PDF and build static site`,
+`Site validation` (incluindo Actionlint), `zizmor security audit`,
+`Lighthouse quality`, `SEO metadata consistency` e `WCAG 2 AA accessibility`
+passaram. O job de deploy foi corretamente ignorado no contexto de Pull Request.
 
 ### 12.2 Snapshot remoto disponível
 
