@@ -50,6 +50,9 @@ jobs:
       - name: Generate resume PDF
         run: node .github/scripts/generate-resume-pdf.mjs
 
+      - name: Check resume PDF text reading order
+        run: python3 .github/scripts/test_resume_pdf_order.py
+
       - name: Assemble site
         run: |
           mkdir -p _site
