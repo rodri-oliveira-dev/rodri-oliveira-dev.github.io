@@ -47,7 +47,7 @@ Para manutenção, edite as três traduções no mesmo PR e execute `python3 .gi
 | SEO validation | [`seo-validation.yml`](workflows/seo-validation.yml) | Pull Request, push em `main` e manual | Validar JSON-LD, sitemap, RSS discovery e consistência dos artefatos SEO |
 | Accessibility | [`accessibility.yml`](workflows/accessibility.yml) | Pull Request, push em `main` e manual | Aplicar verificações automatizadas de WCAG 2 AA |
 | GitHub Actions security | [`actions-security.yml`](workflows/actions-security.yml) | Pull Request, push em `main` e manual | Auditar a segurança da automação com zizmor |
-| Lighthouse CI | [`lighthouse.yml`](workflows/lighthouse.yml) | Pull Request, push em `main` e manual | Medir Performance, Accessibility, Best Practices e SEO |
+| Lighthouse CI | [`lighthouse.yml`](workflows/lighthouse.yml) | Pull Request, diário às 21h de São Paulo e manual | Medir Performance, Accessibility, Best Practices e SEO |
 | External link health | [`external-link-health.yml`](workflows/external-link-health.yml) | Semanal, manual e quando o próprio workflow muda em PR | Detectar link rot com uma verificação externa mais tolerante |
 | Import newsletter article | [`import-newsletter-article.yml`](workflows/import-newsletter-article.yml) | Manual | Importar metadados e atualizar catálogo, homepage, RSS, JSON-LD e sitemap via Pull Request |
 | Sync newsletter articles | [`sync-newsletter-articles.yml`](workflows/sync-newsletter-articles.yml) | Manual, somente fallback | Reconciliar manualmente os artefatos da newsletter caso necessário |
@@ -143,7 +143,9 @@ O relatório estruturado é produzido por [`scripts/summarize-zizmor.mjs`](scrip
 
 O [`lighthouse.yml`](workflows/lighthouse.yml) sobe o site localmente e executa Lighthouse CI contra `/`, `/en/`, `/es/` e todos os estudos de caso trilíngues descobertos, além de `/curriculo/` e das três páginas de serviços.
 
-Cada página é medida três vezes para reduzir variação do runner. Os valores usados para os gates são agregados pela mediana.
+Em Pull Requests, o seletor incremental compara a branch com a base, considera arquivos adicionados, modificados, renomeados e excluídos e percorre as dependências locais referenciadas por HTML, CSS e JavaScript. Cada página afetada é medida duas vezes. Recursos compartilhados selecionam todas as páginas dependentes; mudanças na configuração ou nos scripts do Lighthouse, falhas na comparação e impactos incertos provocam uma auditoria completa. Alterações apenas internas mantêm o check obrigatório verde sem iniciar o navegador.
+
+Às 21h de São Paulo (`0 0 * * *` em UTC) e em execuções manuais, todas as páginas são medidas três vezes a partir da branch padrão. Em todos os modos, os valores usados para os gates são agregados pela mediana. Os relatórios JSON e HTML ficam disponíveis como artifact por um dia, inclusive quando o quality gate falha.
 
 Os budgets estão definidos em [`../lighthouserc.cjs`](../lighthouserc.cjs):
 
