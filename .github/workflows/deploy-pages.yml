@@ -53,7 +53,9 @@ jobs:
       - name: Assemble site
         run: |
           mkdir -p _site
-          rsync -a --exclude='/.git/' --exclude='/.github/' --exclude='/node_modules/' --exclude='/_site/' --exclude='*.log' ./ _site/
+          rsync -a --exclude='/.git/' --exclude='/.github/' --exclude='/.sonarcloud.properties' --exclude='/docs/sonarcloud-integration.md' --exclude='/node_modules/' --exclude='/_site/' --exclude='*.log' ./ _site/
+          test ! -e _site/.sonarcloud.properties
+          test ! -e _site/docs/sonarcloud-integration.md
           test -s _site/curriculo/rodrigo-de-oliveira.pdf
           test -f _site/curriculo/index.html
           test -f _site/index.html

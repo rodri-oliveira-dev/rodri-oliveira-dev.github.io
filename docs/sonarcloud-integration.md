@@ -351,7 +351,7 @@ Analysis.
 | Ausência de cobertura | Não inventar métrica nem adicionar dependência nesta integração. |
 | PRs de forks sem secrets | Automatic Analysis evita disponibilizar token; se houver migração para CI, redesenhar a ameaça antes de executar scanner autenticado. |
 | Mudança externa no SonarCloud ou ruleset | Registrar data, responsável e evidência no PR, pois não aparece integralmente no diff Git. |
-| `.sonarcloud.properties` incluído pelo `rsync` do Pages | O arquivo contém somente identificadores públicos e escopo, sem segredo. Avaliar sua exclusão do artefato quando alterações de workflow forem permitidas. |
+| Arquivos internos incluídos pelo `rsync` do Pages | Corrigido na etapa 4: `.sonarcloud.properties` e esta especificação são excluídos do artefato e sua ausência é verificada no build. |
 
 Decisões:
 
@@ -429,14 +429,135 @@ Decisões:
 
 ### Etapa 4 — aceite final
 
-1. Executar os gates pertinentes e revisar segurança, permissões e ausência de
-   duplicação de análise.
-2. Confirmar que o PR está atualizado e que todos os checks obrigatórios passam.
-3. Atualizar a evidência final no documento antes do merge, sem ampliar o escopo.
-4. Após o merge, validar a análise e o Quality Gate da `main` e registrar o
-   resultado no próprio PR.
+1. Configuração, resultados SonarCloud, workflows, secrets e ruleset revisados.
+2. Publicação dos arquivos internos da integração impedida no build do Pages.
+3. Evidências comprovadas e pendências remotas registradas neste documento.
+4. Validação pós-merge da `main` permanece pendente e deve ser registrada no PR.
 
-## 11. Referências
+## 11. Arquitetura final
+
+A integração final mantém um único mecanismo de análise:
+
+1. o SonarCloud lê o repositório GitHub por **Automatic Analysis**;
+2. `.sonarcloud.properties` define identidade, fontes, testes, exclusões e UTF-8;
+3. nenhuma action Sonar, credencial ou dependência é executada no GitHub Actions;
+4. o `Sonar way` permanece como Quality Gate padrão da organização;
+5. os cinco checks existentes continuam independentes e obrigatórios;
+6. `deploy-pages.yml` remove a configuração e esta especificação do artefato
+   publicado.
+
+Não há eventos de execução definidos no repositório para o SonarCloud. Quando
+Automatic Analysis estiver confirmado no painel, o serviço remoto deve reagir a
+mudanças na `main` e a Pull Requests. Não existe fallback por CI: qualquer
+migração futura exige primeiro desabilitar Automatic Analysis e revisar esta
+especificação.
+
+## 12. Evidências da validação final
+
+### 12.1 Implementação local
+
+- `.sonarcloud.properties` possui sete propriedades únicas, sem token;
+- `sonar.sources` e `sonar.tests` usam diretórios existentes e sem wildcard;
+- dez arquivos correspondem às inclusões de teste;
+- os quatro caminhos excluídos existem e têm justificativa versionada;
+- `sonar-project.properties` e `.github/workflows/sonarcloud.yml` não existem;
+- não há mecanismo de análise duplicado nem `SONAR_TOKEN` no repositório;
+- o build do Pages exclui os dois arquivos internos da integração;
+- nenhum HTML, CSS, JavaScript, catálogo ou sitemap foi alterado.
+
+### 12.2 Snapshot remoto disponível
+
+O único snapshot da `main` foi concluído em `2026-11-12T14:15:59Z` para o commit
+`9201b8b82a4bcf96bad2ed736838a364eb8e76eb`, anterior a esta configuração.
+Portanto, ele comprova acesso e análise do repositório, mas não comprova a
+aplicação de `.sonarcloud.properties`.
+
+| Evidência | Resultado observado |
+| --- | --- |
+| Arquivos / linhas de código | 74 / 18.305 |
+| Issues abertas | 213: 202 code smells, 8 vulnerabilidades e 3 bugs |
+| Impactos High / Blocker | 22 / 2; 24 issues no filtro combinado |
+| Ratings gerais | confiabilidade D, segurança E e manutenibilidade A |
+| Duplicação geral | 8,7% |
+| Security Hotspots | 0 |
+| Cobertura | medida ausente; nenhum dado real disponível |
+| Quality Gate da `main` | `NOT_COMPUTED`, sem condições |
+| Quality Gate do PR 117 | `NOT_COMPUTED`, sem condições |
+| Análises de Pull Request | nenhuma registrada |
+
+Os quatro arquivos configurados em `sonar.exclusions` ainda aparecem no snapshot
+remoto porque a análise antecede o PR. Isso é uma limitação temporal, não
+evidência de que as exclusões estejam incorretas. Bugs, vulnerabilidades e code
+smells do código legado devem ser triados em trabalho separado; refatorá-los
+nesta integração violaria o escopo e confundiria a validação do código novo.
+
+### 12.3 Quality Gate e proteção da `main`
+
+O `Sonar way` é o gate padrão da organização e prioriza código novo. O projeto,
+contudo, ainda não possui resultado calculado. O ruleset da `main` permanece sem
+check Sonar e continua exigindo:
+
+- `Site validation`;
+- `WCAG 2 AA accessibility`;
+- `Lighthouse quality`;
+- `zizmor security audit`;
+- `SEO metadata consistency`.
+
+Essa distinção é intencional: resultados de análise, estado do Quality Gate e
+checks obrigatórios são mecanismos diferentes. O check Sonar só deve entrar no
+ruleset depois de uma análise de PR produzir decoração estável e um resultado
+calculado. A condição de cobertura do `Sonar way` não autoriza gerar ou declarar
+cobertura inexistente; Automatic Analysis não recebeu relatório instrumentado.
+
+## 13. Configurações manuais pendentes
+
+Um administrador deve confirmar no SonarCloud:
+
+1. **Project Settings > Analysis Method:** Automatic Analysis habilitada e
+   CI-based analysis desabilitada;
+2. vínculo do projeto ao repositório GitHub correto;
+3. definição de código novo da `main`;
+4. associação efetiva do projeto ao `Sonar way`;
+5. decoração e check de Pull Requests habilitados.
+
+Depois dessas confirmações, um novo commit neste PR deve produzir uma análise de
+PR. Somente após observar o nome e o comportamento do check deve-se solicitar
+autorização específica para alterar o ruleset. Nenhuma dessas ações foi declarada
+como realizada nesta etapa.
+
+## 14. Diagnóstico de falhas
+
+1. **Sem nova análise:** conferir Analysis Method, vínculo GitHub e Background
+   Tasks; confirmar que o SHA analisado corresponde ao commit esperado.
+2. **Configuração ignorada:** verificar o scanner context da análise mais recente
+   e comparar fontes, testes e exclusões com `.sonarcloud.properties`.
+3. **Quality Gate `NOT_COMPUTED`:** confirmar que existe uma segunda análise e
+   que a definição de código novo está configurada.
+4. **Sem decoração no PR:** confirmar o vínculo do projeto, permissões do app
+   SonarCloud e se o PR aparece na lista de Pull Requests do projeto.
+5. **Check obrigatório ausente:** não adicionar um status “Expected” ao ruleset;
+   primeiro obter ao menos uma publicação estável do check.
+6. **Scanner CI falha:** verificar se Automatic Analysis continua habilitada;
+   os dois métodos não podem operar simultaneamente.
+7. **Exclusões não aplicadas:** comparar somente com uma análise posterior ao
+   commit que introduziu `.sonarcloud.properties`.
+
+## 15. Critérios finais: comprovados e pendentes
+
+| Critério | Estado | Evidência |
+| --- | --- | --- |
+| Especificação coerente com a implementação | Comprovado | Automatic Analysis, sem workflow CI |
+| Configuração sintaticamente válida | Comprovado localmente | propriedades, caminhos e padrões validados |
+| Ausência de credenciais versionadas | Comprovado | busca local e nomes dos secrets |
+| Ausência de mecanismos duplicados | Comprovado | sem scanner/workflow Sonar |
+| Workflows e ruleset preservados | Comprovado | somente hardening do artefato Pages; ruleset intacto |
+| Quality Gate adequado ao código novo | Parcial | `Sonar way` identificado; cálculo remoto ausente |
+| Escopo e exclusões aplicados remotamente | Pendente | snapshot disponível é anterior ao PR |
+| Análise e decoração de PR | Pendente | PR 117 não aparece no SonarCloud |
+| Análise pós-merge da `main` | Pendente | merge não autorizado nesta etapa |
+| Integração totalmente operacional | Não comprovado | depende das confirmações administrativas acima |
+
+## 16. Referências
 
 - [Métodos de análise para GitHub](https://docs.sonarsource.com/sonarqube-cloud/getting-started/github)
 - [Conflito entre Automatic Analysis e CI](https://docs.sonarsource.com/sonarqube-cloud/analyzing-source-code/ci-based-analysis/overview-of-integrated-cis)
