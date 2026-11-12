@@ -85,6 +85,8 @@ CUST
 booleano
 Terraform
 TOML
+UNINTER
+UNIP
 WebMCP
 weme
 YamlDotNet
