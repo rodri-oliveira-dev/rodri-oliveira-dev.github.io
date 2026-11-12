@@ -434,19 +434,19 @@ h2 {
   .contact ul { font-size: 8pt; column-gap: 5mm; row-gap: 1mm; }
   .contact-icon { width: 11px; height: 11px; flex-basis: 11px; margin-top: 1px; }
 
-  .profile { padding: 5mm 0; }
+  .profile { padding: 4mm 0; }
   .profile p { margin-bottom: 2mm; }
   /* Evita títulos com letras separadas na extração de texto do PDF/ATS. */
   h2 { font-size: 9pt; margin-bottom: 3mm; letter-spacing: normal; text-transform: none; }
 
   .columns { display: block; padding-top: 5mm; }
-  .career-entry { padding: 0 0 2mm 3.5mm; margin-bottom: 4mm; }
+  .career-entry { padding: 0 0 1.5mm 3.5mm; margin-bottom: 3mm; }
   .career-entry::before { width: 7px; height: 7px; left: -4.5px; top: 4px; }
   .entry-heading { margin-bottom: 2mm; }
   .entry-heading h3 { font-size: 12pt; }
   .compact .entry-heading h3 { font-size: 11pt; }
   .date { font-size: 8pt; }
-  .role { padding-top: 2mm; }
+  .role { padding-top: 1.5mm; }
   .role-heading { margin-bottom: 1mm; }
   .role-heading h4 { font-size: 9.5pt; }
   .role p:last-child, .compact > p, .additional { font-size: 9pt; line-height: 1.37; }
@@ -460,17 +460,17 @@ h2 {
      a sequência cronológica e a leitura por extratores de texto/ATS. */
   .side-column {
     display: block;
-    padding-top: 5mm;
+    padding-top: 3mm;
     border-top: 1px solid var(--line);
   }
-  .side-column .section, .side-column .section:last-child { margin-bottom: 2mm; }
-  .plain-list li { font-size: 8.5pt; padding: 1mm 0; }
-  .tech-list div { margin-bottom: 2mm; }
+  .side-column .section, .side-column .section:last-child { margin-bottom: 1mm; }
+  .plain-list li { font-size: 8.5pt; padding: .6mm 0; }
+  .tech-list div { margin-bottom: 1.5mm; }
   .tech-list dt { font-size: 8pt; }
   .tech-list dd, .independent p, .projects p { font-size: 8.5pt; }
   .projects li { margin-bottom: 2mm; }
   .projects h3 { font-size: 9pt; }
-  .resume-footer { margin-top: 4mm; padding-top: 2mm; font-size: 8pt; }
+  .resume-footer { margin-top: 2mm; padding-top: 2mm; font-size: 8pt; }
 
   a { color: inherit; text-decoration: none; }
   .contact a, .resume-footer a, .projects h3 a { color: var(--accent-dark); }
