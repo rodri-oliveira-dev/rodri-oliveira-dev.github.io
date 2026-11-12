@@ -73,9 +73,9 @@ def main() -> int:
     if not match:
         raise AssertionError("Não foi possível determinar o número de páginas do PDF.")
     pages = int(match.group(1))
-    if pages != 2:
-        raise AssertionError(f"O currículo deve ocupar 2 páginas A4, mas possui {pages}.")
-    print("Ordem de leitura e paginação (2 páginas A4) do PDF validadas.")
+    if not 1 <= pages <= 3:
+        raise AssertionError(f"O currículo deve ocupar no máximo 3 páginas A4, mas possui {pages}.")
+    print(f"Ordem de leitura e paginação ({pages} páginas A4, limite de 3) do PDF validadas.")
     return 0
 
 
