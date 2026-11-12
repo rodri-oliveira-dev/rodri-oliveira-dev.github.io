@@ -220,8 +220,13 @@ for (const [index, dates] of careerDates.entries()) {
   assert.deepEqual(dates, careerDates[0], `${variants[index].key} career dates`);
 }
 for (const [index, section] of careerSections.entries()) {
-  assert.ok(section.includes('<h4 lang="pt-BR">Engenheiro de Software Pleno</h4>') || index === 0,
-    `${variants[index].key} preserves the official CI&T role title`);
+  if (index === 1) {
+    assert.ok(section.includes('<h4>Mid-level Software Engineer</h4>'),
+      "en uses the localized CI&T role title");
+  } else if (index === 2) {
+    assert.ok(section.includes('<h4 lang="pt-BR">Engenheiro de Software Pleno</h4>'),
+      "es-419 preserves the original CI&T role title");
+  }
   assert.ok(section.includes("<h3>Comtel e Fernandez S/A</h3>"),
     `${variants[index].key} preserves company names`);
   assert.ok(!section.includes('class="selected-results"'),
