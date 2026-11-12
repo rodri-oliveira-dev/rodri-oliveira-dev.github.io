@@ -751,11 +751,10 @@ def load_sitemap_lastmods() -> dict[str, str]:
     except ET.ParseError as error:
         raise SystemExit(f"Invalid sitemap XML: {error}") from error
 
-    namespace = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
     lastmods: dict[str, str] = {}
-    for entry in root.findall("sm:url", namespace):
-        url = (entry.findtext("sm:loc", namespaces=namespace) or "").strip()
-        lastmod = (entry.findtext("sm:lastmod", namespaces=namespace) or "").strip()
+    for entry in root.findall("{*}url"):
+        url = (entry.findtext("{*}loc") or "").strip()
+        lastmod = (entry.findtext("{*}lastmod") or "").strip()
         if not url or not lastmod:
             continue
         try:

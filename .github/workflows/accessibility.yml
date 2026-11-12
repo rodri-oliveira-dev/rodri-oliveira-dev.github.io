@@ -33,7 +33,17 @@ jobs:
           package-manager-cache: false
 
       - name: Install Pa11y CI
-        run: npm install --no-save --package-lock=false pa11y-ci@4.1.1
+        run: npm install --ignore-scripts --no-save --package-lock=false pa11y-ci@4.1.1
+
+      - name: Configure system Chrome for Pa11y
+        shell: bash
+        run: |
+          chrome_path="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium-browser || command -v chromium)"
+          if [[ -z "$chrome_path" ]]; then
+            echo "No system Chrome or Chromium executable was found."
+            exit 1
+          fi
+          echo "PUPPETEER_EXECUTABLE_PATH=${chrome_path}" >> "$GITHUB_ENV"
 
       - name: Validate contrast tokens
         run: node .github/scripts/check-contrast.mjs

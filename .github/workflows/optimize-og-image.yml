@@ -39,7 +39,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install Pillow
-        run: python -m pip install --disable-pip-version-check pillow
+        run: "python -m pip install --disable-pip-version-check --only-binary=:all: pillow==13.0.0"
 
       - name: Generate optimized WebP
         id: optimize
