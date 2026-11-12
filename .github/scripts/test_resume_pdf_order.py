@@ -44,9 +44,12 @@ def verify(raw: bool) -> None:
     for label in SECTIONS:
         index = content.find(normalized(label), cursor + 1)
         if index < 0:
+            positions = [(name, content.find(normalized(name))) for name in SECTIONS]
             raise AssertionError(
                 f"Seção ausente ou fora de ordem no pdftotext "
-                f"({'raw' if raw else 'padrão'}): {label}"
+                f"({'raw' if raw else 'padrão'}): {label}. "
+                f"Posições encontradas: {positions}. "
+                f"Contexto após seção anterior: {content[max(0, cursor-180):cursor+600]!r}"
             )
         cursor = index
 
