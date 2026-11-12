@@ -437,10 +437,10 @@ h2 {
   .role p:last-child, .compact > p, .additional { font-size: 9pt; line-height: 1.37; }
   .additional { margin-top: 2mm; padding: 1.5mm 2mm; background: #f5f7f9; }
 
+  /* O PDF segue o fluxo do DOM em coluna única para preservar
+     a sequência cronológica e a leitura por extratores de texto/ATS. */
   .side-column {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 3mm 8mm;
+    display: block;
     padding-top: 5mm;
     border-top: 1px solid var(--line);
   }
