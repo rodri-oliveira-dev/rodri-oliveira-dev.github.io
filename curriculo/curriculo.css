@@ -422,7 +422,8 @@ h2 {
 
   .profile { padding: 5mm 0; }
   .profile p { margin-bottom: 2mm; }
-  h2 { font-size: 9pt; margin-bottom: 3mm; }
+  /* Evita títulos com letras separadas na extração de texto do PDF/ATS. */
+  h2 { font-size: 9pt; margin-bottom: 3mm; letter-spacing: normal; text-transform: none; }
 
   .columns { display: block; padding-top: 5mm; }
   .career-entry { padding: 0 0 2mm 3.5mm; margin-bottom: 4mm; }
