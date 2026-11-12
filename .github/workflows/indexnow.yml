@@ -140,7 +140,7 @@ jobs:
         run: |
           key_url="${SITE_URL}/${INDEXNOW_KEY}.txt"
           for attempt in {1..18}; do
-            body="$(curl --silent --show-error --location --max-time 10 "$key_url" || true)"
+            body="$(curl --silent --show-error --location --proto '=https' --proto-redir '=https' --max-time 10 "$key_url" || true)"
             if [[ "$body" == "$INDEXNOW_KEY" || "$body" == "$INDEXNOW_KEY"$'\n' ]]; then
               echo "IndexNow ownership key is publicly available."
               exit 0

@@ -448,7 +448,8 @@ def main() -> None:
         reverse=True,
     )
     articles = articles[:12]
-    DATA_PATH.write_text(json.dumps(articles, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    with DATA_PATH.open("w", encoding="utf-8") as data_file:
+        data_file.write(json.dumps(articles, ensure_ascii=False, indent=2) + "\n")
 
     fetch_result = f"Falha na recuperação automática — {fetch_error}" if fetch_error else f"HTTP {http_status or 'desconhecido'}"
     result = "Metadados recuperados automaticamente" if title_auto and description_auto and published_at_auto else "Resultado parcial ou com fallback manual"

@@ -94,7 +94,8 @@ def main() -> None:
     rendered = "\n".join(render_article(article) for article in selected)
     updated = f"{before}{START}\n{rendered}\n{END}{after}"
 
-    INDEX_PATH.write_text(updated, encoding="utf-8")
+    with INDEX_PATH.open("w", encoding="utf-8") as index_file:
+        index_file.write(updated)
     print(f"Rendered {len(selected)} article(s) into {INDEX_PATH.relative_to(ROOT)}.")
     for article in selected:
         print(f"- {article['publishedAt']}: {article['title']}")

@@ -33,7 +33,7 @@ jobs:
           package-manager-cache: false
 
       - name: Install Pa11y CI
-        run: npm install --no-save --package-lock=false pa11y-ci@4.1.1
+        run: npm install --ignore-scripts --no-save --package-lock=false pa11y-ci@4.1.1
 
       - name: Validate contrast tokens
         run: node .github/scripts/check-contrast.mjs
