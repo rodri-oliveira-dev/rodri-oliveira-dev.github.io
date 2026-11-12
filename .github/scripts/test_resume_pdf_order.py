@@ -25,8 +25,9 @@ SECTIONS = (
     "Comtel e Fernandez S/A",
     "Áreas de atuação",
     "Tecnologias",
+    "Formação acadêmica",
+    "Idiomas",
     "Projetos independentes",
-    "Projetos open source",
     "Portfólio e estudos de caso",
 )
 
