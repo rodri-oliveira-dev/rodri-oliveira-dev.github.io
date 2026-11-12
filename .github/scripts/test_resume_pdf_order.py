@@ -64,7 +64,18 @@ def main() -> int:
         raise RuntimeError("Instale poppler-utils para executar a validação do PDF.")
     verify(layout=False)
     verify(layout=True)
-    print("Ordem de leitura do PDF validada em extrações padrão e layout.")
+    if shutil.which("pdfinfo") is None:
+        raise RuntimeError("Instale poppler-utils para verificar a paginação do PDF.")
+    metadata = subprocess.run(
+        ["pdfinfo", str(PDF)], check=True, capture_output=True, text=True
+    ).stdout
+    match = re.search(r"^Pages:\\s*(\\d+)\\s*$", metadata, re.MULTILINE)
+    if not match:
+        raise AssertionError("Não foi possível determinar o número de páginas do PDF.")
+    pages = int(match.group(1))
+    if pages != 2:
+        raise AssertionError(f"O currículo deve ocupar 2 páginas A4, mas possui {pages}.")
+    print("Ordem de leitura e paginação (2 páginas A4) do PDF validadas.")
     return 0
 
 
