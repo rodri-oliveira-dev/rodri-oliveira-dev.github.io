@@ -184,48 +184,104 @@ test("project catalog is synchronized with HTML content in all three languages",
   }
 });
 
-const CAREER_EVIDENCE = {
-  "pt-BR": [
-    "dois times de engenharia",
-    "funcionalidades legadas",
-    "Centro de Excelência de Arquitetura",
-    "Career Advisor",
-    "ferramentas de inteligência artificial",
-  ],
-  en: [
-    "two engineering teams",
-    "legacy functionality",
-    "Architecture Center of Excellence",
-    "Career Advisor",
-    "AI tools",
-  ],
-  "es-419": [
-    "dos equipos de ingeniería",
-    "funcionalidades heredadas",
-    "Centro de Excelencia de Arquitectura",
-    "Career Advisor",
-    "herramientas de inteligencia artificial",
-  ],
-};
+/** Stable facts and locale-specific evidence; translations need not be identical. */
+const CAREER_FACTS = [
+  {
+    id: "architectural-ownership",
+    scope: "currentRole",
+    evidence: { "pt-BR": "dois times de engenharia", en: "two engineering teams", "es-419": "dos equipos de ingeniería" },
+  },
+  {
+    id: "legacy-modernization",
+    scope: "currentRole",
+    evidence: { "pt-BR": "funcionalidades legadas", en: "legacy functionality", "es-419": "funcionalidades heredadas" },
+  },
+  {
+    id: "architecture-governance",
+    scope: "currentRole",
+    evidence: { "pt-BR": "Centro de Excelência de Arquitetura", en: "Architecture Center of Excellence", "es-419": "Centro de Excelencia de Arquitectura" },
+  },
+  {
+    id: "technical-leadership-and-mentoring",
+    scope: "leadership",
+    evidence: { "pt-BR": "Career Advisor", en: "Career Advisor", "es-419": "Career Advisor" },
+  },
+  {
+    id: "ai-tool-adoption",
+    scope: "currentRole",
+    evidence: { "pt-BR": "ferramentas de inteligência artificial", en: "AI tools", "es-419": "herramientas de inteligencia artificial" },
+  },
+];
 
-test("getProfile career highlights are localized, published and returned by value", () => {
+/** Extract only the current employer, current role and leadership note from a homepage. */
+function careerSections(html, relative) {
+  const between = (source, startMarker, endMarker, label) => {
+    const start = source.indexOf(startMarker);
+    assert.notEqual(start, -1, relative + ": missing " + label + " start");
+    const end = source.indexOf(endMarker, start + startMarker.length);
+    assert.notEqual(end, -1, relative + ": missing " + label + " end");
+    return source.slice(start + startMarker.length, end);
+  };
+
+  const career = between(html, '<section class="section career-section" id="career">', "</section>", "career section");
+  const company = between(career, '<li class="career-entry career-entry-current">', '<li class="career-entry">', "current employer");
+  return {
+    currentRole: cleanHtml(between(company, '<li class="career-role career-role-current">', '<li class="career-role">', "current role")),
+    leadership: cleanHtml(between(company, '<div class="leadership-note">', "</div>", "leadership note")),
+  };
+}
+
+/** Check semantic facts in WebMCP and the appropriate published career subsection. */
+function assertCareerFacts(language, html) {
+  const relative = PAGE[language];
+  const profile = call(language, "getProfile");
+  const highlights = profile.careerHighlights;
+  const sections = careerSections(html, relative);
+  const matched = new Set();
+
+  assert.ok(Array.isArray(highlights), "[" + language + "] getProfile.careerHighlights must be an array");
+  assert.equal(highlights.length, CAREER_FACTS.length, "[" + language + "] unexpected number of career highlights");
+  for (const [index, highlight] of highlights.entries()) {
+    assert.ok(typeof highlight === "string" && highlight.length > 30,
+      "[" + language + "] invalid career highlight at index " + index);
+  }
+
+  for (const fact of CAREER_FACTS) {
+    const evidence = fact.evidence[language];
+    const prefix = "[" + language + "] " + fact.id + ": ";
+    assert.ok(evidence, prefix + "missing localized test evidence");
+    const index = highlights.findIndex((highlight) => highlight.includes(evidence));
+    assert.notEqual(index, -1, prefix + 'missing "' + evidence + '" in getProfile.careerHighlights');
+    assert.ok(!matched.has(index), prefix + "shares a highlight with another fact");
+    matched.add(index);
+    assert.ok(sections[fact.scope].includes(evidence),
+      prefix + 'missing "' + evidence + '" in ' + relative + " (" + fact.scope + ")");
+  }
+  assert.doesNotMatch(highlights.join(" "), /30\s*%|story points/i,
+    "[" + language + "] careerHighlights should not duplicate the internal delivery metric");
+}
+
+test("getProfile career highlights match the current career sections in every language", () => {
+  assert.equal(new Set(CAREER_FACTS.map((fact) => fact.id)).size, CAREER_FACTS.length, "career fact IDs must be unique");
   for (const language of SUPPORTED_LANGUAGES) {
-    const profile = call(language, "getProfile");
-    const homepage = cleanHtml(read(PAGE[language]));
-    assert.equal(profile.careerHighlights.length, CAREER_EVIDENCE[language].length);
-    profile.careerHighlights.forEach((highlight, index) => {
-      const evidence = CAREER_EVIDENCE[language][index];
-      assert.equal(typeof highlight, "string");
-      assert.ok(highlight.length > 30, language + " highlight " + index);
-      assert.ok(highlight.includes(evidence), language + " missing highlight evidence " + evidence);
-      assert.ok(homepage.includes(evidence), PAGE[language] + " missing published evidence " + evidence);
-    });
-    assert.doesNotMatch(profile.careerHighlights.join(" "), /30\s*%|story points/i);
+    assertCareerFacts(language, read(PAGE[language]));
   }
 
   const mutated = call("en", "getProfile").careerHighlights;
   mutated.push("injected");
-  assert.equal(call("en", "getProfile").careerHighlights.length, CAREER_EVIDENCE.en.length);
+  assert.equal(call("en", "getProfile").careerHighlights.length, CAREER_FACTS.length);
+});
+
+test("career parity rejects missing evidence even when repeated outside the career section", () => {
+  const relative = PAGE.en;
+  const html = read(relative);
+  const evidence = CAREER_FACTS[0].evidence.en;
+  assert.ok(careerSections(html, relative).currentRole.includes(evidence), "test fixture must contain the fact");
+  const withoutRoleFact = html.replace(evidence, "[omitted from current role]");
+  assert.notEqual(withoutRoleFact, html, "test fixture must change");
+  const outsideOnly = withoutRoleFact.replace("</head>", '<meta name="description" content="' + evidence + '"></head>');
+  assert.throws(() => assertCareerFacts("en", outsideOnly),
+    /\[en\] architectural-ownership: missing "two engineering teams" in en\/index\.html \(currentRole\)/);
 });
 
 test("profile, skills, contact and resume match published HTML and JSON-LD", () => {
