@@ -302,23 +302,34 @@ const serviceUrls = [
   `${SITE_URL}/en/services/`,
   `${SITE_URL}/es/servicios/`,
 ];
-expectedPages.push(...serviceUrls, `${SITE_URL}/curriculo/`);
-assert.ok(read("index.html").includes('href="/curriculo/"'), "Homepage must link to resume");
-assert.ok(read("curriculo/index.html").includes('<html lang="pt-BR">'), "Resume must remain in pt-BR");
+const resumeUrls = [`${SITE_URL}/curriculo/`, `${SITE_URL}/en/resume/`, `${SITE_URL}/es/curriculo/`];
+expectedPages.push(...serviceUrls, ...resumeUrls);
+for (const [file, language, route] of [
+  ["curriculo/index.html", "pt-BR", "/curriculo/"],
+  ["en/resume/index.html", "en", "/en/resume/"],
+  ["es/curriculo/index.html", "es-419", "/es/curriculo/"],
+]) {
+  assert.ok(read(file).includes(`<html lang="${language}">`), `${file} language`);
+  assert.ok(read(file).includes('aria-current="page"'), `${file} active language`);
+  assert.ok(read(file).includes('href="./rodrigo-de-oliveira.pdf"'), `${file} PDF link`);
+  assert.ok(read(file).includes('href="/curriculo/"') && read(file).includes('href="/en/resume/"') && read(file).includes('href="/es/curriculo/"'), `${file} reciprocal resume navigation`);
+  const homepage = language === "pt-BR" ? "index.html" : language === "en" ? "en/index.html" : "es/index.html";
+  assert.ok(read(homepage).includes(`href="${route}"`), `${homepage} localized resume link`);
+}
 assert.equal(sitemapEntries.length, expectedPages.length, "Sitemap URL count");
 assert.deepEqual(new Set(sitemapEntries.map((entry) => entry.loc)), new Set(expectedPages), "Sitemap URL correspondence and uniqueness");
 for (const entry of sitemapEntries) {
   assert.match(entry.lastmod ?? "", /^\d{4}-\d{2}-\d{2}$/, `${entry.loc} sitemap lastmod`);
   const slug = entry.loc.includes("/case-studies/") ? entry.loc.split("/case-studies/")[1].replace(/\/$/, "") : "";
-  const isResume = entry.loc.endsWith("/curriculo/");
+  const isResume = resumeUrls.includes(entry.loc);
   const isServices = serviceUrls.includes(entry.loc);
   const expectedAlternates = isResume
-    ? {}
+    ? { "pt-BR": resumeUrls[0], en: resumeUrls[1], es: resumeUrls[2] }
     : isServices
       ? { "pt-BR": serviceUrls[0], en: serviceUrls[1], es: serviceUrls[2] }
       : Object.fromEntries(variants.map((variant) => [variant.hreflang, pageUrl(variant, slug)]));
-  if (!isResume) expectedAlternates["x-default"] = isServices ? serviceUrls[0] : pageUrl(variants[0], slug);
+  expectedAlternates["x-default"] = isResume ? resumeUrls[0] : isServices ? serviceUrls[0] : pageUrl(variants[0], slug);
   assert.deepEqual(entry.alternates, expectedAlternates, `${entry.loc} sitemap alternates`);
 }
 
-console.log(`Validated 3 homepages, 3 service pages in sitemap, ${slugSets[0].length * 3} localized case studies, legacy redirect, metadata, navigation, local resources, and sitemap.`);
+console.log(`Validated 3 homepages, 3 resumes, 3 service pages in sitemap, ${slugSets[0].length * 3} localized case studies, legacy redirect, metadata, navigation, local resources, and sitemap.`);

@@ -7,10 +7,10 @@
 El sitio ofrece seis herramientas generales **de solo lectura** y cuatro herramientas adicionales para servicios mediante la [API imperativa de WebMCP](https://developer.chrome.com/docs/ai/webmcp/imperative-api). Se registran dentro de una pestaña de un navegador compatible mediante `document.modelContext.registerTool`. No son endpoints REST ni un servidor MCP remoto. La apariencia del sitio no cambia.
 
 - Idiomas: `pt-BR`, `en` y `es-419`. Las descripciones de las herramientas siguen el idioma de la página, pero cada llamada puede solicitar otro idioma.
-- Páginas: inicio y cinco estudios de caso en portugués, inglés y español; currículum en portugués y servicios en `/servicos/`, `/en/services/` y `/es/servicios/`.
+- Páginas: inicio, cinco estudios de caso y currículum en portugués, inglés y español; servicios en `/servicos/`, `/en/services/` y `/es/servicios/`.
 - Datos: información profesional pública, cinco proyectos destacados y cuatro servicios de consultoría; sin credenciales, análisis de usuarios, peticiones externas ni operaciones de escritura.
 - Compatibilidad: si la API no existe o el contexto no es seguro, el sitio continúa funcionando normalmente sin registrar herramientas.
-- Currículum: los documentos HTML y PDF publicados **solo están disponibles en portugués de Brasil**. Una respuesta en español no implica que exista una versión traducida.
+- Currículum: existen documentos HTML y PDF propios en `pt-BR`, `en` y `es-419`; `getResume` devuelve la versión correspondiente a `language`.
 
 **WebMCP todavía es experimental.** No sustituye al SEO, al HTML semántico, a los datos estructurados ni al sitemap, y no garantiza que los agentes descubran o recomienden el sitio. Su disponibilidad depende del navegador, versión y configuración. Este repositorio no incorpora un token de prueba de origen (*origin trial*).
 
@@ -41,7 +41,7 @@ Las páginas cargan `/assets/js/webmcp.js` como módulo ECMAScript nativo. Solo 
 | `getSkills` | `language?` | Competencias técnicas publicadas |
 | `searchProjects` | `query?`, `technology?`, `limit?`, `language?` | Total y resultados de búsqueda de proyectos |
 | `getProjectDetails` | `projectId`, `language?` | Información de un proyecto, repositorio y estudio de caso |
-| `getResume` | `language?` | Enlaces HTML/PDF e idioma realmente disponible: `pt-BR` |
+| `getResume` | `language?` | Enlaces HTML/PDF localizados y `availableLanguages` con `pt-BR`, `en` y `es-419` |
 | `getContactInfo` | `language?` | Correo, LinkedIn, GitHub y sitio público |
 
 ### Herramientas adicionales exclusivas de las páginas de servicios

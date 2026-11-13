@@ -174,13 +174,21 @@ export function createPortfolioTools(pageLocale = "pt-BR") {
       "getResume",
       text.tools.getResume,
       schema(text),
-      common("getResume", [], (_, language) => ({
-        language,
-        availableLanguages: ["pt-BR"],
-        htmlUrl: SITE_URL + "/curriculo/",
-        pdfUrl: SITE_URL + "/curriculo/rodrigo-de-oliveira.pdf",
-        note: MESSAGES[language].resumeNote,
-      }))
+      common("getResume", [], (_, language) => {
+        const routes = {
+          "pt-BR": "/curriculo/",
+          en: "/en/resume/",
+          "es-419": "/es/curriculo/",
+        };
+        const route = routes[language];
+        return {
+          language,
+          availableLanguages: ["pt-BR", "en", "es-419"],
+          htmlUrl: SITE_URL + route,
+          pdfUrl: SITE_URL + route + "rodrigo-de-oliveira.pdf",
+          note: MESSAGES[language].resumeNote,
+        };
+      })
     ),
     definition(
       "getContactInfo",

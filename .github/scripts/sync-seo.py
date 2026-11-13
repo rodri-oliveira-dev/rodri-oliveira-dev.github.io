@@ -21,7 +21,11 @@ PT_INDEX = ROOT / "index.html"
 EN_INDEX = ROOT / "en/index.html"
 ES_INDEX = ROOT / "es/index.html"
 SITEMAP_PATH = ROOT / "sitemap.xml"
-RESUME_INDEX = ROOT / "curriculo/index.html"
+RESUME_PAGES = {
+    "pt-BR": ROOT / "curriculo/index.html",
+    "en": ROOT / "en/resume/index.html",
+    "es-419": ROOT / "es/curriculo/index.html",
+}
 SERVICE_PAGES = {
     "pt-BR": ROOT / "servicos/index.html",
     "en": ROOT / "en/services/index.html",
@@ -33,7 +37,12 @@ SERVICE_URLS = {
     "en": f"{SITE_URL}en/services/",
     "es-419": f"{SITE_URL}es/servicios/",
 }
-RESUME_URL = f"{SITE_URL}curriculo/"
+RESUME_URLS = {
+    "pt-BR": f"{SITE_URL}curriculo/",
+    "en": f"{SITE_URL}en/resume/",
+    "es-419": f"{SITE_URL}es/curriculo/",
+}
+RESUME_URL = RESUME_URLS["pt-BR"]
 EN_URL = f"{SITE_URL}en/"
 ES_URL = f"{SITE_URL}es/"
 PT_FEED_URL = f"{SITE_URL}newsletter/feed.xml"
@@ -559,6 +568,15 @@ def existing_service_variants() -> dict[str, Path]:
     return existing
 
 
+def existing_resume_variants() -> dict[str, Path]:
+    """Return all localized resumes, or fail when publication is incomplete."""
+    existing = {language: path for language, path in RESUME_PAGES.items() if path.is_file()}
+    if existing and len(existing) != len(RESUME_PAGES):
+        missing = sorted(set(RESUME_PAGES) - set(existing))
+        raise SystemExit(f"Resume translations are incomplete: {missing}.")
+    return existing
+
+
 def service_structured_data(language: str, html: str) -> dict:
     """Describe the actual published professional page, without fabricated offers."""
     title = re.search(r"<title>(.*?)</title>", html, re.DOTALL)
@@ -697,6 +715,31 @@ def service_sitemap_blocks(
         for code, path in paths.items()
     )
 
+
+def resume_sitemap_blocks(
+    paths: dict[str, Path],
+    today: str,
+    existing_lastmods: dict[str, str],
+) -> str:
+    """Build reciprocal resume entries for every published language."""
+    if not paths:
+        return ""
+    alternate_links = "\n".join(
+        f'    <xhtml:link rel="alternate" hreflang="{LANGUAGE_VARIANTS[code]["hreflang"]}" href="{escape(RESUME_URLS[code])}"/>'
+        for code in paths
+    )
+    alternate_links += (
+        f'\n    <xhtml:link rel="alternate" hreflang="x-default" '
+        f'href="{escape(RESUME_URLS["pt-BR"])}"/>'
+    )
+    return "\n".join(
+        f'''  <url>
+    <loc>{escape(RESUME_URLS[code])}</loc>
+{alternate_links}
+    <lastmod>{max_date(page_lastmod(RESUME_URLS[code], path, today, existing_lastmods), git_last_modified(path))}</lastmod>
+  </url>'''
+        for code, path in paths.items()
+    )
 def git_last_modified(path: Path) -> str:
     relative = path.relative_to(ROOT).as_posix()
     try:
@@ -978,19 +1021,9 @@ def write_sitemap(
         existing_service_variants(), today, existing_lastmods
     )
 
-    # O currículo tem somente uma versão em PT-BR: não há traduções para hreflang.
-    resume_block = ""
-    if RESUME_INDEX.exists():
-        resume_lastmod = max_date(
-            page_lastmod(RESUME_URL, RESUME_INDEX, today, existing_lastmods),
-            git_last_modified(RESUME_INDEX),
-        )
-        resume_block = (
-            "  <url>\n"
-            f"    <loc>{escape(RESUME_URL)}</loc>\n"
-            f"    <lastmod>{resume_lastmod}</lastmod>\n"
-            "  </url>"
-        )
+    resume_block = resume_sitemap_blocks(
+        existing_resume_variants(), today, existing_lastmods
+    )
 
     sitemap = f'''<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
@@ -1052,6 +1085,8 @@ def main() -> None:
             validate_json_ld(path)
     for path in existing_service_variants().values():
         validate_json_ld(path)
+    for path in existing_resume_variants().values():
+        validate_json_ld(path)
 
     print("SEO artifacts synchronized:")
     print("- index.html: WebSite/ProfilePage/Person + latest Article entities + PT-BR RSS discovery")
@@ -1062,7 +1097,8 @@ def main() -> None:
     print("- es/index.html: WebSite/ProfilePage/Person + Hashnode Article entities + RSS discovery")
     print("- case studies: canonical Article/Person/WebSite/SoftwareSourceCode entity relationships")
     print("- service pages: reciprocal hreflang + WebPage/Service/BreadcrumbList")
-    print("- sitemap.xml: homepage, services, case studies, resume + reliable lastmod")
+    print("- resume pages: reciprocal hreflang + localized ProfilePage/Person/BreadcrumbList")
+    print("- sitemap.xml: homepage, services, case studies, resumes + reliable lastmod")
 
 
 if __name__ == "__main__":

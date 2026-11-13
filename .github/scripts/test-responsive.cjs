@@ -10,6 +10,7 @@ const navigationOnly = process.env.RESPONSIVE_NAVIGATION_ONLY === "1";
 const widths = [320, 360, 390, 768, 1024, 1440];
 const roots = ["", "en", "es"];
 const servicePaths = ["/servicos/", "/en/services/", "/es/servicios/"];
+const resumePaths = ["/curriculo/", "/en/resume/", "/es/curriculo/"];
 const mobileProfiles = [
   {
     name: "iPhone viewport",
@@ -28,7 +29,7 @@ const urls = roots.flatMap((root) => {
     .map((entry) => entry.name)
     .sort();
   return [`${prefix}/`, ...slugs.map((slug) => `${prefix}/case-studies/${slug}/`)];
-}).concat(servicePaths);
+}).concat(servicePaths, resumePaths);
 
 const launchBrowser = () => puppeteer.launch({
   headless: true,
@@ -36,7 +37,7 @@ const launchBrowser = () => puppeteer.launch({
 });
 
 const inspectLayout = () => {
-  const switcher = document.querySelector(".language-switcher");
+  const switcher = document.querySelector(".language-switcher, .language-nav");
   const rect = switcher?.getBoundingClientRect();
   const heroArtwork = document.querySelector(".hero-artwork")?.getBoundingClientRect();
   const heroActions = document.querySelector(".hero-actions")?.getBoundingClientRect();

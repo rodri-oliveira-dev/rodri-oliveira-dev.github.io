@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - 'curriculo/**'
+      - 'en/resume/**'
+      - 'es/curriculo/**'
       - 'servicos/**'
       - 'en/services/**'
       - 'es/servicios/**'
@@ -47,10 +49,10 @@ jobs:
           npm install --no-save --no-package-lock --ignore-scripts playwright@1.65.0
           npx --no-install playwright install --with-deps chromium
 
-      - name: Generate resume PDF
+      - name: Generate localized resume PDFs
         run: node .github/scripts/generate-resume-pdf.mjs
 
-      - name: Check resume PDF text reading order
+      - name: Check localized resume PDF content, reading order, and pagination
         run: |
           if ! command -v pdftotext >/dev/null 2>&1; then
             sudo apt-get update -qq
@@ -65,7 +67,11 @@ jobs:
           test ! -e _site/.sonarcloud.properties
           test ! -e _site/docs/sonarcloud-integration.md
           test -s _site/curriculo/rodrigo-de-oliveira.pdf
+          test -s _site/en/resume/rodrigo-de-oliveira.pdf
+          test -s _site/es/curriculo/rodrigo-de-oliveira.pdf
           test -f _site/curriculo/index.html
+          test -f _site/en/resume/index.html
+          test -f _site/es/curriculo/index.html
           test -f _site/index.html
           # Keep all client-side WebMCP modules in the GitHub Pages artifact.
           # Missing modules would break the dependency chain after publish.
@@ -85,12 +91,15 @@ jobs:
           test -f _site/es/servicios/index.html
           test -f _site/assets/css/servicos.css
 
-      - name: Upload PDF preview for review
+      - name: Upload localized PDF previews for review
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: curriculo-pdf-preview
-          path: curriculo/rodrigo-de-oliveira.pdf
+          name: localized-resume-pdf-previews
+          path: |
+            curriculo/rodrigo-de-oliveira.pdf
+            en/resume/rodrigo-de-oliveira.pdf
+            es/curriculo/rodrigo-de-oliveira.pdf
           if-no-files-found: error
 
       - name: Configure GitHub Pages

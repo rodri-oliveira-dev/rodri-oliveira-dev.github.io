@@ -7,10 +7,10 @@
 O site expõe seis ferramentas gerais **somente de leitura** e quatro ferramentas adicionais nas páginas de serviços, por meio da [API imperativa WebMCP](https://developer.chrome.com/docs/ai/webmcp/imperative-api). A integração funciona no navegador quando `document.modelContext.registerTool` está disponível; não é uma API REST, não inicia servidor MCP nem altera as páginas para visitantes.
 
 - Idiomas suportados: `pt-BR`, `en` e `es-419`. A descrição das ferramentas acompanha o idioma da página; cada execução pode solicitar outro idioma.
-- Cobertura: homepages PT/EN/ES, cinco estudos de caso em cada idioma, currículo em português e páginas de serviços `/servicos/`, `/en/services/`, `/es/servicios/`.
+- Cobertura: homepages PT/EN/ES, cinco estudos de caso em cada idioma, currículos nos três idiomas e páginas de serviços `/servicos/`, `/en/services/`, `/es/servicios/`.
 - Dados: informações **públicas** do portfólio, cinco projetos em destaque e quatro serviços de consultoria, sem chamadas HTTP, credenciais, analytics ou alterações de estado.
 - Compatibilidade: sem WebMCP ou sem contexto seguro, o site funciona normalmente e não registra ferramentas.
-- Currículo: a página HTML e o PDF publicados são apenas em português. Respostas em inglês ou espanhol não implicam currículo traduzido.
+- Currículo: HTML e PDF próprios em `pt-BR`, `en` e `es-419`; `getResume` devolve a versão correspondente ao parâmetro `language`.
 
 O WebMCP é **experimental**. Ele não substitui SEO, JSON-LD, sitemap nem os links HTML; não garante indexação, descoberta ou recomendações por agentes. O suporte depende do navegador/cliente, versão e eventuais permissões/flags. Este repositório **não configura token de origin trial**.
 
@@ -41,7 +41,7 @@ As páginas importam somente o módulo `/assets/js/webmcp.js`. Nas três rotas d
 | `getSkills` | `language?` | Lista pública de competências técnicas |
 | `searchProjects` | `query?`, `technology?`, `limit?`, `language?` | Total de resultados e projetos com descrições, tecnologias e URLs |
 | `getProjectDetails` | `projectId`, `language?` | Detalhes de um dos cinco projetos em destaque |
-| `getResume` | `language?` | URLs HTML/PDF e indicação de que o currículo está apenas em `pt-BR` |
+| `getResume` | `language?` | URLs HTML/PDF no idioma solicitado e `availableLanguages` com `pt-BR`, `en` e `es-419` |
 | `getContactInfo` | `language?` | E-mail, LinkedIn, GitHub e site públicos |
 
 ### Ferramentas adicionais disponíveis apenas nas páginas de serviços

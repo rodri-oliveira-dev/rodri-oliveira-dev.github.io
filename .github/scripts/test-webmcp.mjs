@@ -119,7 +119,10 @@ test("every tool defaults to page language and accepts an explicit override", ()
   assert.equal(call("en", "getProfile", { language: "pt-BR" }).role, "Arquiteto de Software Sênior");
   assert.equal(call("en", "getProfile", { language: "es-419" }).role, "Arquitecto de Software Senior");
   assert.equal(call("es-419", "getProfile", { language: "en" }).role, "Senior Software Architect");
-  assert.deepEqual(call("en", "getResume").availableLanguages, ["pt-BR"]);
+  assert.deepEqual(call("en", "getResume").availableLanguages, ["pt-BR", "en", "es-419"]);
+  assert.equal(call("pt-BR", "getResume").htmlUrl, SITE_URL + "/curriculo/");
+  assert.equal(call("en", "getResume").htmlUrl, SITE_URL + "/en/resume/");
+  assert.equal(call("es-419", "getResume").htmlUrl, SITE_URL + "/es/curriculo/");
 });
 
 test("search is multilingual, accent-insensitive and applies limits", () => {
@@ -300,12 +303,21 @@ test("profile, skills, contact and resume match published HTML and JSON-LD", () 
     assert.equal(profile.websiteUrl, SITE_URL + (language === "en" ? "/en/" : language === "es-419" ? "/es/" : "/"));
     assert.equal(contact.websiteUrl, profile.websiteUrl);
   }
-  const resume = call("en", "getResume");
-  assert.equal(resume.htmlUrl, SITE_URL + "/curriculo/");
-  assert.equal(resume.pdfUrl, SITE_URL + "/curriculo/rodrigo-de-oliveira.pdf");
-  assert.ok(read("curriculo/index.html").includes('href="./rodrigo-de-oliveira.pdf"'));
+  const expected = {
+    "pt-BR": ["curriculo/index.html", "/curriculo/"],
+    en: ["en/resume/index.html", "/en/resume/"],
+    "es-419": ["es/curriculo/index.html", "/es/curriculo/"],
+  };
+  for (const [language, [file, route]] of Object.entries(expected)) {
+    const resume = call(language, "getResume");
+    assert.equal(resume.htmlUrl, SITE_URL + route);
+    assert.equal(resume.pdfUrl, SITE_URL + route + "rodrigo-de-oliveira.pdf");
+    assert.ok(read(file).includes('href="./rodrigo-de-oliveira.pdf"'));
+    assert.deepEqual(resume.availableLanguages, ["pt-BR", "en", "es-419"]);
+  }
   assert.ok(read("index.html").includes('href="/curriculo/"'));
-  assert.deepEqual(resume.availableLanguages, ["pt-BR"]);
+  assert.ok(read("en/index.html").includes('href="/en/resume/"'));
+  assert.ok(read("es/index.html").includes('href="/es/curriculo/"'));
 });
 
 test("page loading and existing CSP remain unchanged and safe", () => {
@@ -320,7 +332,9 @@ test("page loading and existing CSP remain unchanged and safe", () => {
       assert.ok(read(relative).includes('src="/assets/js/webmcp.js"'), relative);
     }
   }
-  assert.ok(read("curriculo/index.html").includes('src="/assets/js/webmcp.js"'));
+  for (const file of ["curriculo/index.html", "en/resume/index.html", "es/curriculo/index.html"]) {
+    assert.ok(read(file).includes('src="/assets/js/webmcp.js"'));
+  }
   assert.ok(read("es/index.html").includes('src="/assets/js/webmcp.js"'));
   for (const relative of [
     "assets/js/webmcp.js", "assets/js/webmcp-tools.mjs",

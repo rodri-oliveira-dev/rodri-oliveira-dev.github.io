@@ -43,7 +43,7 @@ Para manutenção, edite as três traduções no mesmo PR e execute `python3 .gi
 | Workflow | Arquivo | Execução | Objetivo |
 | --- | --- | --- | --- |
 | Site validation | [`site-validation.yml`](workflows/site-validation.yml) | Pull Request, push em `main` e manual | Validar HTML, links, ortografia e workflows |
-| Publish site with resume PDF | [`deploy-pages.yml`](workflows/deploy-pages.yml) | PR que altera o currículo, push em `main` e manual | Gerar currículo PDF a partir de HTML/CSS e publicar o site via GitHub Pages |
+| Publish site with resume PDF | [`deploy-pages.yml`](workflows/deploy-pages.yml) | PR que altera os currículos, push em `main` e manual | Gerar os três PDFs a partir de HTML/CSS e publicar o site via GitHub Pages |
 | SEO validation | [`seo-validation.yml`](workflows/seo-validation.yml) | Pull Request, push em `main` e manual | Validar JSON-LD, sitemap, RSS discovery e consistência dos artefatos SEO |
 | Accessibility | [`accessibility.yml`](workflows/accessibility.yml) | Pull Request, push em `main` e manual | Aplicar verificações automatizadas de WCAG 2 AA |
 | GitHub Actions security | [`actions-security.yml`](workflows/actions-security.yml) | Pull Request, push em `main` e manual | Auditar a segurança da automação com zizmor |
@@ -58,15 +58,15 @@ Para manutenção, edite as três traduções no mesmo PR e execute `python3 .gi
 
 ## Currículo HTML e PDF
 
-O currículo em português está em [`../curriculo/index.html`](../curriculo/index.html), com CSS próprio em [`../curriculo/curriculo.css`](../curriculo/curriculo.css). O botão **Baixar currículo em PDF** aponta para `/curriculo/rodrigo-de-oliveira.pdf`.
+Os currículos estão em [`../curriculo/index.html`](../curriculo/index.html), [`../en/resume/index.html`](../en/resume/index.html) e [`../es/curriculo/index.html`](../es/curriculo/index.html), com CSS compartilhado em [`../curriculo/curriculo.css`](../curriculo/curriculo.css). Cada botão de download aponta para `rodrigo-de-oliveira.pdf` na rota do idioma ativo.
 
-O workflow [`deploy-pages.yml`](workflows/deploy-pages.yml) usa Playwright/Chromium para produzir o PDF A4 a partir do HTML e do CSS e publicar um único artifact com o site inteiro. Em Pull Requests que alteram o currículo ou o próprio gerador, o PDF é gerado e validado, mas não publicado. Após merge na `main`, o workflow publica HTML e PDF juntos, sem criar commits de artefatos binários na branch protegida. Ele também pode ser executado manualmente.
+O workflow [`deploy-pages.yml`](workflows/deploy-pages.yml) instala uma única vez Playwright/Chromium, produz os três PDFs A4 a partir dos HTMLs e do CSS e publica um único artifact com o site inteiro. Em Pull Requests, os PDFs são gerados, têm conteúdo, ordem de leitura e paginação validados e ficam disponíveis em um artifact de prévia, mas não são publicados. Após merge na `main`, o workflow publica HTMLs e PDFs juntos, sem criar commits de binários na branch protegida.
 
 **Configuração necessária:** em **Settings → Pages → Build and deployment → Source**, selecionar **GitHub Actions**. Sem essa configuração, o PDF não será servido automaticamente pelo site. O ambiente `github-pages` deve permitir deploy somente da `main`. Essa opção substitui o deploy anterior direto da branch; por isso, o workflow publica o site estático completo e não apenas o PDF.
 
-O gerador está em [`scripts/generate-resume-pdf.mjs`](scripts/generate-resume-pdf.mjs). O PDF não é mantido como arquivo fonte no Git: seu único conteúdo editável é o HTML/CSS do currículo.
+O gerador está em [`scripts/generate-resume-pdf.mjs`](scripts/generate-resume-pdf.mjs). Os PDFs não são mantidos como fonte no Git; o conteúdo editável são os três HTMLs e o CSS compartilhado.
 
-O currículo é uma URL canônica indexável apenas em **pt-BR**, com metadados Open Graph/Twitter, JSON-LD `ProfilePage`/ `Person`/ `BreadcrumbList`, entrada estável no sitemap e notificações IndexNow quando HTML ou CSS muda. Ele é ligado à seção **Contato** da homepage portuguesa. Não há `hreflang` para EN/ES, porque não existem traduções. As verificações de SEO, HTML, ortografia, Lighthouse e WCAG cobrem essa página.
+As três versões são URLs canônicas indexáveis (`/curriculo/`, `/en/resume/` e `/es/curriculo/`) com metadados localizados, JSON-LD `ProfilePage`/`Person`/`BreadcrumbList`, `hreflang` recíproco, sitemap e notificações IndexNow. Cada homepage aponta para o currículo correspondente. As verificações de SEO, HTML, ortografia, Lighthouse e WCAG cobrem as três páginas.
 
 
 ## Quality gates
@@ -106,7 +106,7 @@ Esse último ponto funciona como um gate de drift: se catálogo, homepage, dados
 
 ### Accessibility
 
-O [`accessibility.yml`](workflows/accessibility.yml) sobe o site em um servidor HTTP local e executa Pa11y CI contra as três homepages e todos os estudos de caso em português, inglês e espanhol, além do currículo em português e das três páginas de serviços.
+O [`accessibility.yml`](workflows/accessibility.yml) sobe o site em um servidor HTTP local e executa Pa11y CI contra as três homepages, currículos e páginas de serviços, além de todos os estudos de caso em português, inglês e espanhol.
 
 A configuração usa WCAG 2 AA como baseline e threshold zero para os problemas considerados pelo gate. O objetivo é detectar regressões de semântica, ARIA, estrutura e outras regras automatizáveis de acessibilidade antes do merge.
 
@@ -141,7 +141,7 @@ O relatório estruturado é produzido por [`scripts/summarize-zizmor.mjs`](scrip
 
 ### Lighthouse CI
 
-O [`lighthouse.yml`](workflows/lighthouse.yml) sobe o site localmente e executa Lighthouse CI contra `/`, `/en/`, `/es/` e todos os estudos de caso trilíngues descobertos, além de `/curriculo/` e das três páginas de serviços.
+O [`lighthouse.yml`](workflows/lighthouse.yml) sobe o site localmente e executa Lighthouse CI contra `/`, `/en/`, `/es/`, os três currículos, as três páginas de serviços e todos os estudos de caso trilíngues descobertos.
 
 Em Pull Requests, o seletor incremental compara a branch com a base, considera arquivos adicionados, modificados, renomeados e excluídos e percorre as dependências locais referenciadas por HTML, CSS e JavaScript. Cada página afetada é medida duas vezes. Recursos compartilhados selecionam todas as páginas dependentes; mudanças na configuração ou nos scripts do Lighthouse, falhas na comparação e impactos incertos provocam uma auditoria completa. Alterações apenas internas mantêm o check obrigatório verde sem iniciar o navegador.
 

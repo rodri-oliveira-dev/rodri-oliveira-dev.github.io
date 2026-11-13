@@ -29,7 +29,7 @@ description: >-
 - Verificar seletor de idioma, `aria-current="page"`, labels de navegação e links para a página correspondente, não apenas para a homepage.
 - Revisar `title`, `meta description`, Open Graph, Twitter, texto alternativo e JSON-LD localizado quando houver modificação textual.
 - Artigos externos em DEV Community, Hashnode e newsletter mantêm o idioma/origem do catálogo; não fabricar versões traduzidas.
-- Currículo `/curriculo/` é exclusivo em português.
+- Currículos: `/curriculo/` (`pt-BR`), `/en/resume/` (`en`) e `/es/curriculo/` (`es-419`); preservar equivalência factual com redação editorial natural.
 
 ## Validação
 

@@ -17,6 +17,8 @@ function discoverLighthousePages(root = process.cwd()) {
     "en/index.html",
     "es/index.html",
     "curriculo/index.html",
+    "en/resume/index.html",
+    "es/curriculo/index.html",
     "servicos/index.html",
     "en/services/index.html",
     "es/servicios/index.html",

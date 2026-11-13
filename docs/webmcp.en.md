@@ -7,10 +7,10 @@
 The site exposes six general **read-only** tools plus four additional service-specific tools through the experimental [WebMCP Imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api). Tools are registered inside a compatible browser tab using `document.modelContext.registerTool`. This is not a REST endpoint or a remote MCP server; the visual site remains unchanged.
 
 - Supported languages: `pt-BR`, `en`, and `es-419`. Tool descriptions follow the page locale, while individual calls may request any of the three response languages.
-- Pages: Portuguese, English and Spanish homepages, five case studies per language, the Portuguese resume, and `/servicos/`, `/en/services/`, `/es/servicios/`.
+- Pages: Portuguese, English and Spanish homepages, five case studies and a localized resume per language, plus `/servicos/`, `/en/services/`, `/es/servicios/`.
 - Data: published professional information, five featured projects and four consulting services; no external requests, credentials, analytics, or state changes.
 - Compatibility: if the WebMCP API is missing, or the page lacks a secure context, no tools are registered and the regular site still works.
-- Resume: the published HTML and PDF are **Portuguese only**. An English or Spanish tool response is not a translated resume.
+- Resume: dedicated HTML and PDF documents are published in `pt-BR`, `en`, and `es-419`; `getResume` returns the document matching `language`.
 
 **WebMCP is experimental.** It does not replace SEO, structured data, canonical links, sitemap, or standard HTML navigation, and it does not ensure an AI agent will discover or recommend the site. Availability varies by browser, version, experimental flags and permissions. **No origin-trial token is configured in this repository.**
 
@@ -41,7 +41,7 @@ Each covered HTML page loads only `/assets/js/webmcp.js`. On the three services 
 | `getSkills` | `language?` | Published technical skills |
 | `searchProjects` | `query?`, `technology?`, `limit?`, `language?` | Total matches and project summaries with technologies and links |
 | `getProjectDetails` | `projectId`, `language?` | One featured project's public details |
-| `getResume` | `language?` | HTML/PDF links and the actual available language, `pt-BR` |
+| `getResume` | `language?` | Localized HTML/PDF links and `availableLanguages` containing `pt-BR`, `en`, and `es-419` |
 | `getContactInfo` | `language?` | Public email, LinkedIn, GitHub and website URLs |
 
 ### Additional tools on the services pages only

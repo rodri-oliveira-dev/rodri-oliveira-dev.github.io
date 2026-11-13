@@ -14,40 +14,48 @@ import sys
 import unicodedata
 
 
-PDF = Path("curriculo/rodrigo-de-oliveira.pdf")
-SECTIONS = (
-    "Perfil profissional",
-    "Experiência profissional",
-    "CI&T",
-    "IBM",
-    "Pearson",
-    "weme",
-    "Comtel e Fernandez S/A",
-    "Áreas de atuação",
-    "Tecnologias",
-    "Formação acadêmica",
-    "Idiomas",
-    "Projetos independentes",
-    "Portfólio e estudos de caso",
-)
+RESUMES = {
+    "pt-BR": (
+        Path("curriculo/rodrigo-de-oliveira.pdf"),
+        ("Perfil profissional", "Experiência profissional", "CI&T", "IBM", "Pearson",
+         "weme", "Comtel e Fernandez S/A", "Áreas de atuação", "Tecnologias",
+         "Formação acadêmica", "Idiomas", "Projetos independentes",
+         "Portfólio e estudos de caso"),
+    ),
+    "en": (
+        Path("en/resume/rodrigo-de-oliveira.pdf"),
+        ("Professional profile", "Professional experience", "CI&T", "IBM", "Pearson",
+         "weme", "Comtel e Fernandez S/A", "Areas of expertise", "Technologies",
+         "Education", "Languages", "Independent projects", "Portfolio and case studies"),
+    ),
+    "es-419": (
+        Path("es/curriculo/rodrigo-de-oliveira.pdf"),
+        ("Perfil profesional", "Experiencia profesional", "CI&T", "IBM", "Pearson",
+         "weme", "Comtel e Fernandez S/A", "Áreas de experiencia", "Tecnologías",
+         "Formación académica", "Idiomas", "Proyectos independientes",
+         "Portafolio y estudios de caso"),
+    ),
+}
 
 
 def normalized(value: str) -> str:
     return re.sub(r"\s+", " ", unicodedata.normalize("NFKC", value)).casefold()
 
 
-def verify(layout: bool) -> None:
+def verify(pdf: Path, sections: tuple[str, ...], layout: bool) -> None:
     args = ["pdftotext"]
     if layout:
         args.append("-layout")
-    args.extend(["-enc", "UTF-8", "-nopgbrk", str(PDF), "-"])
-    result = subprocess.run(args, check=True, capture_output=True, text=True)
+    args.extend(["-enc", "UTF-8", "-nopgbrk", str(pdf), "-"])
+    result = subprocess.run(
+        args, check=True, capture_output=True, text=True, encoding="utf-8"
+    )
     content = normalized(result.stdout)
     cursor = -1
-    for label in SECTIONS:
+    for label in sections:
         index = content.find(normalized(label), cursor + 1)
         if index < 0:
-            positions = [(name, content.find(normalized(name))) for name in SECTIONS]
+            positions = [(name, content.find(normalized(name))) for name in sections]
             raise AssertionError(
                 f"Seção ausente ou fora de ordem no pdftotext "
                 f"({'layout' if layout else 'padrão'}): {label}. "
@@ -58,24 +66,26 @@ def verify(layout: bool) -> None:
 
 
 def main() -> int:
-    if not PDF.is_file():
-        raise FileNotFoundError(f"PDF não encontrado: {PDF}")
     if shutil.which("pdftotext") is None:
         raise RuntimeError("Instale poppler-utils para executar a validação do PDF.")
-    verify(layout=False)
-    verify(layout=True)
     if shutil.which("pdfinfo") is None:
         raise RuntimeError("Instale poppler-utils para verificar a paginação do PDF.")
-    metadata = subprocess.run(
-        ["pdfinfo", str(PDF)], check=True, capture_output=True, text=True
-    ).stdout
-    match = re.search(r"^Pages:\s*(\d+)\s*$", metadata, re.MULTILINE)
-    if not match:
-        raise AssertionError("Não foi possível determinar o número de páginas do PDF.")
-    pages = int(match.group(1))
-    if not 1 <= pages <= 3:
-        raise AssertionError(f"O currículo deve ocupar no máximo 3 páginas A4, mas possui {pages}.")
-    print(f"Ordem de leitura e paginação ({pages} páginas A4, limite de 3) do PDF validadas.")
+    for language, (pdf, sections) in RESUMES.items():
+        if not pdf.is_file():
+            raise FileNotFoundError(f"PDF não encontrado: {pdf}")
+        verify(pdf, sections, layout=False)
+        verify(pdf, sections, layout=True)
+        metadata = subprocess.run(
+            ["pdfinfo", str(pdf)], check=True, capture_output=True, text=True,
+            encoding="utf-8",
+        ).stdout
+        match = re.search(r"^Pages:\s*(\d+)\s*$", metadata, re.MULTILINE)
+        if not match:
+            raise AssertionError(f"Não foi possível determinar a paginação de {pdf}.")
+        pages = int(match.group(1))
+        if not 1 <= pages <= 3:
+            raise AssertionError(f"O currículo {language} deve ocupar no máximo 3 páginas A4, mas possui {pages}.")
+        print(f"{language}: ordem de leitura validada; {pages} páginas A4 (limite de 3).")
     return 0
 
 
