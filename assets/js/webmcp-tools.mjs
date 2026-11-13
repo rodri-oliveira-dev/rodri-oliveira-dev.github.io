@@ -91,6 +91,7 @@ export function createPortfolioTools(pageLocale = "pt-BR") {
       common("getProfile", [], (_, language) => ({
         language,
         ...PROFILES[language],
+        careerHighlights: [...PROFILES[language].careerHighlights],
         experienceYearsMinimum: 20,
         websiteUrl: urlFor(language),
       }))

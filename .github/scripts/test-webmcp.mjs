@@ -111,6 +111,8 @@ test("every tool defaults to page language and accepts an explicit override", ()
       assert.doesNotThrow(() => JSON.stringify(cross));
     }
     assert.equal(call(page, "getProfile").role, PROFILES[page].role);
+    assert.deepEqual(call(page, "getProfile").careerHighlights, PROFILES[page].careerHighlights);
+    assert.deepEqual(call(page, "getProfile", { language: other }).careerHighlights, PROFILES[other].careerHighlights);
     assert.deepEqual(call(page, "getSkills").skills, SKILLS[page]);
   }
   assert.equal(call("pt-BR", "getProfile", { language: "en" }).role, "Senior Software Architect");
@@ -180,6 +182,50 @@ test("project catalog is synchronized with HTML content in all three languages",
       assert.deepEqual(results[index], expected, relative + " tool output: " + project.id);
     }
   }
+});
+
+const CAREER_EVIDENCE = {
+  "pt-BR": [
+    "dois times de engenharia",
+    "funcionalidades legadas",
+    "Centro de Excelência de Arquitetura",
+    "Career Advisor",
+    "ferramentas de inteligência artificial",
+  ],
+  en: [
+    "two engineering teams",
+    "legacy functionality",
+    "Architecture Center of Excellence",
+    "Career Advisor",
+    "AI tools",
+  ],
+  "es-419": [
+    "dos equipos de ingeniería",
+    "funcionalidades heredadas",
+    "Centro de Excelencia de Arquitectura",
+    "Career Advisor",
+    "herramientas de inteligencia artificial",
+  ],
+};
+
+test("getProfile career highlights are localized, published and returned by value", () => {
+  for (const language of SUPPORTED_LANGUAGES) {
+    const profile = call(language, "getProfile");
+    const homepage = cleanHtml(read(PAGE[language]));
+    assert.equal(profile.careerHighlights.length, CAREER_EVIDENCE[language].length);
+    profile.careerHighlights.forEach((highlight, index) => {
+      const evidence = CAREER_EVIDENCE[language][index];
+      assert.equal(typeof highlight, "string");
+      assert.ok(highlight.length > 30, language + " highlight " + index);
+      assert.ok(highlight.includes(evidence), language + " missing highlight evidence " + evidence);
+      assert.ok(homepage.includes(evidence), PAGE[language] + " missing published evidence " + evidence);
+    });
+    assert.doesNotMatch(profile.careerHighlights.join(" "), /30\s*%|story points/i);
+  }
+
+  const mutated = call("en", "getProfile").careerHighlights;
+  mutated.push("injected");
+  assert.equal(call("en", "getProfile").careerHighlights.length, CAREER_EVIDENCE.en.length);
 });
 
 test("profile, skills, contact and resume match published HTML and JSON-LD", () => {

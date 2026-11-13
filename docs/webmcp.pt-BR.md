@@ -37,7 +37,7 @@ As páginas importam somente o módulo `/assets/js/webmcp.js`. Nas três rotas d
 
 | Ferramenta | Entrada | Resposta |
 | --- | --- | --- |
-| `getProfile` | `language?` | Nome, cargo, resumo, tempo mínimo de experiência e URL do portfólio |
+| `getProfile` | `language?` | Nome, cargo, resumo, cinco destaques da trajetória profissional (`careerHighlights`), tempo mínimo de experiência e URL do portfólio |
 | `getSkills` | `language?` | Lista pública de competências técnicas |
 | `searchProjects` | `query?`, `technology?`, `limit?`, `language?` | Total de resultados e projetos com descrições, tecnologias e URLs |
 | `getProjectDetails` | `projectId`, `language?` | Detalhes de um dos cinco projetos em destaque |

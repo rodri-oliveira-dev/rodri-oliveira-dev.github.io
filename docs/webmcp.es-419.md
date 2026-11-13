@@ -37,7 +37,7 @@ Las páginas cargan `/assets/js/webmcp.js` como módulo ECMAScript nativo. Solo 
 
 | Herramienta | Parámetros | Respuesta |
 | --- | --- | --- |
-| `getProfile` | `language?` | Nombre, cargo, resumen, experiencia y URL del sitio |
+| `getProfile` | `language?` | Nombre, cargo, resumen, cinco hitos de la trayectoria profesional (`careerHighlights`), experiencia y URL del sitio |
 | `getSkills` | `language?` | Competencias técnicas publicadas |
 | `searchProjects` | `query?`, `technology?`, `limit?`, `language?` | Total y resultados de búsqueda de proyectos |
 | `getProjectDetails` | `projectId`, `language?` | Información de un proyecto, repositorio y estudio de caso |
