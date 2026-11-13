@@ -25,8 +25,9 @@ SECTIONS = (
     "Comtel e Fernandez S/A",
     "Áreas de atuação",
     "Tecnologias",
+    "Formação acadêmica",
+    "Idiomas",
     "Projetos independentes",
-    "Projetos open source",
     "Portfólio e estudos de caso",
 )
 
@@ -63,7 +64,18 @@ def main() -> int:
         raise RuntimeError("Instale poppler-utils para executar a validação do PDF.")
     verify(layout=False)
     verify(layout=True)
-    print("Ordem de leitura do PDF validada em extrações padrão e layout.")
+    if shutil.which("pdfinfo") is None:
+        raise RuntimeError("Instale poppler-utils para verificar a paginação do PDF.")
+    metadata = subprocess.run(
+        ["pdfinfo", str(PDF)], check=True, capture_output=True, text=True
+    ).stdout
+    match = re.search(r"^Pages:\s*(\d+)\s*$", metadata, re.MULTILINE)
+    if not match:
+        raise AssertionError("Não foi possível determinar o número de páginas do PDF.")
+    pages = int(match.group(1))
+    if not 1 <= pages <= 3:
+        raise AssertionError(f"O currículo deve ocupar no máximo 3 páginas A4, mas possui {pages}.")
+    print(f"Ordem de leitura e paginação ({pages} páginas A4, limite de 3) do PDF validadas.")
     return 0
 
 

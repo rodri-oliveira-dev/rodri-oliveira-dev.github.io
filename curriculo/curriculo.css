@@ -260,6 +260,20 @@ h2 {
   line-height: 1.4;
 }
 
+.role > p { margin-bottom: 8px; color: #34485c; font-size: 14px; line-height: 1.6; }
+
+.role-highlights {
+  margin: 7px 0 0;
+  padding-left: 19px;
+  color: #34485c;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.role-highlights li { margin-bottom: 7px; }
+.role-highlights li:last-child { margin-bottom: 0; }
+.role-highlights li::marker { color: var(--accent); }
+
 .role p:last-child, .compact > p, .additional {
   margin-bottom: 0;
   color: #34485c;
@@ -436,6 +450,10 @@ h2 {
   .role-heading { margin-bottom: 1mm; }
   .role-heading h4 { font-size: 9.5pt; }
   .role p:last-child, .compact > p, .additional { font-size: 9pt; line-height: 1.37; }
+  .role > p, .role-highlights { font-size: 9pt; line-height: 1.37; }
+  .role > p { margin-bottom: 1.5mm; }
+  .role-highlights { margin-top: 1mm; padding-left: 5mm; }
+  .role-highlights li { margin-bottom: 1.2mm; }
   .additional { margin-top: 2mm; padding: 1.5mm 2mm; background: #f5f7f9; }
 
   /* O PDF segue o fluxo do DOM em coluna única para preservar

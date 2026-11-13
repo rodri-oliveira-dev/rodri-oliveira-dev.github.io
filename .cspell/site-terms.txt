@@ -44,6 +44,7 @@ linkedin
 MCP
 mensageria
 mentoria
+mentoría
 microserviço
 microserviços
 Mollema
@@ -85,6 +86,8 @@ CUST
 booleano
 Terraform
 TOML
+UNINTER
+UNIP
 WebMCP
 weme
 YamlDotNet

@@ -37,7 +37,7 @@ Each covered HTML page loads only `/assets/js/webmcp.js`. On the three services 
 
 | Tool | Arguments | Output |
 | --- | --- | --- |
-| `getProfile` | `language?` | Name, role, summary, minimum years of experience, portfolio URL |
+| `getProfile` | `language?` | Name, role, summary, five professional career highlights (`careerHighlights`), minimum years of experience, portfolio URL |
 | `getSkills` | `language?` | Published technical skills |
 | `searchProjects` | `query?`, `technology?`, `limit?`, `language?` | Total matches and project summaries with technologies and links |
 | `getProjectDetails` | `projectId`, `language?` | One featured project's public details |

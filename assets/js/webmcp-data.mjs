@@ -65,16 +65,37 @@ export const PROFILES = Object.freeze({
     name: "Rodrigo de Oliveira",
     role: "Arquiteto de Software Sênior",
     summary: "Arquiteto de Software Sênior com mais de 20 anos de experiência em modernização, .NET, sistemas distribuídos, integrações e cloud.",
+    careerHighlights: [
+      "Responsabilidade arquitetural por dois times de engenharia, em colaboração com lideranças técnicas e de produto.",
+      "Modernização de funcionalidades legadas para microsserviços, do levantamento inicial à implantação em produção.",
+      "Participação no Centro de Excelência de Arquitetura, com revisões técnicas e avaliação da qualidade das soluções.",
+      "Liderança técnica e atuação como Career Advisor, incluindo mentoria, avaliação de competências e PDI.",
+      "Participação na adoção e implementação de ferramentas de inteligência artificial no desenvolvimento de novos sistemas.",
+    ],
   },
   en: {
     name: "Rodrigo de Oliveira",
     role: "Senior Software Architect",
     summary: "Senior Software Architect with more than 20 years of experience in modernization, .NET, distributed systems, integrations, and cloud.",
+    careerHighlights: [
+      "Architectural responsibility for two engineering teams, working with product owners, tech leads, and other architects.",
+      "Modernization of legacy functionality into microservices, from initial discovery through production deployment.",
+      "Participation in the Architecture Center of Excellence, contributing to technical reviews and solution quality assessments.",
+      "Technical leadership and Career Advisor work, including mentoring, competency assessments, and IDPs.",
+      "Participation in adopting and implementing AI tools for the development of new systems.",
+    ],
   },
   "es-419": {
     name: "Rodrigo de Oliveira",
     role: "Arquitecto de Software Senior",
     summary: "Arquitecto de Software Senior con más de 20 años de experiencia en modernización, .NET, sistemas distribuidos, integraciones y plataformas en la nube.",
+    careerHighlights: [
+      "Responsabilidad arquitectónica sobre dos equipos de ingeniería, junto con responsables de producto y líderes técnicos.",
+      "Modernización de funcionalidades heredadas hacia microservicios, desde el análisis inicial hasta su puesta en producción.",
+      "Participación en el Centro de Excelencia de Arquitectura, con revisiones técnicas y evaluación de calidad de las soluciones.",
+      "Liderazgo técnico y trabajo como Career Advisor, con mentoría, evaluación de competencias y PDI.",
+      "Participación en la adopción e implementación de herramientas de inteligencia artificial para desarrollar nuevos sistemas.",
+    ],
   },
 });
 
