@@ -68,6 +68,8 @@ jobs:
 
       # Keep the general link gate strict; GitHub file links are handled
       # separately because GitHub may return intermittent 503s to CI crawlers.
+      # Localized resume routes are checked as source files before publication;
+      # generated PDFs are validated by deploy-pages.yml and are not versioned.
       - name: Validate links (excluding GitHub)
         uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2
         with:
@@ -87,9 +89,14 @@ jobs:
             --exclude '^https://rodri-oliveira-dev\.github\.io/es/?$'
             --exclude '^https://rodri-oliveira-dev\.github\.io/(?:(?:en|es)/)?case-studies/[^/]+/?$'
             --exclude '^https://rodri-oliveira-dev\.github\.io/(?:servicos|en/services|es/servicios)/?'
+            --exclude '^https://rodri-oliveira-dev\.github\.io/(?:curriculo|en/resume|es/curriculo)/?$'
+            --exclude 'rodrigo-de-oliveira\.pdf$'
             './index.html'
             './en/index.html'
             './pt-br/index.html'
+            './curriculo/index.html'
+            './en/resume/index.html'
+            './es/curriculo/index.html'
             './servicos/index.html'
             './en/services/index.html'
             './es/servicios/index.html'
@@ -125,6 +132,9 @@ jobs:
             './index.html'
             './en/index.html'
             './pt-br/index.html'
+            './curriculo/index.html'
+            './en/resume/index.html'
+            './es/curriculo/index.html'
             './servicos/index.html'
             './en/services/index.html'
             './es/servicios/index.html'
