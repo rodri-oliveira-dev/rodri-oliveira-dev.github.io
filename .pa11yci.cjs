@@ -32,7 +32,11 @@ module.exports = {
   urls: [
     ...pageUrls,
     ...servicePageUrls,
-    ...(fs.existsSync('curriculo/index.html') ? [`${localOrigin}/curriculo/`] : []),
+    ...[
+      ['curriculo/index.html', `${localOrigin}/curriculo/`],
+      ['en/resume/index.html', `${localOrigin}/en/resume/`],
+      ['es/curriculo/index.html', `${localOrigin}/es/curriculo/`],
+    ].filter(([file]) => fs.existsSync(file)).map(([, url]) => url),
     ...caseStudyUrls,
   ],
 };

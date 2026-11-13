@@ -26,7 +26,7 @@ description: >-
 
 ## Contratos
 
-- Homepages: `/`, `/en/`, `/es/`; serviços: `/servicos/`, `/en/services/`, `/es/servicios/`; estudos de caso: versões equivalentes; currículo: `/curriculo/` somente em pt-BR.
+- Homepages: `/`, `/en/`, `/es/`; serviços: `/servicos/`, `/en/services/`, `/es/servicios/`; estudos de caso: versões equivalentes; currículos: `/curriculo/`, `/en/resume/`, `/es/curriculo/`.
 - Preservar `hreflang` `pt-BR`, `en`, `es`, `x-default` somente quando existir variante correspondente. Não inventar traduções.
 - Reutilizar identidades canônicas `#person` e `#website`, com dados estruturados coerentes com o texto realmente visível.
 - Não inserir `Offer`, preços, avaliações, estatísticas ou resultados não comprovados. Não adicionar ao sitemap rotas de redirecionamento, arquivos estáticos ou páginas inexistentes.

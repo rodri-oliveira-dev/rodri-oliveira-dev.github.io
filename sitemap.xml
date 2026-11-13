@@ -27,6 +27,26 @@
   </url>
   <url>
     <loc>https://rodri-oliveira-dev.github.io/curriculo/</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://rodri-oliveira-dev.github.io/curriculo/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rodri-oliveira-dev.github.io/en/resume/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://rodri-oliveira-dev.github.io/es/curriculo/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rodri-oliveira-dev.github.io/curriculo/"/>
+    <lastmod>2026-11-13</lastmod>
+  </url>
+  <url>
+    <loc>https://rodri-oliveira-dev.github.io/en/resume/</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://rodri-oliveira-dev.github.io/curriculo/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rodri-oliveira-dev.github.io/en/resume/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://rodri-oliveira-dev.github.io/es/curriculo/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rodri-oliveira-dev.github.io/curriculo/"/>
+    <lastmod>2026-11-13</lastmod>
+  </url>
+  <url>
+    <loc>https://rodri-oliveira-dev.github.io/es/curriculo/</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://rodri-oliveira-dev.github.io/curriculo/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rodri-oliveira-dev.github.io/en/resume/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://rodri-oliveira-dev.github.io/es/curriculo/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rodri-oliveira-dev.github.io/curriculo/"/>
     <lastmod>2026-11-13</lastmod>
   </url>
   <url>

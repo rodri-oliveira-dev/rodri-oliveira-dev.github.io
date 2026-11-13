@@ -302,8 +302,13 @@ test("browser registration, absence of support, lifecycle and restoration are is
       supported: true, expected: [...GENERAL_NAMES, ...TOOL_NAMES],
     })),
     { language: "en", pathname: "/en/", secure: true, supported: true, expected: GENERAL_NAMES },
-    { language: "pt-BR", pathname: "/curriculo/", secure: true, supported: true,
-      expected: GENERAL_NAMES },
+    ...[
+      ["pt-BR", "/curriculo/"],
+      ["en", "/en/resume/"],
+      ["es-419", "/es/curriculo/"],
+    ].map(([language, pathname]) => ({
+      language, pathname, secure: true, supported: true, expected: GENERAL_NAMES,
+    })),
     { language: "es-419", pathname: "/es/case-studies/adr-guard/", secure: true,
       supported: true, expected: GENERAL_NAMES },
     { language: "en", pathname: "/en/services/", secure: false, supported: true, expected: [] },

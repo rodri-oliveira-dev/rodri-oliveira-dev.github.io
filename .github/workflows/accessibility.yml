@@ -58,7 +58,10 @@ jobs:
           const languageRoots = ["", "en", "es"];
           const expected = new Set(languageRoots
             .map((root) => `${origin}/${root ? `${root}/` : ""}`));
-          if (fs.existsSync("curriculo/index.html")) expected.add(`${origin}/curriculo/`);
+          for (const route of ["curriculo/", "en/resume/", "es/curriculo/"]) {
+            if (!fs.existsSync(`${route}index.html`)) throw new Error(`Missing resume page: ${route}`);
+            expected.add(`${origin}/${route}`);
+          }
           for (const route of ["servicos/", "en/services/", "es/servicios/"]) {
             if (!fs.existsSync(`${route}index.html`)) throw new Error(`Missing service page: ${route}`);
             expected.add(`${origin}/${route}`);
@@ -85,7 +88,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
-          pages = [Path("index.html"), Path("en/index.html"), Path("es/index.html"), Path("curriculo/index.html"), Path("servicos/index.html"), Path("en/services/index.html"), Path("es/servicios/index.html")]
+          pages = [Path("index.html"), Path("en/index.html"), Path("es/index.html"), Path("curriculo/index.html"), Path("en/resume/index.html"), Path("es/curriculo/index.html"), Path("servicos/index.html"), Path("en/services/index.html"), Path("es/servicios/index.html")]
           for root in (Path("case-studies"), Path("en/case-studies"), Path("es/case-studies")):
               pages.extend(sorted(root.glob("*/index.html")))
           for path in pages:

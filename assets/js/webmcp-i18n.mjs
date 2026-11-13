@@ -23,7 +23,7 @@ export const MESSAGES = Object.freeze({
       getSkills: "Lista as competências técnicas e arquiteturais publicadas no portfólio.",
       searchProjects: "Pesquisa os cinco projetos open source em destaque por palavra-chave e/ou tecnologia; sem filtros, lista todos.",
       getProjectDetails: "Consulta descrição, tecnologias, repositório e estudo de caso de um projeto em destaque.",
-      getResume: "Obtém os links do currículo público em HTML e PDF. O currículo publicado está em português do Brasil.",
+      getResume: "Obtém os links do currículo público em HTML e PDF no idioma solicitado.",
       getContactInfo: "Consulta os canais públicos de contato profissional publicados no portfólio.",
     }),
     parameters: Object.freeze({
@@ -36,7 +36,7 @@ export const MESSAGES = Object.freeze({
     invalidInput: "Parâmetros inválidos para",
     invalidLanguage: "Idioma não suportado. Use pt-BR, en ou es-419.",
     projectNotFound: "Nenhum projeto em destaque corresponde ao identificador informado.",
-    resumeNote: "O currículo publicado está disponível apenas em português do Brasil.",
+    resumeNote: "Currículo em português do Brasil.",
   }),
   en: Object.freeze({
     tools: Object.freeze({
@@ -44,7 +44,7 @@ export const MESSAGES = Object.freeze({
       getSkills: "List the software engineering and architecture skills published on the portfolio.",
       searchProjects: "Search the five featured open-source projects by keyword and/or technology; omit filters to list all.",
       getProjectDetails: "Retrieve a featured project's description, technologies, repository, and case study.",
-      getResume: "Get the public HTML and PDF resume links. The published resume is in Brazilian Portuguese.",
+      getResume: "Get the public HTML and PDF resume links in the requested language.",
       getContactInfo: "Retrieve the public professional contact channels published on the portfolio.",
     }),
     parameters: Object.freeze({
@@ -57,7 +57,7 @@ export const MESSAGES = Object.freeze({
     invalidInput: "Invalid arguments for",
     invalidLanguage: "Unsupported language. Use pt-BR, en or es-419.",
     projectNotFound: "No featured project matches the supplied identifier.",
-    resumeNote: "The published resume is available only in Brazilian Portuguese.",
+    resumeNote: "English-language resume.",
   }),
   "es-419": Object.freeze({
     tools: Object.freeze({
@@ -65,7 +65,7 @@ export const MESSAGES = Object.freeze({
       getSkills: "Enumera las competencias técnicas y de arquitectura publicadas en el portafolio.",
       searchProjects: "Busca los cinco proyectos de código abierto destacados por palabra clave o tecnología; sin filtros, muestra todos.",
       getProjectDetails: "Consulta la descripción, tecnologías, repositorio y estudio de caso de un proyecto destacado.",
-      getResume: "Obtiene los enlaces del currículum público en HTML y PDF. El currículum publicado está en portugués de Brasil.",
+      getResume: "Obtiene los enlaces del currículum público en HTML y PDF en el idioma solicitado.",
       getContactInfo: "Consulta los canales públicos de contacto profesional del portafolio.",
     }),
     parameters: Object.freeze({
@@ -78,6 +78,6 @@ export const MESSAGES = Object.freeze({
     invalidInput: "Parámetros no válidos para",
     invalidLanguage: "Idioma no admitido. Usa pt-BR, en o es-419.",
     projectNotFound: "Ningún proyecto destacado corresponde al identificador indicado.",
-    resumeNote: "El currículum publicado solo está disponible en portugués de Brasil.",
+    resumeNote: "Currículum en español latinoamericano.",
   }),
 });

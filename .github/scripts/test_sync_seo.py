@@ -392,5 +392,30 @@ class ServicePageSeoTests(unittest.TestCase):
                     sync.existing_service_variants()
 
 
+class ResumeSeoTests(unittest.TestCase):
+    @patch.object(sync, "git_last_modified", return_value="2026-11-13")
+    @patch.object(sync, "page_lastmod", return_value="2026-11-13")
+    def test_sitemap_contains_three_reciprocal_resume_urls(self, _lastmod, _git):
+        result = sync.resume_sitemap_blocks(sync.RESUME_PAGES, "2026-11-13", {})
+        self.assertEqual(result.count("<url>"), 3)
+        self.assertEqual(result.count('hreflang="pt-BR"'), 3)
+        self.assertEqual(result.count('hreflang="en"'), 3)
+        self.assertEqual(result.count('hreflang="es"'), 3)
+        self.assertEqual(result.count('hreflang="x-default"'), 3)
+        for url in sync.RESUME_URLS.values():
+            self.assertIn(f"<loc>{url}</loc>", result)
+
+    def test_incomplete_resume_translations_are_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            pt = Path(temporary_directory) / "curriculo/index.html"
+            pt.parent.mkdir(parents=True)
+            pt.touch()
+            pages = {"pt-BR": pt, "en": Path(temporary_directory) / "missing-en",
+                     "es-419": Path(temporary_directory) / "missing-es"}
+            with patch.object(sync, "RESUME_PAGES", pages):
+                with self.assertRaisesRegex(SystemExit, "incomplete"):
+                    sync.existing_resume_variants()
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -26,7 +26,7 @@ Mudanças exclusivamente internas, como documentação de manutenção, skills, 
 
 - Idiomas do site: português do Brasil (`/`, `lang="pt-BR"`), inglês (`/en/`, `lang="en"`) e espanhol latino-americano (`/es/`, `lang="es-419"`). O `hreflang` espanhol usa `es`, conforme a implementação atual.
 - Alterações em páginas equivalentes devem ser refletidas nas três versões no mesmo PR, mantendo significado, estrutura, navegação e tom natural em cada idioma. Não traduzir automaticamente artigos externos.
-- Exceção existente: currículo em `/curriculo/` só em português; não criar `hreflang` ou páginas traduzidas inexistentes.
+- Currículos publicados: português em `/curriculo/`, inglês em `/en/resume/` e espanhol em `/es/curriculo/`; manter conteúdo factual equivalente e `hreflang` recíproco.
 - Preservar os vínculos entre cada tradução, URLs canônicas, metadados Open Graph/Twitter, JSON-LD e links internos. Usar a URL publicada `https://rodri-oliveira-dev.github.io/`.
 - Dar preferência a frases claras, concretas e sem exageros comerciais. Não atribuir resultados open source a clientes ou trabalhos anteriores.
 
