@@ -197,7 +197,7 @@ const CAREER_FACTS = [
   {
     id: "legacy-modernization",
     scope: "currentRole",
-    evidence: { "pt-BR": "funcionalidades legadas", en: "legacy functionality", "es-419": "funcionalidades heredadas" },
+    evidence: { "pt-BR": "regras de negócio de stored procedures para microsserviços", en: "business rules from stored procedures into microservices", "es-419": "reglas de negocio de procedimientos almacenados a microservicios" },
   },
   {
     id: "architecture-governance",
@@ -212,7 +212,7 @@ const CAREER_FACTS = [
   {
     id: "ai-tool-adoption",
     scope: "currentRole",
-    evidence: { "pt-BR": "ferramentas de inteligência artificial", en: "AI tools", "es-419": "herramientas de inteligencia artificial" },
+    evidence: { "pt-BR": "ferramentas de IA", en: "AI tools", "es-419": "herramientas de IA" },
   },
 ];
 
