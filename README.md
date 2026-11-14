@@ -12,6 +12,8 @@
 
 Minha trajetória começou no desenvolvimento de software. Ao longo de mais de 20 anos, passei por projetos de integração, modernização de sistemas e diferentes desafios até chegar à arquitetura de software.
 
+Uma experiência importante foi participar da modernização de um sistema do setor de seguros. Defini a arquitetura para migrar regras de negócio de stored procedures para microsserviços e acompanhei sua implantação em produção. É um exemplo de como minha experiência com desenvolvimento influencia as decisões que tomo hoje como arquiteto.
+
 Nesse caminho, aprendi que uma boa solução não depende apenas de tecnologia. Ela precisa considerar o contexto do negócio, as pessoas envolvidas e as condições reais para evoluir e continuar fazendo sentido com o tempo.
 
 Criei este portfólio para reunir experiências e aprendizados que ajudam a contar essa história, além de mostrar como penso e atuo profissionalmente.
@@ -28,6 +30,8 @@ Criei este portfólio para reunir experiências e aprendizados que ajudam a cont
 **[Visite meu site profissional](https://rodri-oliveira-dev.github.io/)** para explorar minha trajetória, meus trabalhos e minhas publicações.
 
 Disponível em [português](https://rodri-oliveira-dev.github.io/), [inglês](https://rodri-oliveira-dev.github.io/en/) e [espanhol](https://rodri-oliveira-dev.github.io/es/).
+
+[Consultar meu currículo](https://rodri-oliveira-dev.github.io/curriculo/).
 
 ---
 
