@@ -12,6 +12,8 @@
 
 I started my career as a software developer. Over more than 20 years, my work has taken me through integration projects, system modernization, and a wide range of challenges before moving into software architecture.
 
+One important experience was modernizing a system in the insurance sector. I defined the architecture for moving business rules from stored procedures to microservices and followed the implementation through to production. It's an example of how my background in software development shapes the decisions I make as an architect today.
+
 Along the way, I've learned that good solutions are about more than technology. They need to reflect business priorities, the people involved, and what it takes to keep systems useful and maintainable as things change.
 
 I created this portfolio to share the experiences and lessons that have shaped my career, and to give visitors a sense of how I approach my work.
@@ -28,6 +30,8 @@ I created this portfolio to share the experiences and lessons that have shaped m
 **[Visit my professional website](https://rodri-oliveira-dev.github.io/en/)** to learn more about my background, work, and writing.
 
 Available in [Portuguese](https://rodri-oliveira-dev.github.io/), [English](https://rodri-oliveira-dev.github.io/en/), and [Spanish](https://rodri-oliveira-dev.github.io/es/).
+
+[View my resume](https://rodri-oliveira-dev.github.io/en/resume/).
 
 ---
 

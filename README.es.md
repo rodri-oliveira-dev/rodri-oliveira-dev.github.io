@@ -12,6 +12,8 @@
 
 Comencé mi carrera en el desarrollo de software. A lo largo de más de 20 años, he participado en proyectos de integración, modernización de sistemas y distintos desafíos que me llevaron a dedicarme a la arquitectura de software.
 
+Una experiencia importante fue la modernización de un sistema del sector asegurador. Definí la arquitectura para trasladar reglas de negocio de procedimientos almacenados a microservicios y acompañé su implementación hasta la puesta en producción. Es un ejemplo de cómo mi experiencia en desarrollo influye en las decisiones que tomo hoy como arquitecto.
+
 En ese recorrido aprendí que una buena solución va más allá de la tecnología. También debe tener en cuenta las necesidades del negocio, a las personas involucradas y las condiciones reales para que los sistemas puedan evolucionar.
 
 Creé este portafolio para compartir las experiencias y los aprendizajes que han marcado mi trayectoria, y para mostrar mi manera de entender el trabajo que hago.
@@ -28,6 +30,8 @@ Creé este portafolio para compartir las experiencias y los aprendizajes que han
 **[Visita mi sitio profesional](https://rodri-oliveira-dev.github.io/es/)** para conocer mi trayectoria, mis trabajos y mis publicaciones.
 
 Disponible en [portugués](https://rodri-oliveira-dev.github.io/), [inglés](https://rodri-oliveira-dev.github.io/en/) y [español](https://rodri-oliveira-dev.github.io/es/).
+
+[Consultar mi currículum](https://rodri-oliveira-dev.github.io/es/curriculo/).
 
 ---
 
