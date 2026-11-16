@@ -7,6 +7,13 @@
     <atom:link href="https://rodri-oliveira-dev.github.io/newsletter/feed.xml" rel="self" type="application/rss+xml" />
     <language>pt-BR</language>
     <item>
+      <title>O que realmente importa quando o MCP deixa de ser uma demonstração e passa a fazer parte da arquitetura de um sistema.</title>
+      <link>https://www.linkedin.com/pulse/o-que-realmente-importa-quando-mcp-deixa-de-ser-uma-e-de-oliveira-zemsf/</link>
+      <guid isPermaLink="true">https://www.linkedin.com/pulse/o-que-realmente-importa-quando-mcp-deixa-de-ser-uma-e-de-oliveira-zemsf/</guid>
+      <pubDate>Mon, 16 Nov 2026 00:00:00 GMT</pubDate>
+      <description>Nos últimos meses, o Model Context Protocol (MCP) ganhou espaço nas discussões sobre inteligência artificial e desenvolvimento de software. Não é difícil entender o motivo.</description>
+    </item>
+    <item>
       <title>.NET 11 e C# 15: o que realmente muda para quem desenvolve aplicações?</title>
       <link>https://www.linkedin.com/pulse/net-11-e-c-15-o-que-realmente-muda-para-quem-rodrigo-de-oliveira-zngff/</link>
       <guid isPermaLink="true">https://www.linkedin.com/pulse/net-11-e-c-15-o-que-realmente-muda-para-quem-rodrigo-de-oliveira-zngff/</guid>
@@ -82,13 +89,6 @@
       <guid isPermaLink="true">https://www.linkedin.com/pulse/aggregates-e-aggregate-roots-desenhando-fronteiras-de-de-oliveira-c4fkf/</guid>
       <pubDate>Mon, 14 Sep 2026 00:00:00 GMT</pubDate>
       <description>Este é o oitavo artigo da série sobre Domain-Driven Design. No texto anterior, falamos sobre Primitive Obsession e modelo anêmico, discutindo como trazer significado e comportamento de volta ao domínio.</description>
-    </item>
-    <item>
-      <title>Primitive Obsession e modelo anêmico: quando o domínio vira apenas um conjunto de dados</title>
-      <link>https://www.linkedin.com/pulse/primitive-obsession-e-modelo-an%C3%AAmico-quando-o-dom%C3%ADnio-de-oliveira-pdyxf</link>
-      <guid isPermaLink="true">https://www.linkedin.com/pulse/primitive-obsession-e-modelo-an%C3%AAmico-quando-o-dom%C3%ADnio-de-oliveira-pdyxf</guid>
-      <pubDate>Mon, 31 Aug 2026 00:00:00 GMT</pubDate>
-      <description>Este é o sétimo artigo da série sobre Domain-Driven Design. No texto anterior, estudamos Entities e Value Objects e vimos como identidade, igualdade e comportamento influenciam a modelagem.</description>
     </item>
   </channel>
 </rss>
