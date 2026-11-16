@@ -1,5 +1,18 @@
 [
   {
+    "url": "https://www.linkedin.com/pulse/o-que-realmente-importa-quando-mcp-deixa-de-ser-uma-e-de-oliveira-zemsf/",
+    "finalUrl": "https://www.linkedin.com/pulse/o-que-realmente-importa-quando-mcp-deixa-de-ser-uma-e-de-oliveira-zemsf/",
+    "title": "O que realmente importa quando o MCP deixa de ser uma demonstração e passa a fazer parte da arquitetura de um sistema.",
+    "description": "Nos últimos meses, o Model Context Protocol (MCP) ganhou espaço nas discussões sobre inteligência artificial e desenvolvimento de software. Não é difícil entender o motivo.",
+    "publishedAt": "2026-11-16",
+    "metadataSource": {
+      "title": "og:title",
+      "description": "og:description",
+      "publishedAt": "JSON-LD datePublished"
+    },
+    "addedAt": "2026-11-16T11:50:09+00:00"
+  },
+  {
     "url": "https://www.linkedin.com/pulse/net-11-e-c-15-o-que-realmente-muda-para-quem-rodrigo-de-oliveira-zngff/",
     "finalUrl": "https://www.linkedin.com/pulse/net-11-e-c-15-o-que-realmente-muda-para-quem-rodrigo-de-oliveira-zngff/",
     "title": ".NET 11 e C# 15: o que realmente muda para quem desenvolve aplicações?",
@@ -141,18 +154,5 @@
       "publishedAt": "JSON-LD datePublished"
     },
     "addedAt": "2026-09-16T16:21:44+00:00"
-  },
-  {
-    "url": "https://www.linkedin.com/pulse/primitive-obsession-e-modelo-an%C3%AAmico-quando-o-dom%C3%ADnio-de-oliveira-pdyxf",
-    "finalUrl": "https://www.linkedin.com/pulse/primitive-obsession-e-modelo-an%C3%AAmico-quando-o-dom%C3%ADnio-de-oliveira-pdyxf",
-    "title": "Primitive Obsession e modelo anêmico: quando o domínio vira apenas um conjunto de dados",
-    "description": "Este é o sétimo artigo da série sobre Domain-Driven Design. No texto anterior, estudamos Entities e Value Objects e vimos como identidade, igualdade e comportamento influenciam a modelagem.",
-    "publishedAt": "2026-08-31",
-    "metadataSource": {
-      "title": "og:title",
-      "description": "og:description",
-      "publishedAt": "JSON-LD datePublished"
-    },
-    "addedAt": "2026-08-31T12:33:50+00:00"
   }
 ]
