@@ -1,5 +1,28 @@
 [
   {
+    "url": "https://dev.to/rodri-oliveira-dev/validation-in-ddd-applications-protecting-domain-rules-5e47",
+    "title": "Validation in DDD Applications: Protecting Domain Rules",
+    "description": "Learn how to distribute validation responsibilities, preserve invariants, and build consistent domain models without turning your application into a collection of scattered checks. This article is part of our ongoing series on Domain-Driven Design (DDD). In the previous article, Aggregates and Aggregate Roots: Designi…",
+    "publishedAt": "2026-11-18T13:00:00Z",
+    "tags": [
+      "architecture",
+      "backend",
+      "softwaredevelopment",
+      "softwareengineering"
+    ]
+  },
+  {
+    "url": "https://dev.to/rodri-oliveira-dev/mcp-beyond-the-basics-connecting-tools-is-easy-designing-trust-is-hard-37n5",
+    "title": "MCP Beyond the Basics: Connecting Tools Is Easy. Designing Trust Is Hard.",
+    "description": "The Model Context Protocol (MCP) has become an important topic in conversations about AI and software development. And it's easy to see why. The idea of connecting language models to external tools, systems, and data sources through a standardized protocol addresses a problem that previously required custom integratio…",
+    "publishedAt": "2026-11-18T13:00:00Z",
+    "tags": [
+      "ai",
+      "mcp",
+      "software"
+    ]
+  },
+  {
     "url": "https://dev.to/rodri-oliveira-dev/net-11-and-c-15-what-really-changes-for-developers-291m",
     "title": ".NET 11 and C# 15: What Really Changes for Developers?",
     "description": "Every new .NET release brings a substantial number of improvements: performance optimizations, language features, new APIs, and changes to existing behavior. The challenge isn't keeping up with every announcement. It's understanding which changes actually make a difference when developing and maintaining applications.…",
