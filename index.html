@@ -21,13 +21,18 @@
   <link rel="alternate" type="application/rss+xml" title="Café com código — RSS" href="https://rodri-oliveira-dev.github.io/newsletter/feed.xml">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="manifest" href="/site.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Rodrigo">
   <!-- Apple touch icons -->
   <link rel="apple-touch-icon" sizes="60x60" href="/assets/brand/apple-touch-icon-iphone-60x60.png">
   <link rel="apple-touch-icon" sizes="76x76" href="/assets/brand/apple-touch-icon-ipad-76x76.png">
   <link rel="apple-touch-icon" sizes="120x120" href="/assets/brand/apple-touch-icon-iphone-retina-120x120.png">
   <link rel="apple-touch-icon" sizes="152x152" href="/assets/brand/apple-touch-icon-ipad-retina-152x152.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="/assets/brand/android-icon-192x192.png">
   <link rel="stylesheet" href="/assets/css/site.css">
   <link rel="stylesheet" href="/assets/css/mobile-enhancements.css">
+  <link rel="stylesheet" href="/assets/css/home-screen-install.css">
 
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Rodrigo de Oliveira">
@@ -491,6 +496,25 @@
     </section>
   </main>
 
+  <aside class="home-screen-install" id="home-screen-install" aria-labelledby="home-screen-install-title" hidden>
+    <div class="home-screen-install-header">
+      <img class="home-screen-install-icon" src="/assets/brand/android-icon-192x192.png" width="48" height="48" alt="">
+      <div class="home-screen-install-heading">
+        <p class="home-screen-install-eyebrow">Acesso rápido</p>
+        <h2 id="home-screen-install-title">Adicione à tela inicial</h2>
+      </div>
+      <button class="home-screen-install-dismiss" type="button" aria-label="Fechar sugestão de instalação">×</button>
+    </div>
+    <p class="home-screen-install-description">Acesse este portfólio por um ícone na tela inicial do iPhone ou iPad.</p>
+    <button class="home-screen-install-toggle" type="button" aria-controls="home-screen-install-steps" aria-expanded="false" data-open-label="Como adicionar" data-close-label="Ocultar instruções">Como adicionar</button>
+    <ol class="home-screen-install-steps" id="home-screen-install-steps" hidden>
+      <li>Abra o menu do navegador e toque em <strong>Compartilhar</strong>.</li>
+      <li>Se necessário, toque em <strong>Ver mais</strong> para encontrar outras ações.</li>
+      <li>Escolha <strong>Adicionar à Tela de Início</strong> e confirme.</li>
+      <li>Se essa opção não estiver disponível neste navegador ou aplicativo, abra o site no <strong>Safari</strong> e siga os mesmos passos.</li>
+    </ol>
+  </aside>
+
   <footer class="site-footer">
     <div class="container footer-inner">
       <span>© <span id="year"></span> Rodrigo de Oliveira</span>
@@ -499,6 +523,7 @@
   </footer>
 
   <script src="/assets/js/site.js" defer></script>
+  <script src="/assets/js/home-screen-install.js" defer></script>
   <script type="module" src="/assets/js/webmcp.js"></script>
 </body>
 </html>
