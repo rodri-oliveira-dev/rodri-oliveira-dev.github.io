@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const vm = require("node:vm");
 const { SITE_LANGUAGE_LABELS, resolveSiteLanguage } = require("../../assets/js/site.js");
 
 const ROOT = path.resolve(__dirname, "../..");
@@ -353,5 +354,80 @@ assert.ok(!isAppleMobileDevice({ userAgent: "Mozilla/5.0 (Linux; Android 16)" })
 assert.ok(shouldOfferHomeScreenInstall({ device: { userAgent: "iPhone" } }), "Safari/iOS browser eligible");
 assert.ok(!shouldOfferHomeScreenInstall({ device: { userAgent: "iPhone" }, standalone: true }), "Installed iOS site hides the guide");
 assert.ok(!shouldOfferHomeScreenInstall({ device: { userAgent: "iPhone" }, displayModeStandalone: true }), "Standalone display mode hides the guide");
+
+
+const fallbackInstructions = {
+  "pt-BR": "abra o site no <strong>Safari</strong>",
+  en: "open the site in <strong>Safari</strong>",
+  "es-419": "abre el sitio en <strong>Safari</strong>",
+};
+for (const variant of variants) {
+  assert.ok(read(homePath(variant)).includes(fallbackInstructions[variant.key]),
+    "In-app browser Safari fallback for " + variant.key);
+}
+
+// Simulate pages restored from the back/forward cache across localized routes.
+// The second page dismisses the notice; the first must remain hidden on pageshow.
+const makeHomeScreenPage = (storage) => {
+  const windowListeners = new Map();
+  const buttonListeners = new Map();
+  const closeButton = {
+    addEventListener(type, handler) { buttonListeners.set("close-" + type, handler); },
+  };
+  const toggleButton = {
+    dataset: { openLabel: "Show", closeLabel: "Hide" },
+    attributes: { "aria-expanded": "false" },
+    getAttribute(name) { return this.attributes[name]; },
+    setAttribute(name, value) { this.attributes[name] = value; },
+    addEventListener(type, handler) { buttonListeners.set("toggle-" + type, handler); },
+    textContent: "",
+  };
+  const steps = { hidden: true };
+  const prompt = {
+    hidden: true,
+    querySelector(selector) {
+      return {
+        ".home-screen-install-dismiss": closeButton,
+        ".home-screen-install-toggle": toggleButton,
+        ".home-screen-install-steps": steps,
+      }[selector];
+    },
+  };
+  const win = {
+    navigator: { userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)" },
+    matchMedia() { return { matches: false }; },
+    sessionStorage: storage,
+    addEventListener(type, handler) { windowListeners.set(type, handler); },
+  };
+  vm.runInNewContext(read("assets/js/home-screen-install.js"), {
+    document: { getElementById() { return prompt; } },
+    window: win,
+  });
+  return { prompt, windowListeners, buttonListeners, toggleButton, steps };
+};
+const savedDismissal = new Map();
+const sharedSession = {
+  getItem(key) { return savedDismissal.get(key) ?? null; },
+  setItem(key, value) { savedDismissal.set(key, value); },
+};
+const initialPage = makeHomeScreenPage(sharedSession);
+assert.equal(initialPage.prompt.hidden, false, "Guide initially appears for eligible iPhone");
+assert.ok(initialPage.windowListeners.has("pageshow"), "BFCache pageshow listener registered");
+const translatedPage = makeHomeScreenPage(sharedSession);
+translatedPage.buttonListeners.get("close-click")();
+assert.equal(translatedPage.prompt.hidden, true, "Dismissing guide hides it immediately");
+initialPage.windowListeners.get("pageshow")();
+assert.equal(initialPage.prompt.hidden, true, "BFCache restoration respects dismissal on another page");
+const reopenedPage = makeHomeScreenPage(sharedSession);
+assert.equal(reopenedPage.prompt.hidden, true, "Dismissal is shared across localized pages");
+const blockedSession = {
+  getItem() { throw new Error("storage blocked"); },
+  setItem() { throw new Error("storage blocked"); },
+};
+const blockedPage = makeHomeScreenPage(blockedSession);
+assert.equal(blockedPage.prompt.hidden, false, "Guide works when session storage is blocked");
+blockedPage.buttonListeners.get("close-click")();
+blockedPage.windowListeners.get("pageshow")();
+assert.equal(blockedPage.prompt.hidden, true, "Dismissal persists on current page when storage is blocked");
 
 console.log(`Validated 3 homepages, 3 resumes, 3 service pages in sitemap, ${slugSets[0].length * 3} localized case studies, legacy redirect, metadata, navigation, local resources, and sitemap.`);

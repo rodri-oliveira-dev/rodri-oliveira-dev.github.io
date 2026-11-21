@@ -1,6 +1,8 @@
 const isAppleMobileDevice = ({ userAgent = "", platform = "", maxTouchPoints = 0 } = {}) =>
   /iPhone|iPad|iPod/i.test(userAgent) || (platform === "MacIntel" && maxTouchPoints > 1);
 
+// Device detection identifies where the guide may help; it cannot prove that
+// an embedded browser exposes Add to Home Screen. The guide includes a Safari fallback.
 const shouldOfferHomeScreenInstall = ({ device = {}, standalone = false, displayModeStandalone = false } = {}) =>
   isAppleMobileDevice(device) && !standalone && !displayModeStandalone;
 
@@ -27,18 +29,29 @@ if (typeof document !== "undefined" && typeof window !== "undefined") (() => {
   })) return;
 
   const storageKey = "home-screen-install-dismissed";
-  try {
-    if (window.sessionStorage.getItem(storageKey) === "true") return;
-  } catch {
-    // The guide still works when private browsing blocks storage.
-  }
+  let dismissedOnThisPage = false;
+  const isDismissed = () => {
+    if (dismissedOnThisPage) return true;
+    try {
+      return window.sessionStorage.getItem(storageKey) === "true";
+    } catch {
+      // The guide still works when private browsing blocks storage.
+      return false;
+    }
+  };
 
   const close = prompt.querySelector(".home-screen-install-dismiss");
   const toggle = prompt.querySelector(".home-screen-install-toggle");
   const steps = prompt.querySelector(".home-screen-install-steps");
   if (!close || !toggle || !steps) return;
 
-  prompt.hidden = false;
+  const syncVisibility = () => {
+    prompt.hidden = isDismissed();
+  };
+  syncVisibility();
+  // BFCache restores the old DOM without re-running this script. Recheck the
+  // dismissal shared by the three localized pages whenever it reappears.
+  window.addEventListener("pageshow", syncVisibility);
 
   toggle.addEventListener("click", () => {
     const expanded = toggle.getAttribute("aria-expanded") !== "true";
@@ -48,7 +61,8 @@ if (typeof document !== "undefined" && typeof window !== "undefined") (() => {
   });
 
   close.addEventListener("click", () => {
-    prompt.hidden = true;
+    dismissedOnThisPage = true;
+    syncVisibility();
     try {
       window.sessionStorage.setItem(storageKey, "true");
     } catch {
