@@ -332,4 +332,26 @@ for (const entry of sitemapEntries) {
   assert.deepEqual(entry.alternates, expectedAlternates, `${entry.loc} sitemap alternates`);
 }
 
+
+const { isAppleMobileDevice, shouldOfferHomeScreenInstall } = require("../../assets/js/home-screen-install.js");
+const homeScreenManifest = JSON.parse(read("site.webmanifest"));
+assert.equal(homeScreenManifest.display, "standalone", "Home Screen manifest uses standalone display mode");
+assert.ok(homeScreenManifest.icons.some((icon) => icon.sizes === "192x192"), "Home Screen manifest has a high-resolution icon");
+
+for (const variant of variants) {
+  const page = read(homePath(variant));
+  assert.ok(page.includes('name="apple-mobile-web-app-capable" content="yes"'), "iOS standalone meta " + variant.key);
+  assert.ok(page.includes('name="apple-mobile-web-app-title" content="Rodrigo"'), "iOS Home Screen title " + variant.key);
+  assert.ok(page.includes('sizes="192x192" href="/assets/brand/android-icon-192x192.png"'), "iOS high-resolution icon " + variant.key);
+  assert.ok(page.includes('id="home-screen-install"') && page.includes('id="home-screen-install-steps" hidden'), "Localized iOS guide " + variant.key);
+  assert.ok(page.includes('src="/assets/js/home-screen-install.js" defer'), "iOS guide JavaScript " + variant.key);
+  assert.ok(page.includes('href="/assets/css/home-screen-install.css"'), "iOS guide CSS " + variant.key);
+}
+assert.ok(isAppleMobileDevice({ userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)" }), "iPhone detected");
+assert.ok(isAppleMobileDevice({ platform: "MacIntel", maxTouchPoints: 5 }), "iPad desktop user agent detected");
+assert.ok(!isAppleMobileDevice({ userAgent: "Mozilla/5.0 (Linux; Android 16)" }), "Android not detected");
+assert.ok(shouldOfferHomeScreenInstall({ device: { userAgent: "iPhone" } }), "Safari/iOS browser eligible");
+assert.ok(!shouldOfferHomeScreenInstall({ device: { userAgent: "iPhone" }, standalone: true }), "Installed iOS site hides the guide");
+assert.ok(!shouldOfferHomeScreenInstall({ device: { userAgent: "iPhone" }, displayModeStandalone: true }), "Standalone display mode hides the guide");
+
 console.log(`Validated 3 homepages, 3 resumes, 3 service pages in sitemap, ${slugSets[0].length * 3} localized case studies, legacy redirect, metadata, navigation, local resources, and sitemap.`);
