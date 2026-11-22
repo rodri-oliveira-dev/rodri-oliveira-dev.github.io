@@ -6,7 +6,7 @@ Este projeto permanece estático, sem backend e sem framework de aplicativo. O m
 
 - `/sw.js` controla apenas a origem do portfólio, com registro explícito em páginas HTML indexáveis (PT/EN/ES).
 - O conjunto inicial inclui as três páginas iniciais, scripts/CSS essenciais e páginas offline localizadas (`/offline.html`, `/en/offline.html`, `/es/offline.html`). O primeiro carregamento necessita de rede.
-- Navegações e recursos locais (JS/CSS/imagens/fontes) usam **network-first** com limite de 5 segundos; em falha de rede, a cópia já acessada é usada. Em rota ainda não acessada, aparece o fallback no idioma do caminho.
+- Navegações e recursos locais (JS/CSS/imagens/fontes) usam **network-first** com limite de 5 segundos; em falha de rede ou erro transitório de servidor (HTTP 5xx), a cópia já acessada é usada. Uma resposta HTTP 404 legítima é preservada. Em rota ainda não acessada, aparece o fallback no idioma do caminho.
 - O cache de navegação/recurso é limitado a 64 entradas (FIFO). Requisições com parâmetros de consulta não são armazenadas nem reutilizam a cópia offline da URL sem parâmetros, para evitar respostas semanticamente incorretas. URLs externas, POST, PDFs, redirecionamentos e respostas de erro não entram no cache.
 - Os caches são de **melhor esforço**: modo privado, limpeza do navegador e limites de armazenamento podem removê-los. Não prometemos funcionamento offline completo de imagens nunca vistas ou links externos.
 
