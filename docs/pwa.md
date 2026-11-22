@@ -1,0 +1,30 @@
+# PWA offline do portfólio
+
+Este projeto permanece estático, sem backend e sem framework de aplicativo. O manifest existente habilita a instalação e o Service Worker adiciona resiliência de navegação no GitHub Pages.
+
+## Comportamento e escopo
+
+- \`/sw.js\` controla apenas a origem do portfólio, com registro explícito em páginas HTML indexáveis (PT/EN/ES).
+- O conjunto inicial inclui as três páginas iniciais, scripts/CSS essenciais e páginas offline localizadas (\`/offline.html\`, \`/en/offline.html\`, \`/es/offline.html\`). O primeiro carregamento necessita de rede.
+- Navegações e recursos locais (JS/CSS/imagens/fontes) usam **network-first** com limite de 5 segundos; em falha de rede, a cópia já acessada é usada. Em rota ainda não acessada, aparece o fallback no idioma do caminho.
+- O cache de navegação/recurso é limitado a 64 entradas (FIFO). Requisições com parâmetros de consulta são atendidas, mas não gravadas no cache. URLs externas, POST, PDFs, redirecionamentos e respostas de erro não entram no cache.
+- Os caches são de **melhor esforço**: modo privado, limpeza do navegador e limites de armazenamento podem removê-los. Não prometemos funcionamento offline completo de imagens nunca vistas ou links externos.
+
+## Publicações e invalidação
+
+O worker evita \`skipWaiting()\` forçado, pois trocar scripts enquanto uma aba usa a versão antiga pode causar inconsistência. Uma nova versão do worker espera as abas controladas terminarem; \`clients.claim()\` cobre a primeira instalação. HTML, CSS e JS são consultados na rede a cada acesso, de modo que uma publicação nova não fica presa em cache antigo enquanto há conexão. Atualize os sufixos \`shell-v1\` e \`runtime-v1\` quando o próprio conjunto inicial ou política de cache mudar. Caches antigos com prefixo do projeto são limpos na ativação, sem afetar caches de terceiros.
+
+## Segurança e compatibilidade
+
+A CSP mantém restrições existentes, liberando apenas \`worker-src 'self'\` onde o aplicativo é registrado. O Service Worker é servido na raiz, não intercepta requisições de outras origens e não armazena dados pessoais. Nada altera o WebMCP nem URLs canônicas, hreflang ou conteúdo indexável. As páginas de fallback usam \`noindex\` e não entram no sitemap. Instalação em tela inicial varia por navegador; o cache offline funciona em navegadores com suporte a Service Worker, inclusive sem instalação.
+
+## Verificações
+
+\`\`\`sh
+node --test .github/scripts/test-pwa.cjs
+# CI: .github/workflows/pwa.yml executa Playwright em Chromium, Firefox e WebKit.
+\`\`\`
+
+No dispositivo físico, testar: (1) adicionar à Tela de Início no iOS e Android; (2) abrir online; (3) ativar modo avião; (4) abrir uma página visitada; (5) abrir uma rota não visitada e conferir idioma do fallback; (6) desativar modo avião e confirmar conteúdo atualizado após deploy.
+
+Referências: MDN Web Docs (Service Worker, Cache API, Lifecycle), web.dev (offline e PWA), Apple WebKit (web apps no iOS), documentação Playwright.
