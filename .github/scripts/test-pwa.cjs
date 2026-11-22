@@ -8,6 +8,11 @@ const vm = require("node:vm");
 const ROOT = path.resolve(__dirname, "../..");
 const read = (file) => fs.readFileSync(path.join(ROOT, file), "utf8");
 const ORIGIN = "https://rodri-oliveira-dev.github.io";
+const workerSource = read("sw.js");
+const workerVersion = workerSource.match(/^const CACHE_VERSION = "([^"]+)";$/m)?.[1];
+assert.ok(workerVersion, "sw.js must declare a literal CACHE_VERSION");
+const SHELL_CACHE = "rodrigo-portfolio-pwa-shell-" + workerVersion;
+const RUNTIME_CACHE = "rodrigo-portfolio-pwa-runtime-" + workerVersion;
 
 const htmlPages = [
   "index.html", "en/index.html", "es/index.html",
@@ -56,6 +61,8 @@ function createWorker() {
   let isOffline = false;
   let serverStatus = 200;
   let cacheDirective = null;
+  let stallResponseBody = false;
+  let responseWasAborted = false;
   let claimed = false;
   const keyOf = (request) => typeof request === "string" ? new URL(request, ORIGIN).href : request.url;
   const cacheFor = (name) => {
@@ -90,9 +97,26 @@ function createWorker() {
     },
     caches,
     URL, Response, AbortController, setTimeout, clearTimeout,
-    async fetch(request) {
+    ReadableStream,
+    setTimeout(callback, timeout, ...args) {
+      // Shorten the deadline only for the intentionally stalled-body fixture.
+      return setTimeout(callback, stallResponseBody ? Math.min(timeout, 50) : timeout, ...args);
+    },
+    async fetch(request, { signal } = {}) {
       if (isOffline) throw new Error("offline");
       if (serverStatus !== 200) return new Response("server:" + serverStatus, { status: serverStatus });
+      if (stallResponseBody) {
+        return new Response(new ReadableStream({
+          start(controller) {
+            const abort = () => {
+              responseWasAborted = true;
+              controller.error(new Error("Response body aborted"));
+            };
+            if (signal?.aborted) abort();
+            else signal?.addEventListener("abort", abort, { once: true });
+          }
+        }), { status: 200 });
+      }
       return new Response("network:" + keyOf(request), {
         status: 200,
         headers: cacheDirective ? { "cache-control": cacheDirective } : {}
@@ -116,7 +140,7 @@ function createWorker() {
   const request = (pathname, mode = "navigate", destination = "document") => ({
     url: new URL(pathname, ORIGIN).href, method: "GET", mode, destination
   });
-  return { caches, stores, dispatch, request, setOffline(value) { isOffline = value; }, setServerStatus(value) { serverStatus = value; }, setCacheControl(value) { cacheDirective = value; }, get claimed() { return claimed; } };
+  return { caches, stores, dispatch, request, setOffline(value) { isOffline = value; }, setServerStatus(value) { serverStatus = value; }, setCacheControl(value) { cacheDirective = value; }, setStalledBody(value) { stallResponseBody = value; }, get responseWasAborted() { return responseWasAborted; }, get claimed() { return claimed; } };
 }
 
 test("installs localized shell and claims on activation, without deleting unrelated caches", async () => {
@@ -124,7 +148,7 @@ test("installs localized shell and claims on activation, without deleting unrela
   await (await worker.caches.open("unrelated-cache")).put("https://example.com/", new Response("other"));
   await (await worker.caches.open("rodrigo-portfolio-pwa-old")).put(ORIGIN + "/", new Response("old"));
   await worker.dispatch("install");
-  assert.ok((await worker.caches.keys()).includes("rodrigo-portfolio-pwa-shell-2026-11-22.1"));
+  assert.ok((await worker.caches.keys()).includes(SHELL_CACHE));
   await worker.dispatch("activate");
   assert.ok(worker.claimed);
   assert.ok(!(await worker.caches.keys()).includes("rodrigo-portfolio-pwa-old"));
@@ -143,7 +167,7 @@ test("updated worker uses isolated caches until activation, then removes old rev
   assert.ok(activeNames.includes("rodrigo-portfolio-pwa-shell-2026-11-20.1"),
     "install must not modify the active worker caches");
   assert.equal(await (await oldRuntime.match(ORIGIN + "/")).text(), "old-runtime-html");
-  assert.ok(activeNames.includes("rodrigo-portfolio-pwa-shell-2026-11-22.1"));
+  assert.ok(activeNames.includes(SHELL_CACHE));
 
   await worker.dispatch("activate");
   const names = await worker.caches.keys();
@@ -174,6 +198,25 @@ test("network-first serves fresh HTML and falls back to the latest stored respon
   assert.match(await (await worker.dispatch("fetch", req)).text(), /^network:/);
 });
 
+test("HTTP 200 with a stalled body must time out and use cached content", async () => {
+  const worker = createWorker();
+  await worker.dispatch("install");
+  await worker.dispatch("activate");
+  const visitedPage = worker.request("/case-studies/adr-guard/");
+  assert.match(await (await worker.dispatch("fetch", visitedPage)).text(), /^network:/);
+
+  worker.setStalledBody(true);
+  const cached = await worker.dispatch("fetch", visitedPage);
+  assert.match(await cached.text(), /^network:/,
+    "timeout should serve the previously visited page");
+  assert.equal(worker.responseWasAborted, true,
+    "deadline should abort the stalled response stream");
+
+  const unvisitedPage = worker.request("/en/case-studies/unvisited/");
+  const fallback = await worker.dispatch("fetch", unvisitedPage);
+  assert.equal(await fallback.text(), "shell:/en/offline.html");
+});
+
 test("transient 5xx failures use cached HTML or a localized fallback, not a false 404", async () => {
   const worker = createWorker();
   await worker.dispatch("install");
@@ -201,7 +244,7 @@ test("private and no-store responses must not enter runtime cache", async () => 
   const request = worker.request("/servicos/");
   const response = await worker.dispatch("fetch", request);
   assert.equal(response.status, 200);
-  const runtime = await worker.caches.open("rodrigo-portfolio-pwa-runtime-2026-11-22.1");
+  const runtime = await worker.caches.open(RUNTIME_CACHE);
   assert.equal(await runtime.match(request.url), undefined);
 });
 
@@ -251,7 +294,7 @@ test("runtime entries are bounded and URLs with query strings are never cached",
     await worker.dispatch("fetch", worker.request("/case-studies/item-" + i + "/"));
   }
   await worker.dispatch("fetch", worker.request("/en/?utm_source=test"));
-  const runtime = await worker.caches.open("rodrigo-portfolio-pwa-runtime-2026-11-22.1");
+  const runtime = await worker.caches.open(RUNTIME_CACHE);
   const keys = await runtime.keys();
   assert.equal(keys.length, 64);
   assert.ok(keys.every((key) => !key.includes("?")));

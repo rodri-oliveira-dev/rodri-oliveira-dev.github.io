@@ -96,16 +96,6 @@ const putRuntime = async (request, response) => {
   }
 };
 
-const onlineResponse = async (request) => {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), NETWORK_TIMEOUT_MS);
-  try {
-    return await fetch(request, { signal: controller.signal });
-  } finally {
-    clearTimeout(timer);
-  }
-};
-
 const cachedOrOffline = async (request) => {
   const cached = await getCached(request);
   if (cached) return cached;
@@ -114,17 +104,37 @@ const cachedOrOffline = async (request) => {
 };
 
 const networkFirst = async (request) => {
-  try {
-    const response = await onlineResponse(request);
+  const controller = new AbortController();
+  let timeoutId;
+  const deadline = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      controller.abort();
+      reject(new Error("Network response deadline exceeded"));
+    }, NETWORK_TIMEOUT_MS);
+  });
+
+  const load = async () => {
+    const response = await fetch(request, { signal: controller.signal });
     // Temporary server failures should not defeat an otherwise usable offline
     // experience; a genuine 404 stays a 404, never cached as successful HTML.
     if (response.status >= 500) {
       return (await cachedOrOffline(request)) || response;
     }
-    if (response.status === 200) await putRuntime(request, response);
+    if (response.status === 200) {
+      // fetch() resolves after headers. Drain a clone before returning so a
+      // stalled response body also triggers the offline fallback on timeout.
+      await response.clone().arrayBuffer();
+      await putRuntime(request, response);
+    }
     return response;
+  };
+
+  try {
+    return await Promise.race([load(), deadline]);
   } catch {
     return (await cachedOrOffline(request)) || Response.error();
+  } finally {
+    clearTimeout(timeoutId);
   }
 };
 

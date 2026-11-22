@@ -57,13 +57,17 @@ const restartServer = async () => {
       const page = await context.newPage();
       await page.goto(origin + "/", { waitUntil: "load" });
       await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller), null, { timeout: 20000 });
-      for (const route of ["/", "/en/", "/es/"]) {
+      // One study page is deliberately absent from APP_SHELL: it must be
+      // populated by the runtime cache rather than the install precache.
+      for (const route of ["/", "/en/", "/es/", "/case-studies/adr-guard/"]) {
         await page.goto(origin + route, { waitUntil: "domcontentloaded" });
         assert.notEqual(await page.locator("h1").count(), 0, "Online page must render " + route);
       }
       await context.setOffline(true);
       await stopServer();
-      for (const route of ["/", "/en/", "/es/"]) {
+      // One study page is deliberately absent from APP_SHELL: it must be
+      // populated by the runtime cache rather than the install precache.
+      for (const route of ["/", "/en/", "/es/", "/case-studies/adr-guard/"]) {
         await page.goto(origin + route, { waitUntil: "domcontentloaded" });
         assert.equal(await page.locator("[data-pwa-offline]").count(), 0, "Visited page must be cached: " + route);
         assert.ok((await page.title()).includes("Rodrigo"), "Expected offline HTML " + route);
@@ -78,9 +82,23 @@ const restartServer = async () => {
         assert.equal(await page.locator("html").getAttribute("lang"), lang);
       }
       await context.setOffline(false);
-      await restartServer();
-      await page.goto(origin + "/", { waitUntil: "domcontentloaded" });
-      assert.equal(await page.locator("[data-pwa-offline]").count(), 0);
+      // Change the server's HTML *after* the offline phase. Only a real
+      // network response can contain this marker; cached HTML cannot.
+      const homePath = require("node:path").resolve(__dirname, "../../index.html");
+      const originalHtml = fs.readFileSync(homePath, "utf8");
+      const updatedHtml = originalHtml.replace("</body>",
+        '<span data-pwa-reconnected="network-fresh" hidden></span>\\n</body>');
+      assert.notEqual(updatedHtml, originalHtml, "HTML fixture must have a body");
+      fs.writeFileSync(homePath, updatedHtml, "utf8");
+      try {
+        await restartServer();
+        await page.goto(origin + "/", { waitUntil: "domcontentloaded" });
+        assert.equal(await page.locator("[data-pwa-offline]").count(), 0);
+        assert.equal(await page.locator('[data-pwa-reconnected="network-fresh"]').count(), 1,
+          "after reconnecting, navigation must return newly published network HTML");
+      } finally {
+        fs.writeFileSync(homePath, originalHtml, "utf8");
+      }
       console.log("PWA browser scenarios passed: " + name);
     } finally {
       await context.close();
