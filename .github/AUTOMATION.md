@@ -42,6 +42,7 @@ Para manutenção, edite as três traduções no mesmo PR e execute `python3 .gi
 
 | Workflow | Arquivo | Execução | Objetivo |
 | --- | --- | --- | --- |
+| ADR Guard | [`adr-guard.yml`](workflows/adr-guard.yml) | Pull Request para `main`, push em `main` e manual | Validar ADRs versionadas sem gerar ou aprovar decisões |
 | Site validation | [`site-validation.yml`](workflows/site-validation.yml) | Pull Request, push em `main` e manual | Validar HTML, links, ortografia e workflows |
 | Publish site with resume PDF | [`deploy-pages.yml`](workflows/deploy-pages.yml) | PR que altera os currículos, push em `main` e manual | Gerar os três PDFs a partir de HTML/CSS e publicar o site via GitHub Pages |
 | SEO validation | [`seo-validation.yml`](workflows/seo-validation.yml) | Pull Request, push em `main` e manual | Validar JSON-LD, sitemap, RSS discovery e consistência dos artefatos SEO |
@@ -70,6 +71,12 @@ As três versões são URLs canônicas indexáveis (`/curriculo/`, `/en/resume/`
 
 
 ## Quality gates
+
+### ADR Guard
+
+O [workflow ADR Guard](workflows/adr-guard.yml) verifica os documentos em [`docs/adr`](../docs/adr/README.md) em todo PR para `main`, push em `main` e execução manual. O check é somente leitura e usa código fixado por SHA da release `v1.12.0`, runtime `1.12.0`, `contents: read` e `persist-credentials: false`.
+
+O ADR Guard valida estrutura, nomes, status e relacionamentos; ele **não cria nem aprova decisões**. O registro e a passagem de `Proposed` para `Accepted` permanecem sob revisão humana. Para exigir o status antes do merge, habilitar `ADR Guard` nas regras de proteção de `main` após a primeira execução bem-sucedida.
 
 ### Site validation
 

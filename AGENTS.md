@@ -22,6 +22,14 @@ Este arquivo se aplica a todo o repositório. Ele contém as regras permanentes 
 
 Mudanças exclusivamente internas, como documentação de manutenção, skills, `AGENTS.md`, workflows ou testes que não alterem o site publicado, **não justificam** modificar `<lastmod>`. O RSS não é uma URL indexável listada no sitemap; alterações de artigo devem refletir a página de destino efetivamente atualizada.
 
+## Registro de decisões arquiteturais
+
+- Consultar [`docs/adr/README.md`](docs/adr/README.md) antes de propor mudanças relevantes de arquitetura, infraestrutura, integração ou segurança.
+- Criar ou atualizar uma ADR canônica para cada decisão relevante, descrevendo contexto, alternativas pertinentes, decisão e consequências. Preservar o histórico e atualizar o índice no mesmo PR.
+- Registrar alternativas ainda em análise como `Proposed`; alterar para `Accepted` somente com aprovação humana explícita. O sucesso do ADR Guard não equivale à aceitação da decisão.
+- O workflow `.github/workflows/adr-guard.yml` executa `check` somente leitura em PRs e na `main`. Não gerar, aprovar ou substituir ADRs automaticamente a partir de agentes ou da CI.
+- Mudanças exclusivamente nos ADRs e na automação de validação não alteram o conteúdo indexável nem justificam atualização de `sitemap.xml`.
+
 ## Idiomas e integridade editorial
 
 - Idiomas do site: português do Brasil (`/`, `lang="pt-BR"`), inglês (`/en/`, `lang="en"`) e espanhol latino-americano (`/es/`, `lang="es-419"`). O `hreflang` espanhol usa `es`, conforme a implementação atual.
