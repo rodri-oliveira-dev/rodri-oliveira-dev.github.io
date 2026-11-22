@@ -222,7 +222,9 @@ test("unknown offline navigation uses PT/EN/ES fallback", async () => {
   for (const [pathname, expected] of [
     ["/not-visited/", "shell:/offline.html"],
     ["/en/not-visited/", "shell:/en/offline.html"],
-    ["/es/not-visited/", "shell:/es/offline.html"]
+    ["/en", "shell:/en/offline.html"],
+    ["/es/not-visited/", "shell:/es/offline.html"],
+    ["/es", "shell:/es/offline.html"]
   ]) {
     const response = await worker.dispatch("fetch", worker.request(pathname));
     assert.equal(await response.text(), expected);
