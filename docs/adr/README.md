@@ -1,22 +1,24 @@
 # Decisões arquiteturais do portfólio
 
-Este diretório registra o contexto, a decisão e as consequências de escolhas importantes no portfólio. O histórico usa o [formato canônico do ADR Guard](https://github.com/rodri-oliveira-dev/adr-guard/blob/v1.12.0/docs/github-action.pt-BR.md).
+Este diretório registra escolhas que alteram responsabilidades, infraestrutura ou operação do portfólio. As ADRs descrevem o problema, a decisão e os custos aceitos. Detalhes de implementação permanecem na documentação técnica e no código.
 
 | ADR | Decisão | Status |
 | --- | --- | --- |
-| [0001](0001-manter-portfolio-estatico-no-github-pages.md) | Manter o portfólio estático no GitHub Pages | Accepted |
-| [0002](0002-oferecer-pwa-progressiva-com-suporte-offline.md) | Oferecer PWA progressiva com suporte offline | Accepted |
-| [0003](0003-versionar-decisoes-e-validar-com-adr-guard.md) | Versionar decisões e validar com ADR Guard | Accepted |
-| [0004](0004-planejar-backend-separado-para-web-push.md) | Planejar backend separado para Web Push | Proposed |
-| [0005](0005-notificar-artigos-apos-publicacao-confirmada.md) | Notificar artigos após publicação confirmada | Proposed |
+| [0001](0001-manter-portfolio-estatico-no-github-pages.md) | Manter o portfólio público no GitHub Pages | Accepted |
+| [0002](0002-oferecer-pwa-progressiva-com-suporte-offline.md) | Instalação e navegação offline como recursos progressivos | Accepted |
+| [0003](0003-versionar-decisoes-e-validar-com-adr-guard.md) | Versionar decisões e validá-las no CI | Accepted |
+| [0004](0004-planejar-backend-separado-para-web-push.md) | Serviço Web Push serverless na GCP | Proposed |
+| [0005](0005-notificar-artigos-apos-publicacao-confirmada.md) | Notificar apenas artigos PT-BR após publicação confirmada | Proposed |
+| [0006](0006-proteger-dados-de-inscricoes-web-push.md) | Minimizar e proteger dados das inscrições | Proposed |
+| [0007](0007-oferecer-web-push-em-navegadores-compativeis.md) | Inscrição em navegadores compatíveis, inclusive desktop | Proposed |
+| [0008](0008-gerenciar-infraestrutura-gcp-com-terraform-no-monorepo.md) | Terraform e governança da GCP no monorepo | Proposed |
 
-## Convenções
+## Como manter
 
-- Criar um arquivo por decisão em `docs/adr/NNNN-titulo-em-kebab-case.md`, com seções `Status`, `Context`, `Decision` e `Consequences`.
-- Usar `Proposed` para alternativas ainda não aprovadas. Somente uma decisão humana registrada em PR altera o status para `Accepted`; o sucesso do CI não significa aprovação técnica.
-- Não reescrever silenciosamente decisões anteriores. Registrar revisão ou substituição de forma rastreável quando necessário.
-- Atualizar este índice no mesmo PR da criação ou da alteração de status de uma ADR.
-- O workflow [ADR Guard](../../.github/workflows/adr-guard.yml) usa `check` nos PRs e na `main`; ele **valida** documentos versionados, mas não os redige, aprova nem modifica.
-- Como são documentos internos de governança, alterações apenas neste diretório não atualizam datas do `sitemap.xml`.
+- Cada decisão ocupa um arquivo `NNNN-descricao.md`, com as seções canônicas `Status`, `Context`, `Decision` e `Consequences`.
+- `Accepted` identifica uma decisão adotada. `Proposed` significa que ela ainda depende de avaliação e aprovação, mesmo quando o texto descreve uma solução preferida.
+- Atualizações devem preservar a história e explicitar mudança de contexto, substituição ou impacto. Não tratar o resultado da CI como aprovação da decisão.
+- Incluir novas ADRs e alterações de status neste índice no mesmo PR. A validação automática está em [ADR Guard](../../.github/workflows/adr-guard.yml) e utiliza `command: check`.
+- ADRs são documentação interna e não alteram, por si só, o conteúdo indexável do site ou o `sitemap.xml`.
 
-Para uma validação local, instale uma versão compatível da [CLI ADR Guard](https://github.com/rodri-oliveira-dev/adr-guard) e execute `adr-guard check docs/adr`.
+O [ADR Guard](https://github.com/rodri-oliveira-dev/adr-guard) valida estrutura e relacionamentos. A revisão do mérito técnico permanece responsabilidade humana.

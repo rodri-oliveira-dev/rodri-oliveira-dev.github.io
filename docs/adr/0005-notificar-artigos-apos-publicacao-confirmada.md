@@ -1,4 +1,4 @@
-# Notificar artigos após publicação confirmada
+# Disparar notificações de artigos somente após a publicação do site
 
 ## Status
 
@@ -6,20 +6,20 @@ Proposed
 
 ## Context
 
-O repositório possui fluxos diferentes de conteúdo: `import-newsletter-article.yml` importa artigos em português manualmente; `sync-devto-articles.yml` sincroniza publicações em inglês e possui merge automático após verificações; `sync-hashnode-articles.yml` sincroniza publicações em espanhol e preserva merge manual. `sync-newsletter-articles.yml` permanece como fallback manual.
+A atualização editorial não corresponde necessariamente a conteúdo disponível ao visitante. O fluxo `import-newsletter-article.yml` incorpora manualmente artigos em português e abre PR; `sync-newsletter-articles.yml` é um mecanismo de reconciliação manual. Os fluxos DEV Community e Hashnode atendem inglês e espanhol e possuem regras de merge diferentes.
 
-Detectar um diff nos catálogos ou concluir a busca não significa que exista um artigo novo disponível no site. Um PR pode permanecer aberto, falhar em quality gates ou aguardar publicação no GitHub Pages.
+Um artigo importado pode aguardar revisão, falhar em quality gates ou ainda não ter sido publicado. Além disso, mudanças em metadados, RSS ou sitemap não significam uma publicação nova. Disparar notificações diretamente do job de importação criaria esses dois tipos de falso positivo.
 
 ## Decision
 
-Proposta: reutilizar os workflows atuais de sincronização e criar um processo central de notificações acionado somente depois do sucesso do deploy do site na `main`. Comparar URLs canônicas ou identificadores duráveis dos artigos com um histórico de envios, diferenciando conteúdo novo de correções de metadados e alterações apenas de SEO.
+Na primeira versão, notificar **apenas artigos em português** já publicados no portfólio. Os workflows de inglês e espanhol não participam do envio.
 
-Enviar uma notificação por artigo novo e por público inscrito no idioma correspondente (PT-BR, EN ou ES). Fazer o disparo pelo backend autenticado, com deduplicação persistente, retries controlados e observabilidade; uma falha de push não deve invalidar o deploy já concluído.
+A execução de envio será separada da importação. Um workflow específico deverá considerar somente publicações concluídas com sucesso na `main`, vinculando o evento ao commit e ao conteúdo efetivamente disponibilizado no GitHub Pages. A conclusão do deploy é condição necessária, mas o processo também precisa conferir se há artigo novo no catálogo em português.
 
-Esta ADR depende da decisão e implementação do backend Web Push. O workflow de notificação, as inscrições e os envios não estão implementados.
+A identidade de publicação será baseada em URL canônica ou identificador estável, não na posição do artigo nem em `git diff` genérico. O backend manterá estado durável para evitar repetir campanhas em reexecuções e para controlar tentativas por inscrição. Reenvios serão limitados e observáveis; falhas de push não reverterão o deploy.
 
 ## Consequences
 
-A publicação seria separada da comunicação, evitando avisos prematuros ou repetidos. A responsabilidade pela emissão ficaria centralizada em vez de duplicada nas três Actions de conteúdo.
+O visitante não receberá avisos de conteúdo ainda não disponível nem de simples correções editoriais. A independência entre publicação e distribuição reduz o acoplamento das Actions existentes.
 
-A confirmação do deploy pode acrescentar atraso entre artigo e notificação. O sistema precisará lidar com falhas temporárias, publicações concorrentes, artigos reordenados e reexecuções de workflows, além de estabelecer critérios claros de conteúdo novo antes da ativação.
+A notificação poderá ocorrer depois do deploy e dependerá de reconciliação quando eventos forem perdidos ou quando a publicação for iniciada por mecanismos diferentes do workflow habitual. Serviços de push externos não oferecem garantia de entrega exatamente uma vez; nossa deduplicação controla os disparos sob nossa responsabilidade, não o comportamento do dispositivo. O workflow de envio não está implementado e depende da ADR 0004.

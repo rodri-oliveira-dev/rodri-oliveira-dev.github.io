@@ -1,4 +1,4 @@
-# Versionar decisões e validar com ADR Guard
+# Manter decisões arquiteturais no repositório e validá-las no CI
 
 ## Status
 
@@ -6,20 +6,20 @@ Accepted
 
 ## Context
 
-O repositório já possui regras de contribuição, segurança, automação e publicação. A evolução da PWA e a discussão de notificações push expõem a necessidade de distinguir escolhas adotadas de propostas, registrar justificativas e manter um histórico revisável.
+A arquitetura do portfólio vem evoluindo por pequenos PRs: publicação, SEO, automações, PWA e integrações com serviços externos. As descrições dos PRs explicam o que mudou, mas não oferecem um lugar único para consultar por que uma escolha foi feita ou quais limitações foram aceitas.
 
-Documentação informal ou restrita à descrição de PRs tende a fragmentar o raciocínio técnico. O ADR Guard fornece uma validação determinística do formato e do conjunto de Architecture Decision Records (ADRs), sem decidir pela equipe.
+Uma wiki separada exigiria manutenção de outro acervo. Documentos Markdown isolados no repositório resolveriam a rastreabilidade, mas não detectariam inconsistências de estrutura e relacionamento. O ADR Guard já oferece essa validação de forma determinística.
 
 ## Decision
 
-Manter ADRs canônicas em `docs/adr`, numeradas e versionadas junto ao código. Usar as seções `Status`, `Context`, `Decision` e `Consequences`. Manter o índice `docs/adr/README.md` no mesmo PR que altera decisões.
+Registrar decisões relevantes em `docs/adr`, usando arquivos numerados e o formato canônico com `Status`, `Context`, `Decision` e `Consequences`. O índice acompanha os documentos no mesmo PR. Uma ADR registra uma escolha e seus trade-offs; não serve como especificação exaustiva de implementação.
 
-Executar a GitHub Action do ADR Guard com `command: check` em todo pull request para `main`, em pushes na `main` e sob execução manual. Fixar o código da Action no commit publicado da release `v1.12.0` e informar `version: "1.12.0"` para selecionar a imagem de runtime correspondente. Usar somente permissão `contents: read` e checkout sem credenciais persistentes.
+A GitHub Action `adr-guard.yml` executa `check` em pull requests para `main`, em pushes na branch principal e manualmente. O workflow utiliza a release `v1.12.0`, com código fixado por SHA, versão explícita do runtime, checkout sem credenciais persistentes e permissão somente de leitura.
 
-Decisões futuras permanecem `Proposed` até aceitação explícita na revisão humana. A Action não cria documentos, não altera status e não substitui revisão técnica.
+Decisões em discussão usam `Proposed`. Sua aceitação exige revisão humana; uma execução bem-sucedida da Action não altera o status nem constitui aprovação técnica.
 
 ## Consequences
 
-A motivação e as consequências das principais escolhas passam a ser auditáveis no Git, com falhas estruturais detectadas antes do merge. O workflow pode ser convertido em check obrigatório por configuração de ruleset da branch, depois de sua primeira execução.
+O raciocínio arquitetural passa a acompanhar o código e pode ser revisado no mesmo fluxo de PR. A validação detecta problemas formais antes que o histórico fique inconsistente.
 
-Escrever e manter ADRs exige disciplina editorial. A validação não prova mérito técnico, segurança da solução nem aprovação da proposta. Atualizar versões fixadas da Action e da imagem requer revisão explícita de compatibilidade e de cadeia de suprimentos.
+O custo é editorial: decisões precisam ser revisadas quando seus pressupostos mudarem. O ADR Guard não verifica a qualidade do argumento, não comprova requisitos não funcionais e não substitui a avaliação de riscos. A obrigatoriedade do check na proteção de `main` é uma configuração de governança à parte, não consequência automática da criação do workflow.
