@@ -118,11 +118,44 @@ test("installs localized shell and claims on activation, without deleting unrela
   await (await worker.caches.open("unrelated-cache")).put("https://example.com/", new Response("other"));
   await (await worker.caches.open("rodrigo-portfolio-pwa-old")).put(ORIGIN + "/", new Response("old"));
   await worker.dispatch("install");
-  assert.ok((await worker.caches.keys()).includes("rodrigo-portfolio-pwa-shell-v1"));
+  assert.ok((await worker.caches.keys()).includes("rodrigo-portfolio-pwa-shell-2026-11-22.1"));
   await worker.dispatch("activate");
   assert.ok(worker.claimed);
   assert.ok(!(await worker.caches.keys()).includes("rodrigo-portfolio-pwa-old"));
   assert.ok((await worker.caches.keys()).includes("unrelated-cache"));
+});
+
+test("updated worker uses isolated caches until activation, then removes old revisions", async () => {
+  const worker = createWorker();
+  const oldShell = await worker.caches.open("rodrigo-portfolio-pwa-shell-2026-11-20.1");
+  await oldShell.put(ORIGIN + "/", new Response("old-html"));
+  const oldRuntime = await worker.caches.open("rodrigo-portfolio-pwa-runtime-2026-11-20.1");
+  await oldRuntime.put(ORIGIN + "/", new Response("old-runtime-html"));
+
+  await worker.dispatch("install");
+  const activeNames = await worker.caches.keys();
+  assert.ok(activeNames.includes("rodrigo-portfolio-pwa-shell-2026-11-20.1"),
+    "install must not modify the active worker caches");
+  assert.equal(await (await oldRuntime.match(ORIGIN + "/")).text(), "old-runtime-html");
+  assert.ok(activeNames.includes("rodrigo-portfolio-pwa-shell-2026-11-22.1"));
+
+  await worker.dispatch("activate");
+  const names = await worker.caches.keys();
+  assert.ok(!names.includes("rodrigo-portfolio-pwa-shell-2026-11-20.1"));
+  assert.ok(!names.includes("rodrigo-portfolio-pwa-runtime-2026-11-20.1"));
+  worker.setOffline(true);
+  const offlineHome = await worker.dispatch("fetch", worker.request("/"));
+  assert.equal(await offlineHome.text(), "shell:/",
+    "previous runtime HTML must not override the new application's shell");
+});
+
+test("query-bearing URLs do not silently resolve from the cache for a different URL", async () => {
+  const worker = createWorker();
+  await worker.dispatch("install");
+  await worker.dispatch("activate");
+  worker.setOffline(true);
+  const response = await worker.dispatch("fetch", worker.request("/en/?format=print"));
+  assert.equal(await response.text(), "shell:/en/offline.html");
 });
 
 test("network-first serves fresh HTML and falls back to the latest stored response", async () => {
@@ -169,7 +202,7 @@ test("runtime entries are bounded and URLs with query strings are never cached",
     await worker.dispatch("fetch", worker.request("/case-studies/item-" + i + "/"));
   }
   await worker.dispatch("fetch", worker.request("/en/?utm_source=test"));
-  const runtime = await worker.caches.open("rodrigo-portfolio-pwa-runtime-v1");
+  const runtime = await worker.caches.open("rodrigo-portfolio-pwa-runtime-2026-11-22.1");
   const keys = await runtime.keys();
   assert.equal(keys.length, 64);
   assert.ok(keys.every((key) => !key.includes("?")));
