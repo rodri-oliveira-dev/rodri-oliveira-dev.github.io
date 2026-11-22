@@ -70,7 +70,8 @@ const restartServer = async () => {
       for (const route of ["/", "/en/", "/es/", "/case-studies/adr-guard/"]) {
         await page.goto(origin + route, { waitUntil: "domcontentloaded" });
         assert.equal(await page.locator("[data-pwa-offline]").count(), 0, "Visited page must be cached: " + route);
-        assert.ok((await page.title()).includes("Rodrigo"), "Expected offline HTML " + route);
+        const expectedTitle = route.includes("/case-studies/adr-guard/") ? "ADR Guard" : "Rodrigo";
+        assert.ok((await page.title()).includes(expectedTitle), "Expected cached HTML for " + route);
       }
       for (const [route, lang] of [
         ["/case-studies/never-visited/", "pt-BR"],
