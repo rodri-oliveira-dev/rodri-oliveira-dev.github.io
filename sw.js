@@ -2,8 +2,11 @@
 "use strict";
 
 const PREFIX = "rodrigo-portfolio-pwa-";
-const PRECACHE = PREFIX + "shell-v1";
-const RUNTIME = PREFIX + "runtime-v1";
+// Explicit deploy revision: bump for every SW policy/shell change. Keeping
+// active and installing worker caches separate avoids cross-version mixing.
+const CACHE_VERSION = "2026-11-22.1";
+const PRECACHE = PREFIX + "shell-" + CACHE_VERSION;
+const RUNTIME = PREFIX + "runtime-" + CACHE_VERSION;
 const MAX_RUNTIME_ENTRIES = 64;
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
@@ -67,6 +70,9 @@ const cacheKey = (request) => {
 };
 
 const getCached = async (request) => {
+  // Query parameters can change semantics; never substitute the plain URL
+  // for a query-bearing navigation while disconnected.
+  if (new URL(request.url).search) return null;
   const key = cacheKey(request);
   const runtime = await caches.open(RUNTIME);
   return (await runtime.match(key)) ||
