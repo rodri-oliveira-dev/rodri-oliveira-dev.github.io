@@ -205,6 +205,16 @@ test("private and no-store responses must not enter runtime cache", async () => 
   assert.equal(await runtime.match(request.url), undefined);
 });
 
+test("offline fallback cannot be shadowed by an unrelated cache", async () => {
+  const worker = createWorker();
+  const other = await worker.caches.open("unrelated-cache");
+  await other.put(ORIGIN + "/en/offline.html", new Response("unexpected content"));
+  await worker.dispatch("install");
+  worker.setOffline(true);
+  const response = await worker.dispatch("fetch", worker.request("/en/never-seen/"));
+  assert.equal(await response.text(), "shell:/en/offline.html");
+});
+
 test("unknown offline navigation uses PT/EN/ES fallback", async () => {
   const worker = createWorker();
   await worker.dispatch("install");
