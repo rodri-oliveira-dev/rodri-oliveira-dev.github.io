@@ -81,7 +81,8 @@ const getCached = async (request) => {
 
 const putRuntime = async (request, response) => {
   const url = new URL(request.url);
-  if (url.search || !response || !response.ok || response.redirected || response.type === "opaque") return;
+  if (url.search || !response || response.status !== 200 || response.redirected || response.type === "opaque" ||
+      /(?:^|,)s*(?:private|no-store)(?:,|$)/i.test(response.headers.get("cache-control") || "")) return;
   try {
     const cache = await caches.open(RUNTIME);
     await cache.put(cacheKey(request), response.clone());
@@ -105,20 +106,25 @@ const onlineResponse = async (request) => {
   }
 };
 
+const cachedOrOffline = async (request) => {
+  const cached = await getCached(request);
+  if (cached) return cached;
+  if (request.mode !== "navigate") return null;
+  return (await caches.match(offlinePage(new URL(request.url).pathname))) || null;
+};
+
 const networkFirst = async (request) => {
   try {
     const response = await onlineResponse(request);
-    // Never cache errors, redirects, opaque responses or private/external data.
-    if (response.ok) await putRuntime(request, response);
+    // Temporary server failures should not defeat an otherwise usable offline
+    // experience; a genuine 404 stays a 404, never cached as successful HTML.
+    if (response.status >= 500) {
+      return (await cachedOrOffline(request)) || response;
+    }
+    if (response.status === 200) await putRuntime(request, response);
     return response;
   } catch {
-    const cached = await getCached(request);
-    if (cached) return cached;
-    if (request.mode === "navigate") {
-      const fallback = await caches.match(offlinePage(new URL(request.url).pathname));
-      if (fallback) return fallback;
-    }
-    return Response.error();
+    return (await cachedOrOffline(request)) || Response.error();
   }
 };
 
