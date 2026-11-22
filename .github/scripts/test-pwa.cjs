@@ -54,6 +54,7 @@ function createWorker() {
   const listeners = new Map();
   const stores = new Map();
   let isOffline = false;
+  let serverStatus = 200;
   let claimed = false;
   const keyOf = (request) => typeof request === "string" ? new URL(request, ORIGIN).href : request.url;
   const cacheFor = (name) => {
@@ -90,6 +91,7 @@ function createWorker() {
     URL, Response, AbortController, setTimeout, clearTimeout,
     async fetch(request) {
       if (isOffline) throw new Error("offline");
+      if (serverStatus !== 200) return new Response("server:" + serverStatus, { status: serverStatus });
       return new Response("network:" + keyOf(request), { status: 200 });
     }
   };
@@ -110,7 +112,7 @@ function createWorker() {
   const request = (pathname, mode = "navigate", destination = "document") => ({
     url: new URL(pathname, ORIGIN).href, method: "GET", mode, destination
   });
-  return { caches, stores, dispatch, request, setOffline(value) { isOffline = value; }, get claimed() { return claimed; } };
+  return { caches, stores, dispatch, request, setOffline(value) { isOffline = value; }, setServerStatus(value) { serverStatus = value; }, get claimed() { return claimed; } };
 }
 
 test("installs localized shell and claims on activation, without deleting unrelated caches", async () => {
@@ -166,6 +168,25 @@ test("network-first serves fresh HTML and falls back to the latest stored respon
   assert.match(await (await worker.dispatch("fetch", req)).text(), /^network:/);
   worker.setOffline(true);
   assert.match(await (await worker.dispatch("fetch", req)).text(), /^network:/);
+});
+
+test("transient 5xx failures use cached HTML or a localized fallback, not a false 404", async () => {
+  const worker = createWorker();
+  await worker.dispatch("install");
+  await worker.dispatch("activate");
+  await worker.dispatch("fetch", worker.request("/en/"));
+  worker.setServerStatus(503);
+
+  const previouslyViewed = await worker.dispatch("fetch", worker.request("/en/"));
+  assert.match(await previouslyViewed.text(), /^network:/,
+    "a temporary server failure should not replace a known-good cached page");
+
+  const neverViewed = await worker.dispatch("fetch", worker.request("/es/case-studies/unknown/"));
+  assert.equal(await neverViewed.text(), "shell:/es/offline.html");
+
+  worker.setServerStatus(404);
+  const missingPage = await worker.dispatch("fetch", worker.request("/es/case-studies/unknown/"));
+  assert.equal(missingPage.status, 404, "a valid 404 must not become a success response");
 });
 
 test("unknown offline navigation uses PT/EN/ES fallback", async () => {
