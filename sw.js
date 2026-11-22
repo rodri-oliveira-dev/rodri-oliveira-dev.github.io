@@ -47,8 +47,8 @@ self.addEventListener("activate", (event) => {
 });
 
 const offlinePage = (pathname) => {
-  if (pathname.startsWith("/en/")) return "/en/offline.html";
-  if (pathname.startsWith("/es/")) return "/es/offline.html";
+  if (pathname === "/en" || pathname.startsWith("/en/")) return "/en/offline.html";
+  if (pathname === "/es" || pathname.startsWith("/es/")) return "/es/offline.html";
   return "/offline.html";
 };
 
