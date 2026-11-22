@@ -82,7 +82,7 @@ const getCached = async (request) => {
 const putRuntime = async (request, response) => {
   const url = new URL(request.url);
   if (url.search || !response || response.status !== 200 || response.redirected || response.type === "opaque" ||
-      /(?:^|,)s*(?:private|no-store)(?:,|$)/i.test(response.headers.get("cache-control") || "")) return;
+      /\b(?:private|no-store)\b/i.test(response.headers.get("cache-control") || "")) return;
   try {
     const cache = await caches.open(RUNTIME);
     await cache.put(cacheKey(request), response.clone());
