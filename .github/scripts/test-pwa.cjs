@@ -55,6 +55,7 @@ function createWorker() {
   const stores = new Map();
   let isOffline = false;
   let serverStatus = 200;
+  let cacheDirective = null;
   let claimed = false;
   const keyOf = (request) => typeof request === "string" ? new URL(request, ORIGIN).href : request.url;
   const cacheFor = (name) => {
@@ -92,7 +93,10 @@ function createWorker() {
     async fetch(request) {
       if (isOffline) throw new Error("offline");
       if (serverStatus !== 200) return new Response("server:" + serverStatus, { status: serverStatus });
-      return new Response("network:" + keyOf(request), { status: 200 });
+      return new Response("network:" + keyOf(request), {
+        status: 200,
+        headers: cacheDirective ? { "cache-control": cacheDirective } : {}
+      });
     }
   };
   vm.runInNewContext(read("sw.js"), context, { filename: "sw.js" });
@@ -112,7 +116,7 @@ function createWorker() {
   const request = (pathname, mode = "navigate", destination = "document") => ({
     url: new URL(pathname, ORIGIN).href, method: "GET", mode, destination
   });
-  return { caches, stores, dispatch, request, setOffline(value) { isOffline = value; }, setServerStatus(value) { serverStatus = value; }, get claimed() { return claimed; } };
+  return { caches, stores, dispatch, request, setOffline(value) { isOffline = value; }, setServerStatus(value) { serverStatus = value; }, setCacheControl(value) { cacheDirective = value; }, get claimed() { return claimed; } };
 }
 
 test("installs localized shell and claims on activation, without deleting unrelated caches", async () => {
@@ -187,6 +191,18 @@ test("transient 5xx failures use cached HTML or a localized fallback, not a fals
   worker.setServerStatus(404);
   const missingPage = await worker.dispatch("fetch", worker.request("/es/case-studies/unknown/"));
   assert.equal(missingPage.status, 404, "a valid 404 must not become a success response");
+});
+
+test("private and no-store responses must not enter runtime cache", async () => {
+  const worker = createWorker();
+  await worker.dispatch("install");
+  await worker.dispatch("activate");
+  worker.setCacheControl("private, no-store");
+  const request = worker.request("/servicos/");
+  const response = await worker.dispatch("fetch", request);
+  assert.equal(response.status, 200);
+  const runtime = await worker.caches.open("rodrigo-portfolio-pwa-runtime-2026-11-22.1");
+  assert.equal(await runtime.match(request.url), undefined);
 });
 
 test("unknown offline navigation uses PT/EN/ES fallback", async () => {
