@@ -110,7 +110,7 @@ const cachedOrOffline = async (request) => {
   const cached = await getCached(request);
   if (cached) return cached;
   if (request.mode !== "navigate") return null;
-  return (await caches.match(offlinePage(new URL(request.url).pathname))) || null;
+  return (await (await caches.open(PRECACHE)).match(offlinePage(new URL(request.url).pathname))) || null;
 };
 
 const networkFirst = async (request) => {
