@@ -87,7 +87,7 @@ const restartServer = async () => {
       const homePath = require("node:path").resolve(__dirname, "../../index.html");
       const originalHtml = fs.readFileSync(homePath, "utf8");
       const updatedHtml = originalHtml.replace("</body>",
-        '<span data-pwa-reconnected="network-fresh" hidden></span>\\n</body>');
+        '<span data-pwa-reconnected="network-fresh" hidden></span>\n</body>');
       assert.notEqual(updatedHtml, originalHtml, "HTML fixture must have a body");
       fs.writeFileSync(homePath, updatedHtml, "utf8");
       try {

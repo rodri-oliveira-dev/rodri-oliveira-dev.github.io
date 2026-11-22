@@ -96,8 +96,7 @@ function createWorker() {
       addEventListener(type, callback) { listeners.set(type, callback); }
     },
     caches,
-    URL, Response, AbortController, setTimeout, clearTimeout,
-    ReadableStream,
+    URL, Response, AbortController, clearTimeout, ReadableStream,
     setTimeout(callback, timeout, ...args) {
       // Shorten the deadline only for the intentionally stalled-body fixture.
       return setTimeout(callback, stallResponseBody ? Math.min(timeout, 50) : timeout, ...args);
