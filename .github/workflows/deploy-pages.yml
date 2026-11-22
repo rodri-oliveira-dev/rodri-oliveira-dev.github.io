@@ -73,6 +73,13 @@ jobs:
           test -f _site/en/resume/index.html
           test -f _site/es/curriculo/index.html
           test -f _site/index.html
+          # PWA shell and localized fallbacks must be published at origin scope.
+          test -f _site/sw.js
+          test -f _site/assets/js/pwa-register.js
+          test -f _site/assets/css/offline.css
+          test -f _site/offline.html
+          test -f _site/en/offline.html
+          test -f _site/es/offline.html
           # Keep all client-side WebMCP modules in the GitHub Pages artifact.
           # Missing modules would break the dependency chain after publish.
           test -f _site/assets/js/webmcp.js
