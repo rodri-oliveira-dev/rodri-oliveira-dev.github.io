@@ -76,7 +76,7 @@ jobs:
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/pwa-http.log 2>&1 &
           echo $! >/tmp/pwa-http.pid
-          for attempt in {1..20}; do
+          for _ in {1..20}; do
             if curl --fail --silent http://127.0.0.1:8765/ >/dev/null; then
               exit 0
             fi
