@@ -44,6 +44,9 @@ jobs:
       - name: Test language resolution and navigation labels
         run: node .github/scripts/test-site-i18n.cjs
 
+      - name: Test PWA policy, security, localization and cache lifecycle
+        run: node --test .github/scripts/test-pwa.cjs
+
       - name: Test services content, links and accessibility contracts
         run: node .github/scripts/test-services.cjs
 
