@@ -1,0 +1,37 @@
+name: ADR Guard
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: adr-guard-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  adr-guard:
+    name: ADR Guard
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7 # v5
+        with:
+          persist-credentials: false
+
+      # Pin to the verified v1.12.0 release. A commit-SHA reference requires
+      # an explicit runtime image version; do not switch to the moving v1 tag.
+      - name: Validate architecture decision records
+        uses: rodri-oliveira-dev/adr-guard@ccce4e411ee036c5764f3837d4174f4426b076a7 # v1.12.0
+        with:
+          path: docs/adr
+          command: check
+          version: "1.12.0"
