@@ -1,11 +1,50 @@
 "use strict";
 const assert = require("node:assert/strict");
 const { chromium, firefox, webkit } = require("playwright");
+const fs = require("node:fs");
+const { spawn } = require("node:child_process");
 
 const browsers = { chromium, firefox, webkit };
 const name = process.env.PWA_BROWSER;
 const origin = process.env.PWA_TEST_ORIGIN || "http://127.0.0.1:8765";
 if (!browsers[name]) throw new Error("Set PWA_BROWSER to chromium, firefox, or webkit");
+
+// Playwright's emulated offline mode does not always block network fetches
+// initiated inside Firefox's Service Worker. Stop the actual local server as
+// well, so every engine exercises the same real network failure.
+const pidFile = "/tmp/pwa-http.pid";
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const serverResponds = async () => {
+  try {
+    const response = await fetch(origin + "/", { signal: AbortSignal.timeout(500) });
+    return response.ok;
+  } catch {
+    return false;
+  }
+};
+const stopServer = async () => {
+  const pid = Number(fs.readFileSync(pidFile, "utf8").trim());
+  process.kill(pid, "SIGTERM");
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    if (!(await serverResponds())) return;
+    await delay(100);
+  }
+  throw new Error("Local fixture server did not stop");
+};
+const restartServer = async () => {
+  const server = spawn("python3", ["-m", "http.server", "8765", "--bind", "127.0.0.1"], {
+    detached: true,
+    stdio: "ignore"
+  });
+  server.unref();
+  fs.writeFileSync(pidFile, String(server.pid));
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    if (await serverResponds()) return;
+    await delay(100);
+  }
+  throw new Error("Local fixture server did not restart");
+};
+
 
 (async () => {
   const browser = await browsers[name].launch({
@@ -23,6 +62,7 @@ if (!browsers[name]) throw new Error("Set PWA_BROWSER to chromium, firefox, or w
         assert.notEqual(await page.locator("h1").count(), 0, "Online page must render " + route);
       }
       await context.setOffline(true);
+      await stopServer();
       for (const route of ["/", "/en/", "/es/"]) {
         await page.goto(origin + route, { waitUntil: "domcontentloaded" });
         assert.equal(await page.locator("[data-pwa-offline]").count(), 0, "Visited page must be cached: " + route);
@@ -38,6 +78,7 @@ if (!browsers[name]) throw new Error("Set PWA_BROWSER to chromium, firefox, or w
         assert.equal(await page.locator("html").getAttribute("lang"), lang);
       }
       await context.setOffline(false);
+      await restartServer();
       await page.goto(origin + "/", { waitUntil: "domcontentloaded" });
       assert.equal(await page.locator("[data-pwa-offline]").count(), 0);
       console.log("PWA browser scenarios passed: " + name);
