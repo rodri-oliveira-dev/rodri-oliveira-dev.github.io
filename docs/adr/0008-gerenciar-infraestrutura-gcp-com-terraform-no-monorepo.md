@@ -26,4 +26,6 @@ O monorepo permite revisar código, infraestrutura e ADRs em conjunto, sem acopl
 
 Haverá trabalho inicial de bootstrap, separação de IAM e manutenção de estado. Mudanças de infraestrutura poderão afetar recursos duráveis, especialmente a localização imutável do Firestore, portanto exigirão cuidado maior que um deploy de código. O objetivo é gasto baixo e controlado; esta decisão não promete operação permanentemente gratuita.
 
-Esta proposta foi substituída pela [ADR 0009](0009-adotar-azure-para-web-push-por-custo.md) antes do provisionamento na GCP.
+## Superseded by
+
+[ADR 0009](0009-adotar-azure-para-web-push-por-custo.md)
