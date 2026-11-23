@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Superseded
 
 ## Context
 
@@ -23,3 +23,5 @@ O desenho inicial terá um único backend, sem Pub/Sub, Redis ou Kubernetes. Qua
 A separação preserva a simplicidade do site e mantém segredos e persistência fora do cliente. Cloud Run e Firestore permitem crescimento gradual sem provisionar capacidade fixa para uma audiência que ainda não existe.
 
 A solução introduz um serviço público sujeito a abuso, operações de dados pessoais, dependência da GCP, cold starts e possível cobrança mesmo com tráfego pequeno. O Free Tier não é garantia de custo zero, especialmente para recursos e tráfego em São Paulo. Nenhum recurso de cloud foi provisionado por esta ADR. A governança de dados e a automação de infraestrutura estão nas ADRs 0006 e 0008.
+
+Esta proposta foi substituída pela [ADR 0009](0009-adotar-azure-para-web-push-por-custo.md) antes do provisionamento na GCP.
