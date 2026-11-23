@@ -8,34 +8,21 @@
 
 # Rodrigo de Oliveira
 
-**Software Architect | Professional Portfolio**
+**Software Architect**
 
-I started my career as a software developer. Over more than 20 years, my work has taken me through integration projects, system modernization, and a wide range of challenges before moving into software architecture.
+I've spent much of my career trying to understand problems and make systems work. Over time, I've grown just as interested in what happens after delivery as in the code itself: how decisions age, what changes around them, and who has to live with their consequences.
 
-One important experience was modernizing a system in the insurance sector. I defined the architecture for moving business rules from stored procedures to microservices and followed the implementation through to production. It's an example of how my background in software development shapes the decisions I make as an architect today.
+I work in software architecture now, but I still enjoy writing code. Building tools and small projects gives me room to experiment without having to turn every idea into a product. Sometimes the useful lesson is finding out that the simpler solution was enough.
 
-Along the way, I've learned that good solutions are about more than technology. They need to reflect business priorities, the people involved, and what it takes to keep systems useful and maintainable as things change.
+I don't think of architecture as a collection of ready-made answers. I'd rather ask questions, record why a choice was made, and revisit it when the context changes. I've changed my mind about technologies and approaches before, and I see that as part of the job.
 
-I created this portfolio to share the experiences and lessons that have shaped my career, and to give visitors a sense of how I approach my work.
+That curiosity is one reason I still enjoy working in software engineering.
 
-## What you'll find
+## More about my work
 
-- **My career journey:** the experiences, responsibilities, and turning points that shaped my path.
-- **Projects and case studies:** real challenges, decisions, and lessons learned.
-- **Articles and writing:** perspectives on software architecture and engineering.
-- **Beyond the code:** some of the interests and experiences that make up who I am.
+My background, projects, and writing are on my [portfolio website](https://rodri-oliveira-dev.github.io/en/). You can also read my [resume](https://rodri-oliveira-dev.github.io/en/resume/) or explore my [open-source libraries and tools](https://github.com/rodri-oliveira-dev).
 
-## Explore my portfolio
-
-**[Visit my professional website](https://rodri-oliveira-dev.github.io/en/)** to learn more about my background, work, and writing.
-
-Available in [Portuguese](https://rodri-oliveira-dev.github.io/), [English](https://rodri-oliveira-dev.github.io/en/), and [Spanish](https://rodri-oliveira-dev.github.io/es/).
-
-[View my resume](https://rodri-oliveira-dev.github.io/en/resume/).
-
----
-
-If you're looking for my open-source libraries, tools, and contributions, you can also visit my [GitHub profile](https://github.com/rodri-oliveira-dev).
+The site is available in [Portuguese](https://rodri-oliveira-dev.github.io/), [English](https://rodri-oliveira-dev.github.io/en/), and [Spanish](https://rodri-oliveira-dev.github.io/es/).
 
 <details>
 <summary>About this repository</summary>
