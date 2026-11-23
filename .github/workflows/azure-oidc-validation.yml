@@ -1,0 +1,34 @@
+
+name: Azure OIDC Validation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Azure authentication
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Authenticate with Azure
+        uses: azure/login@8c334a195cbb38e46038007b304988d888bf676a
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Verify Resource Group access
+        shell: bash
+        run: |
+          az group show \
+            --name rg-portfolio-push-dev \
+            --query "{name:name,location:location}" \
+            --output json
