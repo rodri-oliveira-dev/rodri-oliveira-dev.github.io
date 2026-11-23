@@ -8,34 +8,21 @@
 
 # Rodrigo de Oliveira
 
-**Arquiteto de Software | Portfólio profissional**
+**Arquiteto de Software**
 
-Minha trajetória começou no desenvolvimento de software. Ao longo de mais de 20 anos, passei por projetos de integração, modernização de sistemas e diferentes desafios até chegar à arquitetura de software.
+Passei boa parte da carreira tentando entender problemas e fazer sistemas funcionarem. Com o tempo, comecei a me interessar tanto pelo que acontece depois da entrega quanto pelo código em si: como uma decisão envelhece, o que muda ao redor dela e quem precisa conviver com suas consequências.
 
-Uma experiência importante foi participar da modernização de um sistema do setor de seguros. Defini a arquitetura para migrar regras de negócio de stored procedures para microsserviços e acompanhei sua implantação em produção. É um exemplo de como minha experiência com desenvolvimento influencia as decisões que tomo hoje como arquiteto.
+Hoje trabalho com arquitetura, mas continuo gostando de programar. Criar ferramentas e pequenos projetos me dá espaço para experimentar sem a obrigação de transformar cada ideia em produto. Às vezes, o aprendizado está justamente em descobrir que a solução mais simples era suficiente.
 
-Nesse caminho, aprendi que uma boa solução não depende apenas de tecnologia. Ela precisa considerar o contexto do negócio, as pessoas envolvidas e as condições reais para evoluir e continuar fazendo sentido com o tempo.
+Não vejo arquitetura como uma coleção de respostas prontas. Prefiro fazer perguntas, registrar o motivo das escolhas e voltar a elas quando o contexto muda. Já mudei de opinião sobre tecnologias e abordagens, e considero isso parte do trabalho.
 
-Criei este portfólio para reunir experiências e aprendizados que ajudam a contar essa história, além de mostrar como penso e atuo profissionalmente.
+É essa curiosidade que continua me aproximando da engenharia de software.
 
-## O que você vai encontrar
+## Mais sobre meu trabalho
 
-- **Minha trajetória:** experiências, responsabilidades e momentos que marcaram minha carreira.
-- **Projetos e estudos de caso:** trabalhos que mostram desafios, escolhas e aprendizados na prática.
-- **Artigos e publicações:** reflexões sobre arquitetura e engenharia de software.
-- **Além do código:** um pouco dos interesses e experiências que também fazem parte de quem sou.
+Minha trajetória, meus projetos e publicações estão no [portfólio](https://rodri-oliveira-dev.github.io/). Também é possível consultar meu [currículo](https://rodri-oliveira-dev.github.io/curriculo/) e explorar minhas [bibliotecas e ferramentas públicas](https://github.com/rodri-oliveira-dev).
 
-## Conheça meu portfólio
-
-**[Visite meu site profissional](https://rodri-oliveira-dev.github.io/)** para explorar minha trajetória, meus trabalhos e minhas publicações.
-
-Disponível em [português](https://rodri-oliveira-dev.github.io/), [inglês](https://rodri-oliveira-dev.github.io/en/) e [espanhol](https://rodri-oliveira-dev.github.io/es/).
-
-[Consultar meu currículo](https://rodri-oliveira-dev.github.io/curriculo/).
-
----
-
-Para conhecer minhas bibliotecas, ferramentas e contribuições open source, visite também meu [perfil no GitHub](https://github.com/rodri-oliveira-dev).
+O site está disponível em [português](https://rodri-oliveira-dev.github.io/), [inglês](https://rodri-oliveira-dev.github.io/en/) e [espanhol](https://rodri-oliveira-dev.github.io/es/).
 
 <details>
 <summary>Sobre este repositório</summary>
