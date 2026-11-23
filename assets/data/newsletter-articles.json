@@ -1,5 +1,18 @@
 [
   {
+    "url": "https://www.linkedin.com/pulse/valida%C3%A7%C3%A3o-em-aplica%C3%A7%C3%B5es-ddd-protegendo-regras-do-rodrigo-de-oliveira-5shlf/",
+    "finalUrl": "https://www.linkedin.com/pulse/valida%C3%A7%C3%A3o-em-aplica%C3%A7%C3%B5es-ddd-protegendo-regras-do-rodrigo-de-oliveira-5shlf/",
+    "title": "Validação em aplicações DDD: protegendo as regras do domínio",
+    "description": "Validação em aplicações DDD: protegendo as regras do domínio Entenda como distribuir responsabilidades de validação, preservar invariantes e construir modelos de domínio consistentes sem transformar sua aplicação em uma coleção de verificações espalhadas pelo código. Este artigo faz parte da nossa…",
+    "publishedAt": "2026-11-23",
+    "metadataSource": {
+      "title": "og:title",
+      "description": "og:description (prévia normalizada)",
+      "publishedAt": "JSON-LD datePublished"
+    },
+    "addedAt": "2026-11-23T10:54:46+00:00"
+  },
+  {
     "url": "https://www.linkedin.com/pulse/o-que-realmente-importa-quando-mcp-deixa-de-ser-uma-e-de-oliveira-zemsf/",
     "finalUrl": "https://www.linkedin.com/pulse/o-que-realmente-importa-quando-mcp-deixa-de-ser-uma-e-de-oliveira-zemsf/",
     "title": "O que realmente importa quando o MCP deixa de ser uma demonstração e passa a fazer parte da arquitetura de um sistema.",
@@ -141,18 +154,5 @@
       "publishedAt": "JSON-LD datePublished"
     },
     "addedAt": "2026-09-16T16:48:04+00:00"
-  },
-  {
-    "url": "https://www.linkedin.com/pulse/aggregates-e-aggregate-roots-desenhando-fronteiras-de-de-oliveira-c4fkf/",
-    "finalUrl": "https://www.linkedin.com/pulse/aggregates-e-aggregate-roots-desenhando-fronteiras-de-de-oliveira-c4fkf/",
-    "title": "Aggregates e Aggregate Roots: desenhando fronteiras de consistência",
-    "description": "Este é o oitavo artigo da série sobre Domain-Driven Design. No texto anterior, falamos sobre Primitive Obsession e modelo anêmico, discutindo como trazer significado e comportamento de volta ao domínio.",
-    "publishedAt": "2026-09-14",
-    "metadataSource": {
-      "title": "og:title",
-      "description": "og:description",
-      "publishedAt": "JSON-LD datePublished"
-    },
-    "addedAt": "2026-09-16T16:21:44+00:00"
   }
 ]
