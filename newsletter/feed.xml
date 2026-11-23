@@ -7,6 +7,13 @@
     <atom:link href="https://rodri-oliveira-dev.github.io/newsletter/feed.xml" rel="self" type="application/rss+xml" />
     <language>pt-BR</language>
     <item>
+      <title>Validação em aplicações DDD: protegendo as regras do domínio</title>
+      <link>https://www.linkedin.com/pulse/valida%C3%A7%C3%A3o-em-aplica%C3%A7%C3%B5es-ddd-protegendo-regras-do-rodrigo-de-oliveira-5shlf/</link>
+      <guid isPermaLink="true">https://www.linkedin.com/pulse/valida%C3%A7%C3%A3o-em-aplica%C3%A7%C3%B5es-ddd-protegendo-regras-do-rodrigo-de-oliveira-5shlf/</guid>
+      <pubDate>Mon, 23 Nov 2026 00:00:00 GMT</pubDate>
+      <description>Validação em aplicações DDD: protegendo as regras do domínio Entenda como distribuir responsabilidades de validação, preservar invariantes e construir modelos de domínio consistentes sem transformar sua aplicação em uma coleção de verificações espalhadas pelo código. Este artigo faz parte da nossa…</description>
+    </item>
+    <item>
       <title>O que realmente importa quando o MCP deixa de ser uma demonstração e passa a fazer parte da arquitetura de um sistema.</title>
       <link>https://www.linkedin.com/pulse/o-que-realmente-importa-quando-mcp-deixa-de-ser-uma-e-de-oliveira-zemsf/</link>
       <guid isPermaLink="true">https://www.linkedin.com/pulse/o-que-realmente-importa-quando-mcp-deixa-de-ser-uma-e-de-oliveira-zemsf/</guid>
@@ -82,13 +89,6 @@
       <guid isPermaLink="true">https://www.linkedin.com/pulse/%C3%A9-poss%C3%ADvel-detectar-complexidade-big-o-durante-rodrigo-de-oliveira-b0upf/</guid>
       <pubDate>Wed, 16 Sep 2026 00:00:00 GMT</pubDate>
       <description>Quando aprendemos análise de algoritmos, normalmente fazemos o exercício de olhar para um trecho de código e tentar responder perguntas como: quantas vezes esse laço executa? Existe outro laço dentro dele? Essa busca percorre uma coleção inteira? Essa recursão divide o problema pela metade? Depois d</description>
-    </item>
-    <item>
-      <title>Aggregates e Aggregate Roots: desenhando fronteiras de consistência</title>
-      <link>https://www.linkedin.com/pulse/aggregates-e-aggregate-roots-desenhando-fronteiras-de-de-oliveira-c4fkf/</link>
-      <guid isPermaLink="true">https://www.linkedin.com/pulse/aggregates-e-aggregate-roots-desenhando-fronteiras-de-de-oliveira-c4fkf/</guid>
-      <pubDate>Mon, 14 Sep 2026 00:00:00 GMT</pubDate>
-      <description>Este é o oitavo artigo da série sobre Domain-Driven Design. No texto anterior, falamos sobre Primitive Obsession e modelo anêmico, discutindo como trazer significado e comportamento de volta ao domínio.</description>
     </item>
   </channel>
 </rss>
