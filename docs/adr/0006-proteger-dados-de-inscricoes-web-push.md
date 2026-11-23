@@ -16,10 +16,10 @@ Coletar somente endpoint, chaves `p256dh` e `auth`, idioma PT-BR, instante e ver
 
 A inscrição dependerá de ação voluntária e informação clara sobre finalidade, fornecedor e cancelamento. Adotaremos consentimento como base legal proposta, sujeito a revisão do aviso de privacidade e do enquadramento jurídico antes da ativação. O visitante poderá cancelar pelo próprio site; a API deverá verificar que a solicitação tem controle legítimo sobre a inscrição antes de excluí-la. Também serão removidos endpoints rejeitados permanentemente pelo serviço de push e inscrições expiradas conforme política de retenção a ser definida e documentada.
 
-Persistir as inscrições no Firestore em `southamerica-east1`, restringir IAM por identidade e regionalizar logs e segredos que possam conter dados da operação. Mapear os fluxos com provedores de push e avaliar transferência internacional nos termos da LGPD e da regulamentação da ANPD. Disponibilizar canal para exercício de direitos quando o navegador original não estiver acessível.
+Persistir as inscrições em serviço gerenciado na região `brazilsouth` (São Paulo), restringir acesso por identidade e regionalizar logs e segredos que possam conter dados da operação. Mapear os fluxos com provedores de push e avaliar transferência internacional nos termos da LGPD e da regulamentação da ANPD. Disponibilizar canal para exercício de direitos quando o navegador original não estiver acessível.
 
 ## Consequences
 
 A aplicação poderá operar sem cadastro, reduzindo coleta, fricção e impacto de eventual incidente. Consentimento e cancelamento poderão ser rastreados sem recorrer a dados pessoais adicionais.
 
-Continuarão existindo responsabilidades de segurança, retenção, atendimento a titulares e avaliação de fornecedores. A localização do Firestore não garante que todo o tratamento permaneça no Brasil. Antes da entrada em produção, será necessário aprovar o aviso de privacidade, o prazo de retenção e o fluxo de exclusão; a ADR não equivale a parecer jurídico.
+Continuarão existindo responsabilidades de segurança, retenção, atendimento a titulares e avaliação de fornecedores. A localização do banco de dados não garante que todo o tratamento permaneça no Brasil. Antes da entrada em produção, será necessário aprovar o aviso de privacidade, o prazo de retenção e o fluxo de exclusão; a ADR não equivale a parecer jurídico.
