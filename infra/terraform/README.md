@@ -81,8 +81,24 @@ As verificações de PR não inicializam o backend e não acessam a Azure:
 
 ```bash
 terraform fmt -check -recursive
-terraform init -backend=false -input=false
+terraform init -backend=false -input=false -lockfile=readonly
 terraform validate -no-color
 ```
+
+### Manutenção do lockfile de providers
+
+Ao incluir uma plataforma ou atualizar um provider deliberadamente, use o Terraform CLI fixado no CI e o registry oficial. Preserve a seleção existente (sem `-upgrade`) quando a intenção for apenas complementar checksums:
+
+```bash
+terraform providers lock \
+  -platform=linux_amd64 \
+  -platform=windows_amd64 \
+  -platform=darwin_amd64 \
+  -platform=darwin_arm64
+```
+
+Revise a assinatura apresentada pelo Terraform, a versão e o diff de `.terraform.lock.hcl`. Versione o lockfile gerado, não hashes calculados manualmente ou obtidos de fontes não verificadas. A inicialização em PR e na validação autenticada usa `-lockfile=readonly` para não ocultar divergências. Se um checksum não corresponder, investigue a origem do pacote antes de atualizar o arquivo; não desabilite a verificação.
+
+Referência: [terraform providers lock](https://developer.hashicorp.com/terraform/cli/commands/providers/lock).
 
 Uma consulta real, `plan` ou importação exige autenticação e deve ocorrer apenas em contexto confiável e explicitamente autorizado.
