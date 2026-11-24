@@ -24,6 +24,9 @@ Minha trajetória, meus projetos e publicações estão no [portfólio](https://
 
 O site está disponível em [português](https://rodri-oliveira-dev.github.io/), [inglês](https://rodri-oliveira-dev.github.io/en/) e [espanhol](https://rodri-oliveira-dev.github.io/es/).
 
+[![WCAG 2.2 AA: objetivo de conformidade](https://img.shields.io/badge/WCAG%202.2-AA%20Target-blue)](docs/accessibility-audit.md)
+[![Testes automatizados de acessibilidade](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/accessibility.yml/badge.svg?branch=main)](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/accessibility.yml)
+
 <details>
 <summary>Sobre este repositório</summary>
 
