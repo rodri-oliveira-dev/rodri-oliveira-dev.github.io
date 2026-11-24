@@ -113,6 +113,8 @@ Esse último ponto funciona como um gate de drift: se catálogo, homepage, dados
 
 ### Accessibility
 
+O contraste textual renderizado é verificado pelo axe no Pa11y CI sem exclusão global de `color-contrast`. O teste de tokens permanece complementar; casos inconclusivos (por exemplo, gradientes e imagens) e contraste não textual exigem avaliação adicional.
+
 A suíte `scripts/test-accessibility-adaptations.cjs` complementa Pa11y com regressões de ampliação de fonte, reflow, espaçamento de texto e árvore AX do Chromium. Não substitui zoom nativo ou testes com leitores de tela.
 
 O [`accessibility.yml`](workflows/accessibility.yml) sobe o site em um servidor HTTP local e executa Pa11y CI contra as três homepages, currículos e páginas de serviços, além de todos os estudos de caso e das três páginas de fallback offline em português, inglês e espanhol. A avaliação direta do fallback não substitui testes do fluxo offline com service worker.
