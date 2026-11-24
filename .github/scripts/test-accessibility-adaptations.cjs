@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const puppeteer = require("puppeteer");
 const { urls } = require("../../.pa11yci.cjs");
 const ORIGIN = process.env.SITE_ORIGIN || "http://127.0.0.1:8080";
+const results = require("./accessibility-results.cjs").createResults("Text adaptations and accessibility tree");
 
 // These checks supplement Pa11y. They are not browser zoom or AT conformance tests.
 const inspectContent = () => {
@@ -34,10 +35,10 @@ const inspectContent = () => {
 
 async function assertLayout(page, url, mode, baseline) {
   const actual = await page.evaluate(inspectContent);
-  assert.ok(actual.documentWidth <= actual.viewport + 1, `${url} ${mode}: horizontal page overflow`);
-  assert.deepEqual(actual.clipped, [], `${url} ${mode}: potentially clipped text or controls`);
-  assert.equal(actual.text, baseline.text, `${url} ${mode}: visible main text changed`);
-  assert.deepEqual(actual.controls, baseline.controls, `${url} ${mode}: visible controls changed`);
+  await results.run(`${url} | ${mode} | horizontal overflow`, () => assert.ok(actual.documentWidth <= actual.viewport + 1, `document ${actual.documentWidth}px / viewport ${actual.viewport}px`));
+  await results.run(`${url} | ${mode} | clipped content`, () => assert.deepEqual(actual.clipped, []));
+  await results.run(`${url} | ${mode} | main text`, () => assert.equal(actual.text, baseline.text));
+  await results.run(`${url} | ${mode} | visible controls`, () => assert.deepEqual(actual.controls, baseline.controls));
 }
 
 async function enlargeText(page) {
@@ -107,32 +108,39 @@ async function assertMobileMenuTree(page, url) {
   try {
     for (const configuredUrl of urls) {
       const url = new URL(new URL(configuredUrl).pathname, ORIGIN).href;
-      const page = await browser.newPage();
-      try {
-        await page.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: "reduce" }]);
-        await page.setViewport({ width: 1280, height: 900, deviceScaleFactor: 1 });
-        await page.goto(url, { waitUntil: "load" });
+      const scenario = async (name, width, height, check) => {
+        await results.run(url + " | " + name, async () => {
+          const page = await browser.newPage();
+          try {
+            await page.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: "reduce" }]);
+            await page.setViewport({ width, height, deviceScaleFactor: 1 });
+            await page.goto(url, { waitUntil: "load" });
+            await check(page);
+          } finally {
+            await page.close();
+          }
+        });
+      };
+      let desktopHeading;
+      await scenario("Desktop accessibility tree", 1280, 900, async page => {
+        desktopHeading = await page.$eval("main h1", element => element.innerText.trim());
         await assertAccessibilityTree(page, url);
-        const desktop = await page.evaluate(inspectContent);
-        const desktopHeading = await page.$eval("main h1", (element) => element.innerText.trim());
+      });
+      await scenario("200% text", 1280, 900, async page => {
+        const baseline = await page.evaluate(inspectContent);
         await enlargeText(page);
-        await assertLayout(page, url, "200% computed font-size", desktop);
-
-        // 320 CSS px is the horizontal reflow equivalent of 1280px at 400% zoom.
-        // Establish a mobile baseline because responsive navigation intentionally differs.
-        await page.setViewport({ width: 320, height: 256, deviceScaleFactor: 1 });
-        await page.reload({ waitUntil: "load" });
+        await assertLayout(page, url, "200% computed font-size", baseline);
+      });
+      await scenario("320px reflow", 320, 256, async page => {
         const mobile = await page.evaluate(inspectContent);
-        // The mobile layout intentionally hides a redundant hero email link.
-        // Compare primary headings separately across responsive breakpoints.
-        const mobileHeading = await page.$eval("main h1", (element) => element.innerText.trim());
-        assert.equal(mobileHeading, desktopHeading, `${url}: primary heading lost at reflow width`);
+        const heading = await page.$eval("main h1", element => element.innerText.trim());
+        await results.run(url + " | reflow | primary heading", () => assert.equal(heading, desktopHeading, "Desktop and mobile primary heading must match"));
         await assertLayout(page, url, "320px reflow", mobile);
-        await assertAccessibilityTree(page, url);
-        await assertMobileMenuTree(page, url);
-        // Independent WCAG 1.4.12 overrides, not combined with the 200% test.
-        await page.reload({ waitUntil: "load" });
-        const beforeSpacing = await page.evaluate(inspectContent);
+      });
+      await scenario("Mobile accessibility tree", 320, 256, page => assertAccessibilityTree(page, url));
+      await scenario("Mobile menu accessibility tree", 320, 256, page => assertMobileMenuTree(page, url));
+      await scenario("WCAG text spacing", 320, 256, async page => {
+        const baseline = await page.evaluate(inspectContent);
         await page.evaluate(() => {
           for (const element of document.querySelectorAll("body, body *")) {
             if (element instanceof SVGElement) continue;
@@ -142,14 +150,12 @@ async function assertMobileMenuTree(page, url) {
             if (element.tagName === "P") element.style.setProperty("margin-bottom", "2em", "important");
           }
         });
-        await assertLayout(page, url, "WCAG text spacing", beforeSpacing);
-        console.log("PASS", url);
-      } finally {
-        await page.close();
-      }
+        await assertLayout(page, url, "WCAG text spacing", baseline);
+      });
     }
   } finally {
     await browser.close();
+    results.finish();
   }
 })().catch((error) => {
   console.error(error);

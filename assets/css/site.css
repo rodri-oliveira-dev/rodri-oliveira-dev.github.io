@@ -1376,17 +1376,19 @@ h1 {
 }
 
 .case-study-constraint-grid {
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .case-study-decision-grid,
 .case-study-failure-grid {
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .case-study-constraint-grid article,
 .case-study-decision-grid article,
 .case-study-failure-grid article {
+  min-width: 0;
+  overflow-wrap: anywhere;
   padding: 28px;
   border-right: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
@@ -1454,6 +1456,7 @@ h1 {
 
 .case-study-flow li {
   min-width: 0;
+  overflow-wrap: anywhere;
   min-height: 160px;
   padding: 22px;
   border-right: 1px solid var(--line);
@@ -1620,12 +1623,14 @@ h1 {
 
 .case-study-outcomes {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   margin-top: 24px;
 }
 
 .case-study-outcomes article {
+  min-width: 0;
+  overflow-wrap: anywhere;
   padding: 20px;
   border: 1px solid var(--line);
   border-radius: 14px;

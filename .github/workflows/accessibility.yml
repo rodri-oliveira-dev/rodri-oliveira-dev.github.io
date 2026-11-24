@@ -46,9 +46,11 @@ jobs:
           echo "PUPPETEER_EXECUTABLE_PATH=${chrome_path}" >> "$GITHUB_ENV"
 
       - name: Validate contrast tokens
+        id: tokens
         run: node .github/scripts/check-contrast.mjs
 
       - name: Validate accessibility page discovery
+        id: discovery
         run: |
           node - <<'NODE'
           const config = require("./.pa11yci.cjs");
@@ -123,20 +125,50 @@ jobs:
         run: npx --no-install pa11y-ci --config .pa11yci.cjs --threshold 0
 
       - name: Diagnose rendered contrast on Pa11y failure
+        id: diagnosis
         if: ${{ !cancelled() && steps.pa11y.outcome == 'failure' }}
         run: node .github/scripts/diagnose-rendered-contrast.cjs
 
       - name: Validate responsive layout and keyboard navigation
+        id: responsive
         if: ${{ !cancelled() && steps.site.outcome == 'success' }}
         run: node .github/scripts/test-responsive.cjs
 
       - name: Validate text adaptations and accessibility tree
+        id: adaptations
         if: ${{ !cancelled() && steps.site.outcome == 'success' }}
         run: node .github/scripts/test-accessibility-adaptations.cjs
 
       - name: Validate contrast preferences
+        id: preferences
         if: ${{ !cancelled() && steps.site.outcome == 'success' }}
         run: node .github/scripts/test-contrast-preference.cjs
+
+      - name: Summarize accessibility workflow
+        if: always()
+        env:
+          TOKENS: ${{ steps.tokens.outcome }}
+          DISCOVERY: ${{ steps.discovery.outcome }}
+          SITE: ${{ steps.site.outcome }}
+          PA11Y: ${{ steps.pa11y.outcome }}
+          DIAGNOSIS: ${{ steps.diagnosis.outcome }}
+          RESPONSIVE: ${{ steps.responsive.outcome }}
+          ADAPTATIONS: ${{ steps.adaptations.outcome }}
+          PREFERENCES: ${{ steps.preferences.outcome }}
+        run: |
+          {
+            echo '## Accessibility workflow'
+            echo '| Suite | Result |'
+            echo '| --- | --- |'
+            printf '| Contrast tokens | %s |\n' "${TOKENS:-not run}"
+            printf '| URL discovery | %s |\n' "${DISCOVERY:-not run}"
+            printf '| Local site | %s |\n' "${SITE:-not run}"
+            printf '| Pa11y / axe | %s |\n' "${PA11Y:-not run}"
+            printf '| Contrast diagnostics | %s |\n' "${DIAGNOSIS:-not run}"
+            printf '| Responsive and keyboard | %s |\n' "${RESPONSIVE:-not run}"
+            printf '| Text adaptations and AX tree | %s |\n' "${ADAPTATIONS:-not run}"
+            printf '| Contrast preferences | %s |\n' "${PREFERENCES:-not run}"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Stop local site
         if: always()

@@ -5,6 +5,7 @@ const puppeteer = require("puppeteer");
 
 const ROOT = path.resolve(__dirname, "../..");
 const ORIGIN = process.env.SITE_ORIGIN || "http://127.0.0.1:8080";
+const results = require("./accessibility-results.cjs").createResults("Responsive layout and keyboard navigation");
 const keyboardOnly = process.env.RESPONSIVE_KEYBOARD_ONLY === "1";
 const navigationOnly = process.env.RESPONSIVE_NAVIGATION_ONLY === "1";
 const widths = [320, 360, 390, 768, 1024, 1440];
@@ -215,6 +216,7 @@ const assertMobileLinkNavigation = async (page, url, profileName) => {
 (async () => {
   for (const width of keyboardOnly || navigationOnly ? [] : widths) {
     for (const url of urls) {
+      await results.run(`${url} | layout | ${width}px`, async () => {
       let result;
       let loadError;
       for (let attempt = 1; attempt <= 3 && !result; attempt += 1) {
@@ -242,11 +244,13 @@ const assertMobileLinkNavigation = async (page, url, profileName) => {
         assert.ok(Math.abs(result.heroArtworkWidth - result.heroActionsWidth) <= 1,
           `${url} aligns hero artwork (${result.heroArtworkWidth}px) and actions (${result.heroActionsWidth}px) at ${width}px`);
       }
+      });
     }
   }
 
   for (const root of navigationOnly ? [] : roots) {
     const url = root ? `/${root}/` : "/";
+    await results.run(`${url} | keyboard | 390px`, async () => {
     let completed = false;
     let keyboardError;
     for (let attempt = 1; attempt <= 3 && !completed; attempt += 1) {
@@ -294,12 +298,14 @@ const assertMobileLinkNavigation = async (page, url, profileName) => {
       }
     }
     if (!completed) throw new Error(`Keyboard validation failed for ${url} after 3 attempts`, { cause: keyboardError });
+    });
   }
 
   if (!keyboardOnly) {
     for (const profile of mobileProfiles) {
       for (const root of roots) {
         const url = root ? `/${root}/` : "/";
+        await results.run(`${url} | mobile navigation | ${profile.name}`, async () => {
         let completed = false;
         let navigationError;
         for (let attempt = 1; attempt <= 3 && !completed; attempt += 1) {
@@ -322,9 +328,11 @@ const assertMobileLinkNavigation = async (page, url, profileName) => {
         if (!completed) {
           throw new Error(`Mobile link validation failed for ${url} on ${profile.name}`, { cause: navigationError });
         }
+        });
       }
     }
 
+    await results.run("/ | Safari focusout sequence", async () => {
     const browser = await launchBrowser();
     try {
       const page = await browser.newPage();
@@ -350,6 +358,7 @@ const assertMobileLinkNavigation = async (page, url, profileName) => {
     } finally {
       await browser.close();
     }
+    });
   }
   // Cover representative narrow and wide layouts across every localized route.
   // Reuse one browser; each route starts with a fresh page and native focus order.
@@ -358,6 +367,7 @@ const assertMobileLinkNavigation = async (page, url, profileName) => {
     try {
       for (const width of [320, 390, 768, 1440]) {
         for (const url of (width === 390 || width === 1440 ? urls : roots.map((root) => root ? `/${root}/` : "/"))) {
+          await results.run(`${url} | focus traversal | ${width}px`, async () => {
           const page = await browser.newPage();
           try {
             await page.setViewport({ width, height: 844, deviceScaleFactor: 1 });
@@ -367,6 +377,7 @@ const assertMobileLinkNavigation = async (page, url, profileName) => {
           } finally {
             await page.close();
           }
+          });
         }
       }
     } finally {
@@ -379,6 +390,7 @@ const assertMobileLinkNavigation = async (page, url, profileName) => {
     try {
       for (const root of roots) {
         const url = root ? `/${root}/` : "/";
+        await results.run(`${url} | install guide focus`, async () => {
         const page = await browser.newPage();
         try {
           await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1 });
@@ -394,6 +406,7 @@ const assertMobileLinkNavigation = async (page, url, profileName) => {
         } finally {
           await page.close();
         }
+        });
       }
     } finally {
       await browser.close();
@@ -404,6 +417,7 @@ const assertMobileLinkNavigation = async (page, url, profileName) => {
     const browser = await launchBrowser();
     try {
       for (const servicePath of servicePaths) {
+        await results.run(`${servicePath} | service anchor navigation`, async () => {
         const page = await browser.newPage();
         try {
           await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1 });
@@ -424,11 +438,14 @@ const assertMobileLinkNavigation = async (page, url, profileName) => {
         } finally {
           await page.close();
         }
+        });
       }
     } finally {
       await browser.close();
     }
   }
+  results.finish();
+  if (process.exitCode) return;
   console.log(keyboardOnly
     ? "Validated keyboard navigation in PT/EN/ES."
     : navigationOnly
