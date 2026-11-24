@@ -87,7 +87,7 @@ Antes de mesclar a mudança de estratégia, confirme **Settings → Pages → So
 
 O [`terraform-validation.yml`](workflows/terraform-validation.yml) executa `terraform fmt -check -recursive`, confere os lockfiles assinados para Linux, Windows e macOS, inicializa os dois roots com `terraform init -backend=false -input=false -lockfile=readonly` e aplica `terraform validate -no-color`. O gate roda em todo Pull Request, sem credenciais e sem acessar o backend remoto, para continuar publicando o status mesmo quando a mudança não envolve IaC.
 
-Execuções manuais oferecem `validate`, `plan` ou `apply`. `plan` e `apply` são rejeitados fora de `refs/heads/main`, usam checkout explícito da `main`, serialização por branch e o Environment `terraform-dev`. Somente esses jobs recebem `id-token: write`; as variáveis `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` e `AZURE_SUBSCRIPTION_ID` são mapeadas para OIDC/`ARM_*`, sem client secret. O plano e os logs potencialmente sensíveis permanecem apenas em arquivos efêmeros do runner e não são publicados como artefatos.
+Execuções manuais oferecem `validate`, `validate-oidc`, `plan` ou `apply`. As operações autenticadas são rejeitadas fora de `refs/heads/main`, usam serialização por branch e o Environment `terraform-dev`; `plan` e `apply` usam checkout explícito da `main`. `validate-oidc` comprova autenticação e leitura do Resource Group, sem inicializar o backend ou executar operações Terraform. Somente os jobs autenticados recebem `id-token: write`; as variáveis `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` e `AZURE_SUBSCRIPTION_ID` são mapeadas para OIDC/`ARM_*`, sem client secret. O plano e os logs potencialmente sensíveis permanecem apenas em arquivos efêmeros do runner e não são publicados como artefatos.
 
 `apply` exige simultaneamente despacho manual, confirmação textual `APPLY` e aprovação humana configurada no Environment. Ele cria um plano novo após a aprovação e aplica exatamente esse arquivo; um plano de outra execução nunca é reutilizado. Antes de habilitar o job, o Environment deve impedir bypass de administradores e possuir uma credencial Entra com o subject exato documentado em [`infra/terraform/README.md`](../infra/terraform/README.md). A proteção da `main` também deve exigir Pull Request e impedir force-push/exclusão. Enquanto esses controles externos não estiverem comprovados, o job não está autorizado para uso.
 
@@ -401,6 +401,8 @@ Além dos workflows, a automação depende destes arquivos:
 - [`scripts/summarize-zizmor.mjs`](scripts/summarize-zizmor.mjs) — resumo e comentário do zizmor.
 
 Ao alterar um workflow ou um desses arquivos de suporte, o Pull Request deve permanecer verde nos gates aplicáveis antes do merge.
+
+A baseline RBAC atual da identidade de deploy é `Reader` no Resource Group e `Storage Blob Data Contributor` no contêiner `tfstate`; não há permissão de provisionamento concedida. A reconciliação de identidade verifica as atribuições diretas nos escopos conhecidos por pós-condições de data sources, em plano local do operador autorizado. O CI sem credenciais não comprova essa baseline efetiva. Antes do primeiro apply, revisar os papéis específicos dos recursos modelados, a separação de IAM e a aprovação do plano efetivo; ver [baseline e riscos](../infra/terraform/README.md#baseline-rbac-de-bootstrap-e-evolução).
 
 ### Azure OIDC Validation
 
