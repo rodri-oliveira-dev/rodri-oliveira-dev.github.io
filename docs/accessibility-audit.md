@@ -17,7 +17,7 @@ Revisão estática de código e configuração, 2026-11-24. Não é avaliação 
 | 3.3.7 (A), 3.3.8 (AA) | Nenhum fluxo de autenticação ou formulário identificado na homepage inspecionada | Confirmar escopo total e reavaliar quando novas interações forem introduzidas |
 | 4.1.3 (AA) | Aviso PWA possui controles com aria-expanded e aria-controls | Validar anúncios de status sem mudança de foco quando aplicável; testar leitores de tela |
 | PWA offline | Fallback HTML nos três idiomas com main, h1 e link | Incluir no Pa11y CI; testar offline real, navegação de retorno e tecnologia assistiva |
-| PWA instalação | Botão de fechar e expandir com nomes acessíveis; alvos de 44px | Ao fechar o aviso, o script oculta o elemento sem transferir explicitamente o foco. Reproduzir com teclado em Safari/iOS e definir destino lógico; testar sobreposição e scroll |
+| PWA instalação | Botão de fechar e expandir com nomes acessíveis; alvos de 44px | Correção proposta: transferir foco ao rodapé seguinte antes de ocultar um descendente focado, com teste de regressão nos três idiomas. Validar em Safari/iOS e testar sobreposição e scroll |
 | PDF | Currículos HTML no Pa11y | Avaliar PDFs gerados separadamente: tags, idioma, título, ordem de leitura, links e texto selecionável |
 
 A matriz acima cobre áreas prioritárias, não todos os critérios A/AA. Completar inventário a partir da norma antes de concluir #174. Não marcar critérios como conformes ou não aplicáveis apenas por inspeção estática.
