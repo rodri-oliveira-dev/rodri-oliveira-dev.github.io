@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -32,6 +33,54 @@ class ReleaseTests(unittest.TestCase):
             with patch.object(release, "api", return_value="new-sha"):
                 with self.assertRaisesRegex(RuntimeError, "main advanced"):
                     release.require_main("owner/repo", "old-sha")
+
+    def test_plan_requires_one_recovery_mode(self):
+        base = {
+            "GITHUB_REF": "refs/heads/main",
+            "TERRAFORM_CONFIRMATION": "APPLY",
+            "ALLOW_FIRST_BACKEND_DEPLOY": "false",
+            "BACKEND_ROLLBACK_RUN_ID": "",
+        }
+        with patch.dict(release.os.environ, base, clear=True), patch.object(release, "require_main"):
+            with self.assertRaisesRegex(RuntimeError, "exactly one"):
+                release.plan("owner/repo", "a" * 40)
+
+    def test_plan_rejects_non_release_rollback_run(self):
+        environment = {
+            "GITHUB_REF": "refs/heads/main",
+            "TERRAFORM_CONFIRMATION": "APPLY",
+            "ALLOW_FIRST_BACKEND_DEPLOY": "false",
+            "BACKEND_ROLLBACK_RUN_ID": "42",
+        }
+        invalid = json.dumps({
+            "conclusion": "failure", "event": "workflow_dispatch",
+            "head_branch": "main", "path": ".github/workflows/deploy-pages.yml",
+        })
+        with patch.dict(release.os.environ, environment, clear=True), patch.object(
+            release, "require_main"
+        ), patch.object(release, "api", return_value=invalid):
+            with self.assertRaisesRegex(RuntimeError, "successful main release"):
+                release.plan("owner/repo", "a" * 40)
+
+    def test_tag_is_idempotent_and_never_retargeted(self):
+        environment = {"RELEASE_TAG": "1.2.3"}
+        with patch.dict(release.os.environ, environment), patch.object(
+            release, "command", side_effect=["1.2.3", "a" * 40]
+        ), patch.object(release, "api") as api:
+            release.create_tag("owner/repo", "a" * 40)
+            api.assert_not_called()
+        with patch.dict(release.os.environ, environment), patch.object(
+            release, "command", side_effect=["1.2.3", "b" * 40]
+        ):
+            with self.assertRaisesRegex(RuntimeError, "different commit"):
+                release.create_tag("owner/repo", "a" * 40)
+
+    def test_release_resume_does_not_duplicate_existing_release(self):
+        with patch.dict(release.os.environ, {"RELEASE_TAG": "1.2.3"}), patch.object(
+            release, "command", return_value="a" * 40
+        ), patch.object(release, "api", return_value="1.2.3"), patch("builtins.print") as output:
+            release.publish_release("owner/repo", "a" * 40)
+            output.assert_called_once_with("Release 1.2.3 already exists")
 
 
 if __name__ == "__main__":

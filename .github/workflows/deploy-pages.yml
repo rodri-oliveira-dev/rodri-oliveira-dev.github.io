@@ -2,40 +2,66 @@ name: Release and Deploy
 
 on:
   pull_request:
-    paths:
-      - 'curriculo/**'
-      - 'en/resume/**'
-      - 'es/curriculo/**'
-      - 'servicos/**'
-      - 'en/services/**'
-      - 'es/servicios/**'
-      - 'assets/css/servicos.css'
-      - 'assets/js/webmcp.js'
-      - 'assets/js/webmcp-services.mjs'
-      - 'assets/js/webmcp-services-data.mjs'
-      - '.github/scripts/generate-resume-pdf.mjs'
-      - '.github/workflows/deploy-pages.yml'
-      - '.github/scripts/site-release.py'
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       bump:
-        description: Semantic version increment (ignored when this commit already has a tag)
+        description: Semantic version increment
         required: true
         type: choice
         default: patch
-        options:
-          - patch
-          - minor
-          - major
+        options: [patch, minor, major]
+      terraform_confirmation:
+        description: Type APPLY after reviewing the protected workload plan
+        required: true
+        type: string
+      allow_destructive_terraform_changes:
+        description: Explicitly approve Terraform deletes or replacements
+        required: true
+        default: false
+        type: boolean
+      allow_first_backend_deploy:
+        description: Confirm that no rollback package exists for the first deploy
+        required: true
+        default: false
+        type: boolean
+      backend_rollback_run_id:
+        description: Previous successful run ID used only if backend smoke fails
+        required: false
+        type: string
 
 permissions:
   contents: read
-
 concurrency:
-  group: pages-${{ github.ref }}
+  group: production-release-${{ github.repository }}
   cancel-in-progress: false
+env:
+  DOTNET_VERSION: '10.0.x'
+  TERRAFORM_VERSION: '1.17.2'
+  TF_IN_AUTOMATION: 'true'
+  TF_INPUT: 'false'
 
 jobs:
+  backend_ci:
+    name: Build and test notifications backend
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Restore, build, test and audit
+        run: |
+          dotnet restore backend/notifications-functions/Notifications.Functions.slnx --locked-mode
+          dotnet build backend/notifications-functions/Notifications.Functions.slnx --no-restore --configuration Release
+          dotnet test backend/notifications-functions/Notifications.Functions.slnx --no-build --configuration Release
+          dotnet list backend/notifications-functions/Notifications.Functions.slnx package --vulnerable --include-transitive
+
   preflight:
     name: Validate release candidate
     if: github.event_name == 'workflow_dispatch'
@@ -46,101 +72,293 @@ jobs:
       contents: read
       pages: read
     outputs:
+      sha: ${{ steps.plan.outputs.sha }}
       tag: ${{ steps.plan.outputs.tag }}
     steps:
-      - name: Reject non-main dispatch
-        env:
-          REF: ${{ github.ref }}
-        run: test "$REF" = refs/heads/main
-      - name: Checkout repository
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Check Pages source, quality gates and version
+          ref: ${{ github.sha }}
+      - name: Check source, gates, release inputs and version
         id: plan
         env:
           GH_TOKEN: ${{ github.token }}
           BUMP: ${{ inputs.bump }}
+          TERRAFORM_CONFIRMATION: ${{ inputs.terraform_confirmation }}
+          ALLOW_FIRST_BACKEND_DEPLOY: ${{ inputs.allow_first_backend_deploy }}
+          BACKEND_ROLLBACK_RUN_ID: ${{ inputs.backend_rollback_run_id }}
         run: python3 .github/scripts/site-release.py plan
 
-  build:
+  terraform_plan:
+    name: Plan workload infrastructure
     needs: preflight
-    if: always() && !cancelled() && (github.event_name == 'pull_request' || needs.preflight.result == 'success')
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 20
+    environment: terraform-dev
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      fingerprint: ${{ steps.manifest.outputs.fingerprint }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: infra/terraform
+    env:
+      ARM_USE_OIDC: 'true'
+      ARM_USE_AZUREAD: 'true'
+      ARM_USE_CLI: 'false'
+      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_tenant_id: ${{ vars.AZURE_TENANT_ID }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          ref: ${{ needs.preflight.outputs.sha }}
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Create value-free action manifest
+        id: manifest
+        env:
+          ALLOW_DESTRUCTIVE: ${{ inputs.allow_destructive_terraform_changes }}
+        run: |
+          set -euo pipefail
+          plan_file="$RUNNER_TEMP/workload.tfplan"; plan_json="$RUNNER_TEMP/workload.json"; plan_log="$RUNNER_TEMP/workload-plan.log"
+          trap 'rm -f "$plan_file" "$plan_json" "$plan_log"' EXIT
+          terraform init -backend-config=backend.hcl.example -input=false -lockfile=readonly -no-color
+          if ! terraform plan -input=false -lock-timeout=5m -no-color -out="$plan_file" >"$plan_log" 2>&1; then echo 'Terraform plan failed; sensitive log withheld.' >&2; exit 1; fi
+          terraform show -json "$plan_file" >"$plan_json"
+          args=(); if [ "$ALLOW_DESTRUCTIVE" = true ]; then args+=(--allow-destructive); fi
+          python3 ../../.github/scripts/terraform-release-plan.py "$plan_json" "${args[@]}"
+
+  terraform_apply:
+    name: Apply approved workload plan
+    needs: [preflight, terraform_plan]
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 30
+    environment: terraform-dev
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      function_app_name: ${{ steps.coordinates.outputs.function_app_name }}
+      health_url: ${{ steps.coordinates.outputs.health_url }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: infra/terraform
+    env:
+      ARM_USE_OIDC: 'true'
+      ARM_USE_AZUREAD: 'true'
+      ARM_USE_CLI: 'false'
+      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_tenant_id: ${{ vars.AZURE_TENANT_ID }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          ref: ${{ needs.preflight.outputs.sha }}
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Recheck immutable main revision
+        working-directory: ${{ github.workspace }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ needs.preflight.outputs.sha }}
+        run: test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)" = "$RELEASE_SHA"
+      - name: Replan and apply the approved action manifest
+        env:
+          APPROVED_FINGERPRINT: ${{ needs.terraform_plan.outputs.fingerprint }}
+          ALLOW_DESTRUCTIVE: ${{ inputs.allow_destructive_terraform_changes }}
+        run: |
+          set -euo pipefail
+          plan_file="$RUNNER_TEMP/workload.tfplan"; plan_json="$RUNNER_TEMP/workload.json"; plan_log="$RUNNER_TEMP/workload-plan.log"; apply_log="$RUNNER_TEMP/workload-apply.log"; manifest_output="$RUNNER_TEMP/manifest-output"
+          trap 'rm -f "$plan_file" "$plan_json" "$plan_log" "$apply_log" "$manifest_output"' EXIT
+          terraform init -backend-config=backend.hcl.example -input=false -lockfile=readonly -no-color
+          terraform plan -input=false -lock-timeout=5m -no-color -out="$plan_file" >"$plan_log" 2>&1
+          terraform show -json "$plan_file" >"$plan_json"
+          args=(); if [ "$ALLOW_DESTRUCTIVE" = true ]; then args+=(--allow-destructive); fi
+          GITHUB_OUTPUT="$manifest_output" python3 ../../.github/scripts/terraform-release-plan.py "$plan_json" "${args[@]}"
+          test "$(sed -n 's/^fingerprint=//p' "$manifest_output")" = "$APPROVED_FINGERPRINT" || { echo 'Terraform actions changed after approval.' >&2; exit 1; }
+          if ! terraform apply -auto-approve -input=false -lock-timeout=5m -no-color "$plan_file" >"$apply_log" 2>&1; then echo 'Terraform apply failed; sensitive log withheld.' >&2; exit 1; fi
+          echo 'Applied the revalidated ephemeral workload plan; no plan, log, or State artifact was retained.' >>"$GITHUB_STEP_SUMMARY"
+      - name: Export non-secret deployment coordinates
+        id: coordinates
+        run: |
+          echo "function_app_name=$(terraform output -raw function_app_name)" >>"$GITHUB_OUTPUT"
+          echo "health_url=$(terraform output -raw function_app_health_url)" >>"$GITHUB_OUTPUT"
+
+  backend_package:
+    name: Package notifications backend
+    needs: [preflight, terraform_apply]
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          ref: ${{ needs.preflight.outputs.sha }}
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Test, audit and publish
+        run: |
+          dotnet restore backend/notifications-functions/Notifications.Functions.slnx --locked-mode
+          dotnet build backend/notifications-functions/Notifications.Functions.slnx --no-restore --configuration Release
+          dotnet test backend/notifications-functions/Notifications.Functions.slnx --no-build --configuration Release
+          dotnet list backend/notifications-functions/Notifications.Functions.slnx package --vulnerable --include-transitive
+          dotnet publish backend/notifications-functions/src/Notifications.Functions/Notifications.Functions.csproj --no-build --configuration Release --output "$RUNNER_TEMP/function-publish"
+          mkdir "$RUNNER_TEMP/function-package"
+          (cd "$RUNNER_TEMP/function-publish" && zip -X -q -r "$RUNNER_TEMP/function-package/notifications-function.zip" .)
+          python3 .github/scripts/function-release.py create "$RUNNER_TEMP/function-package/notifications-function.zip" "$RUNNER_TEMP/function-package/manifest.json" "${{ needs.preflight.outputs.sha }}" "$GITHUB_RUN_ID"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: notifications-function-${{ needs.preflight.outputs.sha }}
+          path: ${{ runner.temp }}/function-package
+          if-no-files-found: error
+          retention-days: 90
+
+  backend_deploy:
+    name: Deploy and verify notifications backend
+    needs: [preflight, terraform_apply, backend_package]
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 20
+    environment: functions-dev
+    permissions:
+      actions: read
+      contents: read
+      deployments: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ needs.preflight.outputs.sha }}
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: notifications-function-${{ needs.preflight.outputs.sha }}
+          path: ${{ runner.temp }}/current-package
+      - name: Download rollback candidate
+        if: inputs.backend_rollback_run_id != ''
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.backend_rollback_run_id }}
+          pattern: notifications-function-*
+          path: ${{ runner.temp }}/rollback-package
+          merge-multiple: true
+      - name: Verify package lineage
+        env:
+          RELEASE_SHA: ${{ needs.preflight.outputs.sha }}
+          ROLLBACK_RUN_ID: ${{ inputs.backend_rollback_run_id }}
+        run: |
+          python3 .github/scripts/function-release.py verify "$RUNNER_TEMP/current-package/notifications-function.zip" "$RUNNER_TEMP/current-package/manifest.json" --revision "$RELEASE_SHA"
+          if [ -n "$ROLLBACK_RUN_ID" ]; then
+            rollback_sha="$(python3 .github/scripts/function-release.py verify "$RUNNER_TEMP/rollback-package/notifications-function.zip" "$RUNNER_TEMP/rollback-package/manifest.json")"
+            python3 .github/scripts/function-release.py lineage "$RELEASE_SHA" "$rollback_sha"
+          fi
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_FUNCTIONS_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Detect an already deployed revision
+        id: deployment_state
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ needs.preflight.outputs.sha }}
+        run: |
+          deploy=true
+          while read -r deployment_id; do
+            if [ "$(gh api "repos/$GITHUB_REPOSITORY/deployments/$deployment_id/statuses" --jq '[.[] | select(.state == "success")] | length')" -gt 0 ]; then
+              deploy=false
+              break
+            fi
+          done < <(gh api "repos/$GITHUB_REPOSITORY/deployments?environment=functions-dev&sha=$RELEASE_SHA&per_page=100" --jq '.[].id')
+          echo "deploy=$deploy" >>"$GITHUB_OUTPUT"
+          if [ "$deploy" = false ]; then echo 'The exact revision is already deployed; only health will be rechecked.' >>"$GITHUB_STEP_SUMMARY"; fi
+      - name: Deploy immutable package
+        if: steps.deployment_state.outputs.deploy == 'true'
+        uses: Azure/functions-action@c5060b3b8bb1ebbcb531abd00c822ecbaa8ea656 # v1.5.7
+        with:
+          app-name: ${{ needs.terraform_apply.outputs.function_app_name }}
+          package: ${{ runner.temp }}/current-package/notifications-function.zip
+      - name: Smoke test
+        id: smoke
+        continue-on-error: true
+        env:
+          HEALTH_URL: ${{ needs.terraform_apply.outputs.health_url }}
+        run: curl --fail --silent --show-error --retry 8 --retry-delay 5 --retry-all-errors --max-time 15 "$HEALTH_URL" | jq -e '.status == "healthy"' >/dev/null
+      - name: Roll back failed backend deploy
+        if: steps.smoke.outcome == 'failure' && inputs.backend_rollback_run_id != ''
+        uses: Azure/functions-action@c5060b3b8bb1ebbcb531abd00c822ecbaa8ea656 # v1.5.7
+        with:
+          app-name: ${{ needs.terraform_apply.outputs.function_app_name }}
+          package: ${{ runner.temp }}/rollback-package/notifications-function.zip
+      - name: Verify result and preserve failure
+        if: steps.smoke.outcome == 'failure'
+        env:
+          HEALTH_URL: ${{ needs.terraform_apply.outputs.health_url }}
+          ROLLBACK_RUN_ID: ${{ inputs.backend_rollback_run_id }}
+        run: |
+          if [ -n "$ROLLBACK_RUN_ID" ]; then curl --fail --silent --show-error --retry 8 --retry-delay 5 --retry-all-errors --max-time 15 "$HEALTH_URL" | jq -e '.status == "healthy"' >/dev/null; fi
+          echo 'Backend release failed; rollback was attempted only when a verified package was selected.' >&2
+          exit 1
+
+  build:
     name: Generate PDF and build static site
+    needs: [preflight, backend_deploy]
+    if: always() && !cancelled() && (github.event_name != 'workflow_dispatch' || (needs.preflight.result == 'success' && needs.backend_deploy.result == 'success'))
     runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 20
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
-
-      - name: Set up Node.js
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+          ref: ${{ needs.preflight.outputs.sha || github.sha }}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           package-manager-cache: false
-
-      - name: Install pinned PDF renderer
+      - name: Generate and validate localized resume PDFs
         run: |
           npm install --no-save --no-package-lock --ignore-scripts playwright@1.65.0
           npx --no-install playwright install --with-deps chromium
-
-      - name: Generate localized resume PDFs
-        run: node .github/scripts/generate-resume-pdf.mjs
-
-      - name: Check localized resume PDF content, reading order, and pagination
-        run: |
-          if ! command -v pdftotext >/dev/null 2>&1; then
-            sudo apt-get update -qq
-            sudo apt-get install -y --no-install-recommends poppler-utils
-          fi
+          node .github/scripts/generate-resume-pdf.mjs
+          if ! command -v pdftotext >/dev/null 2>&1; then sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends poppler-utils; fi
           python3 .github/scripts/test_resume_pdf_order.py
-
-      - name: Assemble site
+      - name: Assemble allowlisted Pages artifact
         run: |
-          mkdir -p _site
-          rsync -a --exclude='/.git/' --exclude='/.github/' --exclude='/.agents/' --exclude='/.sonarcloud.properties' --exclude='/docs/agent-skills.md' --exclude='/docs/sonarcloud-integration.md' --exclude='/node_modules/' --exclude='/_site/' --exclude='*.log' ./ _site/
-          test ! -e _site/.agents
-          test ! -e _site/.sonarcloud.properties
-          test ! -e _site/docs/agent-skills.md
-          test ! -e _site/docs/sonarcloud-integration.md
-          test -s _site/curriculo/rodrigo-de-oliveira.pdf
-          test -s _site/en/resume/rodrigo-de-oliveira.pdf
-          test -s _site/es/curriculo/rodrigo-de-oliveira.pdf
-          test -f _site/curriculo/index.html
-          test -f _site/en/resume/index.html
-          test -f _site/es/curriculo/index.html
-          test -f _site/index.html
-          # PWA shell and localized fallbacks must be published at origin scope.
-          test -f _site/sw.js
-          test -f _site/assets/css/contrast.css
-          test -f _site/assets/js/contrast.js
-          test -f _site/assets/js/pwa-register.js
-          test -f _site/assets/css/offline.css
-          test -f _site/offline.html
-          test -f _site/en/offline.html
-          test -f _site/es/offline.html
-          # Keep all client-side WebMCP modules in the GitHub Pages artifact.
-          # Missing modules would break the dependency chain after publish.
-          test -f _site/assets/js/webmcp.js
-          test -f _site/assets/js/webmcp-tools.mjs
-          test -f _site/assets/js/webmcp-data.mjs
-          test -f _site/assets/js/webmcp-i18n.mjs
-          test -f _site/assets/js/webmcp-services.mjs
-          test -f _site/assets/js/webmcp-services-data.mjs
-          test -f _site/docs/webmcp.pt-BR.md
-          test -f _site/docs/webmcp.en.md
-          test -f _site/docs/webmcp.es-419.md
-          test -f _site/es/index.html
-          # Ensure all three localized service pages and their stylesheet are deployed.
-          test -f _site/servicos/index.html
-          test -f _site/en/services/index.html
-          test -f _site/es/servicios/index.html
-          test -f _site/assets/css/servicos.css
-
-      - name: Upload localized PDF previews for review
+          python3 .github/scripts/assemble-site.py . "$RUNNER_TEMP/pages-site"
+          test -s "$RUNNER_TEMP/pages-site/curriculo/rodrigo-de-oliveira.pdf"
+          test -s "$RUNNER_TEMP/pages-site/en/resume/rodrigo-de-oliveira.pdf"
+          test -s "$RUNNER_TEMP/pages-site/es/curriculo/rodrigo-de-oliveira.pdf"
+          test ! -e "$RUNNER_TEMP/pages-site/backend"
+          test ! -e "$RUNNER_TEMP/pages-site/infra"
+      - name: Upload localized PDF previews
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -150,21 +368,19 @@ jobs:
             en/resume/rodrigo-de-oliveira.pdf
             es/curriculo/rodrigo-de-oliveira.pdf
           if-no-files-found: error
-
       - name: Configure GitHub Pages
-        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
-
       - name: Upload Pages artifact
-        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
-          path: _site
+          path: ${{ runner.temp }}/pages-site
 
-  deploy:
+  pages_deploy:
     name: Deploy GitHub Pages
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     needs: [preflight, build]
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 10
     permissions:
@@ -174,41 +390,74 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Ensure selected commit is still the main head
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')" = "$GITHUB_SHA"
-      - name: Deploy Pages artifact
-        id: deployment
+          RELEASE_SHA: ${{ needs.preflight.outputs.sha }}
+        run: test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)" = "$RELEASE_SHA"
+      - id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
 
-  release:
-    name: Create tag and GitHub Release
-    needs: [preflight, deploy]
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+  pages_smoke:
+    name: Verify published Pages site
+    needs: pages_deploy
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 10
+    steps:
+      - name: Check public pages and generated PDFs
+        env:
+          PAGE_URL: ${{ needs.pages_deploy.outputs.page_url }}
+        run: |
+          set -euo pipefail
+          base="${PAGE_URL%/}"
+          for path in / /curriculo/ /en/resume/ /es/curriculo/ /curriculo/rodrigo-de-oliveira.pdf /en/resume/rodrigo-de-oliveira.pdf /es/curriculo/rodrigo-de-oliveira.pdf; do
+            curl --fail --silent --show-error --retry 8 --retry-delay 5 --retry-all-errors --max-time 20 --output /dev/null "$base$path"
+          done
+
+  tag:
+    name: Create immutable release tag
+    needs: [preflight, pages_smoke]
     runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 5
     permissions:
       contents: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Publish release for deployed SHA
+          ref: ${{ needs.preflight.outputs.sha }}
+      - name: Create tag for deployed revision
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
-        run: python3 .github/scripts/site-release.py publish
+        run: python3 .github/scripts/site-release.py tag
+
+  release:
+    name: Create GitHub Release
+    needs: [preflight, tag]
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ needs.preflight.outputs.sha }}
+      - name: Publish release for deployed revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
+        run: python3 .github/scripts/site-release.py release
 
   indexnow:
     name: Notify search engines
-    needs: [deploy, release]
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    needs: release
     permissions:
       contents: read
     uses: ./.github/workflows/indexnow.yml

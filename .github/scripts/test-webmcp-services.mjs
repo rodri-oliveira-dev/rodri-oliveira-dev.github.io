@@ -391,10 +391,8 @@ test("trilingual guides document all service tools, schemas and browser smoke te
 });
 
 test("CSP, read-only behavior and Pages bundle checks remain enforced", () => {
-  const deployment = read(".github/workflows/deploy-pages.yml");
-  for (const module of ["webmcp.js", "webmcp-services.mjs", "webmcp-services-data.mjs"]) {
-    assert.ok(deployment.includes("test -f _site/assets/js/" + module), module);
-  }
+  const assembler = read(".github/scripts/assemble-site.py");
+  assert.ok(assembler.includes('"assets"'), "Pages allowlist must include service modules");
   const site = read(".github/workflows/site-validation.yml");
   assert.ok(site.includes("node --test .github/scripts/test-webmcp-services.mjs"));
   for (const file of [

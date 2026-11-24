@@ -81,6 +81,14 @@ Franquias são compartilhadas no escopo da assinatura e não garantem custo zero
 
 O provisionador passa a precisar de ações create/read/update/delete estritamente necessárias em `Microsoft.Web/serverfarms`, `Microsoft.Web/sites`, `Microsoft.Storage/storageAccounts`, blob containers, queues e diagnostic settings, além das operações já derivadas na #144. Ele não precisa de acesso ao conteúdo das filas, artefatos, segredos ou deploy de código. O operador IAM separado precisa atribuir somente os dois papéis de dados modelados à identidade de runtime. A identidade de deploy da #148 deve receber escopo próprio na Function App e não reutilizar automaticamente Terraform, State ou runtime.
 
+## Release coordenada e separação de identidades (#148)
+
+`Release and Deploy` é o único workflow que pode aplicar o root de workload. O `terraform-validation.yml` mantém apenas validação, teste de OIDC e plano diagnóstico; não existe apply independente e o root `identity-reconciliation` permanece somente leitura. Plano, JSON, logs e State nunca são publicados como artifact. O resumo aprovado contém somente endereços, ações e fingerprint; um novo plano idêntico é produzido imediatamente antes do apply.
+
+O Environment `terraform-dev` usa `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` e `AZURE_SUBSCRIPTION_ID`. O Environment separado `functions-dev` usa `AZURE_FUNCTIONS_CLIENT_ID` com tenant e subscription compartilhados apenas como identificadores não secretos. Criar para ele uma credencial federada cujo subject seja `repo:rodri-oliveira-dev/rodri-oliveira-dev.github.io:environment:functions-dev`. A identidade correspondente deve ter somente as ações de deploy de pacote necessárias no escopo da Function App; não deve acessar State, conteúdo de fila, Cosmos, Key Vault, IAM ou provisionar recursos. Derivar e revisar a função efetiva antes do primeiro uso; esta documentação não concede RBAC.
+
+Antes do primeiro release, um operador separado deve: conceder à identidade de provisionamento somente as ações dos recursos realmente presentes no plano; configurar os papéis de dados condicionais do runtime; criar os valores VAPID diretamente no Key Vault; configurar a credencial e o Environment de deploy; e manter campanhas e inscrições públicas ausentes. O input de primeira publicação apenas reconhece que ainda não existe pacote anterior — não contorna aprovação, health check ou controles de acesso.
+
 ## Bootstrap manual do state remoto (#139)
 
 O armazenamento foi preparado manualmente em 24/11/2026, fora do state do workload. Não recrie nem importe esses recursos para este root module.

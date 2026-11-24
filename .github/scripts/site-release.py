@@ -1,4 +1,4 @@
-"""Plan and publish a manually deployed site release using the GitHub CLI."""
+"""Plan, tag and publish a coordinated immutable release using the GitHub CLI."""
 import json
 import os
 import re
@@ -8,8 +8,9 @@ from pathlib import Path
 
 SEMVER = re.compile(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)")
 REQUIRED = ("site-validation.yml", "accessibility.yml", "actions-security.yml",
-            "seo-validation.yml", "adr-guard.yml")
-OPTIONAL = ("pwa.yml", "terraform-validation.yml", "lighthouse.yml")
+            "seo-validation.yml", "adr-guard.yml", "terraform-validation.yml",
+            "deploy-pages.yml")
+OPTIONAL = ("pwa.yml", "lighthouse.yml")
 
 
 def command(*args):
@@ -54,8 +55,9 @@ def require_main(repo, sha):
 def check_runs(repo, sha):
     for workflow in REQUIRED + OPTIONAL:
         runs = json.loads(api(repo, f"actions/workflows/{workflow}/runs?branch=main&head_sha={sha}&per_page=100"))
+        accepted_events = ("push",) if workflow in REQUIRED else ("push", "workflow_dispatch")
         matches = [run for run in runs["workflow_runs"]
-                   if run["head_sha"] == sha and run["event"] in ("push", "workflow_dispatch")]
+                   if run["head_sha"] == sha and run["event"] in accepted_events]
         if not matches:
             if workflow in REQUIRED:
                 raise RuntimeError(f"Missing validation for {workflow} at {sha}; run it on main first")
@@ -68,6 +70,20 @@ def check_runs(repo, sha):
 
 def plan(repo, sha):
     require_main(repo, sha)
+    if os.environ.get("TERRAFORM_CONFIRMATION") != "APPLY":
+        raise RuntimeError("Release requires the exact Terraform confirmation APPLY")
+    rollback_run = os.environ.get("BACKEND_ROLLBACK_RUN_ID", "")
+    first_deploy = os.environ.get("ALLOW_FIRST_BACKEND_DEPLOY") == "true"
+    if bool(rollback_run) == first_deploy:
+        raise RuntimeError("Select exactly one backend recovery mode: first deploy or rollback run ID")
+    if rollback_run and not rollback_run.isdecimal():
+        raise RuntimeError("Backend rollback run ID must be numeric")
+    if rollback_run:
+        run = json.loads(api(repo, f"actions/runs/{rollback_run}"))
+        if (run.get("conclusion") != "success" or run.get("event") != "workflow_dispatch"
+                or run.get("head_branch") != "main"
+                or run.get("path") != ".github/workflows/deploy-pages.yml"):
+            raise RuntimeError("Backend rollback must reference a successful main release run")
     if api(repo, "pages", "--jq", ".build_type") != "workflow":
         raise RuntimeError("Select GitHub Actions as the Pages source in Settings > Pages")
     check_runs(repo, sha)
@@ -76,11 +92,11 @@ def plan(repo, sha):
         command("git", "tag", "--list").splitlines(), os.environ["BUMP"])
     with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as out:
         out.write(f"tag={tag}\n")
+        out.write(f"sha={sha}\n")
     print(f"Release candidate: {tag} ({sha})")
 
 
-def publish(repo, sha):
-    require_main(repo, sha)
+def create_tag(repo, sha):
     tag = os.environ["RELEASE_TAG"]
     if version(tag) is None:
         raise RuntimeError("Invalid release tag")
@@ -95,6 +111,14 @@ def publish(repo, sha):
                          "-f", f"object={sha}", "-f", "type=commit", "--jq", ".sha")
         api(repo, "git/refs", "--method", "POST", "-f", f"ref=refs/tags/{tag}",
             "-f", f"sha={tag_object}")
+
+
+def publish_release(repo, sha):
+    tag = os.environ["RELEASE_TAG"]
+    if version(tag) is None:
+        raise RuntimeError("Invalid release tag")
+    if command("git", "rev-list", "-n", "1", tag) != sha:
+        raise RuntimeError(f"Tag {tag} does not point to the deployed commit")
     # List rather than swallowing arbitrary errors from a failed release lookup.
     release_tags = api(repo, "releases?per_page=100", "--paginate",
                        "--jq", ".[] | select(.draft == false) | .tag_name").splitlines()
@@ -120,7 +144,7 @@ def publish(repo, sha):
 
 def main():
     repo, sha = os.environ["GITHUB_REPOSITORY"], os.environ["GITHUB_SHA"]
-    {"plan": plan, "publish": publish}[sys.argv[1]](repo, sha)
+    {"plan": plan, "tag": create_tag, "release": publish_release}[sys.argv[1]](repo, sha)
 
 
 if __name__ == "__main__":
