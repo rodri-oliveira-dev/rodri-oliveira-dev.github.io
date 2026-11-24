@@ -120,6 +120,9 @@ Esse último ponto funciona como um gate de drift: se catálogo, homepage, dados
 
 ### Accessibility
 
+O check `WCAG 2 AA accessibility` é publicado em todos os PRs. O job sempre executa os testes unitários do seletor de impacto e compara os SHAs do PR via Git (three-dot diff, incluindo exclusões e os dois caminhos de renomes). Quando todos os arquivos alterados pertencem à lista conservadora de entradas internas (por exemplo Terraform, documentação interna e workflows de infraestrutura), registra sucesso sem instalar Pa11y, iniciar servidor ou executar navegador. Qualquer entrada desconhecida, alteração de site, dependência compartilhada, configuração ou ferramenta da auditoria exige a suíte completa. Contexto ausente ou falha de comparação também exige auditoria completa. Em todo push para `main` e em execução manual a suíte completa continua obrigatória, independentemente do diff. Não há filtro de paths no gatilho nem alteração de thresholds; o resumo explicita quando não houve scan. O seletor e seus testes ficam em `scripts/select-accessibility-impact.cjs` e `scripts/test-select-accessibility-impact.cjs`.
+
+
 As suítes de navegador acumulam falhas de cenários independentes por rota, viewport e tipo de validação, com detalhes no log e no `GITHUB_STEP_SUMMARY`. Interações dependentes continuam interrompendo o cenário em caso de falha para evitar erros em cascata; a execução prossegue para os outros cenários. Qualquer falha mantém o código de saída diferente de zero. O resumo final indica também suítes não executadas.
 
 Em falhas do Pa11y, `diagnose-rendered-contrast.cjs` registra `violations` e `incomplete` separadamente, incluindo dados dos checks do axe. As suítes de navegador subsequentes executam mesmo se uma anterior falhar, desde que o servidor local tenha iniciado; o job continua bloqueante e o threshold do Pa11y permanece zero.

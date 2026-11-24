@@ -24,6 +24,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Set up Node.js
@@ -32,10 +33,29 @@ jobs:
           node-version: 24
           package-manager-cache: false
 
+      - name: Test impact selection
+        run: node --test .github/scripts/test-select-accessibility-impact.cjs
+
+      - name: Select accessibility audit scope
+        id: plan
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node .github/scripts/select-accessibility-impact.cjs
+
+      - name: No accessibility impact (success)
+        if: steps.plan.outputs.run == 'false'
+        env:
+          PLAN_REASON: ${{ steps.plan.outputs.reason }}
+        run: |
+          printf '## Accessibility workflow\n\n%s. Required check passed without a scan.\n' "$PLAN_REASON" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Install Pa11y CI
+        if: steps.plan.outputs.run != 'false'
         run: npm install --ignore-scripts --no-save --package-lock=false pa11y-ci@4.1.1
 
       - name: Configure system Chrome for Pa11y
+        if: steps.plan.outputs.run != 'false'
         shell: bash
         run: |
           chrome_path="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium-browser || command -v chromium)"
@@ -46,10 +66,12 @@ jobs:
           echo "PUPPETEER_EXECUTABLE_PATH=${chrome_path}" >> "$GITHUB_ENV"
 
       - name: Validate contrast tokens
+        if: steps.plan.outputs.run != 'false'
         id: tokens
         run: node .github/scripts/check-contrast.mjs
 
       - name: Validate accessibility page discovery
+        if: steps.plan.outputs.run != 'false'
         id: discovery
         run: |
           node - <<'NODE'
@@ -91,6 +113,7 @@ jobs:
           NODE
 
       - name: Prepare local accessibility fixture
+        if: steps.plan.outputs.run != 'false'
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -105,6 +128,7 @@ jobs:
           PY
 
       - name: Start local site
+        if: steps.plan.outputs.run != 'false'
         id: site
         run: |
           python3 -m http.server 8080 --bind 127.0.0.1 > /tmp/portfolio-http.log 2>&1 &
@@ -121,31 +145,32 @@ jobs:
           exit 1
 
       - name: Run WCAG 2 AA checks
+        if: steps.plan.outputs.run != 'false'
         id: pa11y
         run: npx --no-install pa11y-ci --config .pa11yci.cjs --threshold 0
 
       - name: Diagnose rendered contrast on Pa11y failure
         id: diagnosis
-        if: ${{ !cancelled() && steps.pa11y.outcome == 'failure' }}
+        if: ${{ !cancelled() && steps.plan.outputs.run != 'false' && steps.pa11y.outcome == 'failure' }}
         run: node .github/scripts/diagnose-rendered-contrast.cjs
 
       - name: Validate responsive layout and keyboard navigation
         id: responsive
-        if: ${{ !cancelled() && steps.site.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.plan.outputs.run != 'false' && steps.site.outcome == 'success' }}
         run: node .github/scripts/test-responsive.cjs
 
       - name: Validate text adaptations and accessibility tree
         id: adaptations
-        if: ${{ !cancelled() && steps.site.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.plan.outputs.run != 'false' && steps.site.outcome == 'success' }}
         run: node .github/scripts/test-accessibility-adaptations.cjs
 
       - name: Validate contrast preferences
         id: preferences
-        if: ${{ !cancelled() && steps.site.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.plan.outputs.run != 'false' && steps.site.outcome == 'success' }}
         run: node .github/scripts/test-contrast-preference.cjs
 
       - name: Summarize accessibility workflow
-        if: always()
+        if: ${{ always() && steps.plan.outputs.run != 'false' }}
         env:
           TOKENS: ${{ steps.tokens.outcome }}
           DISCOVERY: ${{ steps.discovery.outcome }}
@@ -171,7 +196,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Stop local site
-        if: always()
+        if: ${{ always() && steps.plan.outputs.run != 'false' }}
         run: |
           if [[ -f /tmp/portfolio-http.pid ]]; then
             kill "$(cat /tmp/portfolio-http.pid)" 2>/dev/null || true
