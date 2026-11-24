@@ -74,6 +74,8 @@ As três versões são URLs canônicas indexáveis (`/curriculo/`, `/en/resume/`
 
 ## Release e publicação manual
 
+**Evolução planejada (ADR 0012 / issues #136 e #148):** a publicação manual deste PR é a base do fluxo coordenado do monorepo. A sequência-alvo de jobs é preflight → Terraform plan/apply do workload → deploy e smoke test do backend → build do frontend/PDFs → deploy e smoke test do Pages → tag → GitHub Release → IndexNow/Web Push. A integração Azure ainda não está implementada nesta revisão; não confundir o procedimento atual abaixo com a pipeline-alvo. O hardening de artefatos públicos, concorrência, SHA, quality gates e recuperação deve ser concluído antes da adoção operacional. Nenhum merge ou dispatch autoriza implicitamente provisionamento ou envio real.
+
 1. Após os merges, aguarde os quality gates da `main` no SHA que pretende publicar. Site validation, Accessibility, GitHub Actions security, SEO validation e ADR Guard são obrigatórios. Execuções de PWA, Terraform e Lighthouse no mesmo SHA, quando existentes por push ou dispatch, também devem estar verdes. Os checks exigidos em PR continuam inalterados. Se uma integração automática não gerar checks de main, execute os gates manualmente na `main` e confira o SHA.
 2. Em **Actions → Release and Deploy → Run workflow**, selecione `main` e `patch`, `minor` ou `major`. O fluxo usa a maior tag SemVer existente como base e reutiliza uma tag SemVer do mesmo SHA em reexecuções.
 3. O fluxo confere a origem do Pages e validações, gera e valida os três PDFs, monta e publica um único artefato. Após o deploy, cria a tag e a GitHub Release com notas desde a última release; a primeira release registra o histórico first-parent. IndexNow é executado por último.
