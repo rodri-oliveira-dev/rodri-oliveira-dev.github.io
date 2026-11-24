@@ -27,6 +27,7 @@ Ler `assets/css/site.css`, `assets/css/mobile-enhancements.css` e `assets/js/sit
 - Automação de responsividade: `.github/scripts/test-responsive.cjs` (requer ambiente de navegador configurado no workflow).
 - Acessibilidade: `.github/workflows/accessibility.yml` com Pa11y CI; configuração em `.pa11yci.cjs`, incluindo fallback offline nos três idiomas. A cobertura automatizada não demonstra conformidade WCAG 2.2 AA.
 - Verificar foco não obscurecido (2.4.11), alvos interativos (2.5.8, considerando exceções), navegação em estados dinâmicos e contraste renderizado. Registrar resultados manuais e limitações conforme `docs/accessibility-audit.md`.
+- Adaptações de texto e árvore de acessibilidade: `node .github/scripts/test-accessibility-adaptations.cjs`, com as rotas do Pa11y e o mesmo navegador configurado na CI.
 - Qualidade percebida: `lighthouserc.cjs` e workflow `Lighthouse CI`; validar HTML e links no `Site validation`.
 
 Quando CSS, JS ou imagens mudarem a experiência pública, aplicar a regra de `AGENTS.md`: atualizar o `<lastmod>` no sitemap de cada página realmente impactada, mesmo sem alteração direta no HTML.
