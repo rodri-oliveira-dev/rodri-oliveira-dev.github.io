@@ -31,3 +31,7 @@ Para cada combinação de página, idioma, estado e ambiente, registrar commit, 
 Preservar Pa11y CI, threshold zero e os checks existentes. WCAG2AA é um parâmetro suportado pelo Pa11y; não renomeá-lo para WCAG22AA sem suporte comprovado. Mapear regras executadas e versão efetiva do axe antes de complementar cobertura. Testes de tamanho de controles isolados não substituem a avaliação de todas as exceções do critério 2.5.8. Testar páginas offline diretamente não comprova o funcionamento offline do service worker.
 
 Referências: [WCAG 2.2](https://www.w3.org/TR/WCAG22/), [novos critérios](https://www.w3.org/WAI/standards-guidelines/wcag/new-in-22/), [Pa11y](https://github.com/pa11y/pa11y).
+
+## Preferências de contraste
+
+Sistema, Normal e Alto contraste disponíveis nas rotas HTML e fallbacks; persistência local opcional e recursos no app shell. Testes de seleção, recarga e precedência da preferência do sistema adicionados. A avaliação visual e o contraste de todos os estados e modos permanecem pendentes de execução e revisão manual. O PDF impresso mantém seu estilo original.

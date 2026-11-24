@@ -126,6 +126,9 @@ jobs:
       - name: Validate text adaptations and accessibility tree
         run: node .github/scripts/test-accessibility-adaptations.cjs
 
+      - name: Validate contrast preferences
+        run: node .github/scripts/test-contrast-preference.cjs
+
       - name: Stop local site
         if: always()
         run: |
