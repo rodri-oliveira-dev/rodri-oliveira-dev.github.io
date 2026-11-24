@@ -383,8 +383,14 @@ const makeHomeScreenPage = (storage) => {
     textContent: "",
   };
   const steps = { hidden: true };
+  const footer = {
+    attributes: {},
+    setAttribute(name, value) { this.attributes[name] = value; },
+    focus() { doc.activeElement = this; },
+  };
   const prompt = {
     hidden: true,
+    contains(element) { return [closeButton, toggleButton, steps].includes(element); },
     querySelector(selector) {
       return {
         ".home-screen-install-dismiss": closeButton,
@@ -399,11 +405,12 @@ const makeHomeScreenPage = (storage) => {
     sessionStorage: storage,
     addEventListener(type, handler) { windowListeners.set(type, handler); },
   };
+  const doc = { activeElement: null, getElementById() { return prompt; }, querySelector(selector) { return selector === "footer.site-footer" ? footer : null; } };
   vm.runInNewContext(read("assets/js/home-screen-install.js"), {
-    document: { getElementById() { return prompt; } },
+    document: doc,
     window: win,
   });
-  return { prompt, windowListeners, buttonListeners, toggleButton, steps };
+  return { prompt, windowListeners, buttonListeners, toggleButton, steps, closeButton, footer, doc };
 };
 const savedDismissal = new Map();
 const sharedSession = {
@@ -414,9 +421,13 @@ const initialPage = makeHomeScreenPage(sharedSession);
 assert.equal(initialPage.prompt.hidden, false, "Guide initially appears for eligible iPhone");
 assert.ok(initialPage.windowListeners.has("pageshow"), "BFCache pageshow listener registered");
 const translatedPage = makeHomeScreenPage(sharedSession);
+translatedPage.doc.activeElement = translatedPage.closeButton;
 translatedPage.buttonListeners.get("close-click")();
+assert.equal(translatedPage.doc.activeElement, translatedPage.footer, "Dismissal transfers focus to footer");
+assert.equal(translatedPage.footer.attributes.tabindex, "-1", "Footer accepts programmatic focus");
 assert.equal(translatedPage.prompt.hidden, true, "Dismissing guide hides it immediately");
 initialPage.windowListeners.get("pageshow")();
+assert.equal(initialPage.doc.activeElement, null, "BFCache dismissal does not steal unrelated focus");
 assert.equal(initialPage.prompt.hidden, true, "BFCache restoration respects dismissal on another page");
 const reopenedPage = makeHomeScreenPage(sharedSession);
 assert.equal(reopenedPage.prompt.hidden, true, "Dismissal is shared across localized pages");

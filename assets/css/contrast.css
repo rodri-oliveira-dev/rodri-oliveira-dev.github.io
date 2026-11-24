@@ -1,9 +1,10 @@
 /* Screen-only preferences preserve the printable resume. */
 @media screen {
   .contrast-preference { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; max-width: 100%; font: inherit; }
-  .contrast-preference select { font: inherit; color: inherit; background: transparent; border: 1px solid currentColor; border-radius: .35rem; padding: .35rem; min-height: 44px; max-width: 100%; color-scheme: dark; }
+  .contrast-preference select { font: inherit; color: #edf2ff; background: #111a2d; border: 1px solid currentColor; border-radius: .35rem; padding: .35rem; min-height: 44px; max-width: 100%; color-scheme: dark; }
+  .site-footer { background: var(--bg); }
   .contrast-preference option { background: #111a2d; color: #fff; }
-  .resume-footer .contrast-preference select { color-scheme: light; }
+  .resume-footer .contrast-preference select { color-scheme: light; color: #17283b; background: #fff; }
   .resume-footer .contrast-preference option { background: #fff; color: #17283b; }
   .contrast-preference select:focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
 html[data-contrast="high"] {

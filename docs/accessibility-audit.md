@@ -35,3 +35,7 @@ Referências: [WCAG 2.2](https://www.w3.org/TR/WCAG22/), [novos critérios](http
 ## Preferências de contraste
 
 Sistema, Normal e Alto contraste disponíveis nas rotas HTML e fallbacks; persistência local opcional e recursos no app shell. Testes de seleção, recarga e precedência da preferência do sistema adicionados. A avaliação visual e o contraste de todos os estados e modos permanecem pendentes de execução e revisão manual. O PDF impresso mantém seu estilo original.
+
+### Correções após primeira execução
+
+A CI reportou violações de contraste em áreas com fundos decorativos e translúcidos, além de incompatibilidade do mock de foco. A correção usa superfícies opacas da paleta, mantém a regra axe ativa e atualiza o mock para verificar transferência de foco. A nova execução deve confirmar o resultado; a inspeção dos logs não fornece todos os pares de cores calculados.
