@@ -4,7 +4,7 @@
 const PREFIX = "rodrigo-portfolio-pwa-";
 // Explicit deploy revision: bump for every SW policy/shell change. Keeping
 // active and installing worker caches separate avoids cross-version mixing.
-const CACHE_VERSION = "2026-11-22.1";
+const CACHE_VERSION = "2026-11-24.9";
 const PRECACHE = PREFIX + "shell-" + CACHE_VERSION;
 const RUNTIME = PREFIX + "runtime-" + CACHE_VERSION;
 const MAX_RUNTIME_ENTRIES = 64;
@@ -13,6 +13,8 @@ const APP_SHELL = [
   "/", "/en/", "/es/",
   "/offline.html", "/en/offline.html", "/es/offline.html",
   "/assets/css/offline.css",
+  "/assets/css/contrast.css",
+  "/assets/js/contrast.js",
   "/assets/css/site.css",
   "/assets/css/mobile-enhancements.css",
   "/assets/css/home-screen-install.css",

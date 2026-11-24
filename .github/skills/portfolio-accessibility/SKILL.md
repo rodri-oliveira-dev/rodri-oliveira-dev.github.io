@@ -1,7 +1,7 @@
 ---
 name: portfolio-accessibility
 description: >-
-  Avaliar e implementar alterações de interface com WCAG 2 AA,
+  Avaliar e implementar alterações de interface com objetivo WCAG 2.2 AA,
   responsividade, semântica HTML, navegação por teclado,
   desempenho e regressões visuais no portfólio estático.
 ---
@@ -25,7 +25,10 @@ Ler `assets/css/site.css`, `assets/css/mobile-enhancements.css` e `assets/js/sit
 
 - Contratos de idioma, navegação e serviços: `node .github/scripts/test-site-i18n.cjs` e `node .github/scripts/test-services.cjs`.
 - Automação de responsividade: `.github/scripts/test-responsive.cjs` (requer ambiente de navegador configurado no workflow).
-- Acessibilidade: `.github/workflows/accessibility.yml` com Pa11y CI; configuração em `.pa11yci.cjs`.
+- Acessibilidade: `.github/workflows/accessibility.yml` com Pa11y CI; configuração em `.pa11yci.cjs`, incluindo fallback offline nos três idiomas. A cobertura automatizada não demonstra conformidade WCAG 2.2 AA.
+- Preservar a regra `color-contrast` do axe e o teste de tokens CSS; investigar falhas e casos inconclusivos sem introduzir exclusões globais.
+- Verificar foco não obscurecido (2.4.11), alvos interativos (2.5.8, considerando exceções), navegação em estados dinâmicos e contraste renderizado. Registrar resultados manuais e limitações conforme `docs/accessibility-audit.md`.
+- Adaptações de texto e árvore de acessibilidade: `node .github/scripts/test-accessibility-adaptations.cjs`, com as rotas do Pa11y e o mesmo navegador configurado na CI.
 - Qualidade percebida: `lighthouserc.cjs` e workflow `Lighthouse CI`; validar HTML e links no `Site validation`.
 
 Quando CSS, JS ou imagens mudarem a experiência pública, aplicar a regra de `AGENTS.md`: atualizar o `<lastmod>` no sitemap de cada página realmente impactada, mesmo sem alteração direta no HTML.

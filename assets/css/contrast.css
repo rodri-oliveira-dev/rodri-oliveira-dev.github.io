@@ -1,0 +1,51 @@
+/* Screen-only preferences preserve the printable resume. */
+@media screen {
+  .contrast-preference { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; max-width: 100%; font: inherit; }
+  .contrast-preference select { font: inherit; color: #edf2ff; background: #111a2d; border: 1px solid currentColor; border-radius: .35rem; padding: .35rem; min-height: 44px; max-width: 100%; color-scheme: dark; }
+  .site-footer { background: var(--bg); }
+  .contrast-preference option { background: #111a2d; color: #fff; }
+  .resume-footer .contrast-preference select { color-scheme: light; color: #17283b; background: #fff; }
+  .resume-footer .contrast-preference option { background: #fff; color: #17283b; }
+  .contrast-preference select:focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
+html[data-contrast="high"] {
+  --bg: #000000; --bg-elevated: #000000; --surface: #111111; --surface-soft: #000000;
+  --text: #ffffff; --muted: #ffffff; --accent: #a8e5ff; --accent-2: #e0d4ff;
+  --line: #a6b2c2; --line-strong: #dce4f4; --a11y-control-border: #ffffff;
+  --ink: #000000; --soft: #000000; --accent-dark: #003e70; --paper: #ffffff; --canvas: #ffffff;
+}
+html[data-contrast="high"] body:has(.site-header), html[data-contrast="high"] .site-header, html[data-contrast="high"] .services-hero, html[data-contrast="high"] .contact-section, html[data-contrast="high"] .services-cta { background: #000; }
+html[data-contrast="high"] .hero-accent { background: none; color: #a8e5ff; -webkit-text-fill-color: #a8e5ff; }
+html[data-contrast="high"] .site-header { backdrop-filter: none; }
+html[data-contrast="high"] .site-header a, html[data-contrast="high"] .site-footer a, html[data-contrast="high"] main:not(.sheet) a:not(.button.primary) { text-decoration: underline; text-underline-offset: .18em; }
+html[data-contrast="high"] .sheet { --accent: #003e70; --muted: #000; --line: #555; color: #000; border-color: #000; }
+html[data-contrast="high"] .topbar { --muted: #000; --accent: #003e70; border-color: #000; }
+html[data-contrast="high"] .sheet a, html[data-contrast="high"] .topbar a:not([aria-current="page"]) { color: #003e70; text-decoration: underline; }
+html[data-contrast="high"] .sheet :focus-visible, html[data-contrast="high"] .topbar :focus-visible { outline-color: #003e70; }
+html[data-contrast="high"] main[data-pwa-offline] { background: #000; color: #fff; border-color: #fff; }
+html[data-contrast="high"] main[data-pwa-offline] p { color: #fff; }
+html[data-contrast="high"] main[data-pwa-offline] a { color: #a8e5ff; }
+html[data-contrast="high"] .contrast-preference select { border-color: currentColor; }
+
+  @media (prefers-contrast: more) {
+html:not([data-contrast="normal"]):not([data-contrast="high"]) {
+  --bg: #000000; --bg-elevated: #000000; --surface: #111111; --surface-soft: #000000;
+  --text: #ffffff; --muted: #ffffff; --accent: #a8e5ff; --accent-2: #e0d4ff;
+  --line: #a6b2c2; --line-strong: #dce4f4; --a11y-control-border: #ffffff;
+  --ink: #000000; --soft: #000000; --accent-dark: #003e70; --paper: #ffffff; --canvas: #ffffff;
+}
+html:not([data-contrast="normal"]):not([data-contrast="high"]) body:has(.site-header), html:not([data-contrast="normal"]):not([data-contrast="high"]) .site-header, html:not([data-contrast="normal"]):not([data-contrast="high"]) .services-hero, html:not([data-contrast="normal"]):not([data-contrast="high"]) .contact-section, html:not([data-contrast="normal"]):not([data-contrast="high"]) .services-cta { background: #000; }
+html:not([data-contrast="normal"]):not([data-contrast="high"]) .hero-accent { background: none; color: #a8e5ff; -webkit-text-fill-color: #a8e5ff; }
+html:not([data-contrast="normal"]):not([data-contrast="high"]) .site-header { backdrop-filter: none; }
+html:not([data-contrast="normal"]):not([data-contrast="high"]) .site-header a, html:not([data-contrast="normal"]):not([data-contrast="high"]) .site-footer a, html:not([data-contrast="normal"]):not([data-contrast="high"]) main:not(.sheet) a:not(.button.primary) { text-decoration: underline; text-underline-offset: .18em; }
+html:not([data-contrast="normal"]):not([data-contrast="high"]) .sheet { --accent: #003e70; --muted: #000; --line: #555; color: #000; border-color: #000; }
+html:not([data-contrast="normal"]):not([data-contrast="high"]) .topbar { --muted: #000; --accent: #003e70; border-color: #000; }
+html:not([data-contrast="normal"]):not([data-contrast="high"]) .sheet a, html:not([data-contrast="normal"]):not([data-contrast="high"]) .topbar a:not([aria-current="page"]) { color: #003e70; text-decoration: underline; }
+html:not([data-contrast="normal"]):not([data-contrast="high"]) .sheet :focus-visible, html:not([data-contrast="normal"]):not([data-contrast="high"]) .topbar :focus-visible { outline-color: #003e70; }
+html:not([data-contrast="normal"]):not([data-contrast="high"]) main[data-pwa-offline] { background: #000; color: #fff; border-color: #fff; }
+html:not([data-contrast="normal"]):not([data-contrast="high"]) main[data-pwa-offline] p { color: #fff; }
+html:not([data-contrast="normal"]):not([data-contrast="high"]) main[data-pwa-offline] a { color: #a8e5ff; }
+html:not([data-contrast="normal"]):not([data-contrast="high"]) .contrast-preference select { border-color: currentColor; }
+
+  }
+}
+@media print { .contrast-preference { display: none !important; } }

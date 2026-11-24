@@ -22,7 +22,6 @@ module.exports = {
   defaults: {
     standard: "WCAG2AA",
     runners: ["axe", "htmlcs"],
-    ignore: ["color-contrast"],
     timeout: 30000,
     wait: 250,
     chromeLaunchConfig: {
@@ -38,5 +37,6 @@ module.exports = {
       ['es/curriculo/index.html', `${localOrigin}/es/curriculo/`],
     ].filter(([file]) => fs.existsSync(file)).map(([, url]) => url),
     ...caseStudyUrls,
+    ...languageRoots.map((root) => `${localOrigin}/${root ? `${root}/` : ""}offline.html`),
   ],
 };

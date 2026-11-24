@@ -113,7 +113,15 @@ Esse último ponto funciona como um gate de drift: se catálogo, homepage, dados
 
 ### Accessibility
 
-O [`accessibility.yml`](workflows/accessibility.yml) sobe o site em um servidor HTTP local e executa Pa11y CI contra as três homepages, currículos e páginas de serviços, além de todos os estudos de caso em português, inglês e espanhol.
+As suítes de navegador acumulam falhas de cenários independentes por rota, viewport e tipo de validação, com detalhes no log e no `GITHUB_STEP_SUMMARY`. Interações dependentes continuam interrompendo o cenário em caso de falha para evitar erros em cascata; a execução prossegue para os outros cenários. Qualquer falha mantém o código de saída diferente de zero. O resumo final indica também suítes não executadas.
+
+Em falhas do Pa11y, `diagnose-rendered-contrast.cjs` registra `violations` e `incomplete` separadamente, incluindo dados dos checks do axe. As suítes de navegador subsequentes executam mesmo se uma anterior falhar, desde que o servidor local tenha iniciado; o job continua bloqueante e o threshold do Pa11y permanece zero.
+
+O contraste textual renderizado é verificado pelo axe no Pa11y CI sem exclusão global de `color-contrast`. O teste de tokens permanece complementar; casos inconclusivos (por exemplo, gradientes e imagens) e contraste não textual exigem avaliação adicional.
+
+A suíte `scripts/test-accessibility-adaptations.cjs` complementa Pa11y com regressões de ampliação de fonte, reflow, espaçamento de texto e árvore AX do Chromium. Não substitui zoom nativo ou testes com leitores de tela.
+
+O [`accessibility.yml`](workflows/accessibility.yml) sobe o site em um servidor HTTP local e executa Pa11y CI contra as três homepages, currículos e páginas de serviços, além de todos os estudos de caso e das três páginas de fallback offline em português, inglês e espanhol. A avaliação direta do fallback não substitui testes do fluxo offline com service worker.
 
 A configuração usa WCAG 2 AA como baseline e threshold zero para os problemas considerados pelo gate. O objetivo é detectar regressões de semântica, ARIA, estrutura e outras regras automatizáveis de acessibilidade antes do merge.
 
