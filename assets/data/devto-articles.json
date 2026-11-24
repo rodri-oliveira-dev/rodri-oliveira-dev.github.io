@@ -1,5 +1,17 @@
 [
   {
+    "url": "https://dev.to/rodri-oliveira-dev/i-built-an-open-source-skill-library-for-ai-assisted-software-engineering-43m5",
+    "title": "I Built an Open-Source Skill Library for AI-Assisted Software Engineering",
+    "description": "A pull request can compile successfully, pass every automated test, and still introduce a serious production problem. Anyone who has worked on software long enough has seen some variation of this. The implementation looks reasonable, the tests are green, and the issue only becomes obvious when you consider something o…",
+    "publishedAt": "2026-11-23T17:36:31Z",
+    "tags": [
+      "opensource",
+      "ai",
+      "programming",
+      "productivity"
+    ]
+  },
+  {
     "url": "https://dev.to/rodri-oliveira-dev/validation-in-ddd-applications-protecting-domain-rules-5e47",
     "title": "Validation in DDD Applications: Protecting Domain Rules",
     "description": "Learn how to distribute validation responsibilities, preserve invariants, and build consistent domain models without turning your application into a collection of scattered checks. This article is part of our ongoing series on Domain-Driven Design (DDD). In the previous article, Aggregates and Aggregate Roots: Designi…",
@@ -126,18 +138,6 @@
       "architecture",
       "adr",
       "documentation",
-      "dotnet"
-    ]
-  },
-  {
-    "url": "https://dev.to/rodri-oliveira-dev/can-big-o-complexity-be-detected-at-compile-time-1nk1",
-    "title": "Can Big-O Complexity Be Detected at Compile Time?",
-    "description": "When we learn algorithm analysis, we usually practice by looking at a piece of code and asking questions such as: how many times does this loop run? Is there another loop inside it? Does this search scan an entire collection? Does this recursion split the problem in half? After a while, we start recognizing these patt…",
-    "publishedAt": "2026-09-17T20:08:02Z",
-    "tags": [
-      "csharp",
-      "roslyn",
-      "algorithms",
       "dotnet"
     ]
   }
