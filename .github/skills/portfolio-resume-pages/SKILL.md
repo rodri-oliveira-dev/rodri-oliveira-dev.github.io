@@ -20,7 +20,7 @@ description: >-
 1. Manter as versões `pt-BR`, `en` e `es-419` factualmente equivalentes, com canonical próprio, vínculo com `#person` e `hreflang` recíproco.
 2. Garantir que informações profissionais e de contato sejam públicas, exatas, coerentes com o site e não confidenciais.
 3. Manter o link de download e de retorno ao portfólio, os ícones acessíveis e o layout em tela e impressão A4.
-4. Em PR, a geração fornece artefato de prévia; não publicar PR diretamente no Pages. Em `main`, o workflow publica o site completo com o PDF.
+4. Em PR, a geração fornece artefato de prévia; não publicar PR diretamente no Pages. Somente a execução manual em `main` publica o site completo com os PDFs e cria a tag e a release após o deploy.
 5. Evitar mudanças de dependências, flags de Chromium, branch de deploy ou permissões sem avaliar segurança e estabilidade.
 6. Ao modificar HTML ou CSS dos currículos, revisar os `<lastmod>` das três rotas em `sitemap.xml` e sincronizar SEO; o CSS compartilhado afeta todas as versões.
 

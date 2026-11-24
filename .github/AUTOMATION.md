@@ -46,7 +46,7 @@ Para manutenção, edite as três traduções no mesmo PR e execute `python3 .gi
 | Terraform validation | [`terraform-validation.yml`](workflows/terraform-validation.yml) | Todo Pull Request e manual; operações autenticadas somente na `main` | Validar IaC sem credenciais em PR e restringir `plan`/`apply` ao Environment protegido |
 | Azure OIDC Validation | [`azure-oidc-validation.yml`](workflows/azure-oidc-validation.yml) | Manual, somente `main` | Validar autenticação OIDC, acesso ao Resource Group, backend remoto e Blob Lease descartável |
 | Site validation | [`site-validation.yml`](workflows/site-validation.yml) | Pull Request, push em `main` e manual | Validar HTML, links, ortografia e workflows |
-| Publish site with resume PDF | [`deploy-pages.yml`](workflows/deploy-pages.yml) | PR que altera os currículos, push em `main` e manual | Gerar os três PDFs a partir de HTML/CSS e publicar o site via GitHub Pages |
+| Release and Deploy | [`deploy-pages.yml`](workflows/deploy-pages.yml) | PR relevante (somente prévia); publicação manual em `main` | Validar gates, gerar PDFs, publicar o artefato, criar tag e release |
 | SEO validation | [`seo-validation.yml`](workflows/seo-validation.yml) | Pull Request, push em `main` e manual | Validar JSON-LD, sitemap, RSS discovery e consistência dos artefatos SEO |
 | Accessibility | [`accessibility.yml`](workflows/accessibility.yml) | Pull Request, push em `main` e manual | Aplicar verificações automatizadas de WCAG 2 AA |
 | GitHub Actions security | [`actions-security.yml`](workflows/actions-security.yml) | Pull Request, push em `main` e manual | Auditar a segurança da automação com zizmor |
@@ -56,21 +56,32 @@ Para manutenção, edite as três traduções no mesmo PR e execute `python3 .gi
 | Sync newsletter articles | [`sync-newsletter-articles.yml`](workflows/sync-newsletter-articles.yml) | Manual, somente fallback | Reconciliar manualmente os artefatos da newsletter caso necessário |
 | Sync DEV Community articles | [`sync-devto-articles.yml`](workflows/sync-devto-articles.yml) | Diário e manual | Sincronizar os artigos em inglês a partir do DEV Community |
 | Sync Hashnode articles | [`sync-hashnode-articles.yml`](workflows/sync-hashnode-articles.yml) | Diário e manual | Sincronizar os artigos em espanhol a partir do Hashnode |
-| Notify IndexNow | [`indexnow.yml`](workflows/indexnow.yml) | Push em `main`, diário e manual | Notificar mecanismos compatíveis com IndexNow sobre URLs públicas alteradas |
+| Notify IndexNow | [`indexnow.yml`](workflows/indexnow.yml) | Chamado por Release and Deploy após sucesso | Notificar mecanismos compatíveis com IndexNow sobre URLs publicadas |
 | Optimize Open Graph image | [`optimize-og-image.yml`](workflows/optimize-og-image.yml) | Push específico em `main` e manual | Gerar e validar o WebP e propor a atualização via Pull Request |
 
 ## Currículo HTML e PDF
 
 Os currículos estão em [`../curriculo/index.html`](../curriculo/index.html), [`../en/resume/index.html`](../en/resume/index.html) e [`../es/curriculo/index.html`](../es/curriculo/index.html), com CSS compartilhado em [`../curriculo/curriculo.css`](../curriculo/curriculo.css). Cada botão de download aponta para `rodrigo-de-oliveira.pdf` na rota do idioma ativo.
 
-O workflow [`deploy-pages.yml`](workflows/deploy-pages.yml) instala uma única vez Playwright/Chromium, produz os três PDFs A4 a partir dos HTMLs e do CSS e publica um único artifact com o site inteiro. Em Pull Requests, os PDFs são gerados, têm conteúdo, ordem de leitura e paginação validados e ficam disponíveis em um artifact de prévia, mas não são publicados. Após merge na `main`, o workflow publica HTMLs e PDFs juntos, sem criar commits de binários na branch protegida.
+O workflow [`deploy-pages.yml`](workflows/deploy-pages.yml) instala uma única vez Playwright/Chromium, produz os três PDFs A4 a partir dos HTMLs e do CSS e publica um único artifact com o site inteiro. Em Pull Requests, os PDFs são gerados, têm conteúdo, ordem de leitura e paginação validados e ficam disponíveis em um artifact de prévia, mas não são publicados. Merges na `main` não publicam. Somente o acionamento manual em `main` publica HTMLs e PDFs juntos, sem criar commits de binários na branch protegida.
 
-**Configuração necessária:** em **Settings → Pages → Build and deployment → Source**, selecionar **GitHub Actions**. Sem essa configuração, o PDF não será servido automaticamente pelo site. O ambiente `github-pages` deve permitir deploy somente da `main`. Essa opção substitui o deploy anterior direto da branch; por isso, o workflow publica o site estático completo e não apenas o PDF.
+**Configuração necessária:** em **Settings → Pages → Build and deployment → Source**, selecionar **GitHub Actions**. Sem essa configuração, o deploy nativo por branch pode publicar antes da release; o fluxo manual recusa executar. O ambiente `github-pages` deve permitir deploy somente da `main`. Essa opção substitui o deploy anterior direto da branch; por isso, o workflow publica o site estático completo e não apenas o PDF.
 
 O gerador está em [`scripts/generate-resume-pdf.mjs`](scripts/generate-resume-pdf.mjs). Os PDFs não são mantidos como fonte no Git; o conteúdo editável são os três HTMLs e o CSS compartilhado.
 
 As três versões são URLs canônicas indexáveis (`/curriculo/`, `/en/resume/` e `/es/curriculo/`) com metadados localizados, JSON-LD `ProfilePage`/`Person`/`BreadcrumbList`, `hreflang` recíproco, sitemap e notificações IndexNow. Cada homepage aponta para o currículo correspondente. As verificações de SEO, HTML, ortografia, Lighthouse e WCAG cobrem as três páginas.
 
+
+## Release e publicação manual
+
+**Evolução planejada (ADR 0012 / issues #136 e #148):** a publicação manual deste PR é a base do fluxo coordenado do monorepo. A sequência-alvo de jobs é preflight → Terraform plan/apply do workload → deploy e smoke test do backend → build do frontend/PDFs → deploy e smoke test do Pages → tag → GitHub Release → IndexNow/Web Push. A integração Azure ainda não está implementada nesta revisão; não confundir o procedimento atual abaixo com a pipeline-alvo. O hardening de artefatos públicos, concorrência, SHA, quality gates e recuperação deve ser concluído antes da adoção operacional. Nenhum merge ou dispatch autoriza implicitamente provisionamento ou envio real.
+
+1. Após os merges, aguarde os quality gates da `main` no SHA que pretende publicar. Site validation, Accessibility, GitHub Actions security, SEO validation e ADR Guard são obrigatórios. Execuções de PWA, Terraform e Lighthouse no mesmo SHA, quando existentes por push ou dispatch, também devem estar verdes. Os checks exigidos em PR continuam inalterados. Se uma integração automática não gerar checks de main, execute os gates manualmente na `main` e confira o SHA.
+2. Em **Actions → Release and Deploy → Run workflow**, selecione `main` e `patch`, `minor` ou `major`. O fluxo usa a maior tag SemVer existente como base e reutiliza uma tag SemVer do mesmo SHA em reexecuções.
+3. O fluxo confere a origem do Pages e validações, gera e valida os três PDFs, monta e publica um único artefato. Após o deploy, cria a tag e a GitHub Release com notas desde a última release; a primeira release registra o histórico first-parent. IndexNow é executado por último.
+4. Em falha parcial, use **Re-run failed jobs** enquanto o SHA continuar sendo a ponta da `main`. A tag não é movida e a release existente não é duplicada. Se a main avançou, reconcilie o estado de produção e publique o novo SHA por uma nova execução; não reexecute deploy antigo. Falha de tag, release ou IndexNow não desfaz um deploy bem-sucedido.
+
+Antes de mesclar a mudança de estratégia, confirme **Settings → Pages → Source → GitHub Actions** e a restrição do environment `github-pages` à `main`. Sem essa alteração externa, o deploy nativo por branch pode continuar publicando a cada merge. Consulte a [ADR 0012](../docs/adr/0012-controlar-publicacao-por-release-manual.md).
 
 ## Quality gates
 
@@ -287,11 +298,7 @@ Quando `AUTOMATION_PR_TOKEN` existe, ele é preferido. Caso contrário, os workf
 
 ### IndexNow
 
-O [`indexnow.yml`](workflows/indexnow.yml) notifica o endpoint público do IndexNow quando alterações relevantes chegam à `main`.
-
-O workflow também possui execução manual e uma execução diária de fallback. Esse agendamento é independente da sincronização da newsletter: ele existe apenas para cobrir cenários em que uma alteração tenha sido mesclada por uma credencial de automação que não origine um novo evento `push` de workflow.
-
-A submissão é limitada às URLs públicas pertinentes à alteração, incluindo a homepage, a versão em inglês, estudos de caso descobertos pela estrutura de diretórios e o RSS quando aplicável.
+O [`indexnow.yml`](workflows/indexnow.yml) é chamado somente após deploy e GitHub Release bem-sucedidos. A execução usa o sitemap do mesmo SHA publicado e inclui o RSS. Como uma release pode acumular vários PRs, a submissão inclui todas as URLs do sitemap em vez de usar o diff do último push. Não há agendamento independente nem notificação por merge. Em falha, reexecute o job de notificação.
 
 ## Descoberta e mensuração de SEO e GEO
 

@@ -12,7 +12,7 @@ Migrar tudo para uma aplicação com servidor permitiria implementar funcionalid
 
 ## Decision
 
-O GitHub Pages continua responsável pela entrega do portfólio. HTML, CSS, JavaScript e arquivos gerados permanecem no repositório; o workflow `.github/workflows/deploy-pages.yml` monta e publica o artefato.
+O GitHub Pages continua responsável pela entrega do portfólio. HTML, CSS, JavaScript e arquivos gerados permanecem no repositório; o workflow `.github/workflows/deploy-pages.yml` monta e publica o artefato. A cadência de publicação é tratada na [ADR 0012](0012-controlar-publicacao-por-release-manual.md).
 
 Funcionalidades que exigirem execução confiável no servidor, armazenamento persistente ou segredos devem ser isoladas em serviços próprios, acessados pelo site por contratos explícitos. Não migraremos a hospedagem das páginas para acomodar uma funcionalidade periférica.
 

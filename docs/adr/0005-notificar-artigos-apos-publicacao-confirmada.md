@@ -14,7 +14,7 @@ Um artigo importado pode aguardar revisão, falhar em quality gates ou ainda nã
 
 Na primeira versão, notificar **apenas artigos em português** já publicados no portfólio. Os workflows de inglês e espanhol não participam do envio.
 
-A execução de envio será separada da importação. Um workflow específico deverá considerar somente publicações concluídas com sucesso na `main`, vinculando o evento ao commit e ao conteúdo efetivamente disponibilizado no GitHub Pages. A conclusão do deploy é condição necessária, mas o processo também precisa conferir se há artigo novo no catálogo em português.
+A execução de envio será separada da importação. O envio deverá considerar somente publicações concluídas com sucesso na `main`, vinculando o evento ao commit e ao conteúdo efetivamente disponibilizado no GitHub Pages. A [ADR 0012](0012-controlar-publicacao-por-release-manual.md) propõe integrar o envio como job pós-release reutilizável da pipeline manual, depois da verificação de frontend, tag e release. Não usar push na main como evidência de publicação. A reconciliação independente, quando necessária, verifica a última publicação efetiva e o estado durável, nunca o catálogo da ponta da main por si só. A conclusão do deploy é condição necessária, mas o processo também precisa conferir se há artigo novo no catálogo em português.
 
 A identidade de publicação será baseada em URL canônica ou identificador estável, não na posição do artigo nem em `git diff` genérico. O backend manterá estado durável para evitar repetir campanhas em reexecuções e para controlar tentativas por inscrição. Reenvios serão limitados e observáveis; falhas de push não reverterão o deploy.
 
