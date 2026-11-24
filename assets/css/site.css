@@ -1587,6 +1587,7 @@ h1 {
 
 .case-study-table td {
   color: var(--muted);
+  background: var(--bg);
 }
 
 .visually-hidden {
@@ -1774,7 +1775,7 @@ h1 {
 .contributions-section {
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
-  background: rgba(255, 255, 255, .015);
+  background: var(--surface-soft);
 }
 
 .career-timeline {
@@ -2042,7 +2043,7 @@ h1 {
   border: 1px solid rgba(125, 211, 252, .35);
   border-radius: 999px;
   color: var(--accent);
-  background: rgba(125, 211, 252, .07);
+  background: var(--surface);
   font-size: 11px;
   font-weight: 750;
   letter-spacing: .05em;

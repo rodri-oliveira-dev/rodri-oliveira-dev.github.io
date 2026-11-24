@@ -39,3 +39,5 @@ Sistema, Normal e Alto contraste disponíveis nas rotas HTML e fallbacks; persis
 ### Correções após primeira execução
 
 A CI reportou violações de contraste em áreas com fundos decorativos e translúcidos, além de incompatibilidade do mock de foco. A correção usa superfícies opacas da paleta, mantém a regra axe ativa e atualiza o mock para verificar transferência de foco. A nova execução deve confirmar o resultado; a inspeção dos logs não fornece todos os pares de cores calculados.
+
+Na execução 45385105636, restaram 66 ocorrências de contraste: 21 em cada homepage e uma em cada estudo Dapper FluentMap. As demais 21 rotas não reportaram erros. Ajustados os fundos da seção de carreira, indicador de posição atual e células de tabela; confirmação depende da próxima CI. Site validation aprovado na execução 45385105606.
