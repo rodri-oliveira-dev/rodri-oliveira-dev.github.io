@@ -123,6 +123,9 @@ jobs:
       - name: Validate responsive layout and keyboard navigation
         run: node .github/scripts/test-responsive.cjs
 
+      - name: Validate text adaptations and accessibility tree
+        run: node .github/scripts/test-accessibility-adaptations.cjs
+
       - name: Stop local site
         if: always()
         run: |
