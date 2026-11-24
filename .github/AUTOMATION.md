@@ -76,9 +76,9 @@ As três versões são URLs canônicas indexáveis (`/curriculo/`, `/en/resume/`
 
 ### Terraform validation
 
-O [`terraform-validation.yml`](workflows/terraform-validation.yml) executa `terraform fmt -check -recursive`, inicializa providers com `terraform init -backend=false -input=false` e valida a configuração com `terraform validate -no-color`. O gate roda sem credenciais e sem acessar o backend remoto quando `infra/terraform/` ou o próprio workflow muda em um Pull Request para `main`; também aceita execução manual.
+O [`terraform-validation.yml`](workflows/terraform-validation.yml) executa `terraform fmt -check -recursive`, inicializa providers com `terraform init -backend=false -input=false -lockfile=readonly` e valida a configuração com `terraform validate -no-color`. O gate roda sem credenciais e sem acessar o backend remoto quando `infra/terraform/` ou o próprio workflow muda em um Pull Request para `main`; também aceita execução manual.
 
-O Terraform CLI é fixado em `1.17.2`, as actions usam SHA imutável, as credenciais do checkout não persistem e a única permissão do `GITHUB_TOKEN` é `contents: read`. O workflow não executa `plan`, `import` ou `apply` e não solicita `id-token: write`.
+O workflow também verifica os checksums assinados do AzureRM para `linux_amd64`, `windows_amd64`, `darwin_amd64` e `darwin_arm64` com `terraform providers lock`, falhando se a geração alterar o lockfile versionado. O Terraform CLI é fixado em `1.17.2`, as actions usam SHA imutável, as credenciais do checkout não persistem e a única permissão do `GITHUB_TOKEN` é `contents: read`. O workflow não executa `plan`, `import` ou `apply` e não solicita `id-token: write`.
 
 ### ADR Guard
 
