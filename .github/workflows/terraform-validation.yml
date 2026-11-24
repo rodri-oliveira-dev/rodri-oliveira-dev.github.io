@@ -17,6 +17,7 @@ on:
         type: choice
         options:
           - validate
+          - validate-oidc
           - plan
           - apply
       apply_confirmation:
@@ -117,6 +118,39 @@ jobs:
         run: |
           echo "Apply requires the exact confirmation APPLY."
           exit 1
+
+  validate_oidc:
+    name: Validate Terraform Environment OIDC
+    needs: validate
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' &&
+      inputs.operation == 'validate-oidc'
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 5
+    environment: terraform-dev
+
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      AZURE_CORE_OUTPUT: none
+
+    steps:
+      - name: Authenticate with Azure using Environment OIDC
+        uses: azure/login@8c334a195cbb38e46038007b304988d888bf676a
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Verify read access to the existing Resource Group
+        shell: bash
+        run: |
+          set -euo pipefail
+          az group show --name rg-portfolio-push-dev --output none
+          echo "Environment OIDC authentication and Resource Group read access succeeded. No Terraform State or Azure resources were modified." >> "$GITHUB_STEP_SUMMARY"
 
   plan:
     name: Terraform plan (protected)
