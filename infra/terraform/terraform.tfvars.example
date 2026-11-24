@@ -1,0 +1,6 @@
+# Identificadores não sensíveis de exemplo. Não copie credenciais para este arquivo.
+subscription_id = "00000000-0000-0000-0000-000000000000"
+tenant_id       = "00000000-0000-0000-0000-000000000000"
+
+resource_group_name = "rg-portfolio-push-dev"
+location            = "brazilsouth"

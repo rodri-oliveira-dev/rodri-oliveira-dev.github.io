@@ -43,6 +43,7 @@ Para manutenção, edite as três traduções no mesmo PR e execute `python3 .gi
 | Workflow | Arquivo | Execução | Objetivo |
 | --- | --- | --- | --- |
 | ADR Guard | [`adr-guard.yml`](workflows/adr-guard.yml) | Pull Request para `main`, push em `main` e manual | Validar ADRs versionadas sem gerar ou aprovar decisões |
+| Terraform validation | [`terraform-validation.yml`](workflows/terraform-validation.yml) | Pull Request que altera `infra/terraform/` e manual | Verificar formatação, inicialização sem backend e validade da configuração AzureRM sem credenciais |
 | Site validation | [`site-validation.yml`](workflows/site-validation.yml) | Pull Request, push em `main` e manual | Validar HTML, links, ortografia e workflows |
 | Publish site with resume PDF | [`deploy-pages.yml`](workflows/deploy-pages.yml) | PR que altera os currículos, push em `main` e manual | Gerar os três PDFs a partir de HTML/CSS e publicar o site via GitHub Pages |
 | SEO validation | [`seo-validation.yml`](workflows/seo-validation.yml) | Pull Request, push em `main` e manual | Validar JSON-LD, sitemap, RSS discovery e consistência dos artefatos SEO |
@@ -71,6 +72,12 @@ As três versões são URLs canônicas indexáveis (`/curriculo/`, `/en/resume/`
 
 
 ## Quality gates
+
+### Terraform validation
+
+O [`terraform-validation.yml`](workflows/terraform-validation.yml) executa `terraform fmt -check -recursive`, inicializa providers com `terraform init -backend=false -input=false` e valida a configuração com `terraform validate -no-color`. O gate roda sem credenciais e sem acessar o backend remoto quando `infra/terraform/` ou o próprio workflow muda em um Pull Request para `main`; também aceita execução manual.
+
+O Terraform CLI é fixado em `1.17.2`, as actions usam SHA imutável, as credenciais do checkout não persistem e a única permissão do `GITHUB_TOKEN` é `contents: read`. O workflow não executa `plan`, `import` ou `apply` e não solicita `id-token: write`.
 
 ### ADR Guard
 
