@@ -46,7 +46,16 @@ if (typeof document !== "undefined" && typeof window !== "undefined") (() => {
   if (!close || !toggle || !steps) return;
 
   const syncVisibility = () => {
-    prompt.hidden = isDismissed();
+    const hidden = isDismissed();
+    // Move focus before hiding a focused descendant (including BFCache restores).
+    if (hidden && prompt.contains(document.activeElement)) {
+      const footer = document.querySelector("footer.site-footer");
+      if (footer) {
+        footer.setAttribute("tabindex", "-1");
+        footer.focus();
+      }
+    }
+    prompt.hidden = hidden;
   };
   syncVisibility();
   // BFCache restores the old DOM without re-running this script. Recheck the

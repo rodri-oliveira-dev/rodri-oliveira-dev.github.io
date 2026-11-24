@@ -75,6 +75,8 @@ jobs:
           test -f _site/index.html
           # PWA shell and localized fallbacks must be published at origin scope.
           test -f _site/sw.js
+          test -f _site/assets/css/contrast.css
+          test -f _site/assets/js/contrast.js
           test -f _site/assets/js/pwa-register.js
           test -f _site/assets/css/offline.css
           test -f _site/offline.html

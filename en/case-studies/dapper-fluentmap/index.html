@@ -86,6 +86,8 @@
     }
   }
   </script>
+  <link rel="stylesheet" href="/assets/css/contrast.css">
+  <script src="/assets/js/contrast.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -196,7 +198,7 @@ public sealed class CustomerMap : EntityMap&lt;Customer&gt;
           <thead><tr><th>Approach</th><th>Example</th><th>Advantage</th><th>Cost and best fit</th></tr></thead>
           <tbody>
             <tr><td>SQL aliases</td><td><code>SELECT CUST_NO AS Id, LEGAL_NM AS Name</code></td><td>No extra configuration; intent is visible in the query.</td><td>Repeats aliases across queries. Good for a one-off read or SQL owned by one operation.</td></tr>
-            <tr><td>Persistence DTO</td><td><code>CustomerRow.CUST_NO</code> → <code>Customer.Id</code></td><td>Fully explicit boundary and transformation; DTOs can model joins and projections.</td><td>More types and conversion code. Good when the persistence shape differs semantically from the aggregate.</td></tr>
+            <tr><td>Persistence DTO</td><td><code>CustomerRow.CUST_NO</code> <span class="mapping-direction">to</span> <code>Customer.Id</code></td><td>Fully explicit boundary and transformation; DTOs can model joins and projections.</td><td>More types and conversion code. Good when the persistence shape differs semantically from the aggregate.</td></tr>
             <tr><td>Explicit FluentMap</td><td><code>Map(x =&gt; x.Id).ToColumn("CUST_NO")</code></td><td>Reuses a typed map and leaves the entity free of attributes.</td><td>Global configuration requires discipline and does not remove SQL. Good when entities recur across queries with stable physical names.</td></tr>
           </tbody>
         </table></div>

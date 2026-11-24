@@ -86,6 +86,8 @@
     }
   }
   </script>
+  <link rel="stylesheet" href="/assets/css/contrast.css">
+  <script src="/assets/js/contrast.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Ir para o conteúdo</a>
@@ -198,7 +200,7 @@ public sealed class CustomerMap : EntityMap&lt;Customer&gt;
             <thead><tr><th>Abordagem</th><th>Exemplo</th><th>Vantagem</th><th>Custo e melhor contexto</th></tr></thead>
             <tbody>
               <tr><td>Aliases no SQL</td><td><code>SELECT CUST_NO AS Id, LEGAL_NM AS Name</code></td><td>Sem configuração adicional; intenção visível na consulta.</td><td>Repete aliases em várias consultas. Boa para leitura pontual ou SQL inteiramente controlado por uma única operação.</td></tr>
-              <tr><td>DTO de persistência</td><td><code>CustomerRow.CUST_NO</code> → <code>Customer.Id</code></td><td>Fronteira e transformação totalmente explícitas; DTO pode refletir joins e projeções.</td><td>Mais tipos e código de conversão. Boa quando o shape de persistência difere semanticamente do agregado.</td></tr>
+              <tr><td>DTO de persistência</td><td><code>CustomerRow.CUST_NO</code> <span class="mapping-direction">para</span> <code>Customer.Id</code></td><td>Fronteira e transformação totalmente explícitas; DTO pode refletir joins e projeções.</td><td>Mais tipos e código de conversão. Boa quando o shape de persistência difere semanticamente do agregado.</td></tr>
               <tr><td>FluentMap explícito</td><td><code>Map(x =&gt; x.Id).ToColumn("CUST_NO")</code></td><td>Reutiliza um map tipado e mantém a entidade livre de atributos.</td><td>Configuração global exige disciplina; não elimina SQL. Boa quando entidades reaparecem em várias consultas com nomes físicos estáveis.</td></tr>
             </tbody>
           </table>

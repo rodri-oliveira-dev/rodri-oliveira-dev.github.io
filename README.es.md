@@ -24,6 +24,11 @@ Mi trayectoria, mis proyectos y publicaciones están en mi [portafolio](https://
 
 El sitio está disponible en [portugués](https://rodri-oliveira-dev.github.io/), [inglés](https://rodri-oliveira-dev.github.io/en/) y [español](https://rodri-oliveira-dev.github.io/es/).
 
+[![WCAG 2.2 AA: objetivo de conformidad](https://img.shields.io/badge/WCAG%202.2-AA%20Target-blue)](docs/accessibility-audit.md)
+[![Pruebas automatizadas de accesibilidad](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/accessibility.yml/badge.svg?branch=main)](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/accessibility.yml)
+[![Validación de registros de decisiones arquitectónicas con ADR Guard](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/adr-guard.yml/badge.svg?branch=main)](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/adr-guard.yml)
+[![Validación de calidad con Lighthouse CI](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/lighthouse.yml/badge.svg?branch=main)](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/lighthouse.yml)
+
 <details>
 <summary>Sobre este repositorio</summary>
 

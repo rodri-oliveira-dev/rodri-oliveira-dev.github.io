@@ -5,6 +5,7 @@ const puppeteer = require("puppeteer");
 
 const ROOT = path.resolve(__dirname, "../..");
 const ORIGIN = process.env.SITE_ORIGIN || "http://127.0.0.1:8080";
+const results = require("./accessibility-results.cjs").createResults("Responsive layout and keyboard navigation");
 const keyboardOnly = process.env.RESPONSIVE_KEYBOARD_ONLY === "1";
 const navigationOnly = process.env.RESPONSIVE_NAVIGATION_ONLY === "1";
 const widths = [320, 360, 390, 768, 1024, 1440];
@@ -79,6 +80,76 @@ const inspectLayout = () => {
   };
 };
 
+// Check the minimum WCAG 2.4.11 requirement for the sticky header only.
+// Use actual keyboard navigation, not scrollIntoView (which could mask a defect).
+const assertHeaderDoesNotObscureFocus = async (page, url, width) => {
+  const visited = new Set();
+  const inspect = () => page.evaluate(() => {
+    const target = document.activeElement;
+    if (!target || target === document.body || target === document.documentElement) return null;
+    const header = document.querySelector(".site-header");
+    const bounds = target.getBoundingClientRect();
+    const cover = header?.getBoundingClientRect();
+    const label = target.getAttribute("aria-label") || target.textContent.trim().slice(0, 80);
+    const key = Array.from(document.querySelectorAll("*")).indexOf(target);
+    // Header descendants and the higher-z-index skip link are not covered by the header.
+    if (!cover || header.contains(target) || target.closest(".skip-link") ||
+        bounds.width === 0 || bounds.height === 0 ||
+        !["sticky", "fixed"].includes(getComputedStyle(header).position)) {
+      return { key, label, obscured: false };
+    }
+    const fragments = [...target.getClientRects()].filter((rect) => rect.width > 0 && rect.height > 0);
+    const obscured = fragments.length > 0 && fragments.every((rect) => {
+      const left = Math.max(0, rect.left);
+      const right = Math.min(innerWidth, rect.right);
+      const top = Math.max(0, rect.top);
+      const bottom = Math.min(innerHeight, rect.bottom);
+      if (right <= left || bottom <= top) return true;
+      return cover.left <= left && cover.right >= right &&
+        cover.top <= top && cover.bottom >= bottom;
+    });
+    const overlapsHeader = fragments.some((rect) =>
+      rect.left < cover.right && rect.right > cover.left &&
+      rect.top < cover.bottom && rect.bottom > cover.top);
+    return { key, label, obscured: obscured && overlapsHeader };
+  });
+  const check = async (direction) => {
+    // Allow native focus scrolling and layout to settle, without forcing scroll.
+    await page.evaluate(() => new Promise((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const result = await inspect();
+    if (result) {
+      assert.equal(result.obscured, false,
+        `${url} at ${width}px: ${direction} focus hidden by header: ${result.label}`);
+    }
+    return result;
+  };
+  let ended = false;
+  for (let i = 0; i < 500; i += 1) {
+    await page.keyboard.press("Tab");
+    const result = await check("Tab");
+    if (!result || visited.has(result.key)) { ended = true; break; }
+    visited.add(result.key);
+  }
+  assert.ok(ended && visited.size > 0, `${url} at ${width}px: incomplete forward focus traversal`);
+  const backwards = new Set();
+  await page.keyboard.down("Shift");
+  try {
+    ended = false;
+    for (let i = 0; i < 500; i += 1) {
+      await page.keyboard.press("Tab");
+      const result = await check("Shift+Tab");
+      if (!result || backwards.has(result.key)) { ended = true; break; }
+      backwards.add(result.key);
+    }
+  } finally {
+    await page.keyboard.up("Shift");
+  }
+  assert.ok(ended && backwards.size > 0, `${url} at ${width}px: incomplete reverse focus traversal`);
+  assert.deepEqual([...visited].filter((key) => !backwards.has(key)), [],
+    `${url} at ${width}px: reverse traversal missed forward focus targets`);
+};
+
 const assertMobileLinkNavigation = async (page, url, profileName) => {
   const links = await page.$$eval(".mobile-nav-panel a", (elements) =>
     elements.map((link) => link.getAttribute("href")),
@@ -145,6 +216,7 @@ const assertMobileLinkNavigation = async (page, url, profileName) => {
 (async () => {
   for (const width of keyboardOnly || navigationOnly ? [] : widths) {
     for (const url of urls) {
+      await results.run(`${url} | layout | ${width}px`, async () => {
       let result;
       let loadError;
       for (let attempt = 1; attempt <= 3 && !result; attempt += 1) {
@@ -172,11 +244,13 @@ const assertMobileLinkNavigation = async (page, url, profileName) => {
         assert.ok(Math.abs(result.heroArtworkWidth - result.heroActionsWidth) <= 1,
           `${url} aligns hero artwork (${result.heroArtworkWidth}px) and actions (${result.heroActionsWidth}px) at ${width}px`);
       }
+      });
     }
   }
 
   for (const root of navigationOnly ? [] : roots) {
     const url = root ? `/${root}/` : "/";
+    await results.run(`${url} | keyboard | 390px`, async () => {
     let completed = false;
     let keyboardError;
     for (let attempt = 1; attempt <= 3 && !completed; attempt += 1) {
@@ -185,6 +259,14 @@ const assertMobileLinkNavigation = async (page, url, profileName) => {
         const page = await browser.newPage();
         await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1 });
         await page.goto(`${ORIGIN}${url}`, { waitUntil: "load" });
+        // These navigation controls use a 44px height and at least 24px width.
+        const targets = await page.$$eval(".mobile-nav-toggle, .language-switcher .lang-link", (elements) =>
+          elements.map((element) => ({ name: element.textContent.trim() || element.getAttribute("aria-label"), width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height })),
+        );
+        assert.ok(targets.length === 4, `${url} exposes mobile navigation targets`);
+        for (const target of targets) {
+          assert.ok(target.height >= 44 && target.width >= 24, `${url} target ${target.name} is ${target.width}x${target.height}px`);
+        }
         await page.focus(".mobile-nav-toggle");
         await page.keyboard.press("Enter");
         assert.equal(await page.$eval(".mobile-nav-toggle", (toggle) => toggle.getAttribute("aria-expanded")), "true", `${url} keyboard opens menu`);
@@ -216,12 +298,14 @@ const assertMobileLinkNavigation = async (page, url, profileName) => {
       }
     }
     if (!completed) throw new Error(`Keyboard validation failed for ${url} after 3 attempts`, { cause: keyboardError });
+    });
   }
 
   if (!keyboardOnly) {
     for (const profile of mobileProfiles) {
       for (const root of roots) {
         const url = root ? `/${root}/` : "/";
+        await results.run(`${url} | mobile navigation | ${profile.name}`, async () => {
         let completed = false;
         let navigationError;
         for (let attempt = 1; attempt <= 3 && !completed; attempt += 1) {
@@ -244,9 +328,11 @@ const assertMobileLinkNavigation = async (page, url, profileName) => {
         if (!completed) {
           throw new Error(`Mobile link validation failed for ${url} on ${profile.name}`, { cause: navigationError });
         }
+        });
       }
     }
 
+    await results.run("/ | Safari focusout sequence", async () => {
     const browser = await launchBrowser();
     try {
       const page = await browser.newPage();
@@ -272,12 +358,66 @@ const assertMobileLinkNavigation = async (page, url, profileName) => {
     } finally {
       await browser.close();
     }
+    });
+  }
+  // Cover representative narrow and wide layouts across every localized route.
+  // Reuse one browser; each route starts with a fresh page and native focus order.
+  if (!navigationOnly) {
+    const browser = await launchBrowser();
+    try {
+      for (const width of [320, 390, 768, 1440]) {
+        for (const url of (width === 390 || width === 1440 ? urls : roots.map((root) => root ? `/${root}/` : "/"))) {
+          await results.run(`${url} | focus traversal | ${width}px`, async () => {
+          const page = await browser.newPage();
+          try {
+            await page.setViewport({ width, height: 844, deviceScaleFactor: 1 });
+            await page.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: "reduce" }]);
+            await page.goto(`${ORIGIN}${url}`, { waitUntil: "load" });
+            await assertHeaderDoesNotObscureFocus(page, url, width);
+          } finally {
+            await page.close();
+          }
+          });
+        }
+      }
+    } finally {
+      await browser.close();
+    }
+  }
+  // Simulate Apple device detection; actual Safari/VoiceOver still needs manual validation.
+  if (!navigationOnly) {
+    const browser = await launchBrowser();
+    try {
+      for (const root of roots) {
+        const url = root ? `/${root}/` : "/";
+        await results.run(`${url} | install guide focus`, async () => {
+        const page = await browser.newPage();
+        try {
+          await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1 });
+          await page.evaluateOnNewDocument(() => {
+            Object.defineProperty(navigator, "userAgent", { get: () => "iPhone" });
+          });
+          await page.goto(`${ORIGIN}${url}`, { waitUntil: "load" });
+          await page.waitForSelector("#home-screen-install", { visible: true });
+          await page.focus(".home-screen-install-dismiss");
+          await page.keyboard.press("Enter");
+          assert.equal(await page.$eval("#home-screen-install", (el) => el.hidden), true, `${url} dismisses install guide`);
+          assert.equal(await page.evaluate(() => document.activeElement === document.querySelector("footer.site-footer")), true, `${url} moves focus to the next landmark`);
+        } finally {
+          await page.close();
+        }
+        });
+      }
+    } finally {
+      await browser.close();
+    }
   }
   // Check service-page anchor navigation through the mobile menu.
   if (!navigationOnly) {
     const browser = await launchBrowser();
     try {
       for (const servicePath of servicePaths) {
+        await results.run(`${servicePath} | service anchor navigation`, async () => {
         const page = await browser.newPage();
         try {
           await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1 });
@@ -298,11 +438,14 @@ const assertMobileLinkNavigation = async (page, url, profileName) => {
         } finally {
           await page.close();
         }
+        });
       }
     } finally {
       await browser.close();
     }
   }
+  results.finish();
+  if (process.exitCode) return;
   console.log(keyboardOnly
     ? "Validated keyboard navigation in PT/EN/ES."
     : navigationOnly
