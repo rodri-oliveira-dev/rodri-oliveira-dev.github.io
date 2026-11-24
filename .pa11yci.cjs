@@ -22,7 +22,6 @@ module.exports = {
   defaults: {
     standard: "WCAG2AA",
     runners: ["axe", "htmlcs"],
-    ignore: ["color-contrast"],
     timeout: 30000,
     wait: 250,
     chromeLaunchConfig: {
