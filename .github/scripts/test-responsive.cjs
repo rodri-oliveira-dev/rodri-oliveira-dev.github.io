@@ -281,6 +281,32 @@ const assertMobileLinkNavigation = async (page, url, profileName) => {
       await browser.close();
     }
   }
+  // Simulate Apple device detection; actual Safari/VoiceOver still needs manual validation.
+  if (!navigationOnly) {
+    const browser = await launchBrowser();
+    try {
+      for (const root of roots) {
+        const url = root ? `/${root}/` : "/";
+        const page = await browser.newPage();
+        try {
+          await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1 });
+          await page.evaluateOnNewDocument(() => {
+            Object.defineProperty(navigator, "userAgent", { get: () => "iPhone" });
+          });
+          await page.goto(`${ORIGIN}${url}`, { waitUntil: "load" });
+          await page.waitForSelector("#home-screen-install", { visible: true });
+          await page.focus(".home-screen-install-dismiss");
+          await page.keyboard.press("Enter");
+          assert.equal(await page.$eval("#home-screen-install", (el) => el.hidden), true, `${url} dismisses install guide`);
+          assert.equal(await page.evaluate(() => document.activeElement === document.querySelector("footer.site-footer")), true, `${url} moves focus to the next landmark`);
+        } finally {
+          await page.close();
+        }
+      }
+    } finally {
+      await browser.close();
+    }
+  }
   // Check service-page anchor navigation through the mobile menu.
   if (!navigationOnly) {
     const browser = await launchBrowser();
