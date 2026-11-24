@@ -27,6 +27,7 @@ html {
 
   .header-inner {
     min-height: 64px;
+    padding-block: 0;
   }
 
   .language-switcher {
@@ -90,6 +91,9 @@ html {
     z-index: 99;
     display: grid;
     gap: 2px;
+    max-height: calc(100dvh - 80px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 10px max(14px, env(safe-area-inset-right)) 16px max(14px, env(safe-area-inset-left));
     border-bottom: 1px solid var(--a11y-control-border);
     background: #000;

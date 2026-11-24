@@ -256,7 +256,7 @@ const assertMobileLinkNavigation = async (page, url, profileName) => {
         await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1 });
         await page.goto(`${ORIGIN}${url}`, { waitUntil: "load" });
         // These navigation controls use a 44px height and at least 24px width.
-        const targets = await page.$eval(".mobile-nav-toggle, .language-switcher .lang-link", (elements) =>
+        const targets = await page.$$eval(".mobile-nav-toggle, .language-switcher .lang-link", (elements) =>
           elements.map((element) => ({ name: element.textContent.trim() || element.getAttribute("aria-label"), width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height })),
         );
         assert.ok(targets.length === 4, `${url} exposes mobile navigation targets`);

@@ -41,6 +41,18 @@ if (typeof document !== "undefined" && typeof window !== "undefined") (() => {
 
   if (!siteHeader || !headerInner || !desktopNav || !languageSwitcher) return;
 
+  // Keep native anchor and focus scrolling aligned with a header that can wrap
+  // under text enlargement or user-defined spacing. CSS retains its fallback.
+  if (typeof window.ResizeObserver === "function") {
+    const syncHeaderOffset = () => {
+      const height = Math.ceil(siteHeader.getBoundingClientRect().height);
+      document.documentElement.style.scrollPaddingTop = (height + 16) + "px";
+    };
+    const headerObserver = new window.ResizeObserver(syncHeaderOffset);
+    headerObserver.observe(siteHeader);
+    syncHeaderOffset();
+  }
+
   const language = resolveSiteLanguage(document.documentElement.lang);
   const labels = SITE_LANGUAGE_LABELS[language];
 

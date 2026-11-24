@@ -65,8 +65,10 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .header-inner {
   min-height: 72px;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 28px;
+  gap: 8px 28px;
+  padding-block: 8px;
 }
 
 .brand {
@@ -75,7 +77,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
   gap: 12px;
   text-decoration: none;
   font-weight: 700;
-  white-space: nowrap;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .brand-symbol {
@@ -98,7 +102,11 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 .nav {
   display: flex;
-  gap: 24px;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px 24px;
   margin-left: auto;
 }
 
@@ -113,6 +121,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 .language-switcher {
   display: inline-flex;
+  flex: 0 0 auto;
+  max-width: 100%;
   padding: 3px;
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -550,6 +560,7 @@ h1 {
 
 .footer-inner {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 30px;
 }
@@ -1283,7 +1294,7 @@ h1 {
     font-size: 12px;
     line-height: 1.2;
     text-align: center;
-    white-space: nowrap;
+    white-space: normal;
   }
 }
 
@@ -1874,7 +1885,7 @@ h1 {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 13px;
   text-align: right;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .career-content {
@@ -1961,7 +1972,7 @@ h1 {
   color: var(--muted);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 12px;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .career-role > p {
