@@ -38,5 +38,6 @@ module.exports = {
       ['es/curriculo/index.html', `${localOrigin}/es/curriculo/`],
     ].filter(([file]) => fs.existsSync(file)).map(([, url]) => url),
     ...caseStudyUrls,
+    ...languageRoots.map((root) => `${localOrigin}/${root ? `${root}/` : ""}offline.html`),
   ],
 };
