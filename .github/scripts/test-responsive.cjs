@@ -185,6 +185,14 @@ const assertMobileLinkNavigation = async (page, url, profileName) => {
         const page = await browser.newPage();
         await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1 });
         await page.goto(`${ORIGIN}${url}`, { waitUntil: "load" });
+        // These isolated navigation controls should meet the project's 44px mobile target.
+        const targets = await page.$eval(".mobile-nav-toggle, .language-switcher .lang-link", (elements) =>
+          elements.map((element) => ({ name: element.textContent.trim() || element.getAttribute("aria-label"), width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height })),
+        );
+        assert.ok(targets.length >= 2, `${url} exposes mobile navigation targets`);
+        for (const target of targets) {
+          assert.ok(target.height >= 44 && target.width >= 24, `${url} target ${target.name} is ${target.width}x${target.height}px`);
+        }
         await page.focus(".mobile-nav-toggle");
         await page.keyboard.press("Enter");
         assert.equal(await page.$eval(".mobile-nav-toggle", (toggle) => toggle.getAttribute("aria-expanded")), "true", `${url} keyboard opens menu`);
