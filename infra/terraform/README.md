@@ -133,6 +133,12 @@ repo:rodri-oliveira-dev/rodri-oliveira-dev.github.io:environment:terraform-dev
 
 Esse subject não é coberto pela credencial da branch. A credencial de ambiente deve existir previamente no Entra, com issuer/audience idênticos e IDs imutáveis confirmados, antes de o job tentar autenticar. Não substitua nem edite a credencial funcional da `main` para obter essa correspondência.
 
+### Validação OIDC do Environment `terraform-dev`
+
+Após integrar o PR #184 e cadastrar a credencial federada do Environment no Entra, acesse Actions > Terraform validation > Run workflow, selecione `main` e a operação `validate-oidc`. O job autenticado aguarda a aprovação do Environment `terraform-dev`, usa `azure/login` com OIDC e consulta somente o Resource Group existente `rg-portfolio-push-dev`, sem publicar seus dados.
+
+Esta operação não inicializa o backend remoto, não lê nem altera o State e não executa `plan`, `import` ou `apply`. O sucesso comprova a autenticação do subject de ambiente e a leitura do Resource Group, não o RBAC mínimo, o acesso ao State ou a autorização para provisionamento. Registre o link da execução bem-sucedida na issue #142; o gate continua pendente até a revisão dos demais controles.
+
 ### Plano de menor privilégio
 
 1. **State:** manter `Storage Blob Data Contributor` somente no contêiner `tfstate`; não conceder chave da conta, SAS ou papel de gerenciamento do Storage ao workflow.
