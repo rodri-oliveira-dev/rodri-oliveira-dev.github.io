@@ -27,8 +27,11 @@ const inspectContent = () => {
     }
   }
   const main = document.querySelector("main");
-  // Only the explicitly interchangeable hero contact actions may vary by viewport.
-  const alternateContact = ".hero-actions a[href^='mailto:'], .hero-actions .mobile-contact-action";
+  // Only the homepage hero swaps its email CTA for a vCard on mobile.
+  // Service pages reuse .hero-actions but must preserve their email CTAs.
+  const heroEmail = ".hero .hero-actions > a[href^='mailto:']";
+  const heroVcard = ".hero .hero-actions > a.mobile-contact-action";
+  const alternateContact = heroEmail + ", " + heroVcard;
   const stableText = [];
   if (main) {
     const walker = document.createTreeWalker(main, NodeFilter.SHOW_TEXT);
@@ -45,8 +48,8 @@ const inspectContent = () => {
   return {
     stableText,
     mainControls: controls.filter(element => main?.contains(element) && !element.closest(alternateContact)).map(describe),
-    desktopContact: controls.some(element => element.matches(".hero-actions a[href^='mailto:']")),
-    mobileContact: controls.some(element => element.matches(".hero-actions .mobile-contact-action")),
+    desktopContact: controls.some(element => element.matches(heroEmail)),
+    mobileContact: controls.some(element => element.matches(heroVcard)),
     alternateEmail: controls.some(element => element.matches(".contact-links a[href^='mailto:']")),
     viewport: innerWidth,
     documentWidth: document.documentElement.scrollWidth,
@@ -149,6 +152,20 @@ async function assertMobileMenuTree(page, url) {
         await page.$eval("#clip-fixture", el => { el.style.display = "none"; });
         const hidden = await page.evaluate(inspectContent);
         assert.notDeepEqual(hidden.stableText, baseline, "Hidden main text must change the baseline");
+      } finally { await page.close(); }
+    });
+    await results.run("Responsive contact contract regression", async () => {
+      const page = await browser.newPage();
+      try {
+        await page.setContent('<main><section class="services-hero"><div class="hero-actions"><a href="mailto:test@example.com?subject=Project">Project email</a></div></section><section class="services-cta"><div class="hero-actions"><a href="mailto:test@example.com?subject=Project">Contact email</a></div></section></main>');
+        const desktop = await page.evaluate(inspectContent);
+        assert.equal(desktop.desktopContact, false, "Service CTAs must not trigger the homepage vCard exception");
+        assert.equal(desktop.mainControls.length, 2, "Both service CTAs must be preserved");
+        assert.deepEqual(desktop.stableText, ["Project email", "Contact email"]);
+        await page.$eval(".services-cta a", el => { el.style.display = "none"; });
+        const mobile = await page.evaluate(inspectContent);
+        assert.notDeepEqual(mobile.mainControls, desktop.mainControls, "Hidden service CTA must be detected");
+        assert.notDeepEqual(mobile.stableText, desktop.stableText, "Hidden service CTA text must be detected");
       } finally { await page.close(); }
     });
     for (const configuredUrl of urls) {
