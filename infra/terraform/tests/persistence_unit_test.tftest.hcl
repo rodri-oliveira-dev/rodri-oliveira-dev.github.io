@@ -30,8 +30,9 @@ mock_provider "azurerm" {
 
   mock_resource "azurerm_storage_account" {
     defaults = {
-      id                    = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-portfolio-push-dev/providers/Microsoft.Storage/storageAccounts/stportpushdev1350159615"
-      primary_blob_endpoint = "https://stportpushdev1350159615.blob.core.windows.net/"
+      id                     = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-portfolio-push-dev/providers/Microsoft.Storage/storageAccounts/stportpushdev1350159615"
+      primary_blob_endpoint  = "https://stportpushdev1350159615.blob.core.windows.net/"
+      primary_queue_endpoint = "https://stportpushdev1350159615.queue.core.windows.net/"
     }
   }
 
@@ -104,6 +105,11 @@ run "default_cost_and_security_baseline" {
   assert {
     condition     = azurerm_storage_queue.campaigns.name == "web-push-campaigns" && azurerm_storage_queue.campaigns_poison.name == "web-push-campaigns-poison"
     error_message = "As filas privada e poison devem ter nomes estáveis."
+  }
+
+  assert {
+    condition     = azurerm_function_app_flex_consumption.notifications.app_settings["CampaignQueue__credential"] == "managedidentity" && contains(keys(azurerm_function_app_flex_consumption.notifications.app_settings), "CampaignQueue__queueServiceUri") && !contains(keys(azurerm_function_app_flex_consumption.notifications.app_settings), "CampaignQueue")
+    error_message = "O Queue Trigger deve usar endpoint de dados e Managed Identity, sem connection string."
   }
 }
 

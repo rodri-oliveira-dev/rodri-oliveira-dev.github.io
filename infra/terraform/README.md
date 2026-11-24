@@ -62,6 +62,8 @@ O host processa uma mensagem por lote, sem prefetch adicional, tenta no máximo 
 
 As funções `Storage Blob Data Owner` e `Storage Queue Data Contributor` estão declaradas no escopo da conta dedicada, mas continuam ausentes do plano padrão enquanto `manage_runtime_role_assignments=false`. A Function só ficará operacional após uma execução IAM separada, revisada e aprovada. Não há connection string, access key ou segredo em HCL, plano ou State. Application Insights não foi criado: logs e métricas de plataforma são enviados diretamente ao Log Analytics, evitando introduzir uma connection string sensível no State nesta fase.
 
+O sender da #147 recebe somente o identificador de campanha pela fila. A Function recebe por app settings apenas a URI do Key Vault, o subject VAPID, os nomes estáveis `vapid-public-key`/`vapid-private-key`, TTL e timeout. Os valores dos secrets não são recursos Terraform: devem ser criados diretamente por operador autorizado depois de provisionar o vault e antes de qualquer ativação. A identidade de runtime precisa das atribuições condicionais já modeladas; o publicador futuro não deve receber leitura do vault, Cosmos ou acesso de deploy.
+
 ### Custo incremental estimado
 
 Consulta à Azure Retail Prices API em 24/11/2026 para Brazil South e USD:

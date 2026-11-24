@@ -33,6 +33,9 @@ internal sealed class SubscriptionDocument
 
     [JsonProperty("ttl", NullValueHandling = NullValueHandling.Ignore)]
     public int? TimeToLiveSeconds { get; init; }
+
+    [JsonProperty("_etag", NullValueHandling = NullValueHandling.Ignore)]
+    public string? ETag { get; init; }
 }
 
 internal sealed record SubscriptionKeysDocument(
@@ -51,6 +54,11 @@ internal sealed record DocumentWriteResult(
 
 internal interface ISubscriptionDocumentStore
 {
+    IAsyncEnumerable<StoredSubscriptionDocument> ListByLocaleAsync(
+        string locale,
+        int pageSize,
+        CancellationToken cancellationToken);
+
     Task<StoredSubscriptionDocument?> ReadAsync(
         string id,
         string partitionKey,

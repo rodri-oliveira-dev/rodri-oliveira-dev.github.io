@@ -80,18 +80,23 @@ resource "azurerm_function_app_flex_consumption" "notifications" {
   }
 
   app_settings = {
-    AzureWebJobsStorage__accountName     = azurerm_storage_account.functions.name
-    AzureWebJobsStorage__credential      = "managedidentity"
-    AzureWebJobsStorage__clientId        = azurerm_user_assigned_identity.functions_runtime.client_id
-    CampaignQueue__accountName           = azurerm_storage_account.functions.name
-    CampaignQueue__credential            = "managedidentity"
-    CampaignQueue__clientId              = azurerm_user_assigned_identity.functions_runtime.client_id
-    Notifications__CosmosEndpoint        = azurerm_cosmosdb_account.notifications.endpoint
-    Notifications__CosmosDatabaseName    = azurerm_cosmosdb_sql_database.notifications.name
-    Notifications__CosmosContainerName   = azurerm_cosmosdb_sql_container.subscriptions.name
-    Notifications__KeyVaultUri           = azurerm_key_vault.vapid.vault_uri
-    Notifications__DeploymentEnvironment = var.environment
-    AZURE_CLIENT_ID                      = azurerm_user_assigned_identity.functions_runtime.client_id
+    AzureWebJobsStorage__accountName         = azurerm_storage_account.functions.name
+    AzureWebJobsStorage__credential          = "managedidentity"
+    AzureWebJobsStorage__clientId            = azurerm_user_assigned_identity.functions_runtime.client_id
+    CampaignQueue__queueServiceUri           = azurerm_storage_account.functions.primary_queue_endpoint
+    CampaignQueue__credential                = "managedidentity"
+    CampaignQueue__clientId                  = azurerm_user_assigned_identity.functions_runtime.client_id
+    Notifications__CosmosEndpoint            = azurerm_cosmosdb_account.notifications.endpoint
+    Notifications__CosmosDatabaseName        = azurerm_cosmosdb_sql_database.notifications.name
+    Notifications__CosmosContainerName       = azurerm_cosmosdb_sql_container.subscriptions.name
+    Notifications__KeyVaultUri               = azurerm_key_vault.vapid.vault_uri
+    Notifications__DeploymentEnvironment     = var.environment
+    Notifications__VapidSubject              = "https://rodri-oliveira-dev.github.io/"
+    Notifications__VapidPublicKeySecretName  = "vapid-public-key"
+    Notifications__VapidPrivateKeySecretName = "vapid-private-key"
+    Notifications__PushTimeToLiveSeconds     = "86400"
+    Notifications__RequestTimeoutSeconds     = "15"
+    AZURE_CLIENT_ID                          = azurerm_user_assigned_identity.functions_runtime.client_id
   }
 
   site_config {

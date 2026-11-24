@@ -19,6 +19,27 @@ internal sealed class CosmosSubscriptionDocumentStore : ISubscriptionDocumentSto
             options.Value.CosmosContainerName);
     }
 
+    public async IAsyncEnumerable<StoredSubscriptionDocument> ListByLocaleAsync(
+        string locale,
+        int pageSize,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var query = new QueryDefinition("SELECT * FROM c WHERE c.locale = @locale")
+            .WithParameter("@locale", locale);
+        using var iterator = _container.GetItemQueryIterator<SubscriptionDocument>(
+            query,
+            requestOptions: new QueryRequestOptions { MaxItemCount = pageSize });
+
+        while (iterator.HasMoreResults)
+        {
+            var response = await iterator.ReadNextAsync(cancellationToken);
+            foreach (var document in response)
+            {
+                yield return new(document, document.ETag ?? string.Empty, response.RequestCharge / Math.Max(response.Count, 1));
+            }
+        }
+    }
+
     public async Task<StoredSubscriptionDocument?> ReadAsync(
         string id,
         string partitionKey,

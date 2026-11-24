@@ -2,6 +2,10 @@ namespace Notifications.Functions.Subscriptions;
 
 public interface ISubscriptionRepository
 {
+    IAsyncEnumerable<SubscriptionRecord> ListActiveAsync(
+        string locale,
+        CancellationToken cancellationToken = default);
+
     Task<SubscriptionRecord?> GetAsync(string endpoint, CancellationToken cancellationToken = default);
 
     Task<SubscriptionMutationResult> CreateAsync(
@@ -21,6 +25,7 @@ public interface ISubscriptionRepository
 
 internal sealed class CosmosSubscriptionRepository : ISubscriptionRepository
 {
+    private const int QueryPageSize = 25;
     private readonly ISubscriptionDocumentStore _store;
     private readonly TimeProvider _timeProvider;
 
@@ -43,6 +48,21 @@ internal sealed class CosmosSubscriptionRepository : ISubscriptionRepository
         var (id, partitionKey) = WebPushSubscriptionValidator.DeriveIdentity(normalizedEndpoint);
         var stored = await _store.ReadAsync(id, partitionKey, cancellationToken);
         return stored is null ? null : Map(stored);
+    }
+
+    public async IAsyncEnumerable<SubscriptionRecord> ListActiveAsync(
+        string locale,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        if (!string.Equals(locale, WebPushSubscriptionValidator.SupportedLocale, StringComparison.Ordinal))
+        {
+            throw new ArgumentException("Somente o idioma pt-BR é aceito nesta versão.", nameof(locale));
+        }
+
+        await foreach (var stored in _store.ListByLocaleAsync(locale, QueryPageSize, cancellationToken))
+        {
+            yield return Map(stored);
+        }
     }
 
     public async Task<SubscriptionMutationResult> CreateAsync(

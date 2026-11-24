@@ -71,6 +71,19 @@ public sealed class CosmosSubscriptionRepositoryTests
         private int _version;
         public Dictionary<string, StoredSubscriptionDocument> Documents { get; } = [];
 
+        public async IAsyncEnumerable<StoredSubscriptionDocument> ListByLocaleAsync(
+            string locale,
+            int pageSize,
+            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            foreach (var stored in Documents.Values.Where(item => item.Document.Locale == locale))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                yield return stored;
+                await Task.Yield();
+            }
+        }
+
         public Task<StoredSubscriptionDocument?> ReadAsync(
             string id,
             string partitionKey,

@@ -18,7 +18,8 @@ public sealed class ServiceCollectionExtensionsTests
                 ["Notifications:DeploymentEnvironment"] = "test",
                 ["Notifications:CosmosEndpoint"] = "https://cosmos.example.test",
                 ["Notifications:CosmosDatabaseName"] = "notifications",
-                ["Notifications:CosmosContainerName"] = "subscriptions"
+                ["Notifications:CosmosContainerName"] = "subscriptions",
+                ["Notifications:KeyVaultUri"] = "https://kv-example.vault.azure.net/"
             })
             .Build();
         var services = new ServiceCollection();
@@ -28,11 +29,13 @@ public sealed class ServiceCollectionExtensionsTests
         using var provider = services.BuildServiceProvider();
         var options = provider.GetRequiredService<IOptions<NotificationsOptions>>().Value;
         var cosmosOptions = provider.GetRequiredService<IOptions<CosmosOptions>>().Value;
+        var webPushOptions = provider.GetRequiredService<IOptions<WebPushOptions>>().Value;
         var healthStatus = provider.GetRequiredService<IHealthStatusService>();
 
         Assert.Equal("test-notifications", options.ServiceName);
         Assert.Equal("test", options.DeploymentEnvironment);
         Assert.Equal("https://cosmos.example.test/", cosmosOptions.CosmosEndpoint!.AbsoluteUri);
+        Assert.Equal("https://kv-example.vault.azure.net/", webPushOptions.KeyVaultUri!.AbsoluteUri);
         Assert.Equal(new HealthResponse("healthy", "test-notifications"), healthStatus.GetStatus());
     }
 
