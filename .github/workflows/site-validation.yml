@@ -41,6 +41,9 @@ jobs:
           node-version: 24
           package-manager-cache: false
 
+      - name: Test Sonar finding synchronization offline
+        run: node --test .github/scripts/test-sonar-quality-sync.cjs
+
       - name: Test language resolution and navigation labels
         run: node .github/scripts/test-site-i18n.cjs
 

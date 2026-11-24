@@ -63,9 +63,11 @@ jobs:
       - name: Assemble site
         run: |
           mkdir -p _site
-          rsync -a --exclude='/.git/' --exclude='/.github/' --exclude='/.agents/' --exclude='/.sonarcloud.properties' --exclude='/docs/agent-skills.md' --exclude='/docs/sonarcloud-integration.md' --exclude='/node_modules/' --exclude='/_site/' --exclude='*.log' ./ _site/
+          rsync -a --exclude='/.git/' --exclude='/.github/' --exclude='/.agents/' --exclude='/.sonarcloud.properties' --exclude='/sonar-project.properties' --exclude='/.scannerwork/' --exclude='/docs/agent-skills.md' --exclude='/docs/sonarcloud-integration.md' --exclude='/node_modules/' --exclude='/_site/' --exclude='*.log' ./ _site/
           test ! -e _site/.agents
           test ! -e _site/.sonarcloud.properties
+          test ! -e _site/sonar-project.properties
+          test ! -e _site/.scannerwork
           test ! -e _site/docs/agent-skills.md
           test ! -e _site/docs/sonarcloud-integration.md
           test -s _site/curriculo/rodrigo-de-oliveira.pdf

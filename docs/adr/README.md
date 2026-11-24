@@ -15,6 +15,7 @@ Este diretório registra escolhas que alteram responsabilidades, infraestrutura 
 | [0009](0009-adotar-azure-para-web-push-por-custo.md) | Adotar Azure para Web Push por controle de custos | Accepted |
 | [0010](0010-tratar-acessibilidade-como-requisito-transversal.md) | Tratar acessibilidade como requisito transversal | Proposed |
 | [0011](0011-preferencias-de-contraste-locais.md) | Preferências locais de contraste | Proposed |
+| [0013](0013-sonarqube-cloud-no-ci.md) | Executar análise SonarQube Cloud no CI | Proposed |
 
 ## Como manter
 

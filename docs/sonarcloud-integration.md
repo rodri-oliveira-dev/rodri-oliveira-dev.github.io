@@ -1,4 +1,48 @@
-# Especificação da integração com SonarCloud
+# Integração SonarQube Cloud
+
+## Estratégia vigente proposta: GitHub Actions
+
+A [ADR 0013](adr/0013-sonarqube-cloud-no-ci.md) registra a migração para CI-based analysis. O projeto existente mantém a identidade rodri-oliveira-dev_rodri-oliveira-dev.github.io e a organização rodri-oliveira-dev. A configuração canônica está em [sonar-project.properties](../sonar-project.properties); não manter o arquivo de Automatic Analysis em paralelo.
+
+### Ativação (administrador)
+
+1. No SonarQube Cloud, confirmar o vínculo GitHub e desabilitar Automatic Analysis em Project Settings > Analysis Method. Os dois métodos são incompatíveis.
+2. Confirmar projeto, organização, definição de New Code e associação ao Sonar way. Não alterar regras para contornar o resultado.
+3. Em GitHub Settings > Secrets and variables > Actions, criar o secret SONAR_TOKEN com privilégio mínimo no projeto. A identidade é fixa no arquivo versionado, e não depende de variables duplicadas.
+4. Definir a repository variable SONAR_CI_ENABLED como true somente após os passos anteriores. Enquanto desabilitado, o job informativo declara que não houve análise.
+5. Executar uma análise manual em main após o merge (ou reexecutar o PR interno após habilitação). Conferir o SHA, os arquivos indexados, a classificação dos testes, o resultado e a decoração no PR. Falha do scanner ou Quality Gate não é mascarada.
+6. Não tornar o check obrigatório antes da validação, da política explícita para forks/Dependabot e da instrumentação de cobertura. Um job ignorado não comprova qualidade. Não adicionar badges antes de validar dados reais.
+
+### Operação
+
+- [SonarQube Cloud](../.github/workflows/sonar.yml): PR interno para main, push em main e despacho manual em main. Checkout completo, token somente nos steps necessários, actions por SHA e permissão contents: read. Não executa em forks ou Dependabot, não utiliza pull_request_target e não acessa OIDC, Terraform State, Pages ou releases.
+- Quality Gate: espera de até 300 segundos; falha do scanner, timeout ou reprovação falham o job. Os demais gates continuam independentes.
+- Escopo: código mantido de frontend, automação, workflows e Terraform elegível ao analisador; testes são classificados separadamente. Excluir arquivos gerados, dependências, state, planos e tfvars potencialmente sensíveis. Conferir cobertura real do analisador de IaC no painel; terraform fmt/validate e zizmor continuam obrigatórios independentemente do Sonar.
+- Cobertura: os testes atuais não produzem relatórios LCOV/Cobertura validados. Este PR não cria cobertura artificial, não adiciona exclusões de cobertura nem muda thresholds. A instrumentação de JS/Python e a estratégia do futuro backend são etapas próprias. O Sonar way pode reprovar por ausência de cobertura.
+- Publicação: não se altera o fluxo de deploy, tags ou releases. A futura integração com preflight de release deverá verificar o resultado do SHA publicado, sem repetir scans desnecessários.
+
+### Sincronização de findings
+
+O [workflow separado](../.github/workflows/sonar-quality-issues.yml) executa somente por despacho manual em main, com SONAR_CI_ENABLED=true e SONAR_SYNC_ENABLED=true. Habilitar a segunda variable apenas após validar o scanner, confirmar análise atual da main e revisar os findings. Antes de cada execução, confirmar no painel que a análise da main corresponde ao HEAD atual; não executar durante processamento de uma análise. Não há execução agendada nesta primeira etapa.
+
+O script reutiliza o reconciliador do ADR Guard (commit 0ce8fb5a58eb85a9031b66df94bf2c1bcc010682), com identidade estável por finding, paginação validada, preservação de issues manuais, atualização, fechamento e reabertura idempotentes de issues gerenciadas pelo bot. Fechamento indica que o finding deixou de qualificar no conjunto OPEN de alto impacto, e não prova isoladamente que um defeito foi corrigido. Falhas de API impedem reconciliação incompleta. Validar offline com node --test .github/scripts/test-sonar-quality-sync.cjs.
+
+### Rollback
+
+Desabilitar SONAR_SYNC_ENABLED e SONAR_CI_ENABLED, cancelar execuções em andamento e remover eventual check obrigatório mediante revisão. Para voltar à Automatic Analysis, reverter a configuração e workflow por PR, confirmar que nenhum scanner CI continua ativo e somente então reativar o método no SonarQube Cloud. Preservar o projeto e seu histórico.
+
+### Referências
+
+- [Métodos de análise](https://docs.sonarsource.com/sonarqube-cloud/analyzing-source-code/ci-based-analysis/overview-of-integrated-cis)
+- [Cobertura JavaScript](https://docs.sonarsource.com/sonarqube-cloud/analyzing-source-code/test-coverage/javascript-typescript-test-coverage)
+
+---
+
+## Histórico da integração anterior
+
+O texto abaixo preserva o levantamento e as decisões de novembro de 2026 referentes à Automatic Analysis. As instruções de configuração e critérios pendentes daquele método são históricos e não devem ser usados para ativar a nova integração.
+
+### Especificação da integração com SonarCloud
 
 ## 1. Contexto e estado atual
 

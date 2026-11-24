@@ -1,0 +1,65 @@
+name: SonarQube Cloud
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sonar-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: SonarQube Cloud Quality Gate
+    if: >-
+      vars.SONAR_CI_ENABLED == 'true' &&
+      github.actor != 'dependabot[bot]' &&
+      (github.event_name != 'pull_request' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]')) &&
+      (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main')
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 20
+    steps:
+      - name: Checkout analyzed revision
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify Sonar token configuration
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$SONAR_TOKEN" || { echo "::error::Set SONAR_TOKEN before enabling SONAR_CI_ENABLED"; exit 1; }
+
+      - name: Scan and wait for the Quality Gate
+        uses: SonarSource/sonarqube-scan-action@70bad232163b09d998ea0707ee80c0ec80798c16 # v8.5.1
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+
+  analysis-not-run:
+    name: SonarQube Cloud not run
+    if: >-
+      vars.SONAR_CI_ENABLED != 'true' ||
+      github.actor == 'dependabot[bot]' ||
+      (github.event_name == 'pull_request' &&
+      (github.event.pull_request.head.repo.full_name != github.repository ||
+      github.event.pull_request.user.login == 'dependabot[bot]')) ||
+      (github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main')
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 2
+    steps:
+      - name: Explain why no Sonar result is available
+        run: echo "::notice::Sonar analysis not performed (disabled, untrusted PR, or manual dispatch outside main). This is not a passing Quality Gate."
