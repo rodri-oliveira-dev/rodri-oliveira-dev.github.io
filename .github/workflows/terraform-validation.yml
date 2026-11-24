@@ -42,14 +42,13 @@ jobs:
       - name: Check formatting
         run: terraform fmt -check -recursive
 
-      - name: Generate signed cross-platform lockfile candidate
+      - name: Verify signed cross-platform provider lockfile
         run: |
           terraform providers lock \
             -platform=linux_amd64 \
             -platform=windows_amd64 \
             -platform=darwin_amd64 \
             -platform=darwin_arm64
-          cat .terraform.lock.hcl
           git diff --exit-code -- .terraform.lock.hcl
 
       - name: Initialize without remote backend
