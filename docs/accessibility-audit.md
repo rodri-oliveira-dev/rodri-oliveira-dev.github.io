@@ -6,9 +6,9 @@ Revisão estática de código e configuração, 2026-11-24. Não é avaliação 
 
 | Critério / superfície | Evidência existente | Lacuna / próxima verificação |
 | --- | --- | --- |
-| 1.1.1, 1.3.1, 2.4.2, 2.4.6, 3.1.1, 4.1.2 | Pa11y (axe e HTML_CodeSniffer); páginas PT/EN/ES | Conferir resultados por página; texto alternativo, ordem semântica e nomes acessíveis manualmente |
+| 1.1.1, 1.3.1, 2.4.2, 2.4.6, 3.1.1, 4.1.2 | Pa11y (axe e HTML_CodeSniffer); páginas PT/EN/ES | Suíte adicional inspeciona árvore AX via CDP: landmark main, heading nível 1, nomes de controles e estado expandido do menu móvel; execução pendente. Validar ordem de leitura, qualidade dos nomes e tecnologias assistivas manualmente |
 | 1.4.3, 1.4.11 | check-contrast.mjs verifica tokens e combinações selecionadas | axe color-contrast está explicitamente ignorado; avaliar contraste efetivamente renderizado, gradientes, bordas e estados antes de alterar a exceção |
-| 1.4.4, 1.4.10, 1.4.12 | test-responsive.cjs verifica larguras de 320 a 1440 px | Testar zoom 200%/400%, espaçamento de texto e exceções de conteúdo bidimensional |
+| 1.4.4, 1.4.10, 1.4.12 | test-responsive.cjs verifica larguras de 320 a 1440 px | Suíte adicional verifica tamanho computado de texto a 200%, viewport equivalente de 320px e espaçamento WCAG 1.4.12; execução pendente. Validar zoom nativo, perda visual de conteúdo e exceções manualmente |
 | 2.1.1, 2.1.2, 2.4.1, 2.4.3, 2.4.7 | Teste do menu móvel, Escape e retorno de foco; skip link e estilo focus-visible | Percorrer todos os controles com Tab e Shift+Tab; verificar skip link, foco visível e ausência de armadilhas nas páginas internas |
 | 2.4.11 (AA) | scroll-padding e teste de âncoras | Teste de regressão acrescentado para Tab e Shift+Tab: cabeçalho sticky, todas as rotas em 390/1440 px e homepages em 320/768 px. Execução pendente na CI. Ainda avaliar aviso expandido, viewport baixo, zoom e leitores de tela |
 | 2.5.8 (AA) | CSS móvel prevê altura de 44px no menu e seletor de idioma; teste acrescentado | Verificar demais alvos e exceções do critério, desktop e mobile; 24×24 CSS px é o mínimo sem exceções, não 44px |
