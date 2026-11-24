@@ -44,6 +44,7 @@ Para manutenção, edite as três traduções no mesmo PR e execute `python3 .gi
 | --- | --- | --- | --- |
 | ADR Guard | [`adr-guard.yml`](workflows/adr-guard.yml) | Pull Request para `main`, push em `main` e manual | Validar ADRs versionadas sem gerar ou aprovar decisões |
 | Terraform validation | [`terraform-validation.yml`](workflows/terraform-validation.yml) | Pull Request que altera `infra/terraform/` e manual | Verificar formatação, inicialização sem backend e validade da configuração AzureRM sem credenciais |
+| Azure OIDC Validation | [`azure-oidc-validation.yml`](workflows/azure-oidc-validation.yml) | Manual, somente `main` | Validar autenticação OIDC, acesso ao Resource Group, backend remoto e Blob Lease descartável |
 | Site validation | [`site-validation.yml`](workflows/site-validation.yml) | Pull Request, push em `main` e manual | Validar HTML, links, ortografia e workflows |
 | Publish site with resume PDF | [`deploy-pages.yml`](workflows/deploy-pages.yml) | PR que altera os currículos, push em `main` e manual | Gerar os três PDFs a partir de HTML/CSS e publicar o site via GitHub Pages |
 | SEO validation | [`seo-validation.yml`](workflows/seo-validation.yml) | Pull Request, push em `main` e manual | Validar JSON-LD, sitemap, RSS discovery e consistência dos artefatos SEO |
@@ -387,3 +388,7 @@ Além dos workflows, a automação depende destes arquivos:
 - [`scripts/summarize-zizmor.mjs`](scripts/summarize-zizmor.mjs) — resumo e comentário do zizmor.
 
 Ao alterar um workflow ou um desses arquivos de suporte, o Pull Request deve permanecer verde nos gates aplicáveis antes do merge.
+
+### Azure OIDC Validation
+
+O [workflow](workflows/azure-oidc-validation.yml) é exclusivamente manual e o job autenticado roda apenas na `main`. Reutiliza as três variáveis Azure existentes e `id-token: write`; não executa com credenciais em PRs. Valida o Resource Group, testa escrita, aquisição/liberação de lease de 60 segundos e exclusão de um blob sintético descartável em `tfstate/_validation/`, inicializa o backend remoto com OIDC e executa `terraform validate`. Não executa plan/apply/import nem publica state ou credenciais. O teste de lease não representa concorrência entre dois processos Terraform; a retenção do armazenamento pode manter versões do blob de teste. Veja [bootstrap e riscos](../infra/terraform/README.md). Após aprovação e merge, execute manualmente e registre o link na issue #139.
