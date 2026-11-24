@@ -19,11 +19,11 @@ const results = require("./accessibility-results.cjs").createResults("Contrast p
       await results.run(url + " | selection and persistence", async () => {
       await page.goto(url, { waitUntil: "load" });
       await open(page);
-      assert.equal(await page.$eval("#contrast-preference input[type=radio]", els => els.length), 3);
+      assert.equal(await page.$$eval("#contrast-preference input[type=radio]", els => els.length), 3);
       assert.ok(await page.$eval("#contrast-preference legend", el => el.textContent.trim()));
       for (const width of [320, 360, 390, 768, 1024, 1440]) {
         await page.setViewport({ width, height: 844 });
-        const layout = await page.$eval("#contrast-preference label", labels => labels.map(label => {
+        const layout = await page.$$eval("#contrast-preference label", labels => labels.map(label => {
           const rect = label.getBoundingClientRect();
           return { width: rect.width, height: rect.height, left: rect.left, right: rect.right };
         }));
