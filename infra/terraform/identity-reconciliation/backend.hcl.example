@@ -1,0 +1,4 @@
+# Backend separado para reconciliar identidade sem misturar o state do workload.
+storage_account_name = "strotfstatepushdev"
+container_name       = "tfstate"
+key                  = "portfolio-push-identity-dev.tfstate"

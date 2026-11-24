@@ -102,3 +102,48 @@ Revise a assinatura apresentada pelo Terraform, a versão e o diff de `.terrafor
 Referência: [terraform providers lock](https://developer.hashicorp.com/terraform/cli/commands/providers/lock).
 
 Uma consulta real, `plan` ou importação exige autenticação e deve ocorrer apenas em contexto confiável e explicitamente autorizado.
+
+## Reconciliação da identidade existente (#140)
+
+O root module separado [`identity-reconciliation/`](identity-reconciliation/) representa, sem recriar o bootstrap:
+
+- a aplicação Entra existente `app-portfolio-push-deploy-dev` e seu service principal, consultados por data sources;
+- a atribuição temporária `Contributor` no escopo exato de `rg-portfolio-push-dev`, consultada em vez de criada;
+- a credencial federada já funcional da branch `main`, declarada com `prevent_destroy` e um bloco `import` obrigatório.
+
+A credencial da `main` aceita somente o issuer `https://token.actions.githubusercontent.com`, a audience `api://AzureADTokenExchange` e o subject exato:
+
+```text
+repo:rodri-oliveira-dev/rodri-oliveira-dev.github.io:ref:refs/heads/main
+```
+
+Não execute esse root module com a própria identidade de deploy. As consultas do provider `azuread` exigem leitura de diretório e o import exige uma sessão de operador autorizada; conceder `Application.ReadWrite.All` ao workflow ampliaria desnecessariamente o impacto de um comprometimento. Antes do primeiro `plan`, o operador deve confirmar no Entra o nome e os IDs imutáveis da credencial, copiá-los para um `terraform.tfvars` ignorado e executar somente o import declarativo. Interrompa se o plano indicar criação, substituição ou alteração da credencial existente. Esta etapa não autoriza `apply`.
+
+O state de identidade usa uma key separada (`portfolio-push-identity-dev.tfstate`) para não misturar privilégios de diretório com o state do workload. A criação dessa key pelo primeiro `init`/import e a concessão de acesso ao operador continuam ações manuais. Não publique IDs de objeto, credential IDs, conteúdo de State ou tokens em issues, logs ou commits.
+
+### Variáveis GitHub Actions confirmadas
+
+Em 24/11/2026, a API do GitHub confirmou os nomes das variáveis de repositório `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` e `AZURE_SUBSCRIPTION_ID`; seus valores não foram lidos nem registrados. Workflows devem continuar mapeando essas variáveis para `azure/login` e `ARM_*`, sem client secret.
+
+O repositório ainda não possuía proteção da branch `main` nem um GitHub Environment dedicado ao Terraform na mesma verificação. Antes de habilitar um fluxo autenticado, exigir Pull Request na `main`, impedir force-push/exclusão e criar um Environment protegido com aprovação humana. Um job que declara `environment: terraform-dev` muda o subject OIDC para:
+
+```text
+repo:rodri-oliveira-dev/rodri-oliveira-dev.github.io:environment:terraform-dev
+```
+
+Esse subject não é coberto pela credencial da branch. A credencial de ambiente deve existir previamente no Entra, com issuer/audience idênticos e IDs imutáveis confirmados, antes de o job tentar autenticar. Não substitua nem edite a credencial funcional da `main` para obter essa correspondência.
+
+### Validação OIDC do Environment `terraform-dev`
+
+Após integrar o PR #184 e cadastrar a credencial federada do Environment no Entra, acesse Actions > Terraform validation > Run workflow, selecione `main` e a operação `validate-oidc`. O job autenticado aguarda a aprovação do Environment `terraform-dev`, usa `azure/login` com OIDC e consulta somente o Resource Group existente `rg-portfolio-push-dev`, sem publicar seus dados.
+
+Esta operação não inicializa o backend remoto, não lê nem altera o State e não executa `plan`, `import` ou `apply`. O sucesso comprova a autenticação do subject de ambiente e a leitura do Resource Group, não o RBAC mínimo, o acesso ao State ou a autorização para provisionamento. Registre o link da execução bem-sucedida na issue #142; o gate continua pendente até a revisão dos demais controles.
+
+### Plano de menor privilégio
+
+1. **State:** manter `Storage Blob Data Contributor` somente no contêiner `tfstate`; não conceder chave da conta, SAS ou papel de gerenciamento do Storage ao workflow.
+2. **Terraform:** substituir `Contributor` no Resource Group por papéis/custom role restritos aos tipos efetivamente modelados, sem `Microsoft.Authorization/roleAssignments/*`, antes do primeiro `apply`. A lista final depende dos recursos aprovados nas issues posteriores e não deve ser antecipada.
+3. **Deploy:** usar credencial federada de Environment e papel limitado ao artefato/slot que o workflow realmente implantar; não reutilizar automaticamente o acesso amplo de Terraform para deploy da aplicação.
+4. **Separação:** manter sujeitos de branch e Environment em credenciais distintas e workflows distintos. Qualquer separação futura em outra app registration exige decisão e escopo próprios; #140 preserva a aplicação existente.
+
+Até que o RBAC mínimo, a proteção da `main`, o Environment e sua credencial federada estejam comprovados, `Contributor` é uma exceção temporária e nenhum gate autoriza `apply`.

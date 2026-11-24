@@ -43,7 +43,7 @@ Para manutenção, edite as três traduções no mesmo PR e execute `python3 .gi
 | Workflow | Arquivo | Execução | Objetivo |
 | --- | --- | --- | --- |
 | ADR Guard | [`adr-guard.yml`](workflows/adr-guard.yml) | Pull Request para `main`, push em `main` e manual | Validar ADRs versionadas sem gerar ou aprovar decisões |
-| Terraform validation | [`terraform-validation.yml`](workflows/terraform-validation.yml) | Pull Request que altera `infra/terraform/` e manual | Verificar formatação, inicialização sem backend e validade da configuração AzureRM sem credenciais |
+| Terraform validation | [`terraform-validation.yml`](workflows/terraform-validation.yml) | Todo Pull Request e manual; operações autenticadas somente na `main` | Validar IaC sem credenciais em PR e restringir `plan`/`apply` ao Environment protegido |
 | Azure OIDC Validation | [`azure-oidc-validation.yml`](workflows/azure-oidc-validation.yml) | Manual, somente `main` | Validar autenticação OIDC, acesso ao Resource Group, backend remoto e Blob Lease descartável |
 | Site validation | [`site-validation.yml`](workflows/site-validation.yml) | Pull Request, push em `main` e manual | Validar HTML, links, ortografia e workflows |
 | Release and Deploy | [`deploy-pages.yml`](workflows/deploy-pages.yml) | PR relevante (somente prévia); publicação manual em `main` | Validar gates, gerar PDFs, publicar o artefato, criar tag e release |
@@ -85,9 +85,17 @@ Antes de mesclar a mudança de estratégia, confirme **Settings → Pages → So
 
 ### Terraform validation
 
-O [`terraform-validation.yml`](workflows/terraform-validation.yml) executa `terraform fmt -check -recursive`, inicializa providers com `terraform init -backend=false -input=false -lockfile=readonly` e valida a configuração com `terraform validate -no-color`. O gate roda sem credenciais e sem acessar o backend remoto quando `infra/terraform/` ou o próprio workflow muda em um Pull Request para `main`; também aceita execução manual.
+O [`terraform-validation.yml`](workflows/terraform-validation.yml) executa `terraform fmt -check -recursive`, confere os lockfiles assinados para Linux, Windows e macOS, inicializa os dois roots com `terraform init -backend=false -input=false -lockfile=readonly` e aplica `terraform validate -no-color`. O gate roda em todo Pull Request, sem credenciais e sem acessar o backend remoto, para continuar publicando o status mesmo quando a mudança não envolve IaC.
 
-O workflow também verifica os checksums assinados do AzureRM para `linux_amd64`, `windows_amd64`, `darwin_amd64` e `darwin_arm64` com `terraform providers lock`, falhando se a geração alterar o lockfile versionado. O Terraform CLI é fixado em `1.17.2`, as actions usam SHA imutável, as credenciais do checkout não persistem e a única permissão do `GITHUB_TOKEN` é `contents: read`. O workflow não executa `plan`, `import` ou `apply` e não solicita `id-token: write`.
+Execuções manuais oferecem `validate`, `plan` ou `apply`. `plan` e `apply` são rejeitados fora de `refs/heads/main`, usam checkout explícito da `main`, serialização por branch e o Environment `terraform-dev`. Somente esses jobs recebem `id-token: write`; as variáveis `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` e `AZURE_SUBSCRIPTION_ID` são mapeadas para OIDC/`ARM_*`, sem client secret. O plano e os logs potencialmente sensíveis permanecem apenas em arquivos efêmeros do runner e não são publicados como artefatos.
+
+`apply` exige simultaneamente despacho manual, confirmação textual `APPLY` e aprovação humana configurada no Environment. Ele cria um plano novo após a aprovação e aplica exatamente esse arquivo; um plano de outra execução nunca é reutilizado. Antes de habilitar o job, o Environment deve impedir bypass de administradores e possuir uma credencial Entra com o subject exato documentado em [`infra/terraform/README.md`](../infra/terraform/README.md). A proteção da `main` também deve exigir Pull Request e impedir force-push/exclusão. Enquanto esses controles externos não estiverem comprovados, o job não está autorizado para uso.
+
+### Rollback do Terraform
+
+Não há rollback automático de infraestrutura. Se um `apply` falhar, não restaurar State, não executar `force-unlock` e não repetir a operação às cegas. Primeiro conferir recursos parcialmente alterados e o lease em uma sessão autorizada, preservar as versões/soft delete do backend e preparar uma mudança Terraform reversa em novo Pull Request. A reversão passa pelos mesmos `fmt`, `validate`, análise estática, `plan`, revisão e aprovação do Environment antes de outro `apply`. Reverter apenas o workflow ou o HCL não desfaz recursos Azure já alterados.
+
+O workflow também verifica os checksums assinados de AzureRM e AzureAD para `linux_amd64`, `windows_amd64`, `darwin_amd64` e `darwin_arm64` com `terraform providers lock`, falhando se a geração alterar um lockfile versionado. O Terraform CLI é fixado em `1.17.2`, as actions usam SHA imutável, as credenciais do checkout não persistem e o `GITHUB_TOKEN` permanece em `contents: read`. Em PR, nenhum job executa `plan`, `import` ou `apply`, solicita token OIDC ou acessa a Azure.
 
 ### ADR Guard
 
