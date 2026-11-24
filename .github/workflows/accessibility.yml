@@ -58,6 +58,11 @@ jobs:
           const languageRoots = ["", "en", "es"];
           const expected = new Set(languageRoots
             .map((root) => `${origin}/${root ? `${root}/` : ""}`));
+          for (const root of languageRoots) {
+            const route = path.join(root, "offline.html");
+            if (!fs.existsSync(route)) throw new Error(`Missing offline page: ${route}`);
+            expected.add(`${origin}/${route.split(path.sep).join("/")}`);
+          }
           for (const route of ["curriculo/", "en/resume/", "es/curriculo/"]) {
             if (!fs.existsSync(`${route}index.html`)) throw new Error(`Missing resume page: ${route}`);
             expected.add(`${origin}/${route}`);
