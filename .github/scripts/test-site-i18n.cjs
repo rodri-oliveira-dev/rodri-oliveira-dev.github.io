@@ -334,7 +334,7 @@ for (const entry of sitemapEntries) {
 }
 
 
-const { isAppleMobileDevice, shouldOfferHomeScreenInstall } = require("../../assets/js/home-screen-install.js");
+const { isAppleMobileDevice, isAndroidDevice, shouldOfferHomeScreenInstall } = require("../../assets/js/home-screen-install.js");
 const homeScreenManifest = JSON.parse(read("site.webmanifest"));
 assert.equal(homeScreenManifest.display, "standalone", "Home Screen manifest uses standalone display mode");
 assert.ok(homeScreenManifest.icons.some((icon) => icon.sizes === "192x192"), "Home Screen manifest has a high-resolution icon");
@@ -345,12 +345,18 @@ for (const variant of variants) {
   assert.ok(page.includes('name="apple-mobile-web-app-title" content="Rodrigo"'), "iOS Home Screen title " + variant.key);
   assert.ok(page.includes('sizes="192x192" href="/assets/brand/android-icon-192x192.png"'), "iOS high-resolution icon " + variant.key);
   assert.ok(page.includes('id="home-screen-install"') && page.includes('id="home-screen-install-steps" hidden'), "Localized iOS guide " + variant.key);
+  assert.ok(page.includes('id="home-screen-install-android-steps" hidden') && page.includes('class="home-screen-install-native" type="button" hidden'), "Localized Android installation controls " + variant.key);
   assert.ok(page.includes('src="/assets/js/home-screen-install.js" defer'), "iOS guide JavaScript " + variant.key);
   assert.ok(page.includes('href="/assets/css/home-screen-install.css"'), "iOS guide CSS " + variant.key);
 }
 assert.ok(isAppleMobileDevice({ userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)" }), "iPhone detected");
 assert.ok(isAppleMobileDevice({ platform: "MacIntel", maxTouchPoints: 5 }), "iPad desktop user agent detected");
 assert.ok(!isAppleMobileDevice({ userAgent: "Mozilla/5.0 (Linux; Android 16)" }), "Android not detected");
+assert.ok(isAndroidDevice({ userAgent: "Mozilla/5.0 (Linux; Android 13)" }), "Android detected");
+assert.ok(isAndroidDevice({ userAgentData: { platform: "Android" } }), "Android client hint detected");
+assert.ok(shouldOfferHomeScreenInstall({ device: { userAgent: "Android" } }), "Android manual guide eligible");
+assert.ok(!shouldOfferHomeScreenInstall({ device: { userAgent: "Android" }, displayModeStandalone: true }), "Installed Android hides guide");
+assert.ok(!shouldOfferHomeScreenInstall({ device: { userAgent: "Windows" } }), "Desktop unchanged");
 assert.ok(shouldOfferHomeScreenInstall({ device: { userAgent: "iPhone" } }), "Safari/iOS browser eligible");
 assert.ok(!shouldOfferHomeScreenInstall({ device: { userAgent: "iPhone" }, standalone: true }), "Installed iOS site hides the guide");
 assert.ok(!shouldOfferHomeScreenInstall({ device: { userAgent: "iPhone" }, displayModeStandalone: true }), "Standalone display mode hides the guide");
@@ -368,7 +374,7 @@ for (const variant of variants) {
 
 // Simulate pages restored from the back/forward cache across localized routes.
 // The second page dismisses the notice; the first must remain hidden on pageshow.
-const makeHomeScreenPage = (storage) => {
+const makeHomeScreenPage = (storage, userAgent = "iPhone") => {
   const windowListeners = new Map();
   const buttonListeners = new Map();
   const closeButton = {
@@ -381,8 +387,16 @@ const makeHomeScreenPage = (storage) => {
     setAttribute(name, value) { this.attributes[name] = value; },
     addEventListener(type, handler) { buttonListeners.set("toggle-" + type, handler); },
     textContent: "",
+    focus() { doc.activeElement = this; },
   };
   const steps = { hidden: true };
+  const androidSteps = { hidden: true };
+  const nativeButton = {
+    hidden: true, attributes: {},
+    addEventListener(type, handler) { buttonListeners.set("native-" + type, handler); },
+    setAttribute(name, value) { this.attributes[name] = value; },
+    removeAttribute(name) { delete this.attributes[name]; },
+  };
   const footer = {
     attributes: {},
     setAttribute(name, value) { this.attributes[name] = value; },
@@ -390,17 +404,19 @@ const makeHomeScreenPage = (storage) => {
   };
   const prompt = {
     hidden: true,
-    contains(element) { return [closeButton, toggleButton, steps].includes(element); },
+    contains(element) { return [closeButton, toggleButton, steps, androidSteps, nativeButton].includes(element); },
     querySelector(selector) {
       return {
         ".home-screen-install-dismiss": closeButton,
         ".home-screen-install-toggle": toggleButton,
         ".home-screen-install-steps": steps,
+        "#home-screen-install-android-steps": androidSteps,
+        ".home-screen-install-native": nativeButton,
       }[selector];
     },
   };
   const win = {
-    navigator: { userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)" },
+    navigator: { userAgent },
     matchMedia() { return { matches: false }; },
     sessionStorage: storage,
     addEventListener(type, handler) { windowListeners.set(type, handler); },
@@ -410,7 +426,7 @@ const makeHomeScreenPage = (storage) => {
     document: doc,
     window: win,
   });
-  return { prompt, windowListeners, buttonListeners, toggleButton, steps, closeButton, footer, doc };
+  return { prompt, windowListeners, buttonListeners, toggleButton, steps, androidSteps, nativeButton, closeButton, footer, doc };
 };
 const savedDismissal = new Map();
 const sharedSession = {
@@ -441,4 +457,54 @@ blockedPage.buttonListeners.get("close-click")();
 blockedPage.windowListeners.get("pageshow")();
 assert.equal(blockedPage.prompt.hidden, true, "Dismissal persists on current page when storage is blocked");
 
-console.log(`Validated 3 homepages, 3 resumes, 3 service pages in sitemap, ${slugSets[0].length * 3} localized case studies, legacy redirect, metadata, navigation, local resources, and sitemap.`);
+// Browser events are simulated here; actual OS installation requires a device.
+(async () => {
+  const android = makeHomeScreenPage(blockedSession, "Android");
+  assert.equal(android.prompt.hidden, false);
+  assert.equal(android.nativeButton.hidden, true, "No native action without capability");
+  android.buttonListeners.get("toggle-click")();
+  assert.equal(android.androidSteps.hidden, false);
+  assert.equal(android.steps.hidden, true);
+  assert.equal(android.toggleButton.attributes["aria-controls"], "home-screen-install-android-steps");
+  let calls = 0;
+  let prevented = false;
+  const deferred = (outcome) => ({
+    preventDefault() { prevented = true; },
+    prompt() { calls++; return Promise.resolve(); },
+    userChoice: Promise.resolve({ outcome }),
+  });
+  android.windowListeners.get("beforeinstallprompt")(deferred("dismissed"));
+  assert.equal(prevented, true);
+  assert.equal(android.nativeButton.hidden, false);
+  android.doc.activeElement = android.nativeButton;
+  const first = android.buttonListeners.get("native-click")();
+  await android.buttonListeners.get("native-click")();
+  await first;
+  assert.equal(calls, 1, "Native event is consumed only once");
+  assert.equal(android.nativeButton.hidden, true);
+  assert.equal(android.prompt.hidden, false, "Manual help remains after cancellation");
+  assert.equal(android.doc.activeElement, android.toggleButton);
+  android.windowListeners.get("beforeinstallprompt")(deferred("accepted"));
+  await android.buttonListeners.get("native-click")();
+  assert.equal(android.prompt.hidden, true);
+  const installed = makeHomeScreenPage(blockedSession, "Android");
+  installed.windowListeners.get("beforeinstallprompt")(deferred("dismissed"));
+  installed.doc.activeElement = installed.nativeButton;
+  installed.windowListeners.get("appinstalled")();
+  assert.equal(installed.prompt.hidden, true);
+  assert.equal(installed.doc.activeElement, installed.footer);
+  prevented = false;
+  installed.windowListeners.get("beforeinstallprompt")(deferred("dismissed"));
+  assert.equal(prevented, false, "Do not intercept after installation");
+  const failed = makeHomeScreenPage(blockedSession, "Android");
+  failed.windowListeners.get("beforeinstallprompt")({ ...deferred("dismissed"), prompt() { throw new Error("Unavailable"); } });
+  await failed.buttonListeners.get("native-click")();
+  assert.equal(failed.prompt.hidden, false);
+  assert.equal(failed.nativeButton.hidden, true);
+  const dismissed = makeHomeScreenPage(blockedSession, "Android");
+  dismissed.buttonListeners.get("close-click")();
+  prevented = false;
+  dismissed.windowListeners.get("beforeinstallprompt")(deferred("dismissed"));
+  assert.equal(prevented, false, "Dismissal must not suppress browser UI");
+  console.log(`Validated 3 homepages, 3 resumes, 3 service pages in sitemap, ${slugSets[0].length * 3} localized case studies, legacy redirect, metadata, navigation, local resources, and sitemap.`);
+})().catch(error => { console.error(error); process.exitCode = 1; });

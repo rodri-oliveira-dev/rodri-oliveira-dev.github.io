@@ -407,6 +407,43 @@ const assertMobileLinkNavigation = async (page, url, profileName) => {
           await page.close();
         }
         });
+        await results.run(`${url} | Android install guide`, async () => {
+          const page = await browser.newPage();
+          try {
+            await page.setViewport({ width: 390, height: 844 });
+            await page.evaluateOnNewDocument(() => {
+              Object.defineProperty(navigator, "userAgent", { get: () => "Android" });
+            });
+            await page.goto(ORIGIN + url, { waitUntil: "load" });
+            await page.waitForSelector("#home-screen-install", { visible: true });
+            // Synthetic event verifies UI integration, not OS installation.
+            await page.evaluate(() => {
+              const event = new Event("beforeinstallprompt", { cancelable: true });
+              event.prompt = () => Promise.resolve();
+              event.userChoice = Promise.resolve({ outcome: "dismissed" });
+              window.dispatchEvent(event);
+            });
+            await page.waitForSelector(".home-screen-install-native", { visible: true });
+            await page.click(".home-screen-install-toggle");
+            assert.equal(await page.$eval("#home-screen-install-android-steps", el => el.hidden), false);
+            assert.equal(await page.$eval("#home-screen-install-steps", el => el.hidden), true);
+            for (const width of widths) {
+              await page.setViewport({ width, height: width < 768 ? 844 : 480 });
+              const rects = await page.$$eval("#home-screen-install, #home-screen-install button", els => els.map(el => {
+                const r = el.getBoundingClientRect();
+                return { left: r.left, right: r.right, width: r.width, height: r.height };
+              }));
+              assert.ok(rects.every(r => r.left >= 0 && r.right <= width + 1 && r.width >= 44 && r.height >= 44), `${url} Android guide at ${width}px`);
+            }
+            await page.focus(".home-screen-install-native");
+            await page.keyboard.press("Enter");
+            await page.waitForFunction(() => document.querySelector(".home-screen-install-native").hidden);
+            assert.equal(await page.evaluate(() => document.activeElement === document.querySelector(".home-screen-install-toggle")), true);
+            await page.evaluate(() => window.dispatchEvent(new Event("appinstalled")));
+            assert.equal(await page.$eval("#home-screen-install", el => el.hidden), true);
+            assert.equal(await page.evaluate(() => document.activeElement === document.querySelector("footer.site-footer")), true);
+          } finally { await page.close(); }
+        });
       }
     } finally {
       await browser.close();
