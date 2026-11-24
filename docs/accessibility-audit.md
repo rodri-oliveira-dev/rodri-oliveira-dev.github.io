@@ -10,7 +10,7 @@ Revisão estática de código e configuração, 2026-11-24. Não é avaliação 
 | 1.4.3, 1.4.11 | check-contrast.mjs verifica tokens e combinações selecionadas | axe color-contrast está explicitamente ignorado; avaliar contraste efetivamente renderizado, gradientes, bordas e estados antes de alterar a exceção |
 | 1.4.4, 1.4.10, 1.4.12 | test-responsive.cjs verifica larguras de 320 a 1440 px | Testar zoom 200%/400%, espaçamento de texto e exceções de conteúdo bidimensional |
 | 2.1.1, 2.1.2, 2.4.1, 2.4.3, 2.4.7 | Teste do menu móvel, Escape e retorno de foco; skip link e estilo focus-visible | Percorrer todos os controles com Tab e Shift+Tab; verificar skip link, foco visível e ausência de armadilhas nas páginas internas |
-| 2.4.11 (AA) | scroll-padding e teste de âncoras | Cabeçalho sticky e aviso de instalação fixo podem obscurecer foco; verificar todos os estados, inclusive aviso expandido e viewport baixo |
+| 2.4.11 (AA) | scroll-padding e teste de âncoras | Teste de regressão acrescentado para Tab e Shift+Tab: cabeçalho sticky, todas as rotas em 390/1440 px e homepages em 320/768 px. Execução pendente na CI. Ainda avaliar aviso expandido, viewport baixo, zoom e leitores de tela |
 | 2.5.8 (AA) | CSS móvel prevê altura de 44px no menu e seletor de idioma; teste acrescentado | Verificar demais alvos e exceções do critério, desktop e mobile; 24×24 CSS px é o mínimo sem exceções, não 44px |
 | 2.5.7 (AA) | Não foi identificado gesto de arrastar no código de navegação inspecionado | Inventariar demais componentes antes de declarar não aplicável |
 | 3.2.6 (A) | Navegação compartilhada | Verificar consistência da posição relativa dos mecanismos de ajuda, quando repetidos |
