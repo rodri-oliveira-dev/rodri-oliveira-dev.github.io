@@ -1,0 +1,7 @@
+# Substitua somente em um terraform.tfvars local ignorado pelo Git.
+subscription_id = "00000000-0000-0000-0000-000000000000"
+tenant_id       = "00000000-0000-0000-0000-000000000000"
+
+# Confirme estes dois valores diretamente no Entra antes de qualquer import.
+main_federated_credential_display_name = "<existing-main-credential-name>"
+main_federated_credential_import_id     = "00000000-0000-0000-0000-000000000000/federatedIdentityCredential/00000000-0000-0000-0000-000000000000"
