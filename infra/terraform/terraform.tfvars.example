@@ -20,4 +20,3 @@ function_instance_memory_mb     = 2048
 function_maximum_instance_count = 2
 
 # As atribuições exigem uma etapa IAM separada e aprovação explícita.
-manage_runtime_role_assignments = false

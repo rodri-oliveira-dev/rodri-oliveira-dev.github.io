@@ -100,7 +100,7 @@ internal sealed class WebPushTransport : IWebPushTransport
         {
             return PushDeliveryStatus.TransientFailure;
         }
-        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        catch (WebPushResponseTimeoutException)
         {
             return PushDeliveryStatus.TransientFailure;
         }

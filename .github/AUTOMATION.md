@@ -90,7 +90,7 @@ Configuração externa necessária para a #149: Pages com source `GitHub Actions
 
 ### Terraform validation
 
-O [`terraform-validation.yml`](workflows/terraform-validation.yml) executa `terraform fmt -check -recursive`, confere os lockfiles assinados para Linux, Windows e macOS, inicializa os dois roots com `terraform init -backend=false -input=false -lockfile=readonly` e aplica `terraform validate -no-color`. O gate roda em todo Pull Request, sem credenciais e sem acessar o backend remoto, para continuar publicando o status mesmo quando a mudança não envolve IaC.
+O [`terraform-validation.yml`](workflows/terraform-validation.yml) executa `terraform fmt -check -recursive`, confere os lockfiles assinados para Linux, Windows e macOS, inicializa os três roots (`workload`, `identity-reconciliation` e `runtime-iam`) com `terraform init -backend=false -input=false -lockfile=readonly` e aplica `terraform validate -no-color`. O gate roda em todo Pull Request, sem credenciais e sem acessar o backend remoto, para continuar publicando o status mesmo quando a mudança não envolve IaC. O root `runtime-iam` possui State exclusivo e nunca é aplicado pela release normal.
 
 Execuções manuais deste workflow diagnóstico oferecem apenas `validate`, `validate-oidc` e `plan`. Operações autenticadas são rejeitadas fora de `refs/heads/main` e usam o Environment `terraform-dev`; nenhum `apply` independente existe. O único apply autorizado faz parte de `Release and Deploy`, depois do preflight e sob a mesma revisão imutável. `validate-oidc` comprova somente autenticação e leitura do Resource Group. Somente jobs autenticados recebem `id-token: write`; `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` e `AZURE_SUBSCRIPTION_ID` são mapeadas para OIDC/`ARM_*`, sem client secret.
 

@@ -47,6 +47,10 @@ internal sealed record StoredSubscriptionDocument(
     string ETag,
     double RequestCharge);
 
+internal sealed record StoredSubscriptionPage(
+    IReadOnlyList<StoredSubscriptionDocument> Items,
+    string? ContinuationToken);
+
 internal sealed record DocumentWriteResult(
     SubscriptionMutationStatus Status,
     string? ETag,
@@ -54,9 +58,10 @@ internal sealed record DocumentWriteResult(
 
 internal interface ISubscriptionDocumentStore
 {
-    IAsyncEnumerable<StoredSubscriptionDocument> ListByLocaleAsync(
+    Task<StoredSubscriptionPage> ListByLocalePageAsync(
         string locale,
         int pageSize,
+        string? continuationToken,
         CancellationToken cancellationToken);
 
     Task<StoredSubscriptionDocument?> ReadAsync(

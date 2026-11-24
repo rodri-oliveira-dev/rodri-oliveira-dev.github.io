@@ -2,8 +2,9 @@ namespace Notifications.Functions.Subscriptions;
 
 public interface ISubscriptionRepository
 {
-    IAsyncEnumerable<SubscriptionRecord> ListActiveAsync(
+    Task<SubscriptionPage> ListActivePageAsync(
         string locale,
+        string? continuationToken,
         CancellationToken cancellationToken = default);
 
     Task<SubscriptionRecord?> GetAsync(string endpoint, CancellationToken cancellationToken = default);
@@ -23,9 +24,13 @@ public interface ISubscriptionRepository
         CancellationToken cancellationToken = default);
 }
 
+public sealed record SubscriptionPage(
+    IReadOnlyList<SubscriptionRecord> Items,
+    string? ContinuationToken);
+
 internal sealed class CosmosSubscriptionRepository : ISubscriptionRepository
 {
-    private const int QueryPageSize = 25;
+    private const int QueryPageSize = 10;
     private readonly ISubscriptionDocumentStore _store;
     private readonly TimeProvider _timeProvider;
 
@@ -50,19 +55,22 @@ internal sealed class CosmosSubscriptionRepository : ISubscriptionRepository
         return stored is null ? null : Map(stored);
     }
 
-    public async IAsyncEnumerable<SubscriptionRecord> ListActiveAsync(
+    public async Task<SubscriptionPage> ListActivePageAsync(
         string locale,
-        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        string? continuationToken,
+        CancellationToken cancellationToken = default)
     {
         if (!string.Equals(locale, WebPushSubscriptionValidator.SupportedLocale, StringComparison.Ordinal))
         {
             throw new ArgumentException("Somente o idioma pt-BR é aceito nesta versão.", nameof(locale));
         }
 
-        await foreach (var stored in _store.ListByLocaleAsync(locale, QueryPageSize, cancellationToken))
-        {
-            yield return Map(stored);
-        }
+        var page = await _store.ListByLocalePageAsync(
+            locale,
+            QueryPageSize,
+            continuationToken,
+            cancellationToken);
+        return new(page.Items.Select(Map).ToArray(), page.ContinuationToken);
     }
 
     public async Task<SubscriptionMutationResult> CreateAsync(
@@ -103,7 +111,9 @@ internal sealed class CosmosSubscriptionRepository : ISubscriptionRepository
             partitionKey,
             current?.Document.CreatedAtUtc ?? now,
             now);
-        var result = await _store.UpsertAsync(document, expectedETag, cancellationToken);
+        var result = current is null
+            ? await _store.CreateAsync(document, cancellationToken)
+            : await _store.UpsertAsync(document, expectedETag, cancellationToken);
         return Map(result, id, partitionKey, current?.RequestCharge ?? 0);
     }
 

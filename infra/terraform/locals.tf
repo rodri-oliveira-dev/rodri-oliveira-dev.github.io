@@ -18,7 +18,7 @@ locals {
   deployment_container    = "function-releases"
   campaign_queue_name     = "web-push-campaigns"
   poison_queue_name       = "web-push-campaigns-poison"
-  key_vault_name          = "kv-push-${var.environment}-${var.resource_name_suffix}"
+  key_vault_name          = "kv-push-${local.environment_short}-${var.resource_name_suffix}"
   log_analytics_name      = "log-portfolio-push-${var.environment}"
   runtime_identity_name   = "id-portfolio-push-runtime-${var.environment}"
   subscriptions_database  = "notifications"

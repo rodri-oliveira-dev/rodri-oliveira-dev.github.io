@@ -38,16 +38,23 @@ PUBLIC_DOCS = (
 )
 
 
-def reject_symlinks(path: Path) -> None:
+def reject_symlinks(path: Path, root: Path) -> None:
+    relative = path.relative_to(root)
+    current = root
+    for component in relative.parts:
+        current /= component
+        if current.is_symlink():
+            raise RuntimeError(f"Public artifact cannot contain symlinks: {path}")
+
     candidates = [path] if path.is_symlink() else path.rglob("*") if path.is_dir() else []
     if any(candidate.is_symlink() for candidate in candidates):
         raise RuntimeError(f"Public artifact cannot contain symlinks: {path}")
 
 
-def copy_path(source: Path, destination: Path) -> None:
+def copy_path(source: Path, destination: Path, root: Path) -> None:
     if not source.exists():
         raise FileNotFoundError(source)
-    reject_symlinks(source)
+    reject_symlinks(source, root)
     destination.parent.mkdir(parents=True, exist_ok=True)
     if source.is_dir():
         shutil.copytree(source, destination)
@@ -63,9 +70,9 @@ def assemble(source: Path, destination: Path) -> None:
         raise RuntimeError("Destination must not already exist")
     destination.mkdir(parents=True)
     for relative in PUBLIC_PATHS:
-        copy_path(source / relative, destination / relative)
+        copy_path(source / relative, destination / relative, source)
     for relative in PUBLIC_DOCS:
-        copy_path(source / "docs" / relative, destination / "docs" / relative)
+        copy_path(source / "docs" / relative, destination / "docs" / relative, source)
 
 
 def main() -> None:

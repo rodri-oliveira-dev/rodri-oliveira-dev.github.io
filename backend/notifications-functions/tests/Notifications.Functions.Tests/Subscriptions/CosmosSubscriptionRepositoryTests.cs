@@ -58,6 +58,18 @@ public sealed class CosmosSubscriptionRepositoryTests
         Assert.Single(store.Documents);
     }
 
+    [Fact]
+    public async Task UpsertAsync_WhenCreateLosesRace_ReturnsDuplicateWithoutReplacingWinner()
+    {
+        var store = new FakeSubscriptionDocumentStore { SimulateDuplicateOnNextCreate = true };
+        var repository = CreateRepository(store);
+
+        var result = await repository.UpsertAsync(WebPushSubscriptionValidatorTests.CreateValid(), null);
+
+        Assert.Equal(SubscriptionMutationStatus.Duplicate, result.Status);
+        Assert.Equal(0, store.UpsertCalls);
+    }
+
     private static CosmosSubscriptionRepository CreateRepository(FakeSubscriptionDocumentStore store) =>
         new(store, new FixedTimeProvider(Now));
 
@@ -70,18 +82,21 @@ public sealed class CosmosSubscriptionRepositoryTests
     {
         private int _version;
         public Dictionary<string, StoredSubscriptionDocument> Documents { get; } = [];
+        public bool SimulateDuplicateOnNextCreate { get; init; }
+        public int UpsertCalls { get; private set; }
 
-        public async IAsyncEnumerable<StoredSubscriptionDocument> ListByLocaleAsync(
+        public Task<StoredSubscriptionPage> ListByLocalePageAsync(
             string locale,
             int pageSize,
-            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+            string? continuationToken,
+            CancellationToken cancellationToken)
         {
-            foreach (var stored in Documents.Values.Where(item => item.Document.Locale == locale))
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                yield return stored;
-                await Task.Yield();
-            }
+            cancellationToken.ThrowIfCancellationRequested();
+            var items = Documents.Values
+                .Where(item => item.Document.Locale == locale)
+                .Take(pageSize)
+                .ToArray();
+            return Task.FromResult(new StoredSubscriptionPage(items, null));
         }
 
         public Task<StoredSubscriptionDocument?> ReadAsync(
@@ -98,7 +113,7 @@ public sealed class CosmosSubscriptionRepositoryTests
             CancellationToken cancellationToken)
         {
             var key = Key(document.Id, document.PartitionKey);
-            if (Documents.ContainsKey(key))
+            if (SimulateDuplicateOnNextCreate || Documents.ContainsKey(key))
             {
                 return Task.FromResult(new DocumentWriteResult(SubscriptionMutationStatus.Duplicate, null, 1));
             }
@@ -113,6 +128,7 @@ public sealed class CosmosSubscriptionRepositoryTests
             string? expectedETag,
             CancellationToken cancellationToken)
         {
+            UpsertCalls++;
             var key = Key(document.Id, document.PartitionKey);
             if (Documents.TryGetValue(key, out var stored) && expectedETag != stored.ETag)
             {

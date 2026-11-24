@@ -34,6 +34,17 @@ class TerraformReleasePlanTests(unittest.TestCase):
         self.assertEqual(result["changes"], [])
         self.assertFalse(result["destructive"])
 
+    def test_top_level_timestamp_does_not_change_fingerprint(self):
+        plan = {
+            "timestamp": "2026-11-24T12:00:00Z",
+            "resource_changes": [{
+                "address": "x.y", "type": "x", "change": {"actions": ["create"], "after": {"value": 1}}
+            }],
+        }
+        later = {**plan, "timestamp": "2026-11-24T12:00:01Z"}
+
+        self.assertEqual(module.analyze(plan)["fingerprint"], module.analyze(later)["fingerprint"])
+
     def test_delete_and_replacement_are_destructive(self):
         for actions in (["delete"], ["delete", "create"], ["create", "delete"]):
             with self.subTest(actions=actions):

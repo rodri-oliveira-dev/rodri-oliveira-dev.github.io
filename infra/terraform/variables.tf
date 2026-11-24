@@ -101,13 +101,6 @@ variable "log_analytics_retention_days" {
   }
 }
 
-variable "manage_runtime_role_assignments" {
-  description = "Modela atribuições de dados do runtime; permanece false até execução IAM separada e explicitamente aprovada."
-  type        = bool
-  default     = false
-  nullable    = false
-}
-
 variable "resource_group_name" {
   description = "Nome do Resource Group existente que receberá os recursos do backend Web Push."
   type        = string
@@ -122,8 +115,8 @@ variable "resource_name_suffix" {
   nullable    = false
 
   validation {
-    condition     = can(regex("^[a-z0-9]{4,16}$", var.resource_name_suffix))
-    error_message = "resource_name_suffix deve ter de 4 a 16 caracteres minúsculos ou numéricos."
+    condition     = can(regex("^[a-z0-9]{4,11}$", var.resource_name_suffix))
+    error_message = "resource_name_suffix deve ter de 4 a 11 caracteres minúsculos ou numéricos para preservar os limites dos nomes Azure."
   }
 }
 

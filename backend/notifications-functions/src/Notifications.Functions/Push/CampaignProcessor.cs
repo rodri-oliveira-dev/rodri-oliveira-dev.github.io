@@ -9,8 +9,14 @@ namespace Notifications.Functions.Push;
 
 public interface ICampaignProcessor
 {
-    Task ProcessAsync(string campaignId, CancellationToken cancellationToken);
+    Task<CampaignProcessResult> ProcessAsync(
+        CampaignWorkItem workItem,
+        CancellationToken cancellationToken);
 }
+
+public sealed record CampaignWorkItem(string CampaignId, string? ContinuationToken = null);
+
+public sealed record CampaignProcessResult(string? ContinuationToken);
 
 internal sealed partial class CampaignProcessor : ICampaignProcessor
 {
@@ -34,18 +40,21 @@ internal sealed partial class CampaignProcessor : ICampaignProcessor
         _logger = logger;
     }
 
-    public async Task ProcessAsync(string campaignId, CancellationToken cancellationToken)
+    public async Task<CampaignProcessResult> ProcessAsync(
+        CampaignWorkItem workItem,
+        CancellationToken cancellationToken)
     {
+        var campaignId = workItem.CampaignId;
         if (string.IsNullOrWhiteSpace(campaignId) || !CampaignIdPattern().IsMatch(campaignId))
         {
             _logger.LogWarning("Mensagem de campanha rejeitada: identificador inválido.");
-            return;
+            return new(null);
         }
 
         if (!_catalog.TryGet(campaignId, out var campaign) || campaign is null)
         {
             _logger.LogWarning("Campanha {CampaignId} inexistente ou inválida.", campaignId);
-            return;
+            return new(null);
         }
 
         var payload = JsonSerializer.Serialize(new
@@ -64,9 +73,11 @@ internal sealed partial class CampaignProcessor : ICampaignProcessor
         var transientFailures = 0;
         var duplicates = 0;
 
-        await foreach (var subscription in _subscriptions.ListActiveAsync(
+        var page = await _subscriptions.ListActivePageAsync(
             WebPushSubscriptionValidator.SupportedLocale,
-            cancellationToken))
+            workItem.ContinuationToken,
+            cancellationToken);
+        foreach (var subscription in page.Items)
         {
             if (!seen.Add(subscription.Id))
             {
@@ -119,6 +130,8 @@ internal sealed partial class CampaignProcessor : ICampaignProcessor
         {
             throw new CampaignTransientFailureException(transientFailures);
         }
+
+        return new(page.ContinuationToken);
     }
 
     internal static string CreateTopic(string campaignId)

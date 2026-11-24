@@ -34,8 +34,11 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: production-release-${{ github.repository }}
-  cancel-in-progress: false
+  group: >-
+    ${{ github.event_name == 'workflow_dispatch'
+      && format('production-release-{0}', github.repository)
+      || format('release-ci-{0}-{1}', github.repository, github.event.pull_request.number || github.ref) }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
 env:
   DOTNET_VERSION: '10.0.x'
   TERRAFORM_VERSION: '1.17.2'
@@ -248,7 +251,6 @@ jobs:
     permissions:
       actions: read
       contents: read
-      deployments: read
       id-token: write
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -285,41 +287,28 @@ jobs:
           client-id: ${{ vars.AZURE_FUNCTIONS_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-      - name: Detect an already deployed revision
-        id: deployment_state
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_SHA: ${{ needs.preflight.outputs.sha }}
-        run: |
-          deploy=true
-          while read -r deployment_id; do
-            if [ "$(gh api "repos/$GITHUB_REPOSITORY/deployments/$deployment_id/statuses" --jq '[.[] | select(.state == "success")] | length')" -gt 0 ]; then
-              deploy=false
-              break
-            fi
-          done < <(gh api "repos/$GITHUB_REPOSITORY/deployments?environment=functions-dev&sha=$RELEASE_SHA&per_page=100" --jq '.[].id')
-          echo "deploy=$deploy" >>"$GITHUB_OUTPUT"
-          if [ "$deploy" = false ]; then echo 'The exact revision is already deployed; only health will be rechecked.' >>"$GITHUB_STEP_SUMMARY"; fi
       - name: Deploy immutable package
-        if: steps.deployment_state.outputs.deploy == 'true'
+        id: deploy
+        continue-on-error: true
         uses: Azure/functions-action@c5060b3b8bb1ebbcb531abd00c822ecbaa8ea656 # v1.5.7
         with:
           app-name: ${{ needs.terraform_apply.outputs.function_app_name }}
           package: ${{ runner.temp }}/current-package/notifications-function.zip
       - name: Smoke test
         id: smoke
+        if: steps.deploy.outcome == 'success'
         continue-on-error: true
         env:
           HEALTH_URL: ${{ needs.terraform_apply.outputs.health_url }}
         run: curl --fail --silent --show-error --retry 8 --retry-delay 5 --retry-all-errors --max-time 15 "$HEALTH_URL" | jq -e '.status == "healthy"' >/dev/null
       - name: Roll back failed backend deploy
-        if: steps.smoke.outcome == 'failure' && inputs.backend_rollback_run_id != ''
+        if: ${{ !cancelled() && inputs.backend_rollback_run_id != '' && (steps.deploy.outcome == 'failure' || steps.smoke.outcome == 'failure') }}
         uses: Azure/functions-action@c5060b3b8bb1ebbcb531abd00c822ecbaa8ea656 # v1.5.7
         with:
           app-name: ${{ needs.terraform_apply.outputs.function_app_name }}
           package: ${{ runner.temp }}/rollback-package/notifications-function.zip
       - name: Verify result and preserve failure
-        if: steps.smoke.outcome == 'failure'
+        if: ${{ !cancelled() && (steps.deploy.outcome == 'failure' || steps.smoke.outcome == 'failure') }}
         env:
           HEALTH_URL: ${{ needs.terraform_apply.outputs.health_url }}
           ROLLBACK_RUN_ID: ${{ inputs.backend_rollback_run_id }}

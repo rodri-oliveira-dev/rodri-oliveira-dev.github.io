@@ -23,7 +23,8 @@ def analyze(plan: dict) -> dict:
     changes.sort(key=lambda item: item["address"])
     # Hash the entire plan so a value-only drift cannot pass approval. Only the
     # digest and the value-free action manifest leave the ephemeral runner.
-    encoded = json.dumps(plan, separators=(",", ":"), sort_keys=True).encode()
+    stable_plan = {key: value for key, value in plan.items() if key != "timestamp"}
+    encoded = json.dumps(stable_plan, separators=(",", ":"), sort_keys=True).encode()
     return {
         "changes": changes,
         "fingerprint": hashlib.sha256(encoded).hexdigest(),

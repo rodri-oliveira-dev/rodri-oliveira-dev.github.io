@@ -11,7 +11,7 @@ resource "azurerm_log_analytics_workspace" "notifications" {
 
 resource "azurerm_monitor_diagnostic_setting" "cosmos_audit" {
   name                       = "send-audit-to-log-analytics"
-  target_resource_id         = azurerm_cosmosdb_account.notifications.id
+  target_resource_id         = azapi_resource.cosmos_account.id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.notifications.id
 
   enabled_log {

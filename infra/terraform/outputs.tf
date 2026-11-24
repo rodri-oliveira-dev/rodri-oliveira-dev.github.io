@@ -1,11 +1,11 @@
 output "cosmos_account_endpoint" {
   description = "Endpoint não secreto da conta Cosmos DB usado pelo runtime com identidade gerenciada."
-  value       = azurerm_cosmosdb_account.notifications.endpoint
+  value       = "https://${local.cosmos_account_name}.documents.azure.com:443/"
 }
 
 output "cosmos_subscriptions_container_id" {
   description = "ID do container de inscrições no Cosmos DB."
-  value       = azurerm_cosmosdb_sql_container.subscriptions.id
+  value       = azapi_resource.subscriptions_container.id
 }
 
 output "function_app_health_url" {

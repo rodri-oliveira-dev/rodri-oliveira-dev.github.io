@@ -5,7 +5,7 @@ Esta pasta contém a infraestrutura definida pela [ADR 0009](../../docs/adr/0009
 ## Versões e autenticação
 
 - Terraform CLI `>= 1.15.0, < 1.18.0`; o CI usa exatamente `1.17.2`.
-- Provider `hashicorp/azurerm ~> 5.14.0`; o `.terraform.lock.hcl` versionado fixa a seleção e seus checksums.
+- Providers `hashicorp/azurerm ~> 5.14.0` e `Azure/azapi ~> 2.14.0`; o `.terraform.lock.hcl` versionado fixa as seleções e seus checksums. Conforme a [ADR 0013](../../docs/adr/0013-gerenciar-cosmos-sem-chaves-e-separar-iam.md), somente os recursos Cosmos usam AzAPI para que o refresh ARM não execute `listKeys` nem grave chaves de conta no State.
 - Provider e backend usam Microsoft Entra. No GitHub Actions, a autenticação prevista é OIDC, sem client secret nem chave compartilhada do Storage Account.
 
 Os identificadores da assinatura e do tenant não são segredos, mas variam por ambiente. Forneça-os por um `terraform.tfvars` local ignorado pelo Git ou pelas variáveis de ambiente `TF_VAR_subscription_id` e `TF_VAR_tenant_id`. Credenciais devem permanecer fora de arquivos Terraform, planos, logs e commits.
@@ -21,13 +21,13 @@ A primeira fatia do workload modela:
 - Log Analytics `PerGB2018` em `brazilsouth`, retenção de 30 dias e cap preventivo de 0,1 GB/dia;
 - logs de auditoria e métricas de Cosmos DB e Key Vault encaminhados ao workspace.
 
-Não existe `azurerm_key_vault_secret`: a chave privada VAPID deve ser inserida diretamente por operador autorizado em etapa posterior. Assim, seu valor nunca entra em configuração, plano ou State. O Cosmos DB desabilita autenticação local para que o provider e o runtime usem Entra ID, sem chaves de conta. O acesso público aos endpoints permanece habilitado nesta baseline porque não há VNet modelada; RBAC, TLS 1.2 e autenticação local desabilitada reduzem a exposição, mas não equivalem a Private Link. Revisar rede privada e seus custos antes da ativação pública.
+Não existe `azurerm_key_vault_secret`: a chave privada VAPID deve ser inserida diretamente por operador autorizado em etapa posterior. Assim, seu valor nunca entra em configuração, plano ou State. O Cosmos DB desabilita autenticação local para que o provisionamento e o runtime usem Entra ID, sem chaves de conta. A conta, o banco e o container são gerenciados como recursos ARM pelo AzAPI, com saída padrão desabilitada; o endpoint é derivado do nome público da conta. O acesso público aos endpoints permanece habilitado nesta baseline porque não há VNet modelada; RBAC, TLS 1.2 e autenticação local desabilitada reduzem a exposição, mas não equivalem a Private Link. Revisar rede privada e seus custos antes da ativação pública.
 
 O repositório da #146 deriva ID e partition key do hash SHA-256 do endpoint, realiza somente point reads e distribui gravações por um prefixo de 8 bits (`v1-xx`). O throughput compartilhado continua limitado a 400 RU/s e o índice exclui os campos volumosos `endpoint` e `keys`. `default_ttl = -1` apenas habilita TTL por documento; nenhum prazo é gravado enquanto a política de retenção exigida pela ADR-0006 não for aprovada.
 
 `cosmos_enable_free_tier` permanece `false` por padrão. A camada gratuita precisa ser escolhida na criação da conta, aceita somente uma conta por assinatura e cobre os primeiros 1.000 RU/s e 25 GB. Altere para `true` apenas depois de confirmar elegibilidade e ausência de outra conta beneficiada; o plano aprovado deve mostrar a opção correta antes de qualquer apply. Não há georreplicação automática nem multi-write.
 
-As atribuições de `Key Vault Secrets User` no vault e `Cosmos DB Built-in Data Contributor` restrita ao container estão declaradas, mas `manage_runtime_role_assignments` permanece `false`. A execução normal de provisionamento não recebe nem exerce `Microsoft.Authorization/roleAssignments/write`. Uma etapa IAM separada e aprovada deve ativar as atribuições depois de revisar o principal e os escopos; o controle de acesso à Storage Queue é acrescentado na #145.
+As atribuições de `Key Vault Secrets User` no vault e `Cosmos DB Built-in Data Contributor` restrita ao container ficam no root/state exclusivo [`runtime-iam/`](runtime-iam/). A execução normal de provisionamento não contém atribuições nem recebe `Microsoft.Authorization/roleAssignments/write`. Uma etapa IAM separada e aprovada deve aplicar esse root depois de revisar o principal e os escopos; ele não participa do workflow de release.
 
 ### Estimativa inicial de custo
 
@@ -60,9 +60,13 @@ A conta StorageV2 Standard LRS é exclusiva do workload. Shared Key, usuários l
 
 O host processa uma mensagem por lote, sem prefetch adicional, tenta no máximo três dequeues, aplica visibility timeout de um minuto e timeout de função de cinco minutos. Com no máximo duas instâncias, o fan-out previsto é de até dois processamentos simultâneos por grupo de escala. O provider AzureRM 5.14.0 ainda não expõe o ajuste específico de concorrência HTTP do Flex; isso não amplia o processamento da fila e deve ser reavaliado quando o provider suportar a propriedade. Os limites de memória e instâncias são validados por testes Terraform.
 
-As funções `Storage Blob Data Owner` e `Storage Queue Data Contributor` estão declaradas no escopo da conta dedicada, mas continuam ausentes do plano padrão enquanto `manage_runtime_role_assignments=false`. A Function só ficará operacional após uma execução IAM separada, revisada e aprovada. Não há connection string, access key ou segredo em HCL, plano ou State. Application Insights não foi criado: logs e métricas de plataforma são enviados diretamente ao Log Analytics, evitando introduzir uma connection string sensível no State nesta fase.
+As funções `Storage Blob Data Owner` e `Storage Queue Data Contributor` também ficam no root/state `runtime-iam`, fora do plano padrão. A Function só ficará operacional após uma execução IAM separada, revisada e aprovada. Não há connection string, access key ou segredo em HCL, plano ou State. Application Insights não foi criado: logs e métricas de plataforma são enviados diretamente ao Log Analytics, evitando introduzir uma connection string sensível no State nesta fase.
 
-O sender da #147 recebe somente o identificador de campanha pela fila. A Function recebe por app settings apenas a URI do Key Vault, o subject VAPID, os nomes estáveis `vapid-public-key`/`vapid-private-key`, TTL e timeout. Os valores dos secrets não são recursos Terraform: devem ser criados diretamente por operador autorizado depois de provisionar o vault e antes de qualquer ativação. A identidade de runtime precisa das atribuições condicionais já modeladas; o publicador futuro não deve receber leitura do vault, Cosmos ou acesso de deploy.
+O sender da #147 recebe pela fila o identificador da campanha e, nas unidades seguintes, um token opaco de continuação do Cosmos DB. Cada invocação processa no máximo dez inscrições e só enfileira a próxima página depois de concluir a atual, preservando progresso dentro do timeout de cinco minutos. A Function recebe por app settings apenas a URI do Key Vault, o subject VAPID, os nomes estáveis `vapid-public-key`/`vapid-private-key`, TTL e timeout. Os valores dos secrets não são recursos Terraform: devem ser criados diretamente por operador autorizado depois de provisionar o vault e antes de qualquer ativação. A identidade de runtime precisa das atribuições do root `runtime-iam`; o publicador futuro não deve receber leitura do vault, Cosmos ou acesso de deploy.
+
+### Root separado de IAM do runtime
+
+[`runtime-iam/`](runtime-iam/) usa a backend key `portfolio-push-runtime-iam-dev.tfstate` e não é referenciado pelos workflows de plan/apply do workload. O CI apenas executa `fmt`, `init -backend=false` e `validate`. Um operador autorizado deve revisar os nomes, o Object ID da identidade resolvida, as quatro atribuições, seus escopos e um plano sanitizado antes de qualquer aplicação separada. Não importar recursos, migrar State, conceder `listKeys` ou executar esse root com a identidade normal de release. A ADR 0013 permanece `Proposed`; esta configuração não autoriza alteração real de IAM.
 
 ### Custo incremental estimado
 

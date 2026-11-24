@@ -61,7 +61,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          for directory in infra/terraform infra/terraform/identity-reconciliation; do
+          for directory in infra/terraform infra/terraform/identity-reconciliation infra/terraform/runtime-iam; do
             terraform -chdir="$directory" providers lock \
               -platform=linux_amd64 \
               -platform=windows_amd64 \
@@ -71,14 +71,15 @@ jobs:
 
           git diff --exit-code -- \
             infra/terraform/.terraform.lock.hcl \
-            infra/terraform/identity-reconciliation/.terraform.lock.hcl
+            infra/terraform/identity-reconciliation/.terraform.lock.hcl \
+            infra/terraform/runtime-iam/.terraform.lock.hcl
 
       - name: Initialize and validate without remote backend
         shell: bash
         run: |
           set -euo pipefail
 
-          for directory in infra/terraform infra/terraform/identity-reconciliation; do
+          for directory in infra/terraform infra/terraform/identity-reconciliation infra/terraform/runtime-iam; do
             terraform -chdir="$directory" init \
               -backend=false \
               -input=false \

@@ -49,6 +49,23 @@ class AssembleSiteTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "symlinks"):
                 module.assemble(source, root / "site")
 
+    def test_rejects_symlink_in_public_file_ancestor(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = self.make_source(root)
+            external = root / "external-contracts"
+            external.mkdir()
+            (external / "webmcp-services.v1.json").write_text("private", encoding="utf-8")
+            contracts = source / "docs" / "contracts"
+            (contracts / "webmcp-services.v1.json").unlink()
+            contracts.rmdir()
+            try:
+                contracts.symlink_to(external, target_is_directory=True)
+            except OSError:
+                self.skipTest("Symlinks are unavailable")
+            with self.assertRaisesRegex(RuntimeError, "symlinks"):
+                module.assemble(source, root / "site")
+
 
 if __name__ == "__main__":
     unittest.main()

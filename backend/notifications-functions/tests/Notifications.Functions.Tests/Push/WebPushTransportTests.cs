@@ -58,6 +58,54 @@ public sealed class WebPushTransportTests
         Assert.Equal(0, handler.RequestCount);
     }
 
+    [Fact]
+    public async Task SendAsync_ResponseDeadlineIsTransientButHostCancellationPropagates()
+    {
+        var timeoutTransport = CreateTransport(
+            new BoundedResponseContentHandler(new DelayedHttpMessageHandler(), TimeSpan.FromMilliseconds(25)));
+
+        var timeoutResult = await timeoutTransport.SendAsync(
+            CreateRecord("https://fcm.googleapis.com/fcm/send/test-only"),
+            "{}",
+            "test-topic",
+            CreateVapidCredentials(),
+            CancellationToken.None);
+
+        Assert.Equal(PushDeliveryStatus.TransientFailure, timeoutResult);
+
+        var cancellationTransport = CreateTransport(
+            new BoundedResponseContentHandler(new DelayedHttpMessageHandler(), TimeSpan.FromSeconds(5)));
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromMilliseconds(25));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => cancellationTransport.SendAsync(
+            CreateRecord("https://fcm.googleapis.com/fcm/send/test-only"),
+            "{}",
+            "test-topic",
+            CreateVapidCredentials(),
+            cancellation.Token));
+    }
+
+    [Fact]
+    public async Task SendAsync_OversizedResponseIsPermanentAndBoundedBeforeLibraryReadsIt()
+    {
+        var transport = CreateTransport(new BoundedResponseContentHandler(
+            new StubHttpMessageHandler(HttpStatusCode.BadRequest, new byte[17]),
+            TimeSpan.FromSeconds(1),
+            maximumResponseBytes: 16));
+
+        var result = await transport.SendAsync(
+            CreateRecord("https://fcm.googleapis.com/fcm/send/test-only"),
+            "{}",
+            "test-topic",
+            CreateVapidCredentials(),
+            CancellationToken.None);
+
+        Assert.Equal(PushDeliveryStatus.PermanentFailure, result);
+    }
+
+    private static WebPushTransport CreateTransport(HttpMessageHandler handler) => new(
+        new PushServiceClient(new HttpClient(handler)) { AutoRetryAfter = false, MaxRetriesAfter = 1 },
+        Options.Create(new WebPushOptions()));
+
     private static SubscriptionRecord CreateRecord(string endpoint)
     {
         var subscription = Subscriptions.WebPushSubscriptionValidatorTests.CreateValid() with { Endpoint = endpoint };
@@ -85,7 +133,7 @@ public sealed class WebPushTransportTests
         .Replace('+', '-')
         .Replace('/', '_');
 
-    private sealed class StubHttpMessageHandler(HttpStatusCode statusCode) : HttpMessageHandler
+    private sealed class StubHttpMessageHandler(HttpStatusCode statusCode, byte[]? content = null) : HttpMessageHandler
     {
         public int RequestCount { get; private set; }
         public Uri? LastRequestUri { get; private set; }
@@ -96,7 +144,21 @@ public sealed class WebPushTransportTests
         {
             RequestCount++;
             LastRequestUri = request.RequestUri;
-            return Task.FromResult(new HttpResponseMessage(statusCode));
+            return Task.FromResult(new HttpResponseMessage(statusCode)
+            {
+                Content = content is null ? null : new ByteArrayContent(content),
+            });
+        }
+    }
+
+    private sealed class DelayedHttpMessageHandler : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            throw new InvalidOperationException("Unreachable after infinite delay.");
         }
     }
 }

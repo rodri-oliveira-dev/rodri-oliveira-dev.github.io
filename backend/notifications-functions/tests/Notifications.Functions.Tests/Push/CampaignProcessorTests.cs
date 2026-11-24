@@ -16,7 +16,7 @@ public sealed class CampaignProcessorTests
         var logger = new CollectingLogger<CampaignProcessor>();
         var processor = CreateProcessor(repository, transport, logger);
 
-        await processor.ProcessAsync("article-2026-11", CancellationToken.None);
+        await processor.ProcessAsync(new("article-2026-11"), CancellationToken.None);
 
         var delivery = Assert.Single(transport.Deliveries);
         Assert.Contains("\"lang\":\"pt-BR\"", delivery.Payload, StringComparison.Ordinal);
@@ -36,7 +36,7 @@ public sealed class CampaignProcessorTests
             new FakeTransport(PushDeliveryStatus.SubscriptionExpired),
             new CollectingLogger<CampaignProcessor>());
 
-        await processor.ProcessAsync("article-2026-11", CancellationToken.None);
+        await processor.ProcessAsync(new("article-2026-11"), CancellationToken.None);
 
         Assert.Equal(1, repository.DeleteCalls);
     }
@@ -49,7 +49,7 @@ public sealed class CampaignProcessorTests
         var transport = new FakeTransport(PushDeliveryStatus.Succeeded);
         var processor = CreateProcessor(repository, transport, new CollectingLogger<CampaignProcessor>());
 
-        await processor.ProcessAsync("article-2026-11", CancellationToken.None);
+        await processor.ProcessAsync(new("article-2026-11"), CancellationToken.None);
 
         Assert.Single(transport.Deliveries);
     }
@@ -63,7 +63,24 @@ public sealed class CampaignProcessorTests
             new CollectingLogger<CampaignProcessor>());
 
         await Assert.ThrowsAsync<CampaignTransientFailureException>(() =>
-            processor.ProcessAsync("article-2026-11", CancellationToken.None));
+            processor.ProcessAsync(new("article-2026-11"), CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task ProcessAsync_ProcessesOneBoundedPageAndReturnsContinuation()
+    {
+        var repository = new FakeRepository([CreateRecord()], "next-page");
+        var processor = CreateProcessor(
+            repository,
+            new FakeTransport(PushDeliveryStatus.Succeeded),
+            new CollectingLogger<CampaignProcessor>());
+
+        var result = await processor.ProcessAsync(
+            new CampaignWorkItem("article-2026-11", "current-page"),
+            CancellationToken.None);
+
+        Assert.Equal("current-page", repository.ReceivedContinuationToken);
+        Assert.Equal("next-page", result.ContinuationToken);
     }
 
     [Theory]
@@ -148,19 +165,20 @@ public sealed class CampaignProcessorTests
         }
     }
 
-    private sealed class FakeRepository(IReadOnlyList<SubscriptionRecord> records) : ISubscriptionRepository
+    private sealed class FakeRepository(
+        IReadOnlyList<SubscriptionRecord> records,
+        string? nextContinuationToken = null) : ISubscriptionRepository
     {
         public int DeleteCalls { get; private set; }
+        public string? ReceivedContinuationToken { get; private set; }
 
-        public async IAsyncEnumerable<SubscriptionRecord> ListActiveAsync(
+        public Task<SubscriptionPage> ListActivePageAsync(
             string locale,
-            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+            string? continuationToken,
+            CancellationToken cancellationToken = default)
         {
-            foreach (var record in records)
-            {
-                yield return record;
-                await Task.Yield();
-            }
+            ReceivedContinuationToken = continuationToken;
+            return Task.FromResult(new SubscriptionPage(records, nextContinuationToken));
         }
 
         public Task<SubscriptionRecord?> GetAsync(string endpoint, CancellationToken cancellationToken = default) =>

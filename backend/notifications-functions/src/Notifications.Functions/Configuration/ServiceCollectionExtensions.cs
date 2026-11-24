@@ -68,9 +68,12 @@ public static class ServiceCollectionExtensions
                 AllowAutoRedirect = false,
                 ConnectTimeout = TimeSpan.FromSeconds(Math.Min(options.RequestTimeoutSeconds, 5)),
             };
-            var httpClient = new HttpClient(handler)
+            var boundedHandler = new BoundedResponseContentHandler(
+                handler,
+                TimeSpan.FromSeconds(options.RequestTimeoutSeconds));
+            var httpClient = new HttpClient(boundedHandler)
             {
-                Timeout = TimeSpan.FromSeconds(options.RequestTimeoutSeconds),
+                Timeout = Timeout.InfiniteTimeSpan,
             };
             return new PushServiceClient(httpClient)
             {

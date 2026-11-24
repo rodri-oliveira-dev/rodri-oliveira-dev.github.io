@@ -19,25 +19,24 @@ internal sealed class CosmosSubscriptionDocumentStore : ISubscriptionDocumentSto
             options.Value.CosmosContainerName);
     }
 
-    public async IAsyncEnumerable<StoredSubscriptionDocument> ListByLocaleAsync(
+    public async Task<StoredSubscriptionPage> ListByLocalePageAsync(
         string locale,
         int pageSize,
-        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+        string? continuationToken,
+        CancellationToken cancellationToken)
     {
         var query = new QueryDefinition("SELECT * FROM c WHERE c.locale = @locale")
             .WithParameter("@locale", locale);
         using var iterator = _container.GetItemQueryIterator<SubscriptionDocument>(
             query,
+            continuationToken,
             requestOptions: new QueryRequestOptions { MaxItemCount = pageSize });
-
-        while (iterator.HasMoreResults)
-        {
-            var response = await iterator.ReadNextAsync(cancellationToken);
-            foreach (var document in response)
-            {
-                yield return new(document, document.ETag ?? string.Empty, response.RequestCharge / Math.Max(response.Count, 1));
-            }
-        }
+        var response = await iterator.ReadNextAsync(cancellationToken);
+        var charge = response.RequestCharge / Math.Max(response.Count, 1);
+        var items = response
+            .Select(document => new StoredSubscriptionDocument(document, document.ETag ?? string.Empty, charge))
+            .ToArray();
+        return new(items, response.ContinuationToken);
     }
 
     public async Task<StoredSubscriptionDocument?> ReadAsync(
@@ -86,11 +85,15 @@ internal sealed class CosmosSubscriptionDocumentStore : ISubscriptionDocumentSto
     {
         try
         {
-            var response = await _container.UpsertItemAsync(
-                document,
-                new PartitionKey(document.PartitionKey),
-                new ItemRequestOptions { IfMatchEtag = expectedETag },
-                cancellationToken);
+            var partitionKey = new PartitionKey(document.PartitionKey);
+            var response = expectedETag is null
+                ? await _container.UpsertItemAsync(document, partitionKey, cancellationToken: cancellationToken)
+                : await _container.ReplaceItemAsync(
+                    document,
+                    document.Id,
+                    partitionKey,
+                    new ItemRequestOptions { IfMatchEtag = expectedETag },
+                    cancellationToken);
 
             var status = response.StatusCode == HttpStatusCode.Created
                 ? SubscriptionMutationStatus.Created
@@ -98,6 +101,11 @@ internal sealed class CosmosSubscriptionDocumentStore : ISubscriptionDocumentSto
             return new(status, response.ETag, response.RequestCharge);
         }
         catch (CosmosException exception) when (exception.StatusCode == HttpStatusCode.PreconditionFailed)
+        {
+            return new(SubscriptionMutationStatus.ConcurrencyConflict, null, exception.RequestCharge);
+        }
+        catch (CosmosException exception) when (
+            expectedETag is not null && exception.StatusCode == HttpStatusCode.NotFound)
         {
             return new(SubscriptionMutationStatus.ConcurrencyConflict, null, exception.RequestCharge);
         }

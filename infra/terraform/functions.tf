@@ -86,9 +86,9 @@ resource "azurerm_function_app_flex_consumption" "notifications" {
     CampaignQueue__queueServiceUri           = azurerm_storage_account.functions.primary_queue_endpoint
     CampaignQueue__credential                = "managedidentity"
     CampaignQueue__clientId                  = azurerm_user_assigned_identity.functions_runtime.client_id
-    Notifications__CosmosEndpoint            = azurerm_cosmosdb_account.notifications.endpoint
-    Notifications__CosmosDatabaseName        = azurerm_cosmosdb_sql_database.notifications.name
-    Notifications__CosmosContainerName       = azurerm_cosmosdb_sql_container.subscriptions.name
+    Notifications__CosmosEndpoint            = "https://${local.cosmos_account_name}.documents.azure.com:443/"
+    Notifications__CosmosDatabaseName        = local.subscriptions_database
+    Notifications__CosmosContainerName       = local.subscriptions_container
     Notifications__KeyVaultUri               = azurerm_key_vault.vapid.vault_uri
     Notifications__DeploymentEnvironment     = var.environment
     Notifications__VapidSubject              = "https://rodri-oliveira-dev.github.io/"
@@ -107,9 +107,4 @@ resource "azurerm_function_app_flex_consumption" "notifications" {
   }
 
   tags = local.common_tags
-
-  depends_on = [
-    azurerm_role_assignment.functions_storage_blob_data_owner,
-    azurerm_role_assignment.functions_storage_queue_data_contributor,
-  ]
 }
