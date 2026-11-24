@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Notifications.Functions/Notifications.Functions.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Notifications.Functions.Tests/Notifications.Functions.Tests.csproj" />
+  </Folder>
+</Solution>
