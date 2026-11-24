@@ -29,4 +29,6 @@ The site is available in [Portuguese](https://rodri-oliveira-dev.github.io/), [E
 
 This repository hosts my personal website and does not accept external contributions. The source code, written content, and visual assets are proprietary. See the [license](LICENSE) for terms of use. Technical maintenance and publishing details are available in the [repository documentation](.github/AUTOMATION.md) (in Portuguese). The experimental WebMCP integration is documented in [English](docs/webmcp.en.md), [Brazilian Portuguese](docs/webmcp.pt-BR.md), and [Spanish](docs/webmcp.es-419.md).
 
+The [accessibility statement](ACCESSIBILITY.md#english) describes the goals, checks and known limitations.
+
 </details>
