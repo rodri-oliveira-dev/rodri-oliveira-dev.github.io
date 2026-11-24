@@ -1,6 +1,7 @@
-/* Home Screen installation is progressively enhanced on iPhone and iPad. */
+/* Progressive installation guidance for iOS and Android. */
 .home-screen-install[hidden],
-.home-screen-install-steps[hidden] {
+.home-screen-install-steps[hidden],
+.home-screen-install-native[hidden] {
   display: none !important;
 }
 
@@ -72,7 +73,8 @@
   color: var(--muted);
 }
 
-.home-screen-install-toggle {
+.home-screen-install-toggle,
+.home-screen-install-native {
   min-height: 44px;
   padding: 9px 14px;
   border: 1px solid var(--accent);
@@ -84,13 +86,16 @@
   cursor: pointer;
 }
 
+.home-screen-install-native { margin: 0 6px 6px 0; }
+.home-screen-install-native[aria-disabled="true"] { cursor: wait; }
 .home-screen-install-dismiss:hover,
 .home-screen-install-dismiss:focus-visible {
   background: rgba(255, 255, 255, 0.10);
 }
 
 .home-screen-install-dismiss:focus-visible,
-.home-screen-install-toggle:focus-visible {
+.home-screen-install-toggle:focus-visible,
+.home-screen-install-native:focus-visible {
   outline: 3px solid #fff;
   outline-offset: 3px;
 }
