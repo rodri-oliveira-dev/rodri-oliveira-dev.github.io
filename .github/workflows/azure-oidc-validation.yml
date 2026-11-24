@@ -1,4 +1,3 @@
-
 name: Azure OIDC Validation
 
 on:
@@ -12,12 +11,24 @@ jobs:
     name: Validate Azure authentication
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     permissions:
       id-token: write
       contents: read
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: "1.17.2"
+          terraform_wrapper: false
+
       - name: Authenticate with Azure
         uses: azure/login@8c334a195cbb38e46038007b304988d888bf676a
         with:
@@ -32,3 +43,25 @@ jobs:
             --name rg-portfolio-push-dev \
             --query "{name:name,location:location}" \
             --output json
+
+      - name: Verify Blob data plane and lease
+        shell: bash
+        run: bash infra/terraform/scripts/validate-blob-lease.sh
+
+      - name: Initialize remote Terraform backend using OIDC
+        shell: bash
+        working-directory: infra/terraform
+        env:
+          ARM_USE_OIDC: "true"
+          ARM_USE_AZUREAD: "true"
+          ARM_USE_CLI: "false"
+          ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          TF_IN_AUTOMATION: "true"
+        run: terraform init -backend-config=backend.hcl.example -input=false -lockfile=readonly -no-color
+
+      - name: Validate Terraform configuration
+        shell: bash
+        working-directory: infra/terraform
+        run: terraform validate -no-color

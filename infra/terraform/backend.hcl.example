@@ -1,5 +1,5 @@
-# Copie para backend.hcl e substitua somente os identificadores do bootstrap.
-# O arquivo backend.hcl real é ignorado pelo Git.
-storage_account_name = "substitua-pelo-storage-account"
+# Identificadores não secretos do bootstrap da issue #139.
+# Pode ser usado diretamente com -backend-config=backend.hcl.example.
+storage_account_name = "strotfstatepushdev"
 container_name       = "tfstate"
 key                  = "portfolio-push-dev.tfstate"
