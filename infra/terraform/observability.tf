@@ -36,3 +36,39 @@ resource "azurerm_monitor_diagnostic_setting" "key_vault_audit" {
     category = "AllMetrics"
   }
 }
+
+resource "azurerm_monitor_diagnostic_setting" "function_app" {
+  name                       = "send-runtime-to-log-analytics"
+  target_resource_id         = azurerm_function_app_flex_consumption.notifications.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.notifications.id
+
+  enabled_log {
+    category_group = "allLogs"
+  }
+
+  enabled_metric {
+    category = "AllMetrics"
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "queue_service" {
+  name                       = "send-queue-audit-to-log-analytics"
+  target_resource_id         = "${azurerm_storage_account.functions.id}/queueServices/default"
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.notifications.id
+
+  enabled_log {
+    category = "StorageDelete"
+  }
+
+  enabled_log {
+    category = "StorageRead"
+  }
+
+  enabled_log {
+    category = "StorageWrite"
+  }
+
+  enabled_metric {
+    category = "Transaction"
+  }
+}

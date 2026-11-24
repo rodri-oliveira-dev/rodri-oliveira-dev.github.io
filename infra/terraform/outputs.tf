@@ -8,6 +8,26 @@ output "cosmos_subscriptions_container_id" {
   value       = azurerm_cosmosdb_sql_container.subscriptions.id
 }
 
+output "function_app_health_url" {
+  description = "URL não secreta do health check usada pelo smoke test; não expõe operação administrativa."
+  value       = "https://${azurerm_function_app_flex_consumption.notifications.default_hostname}/api/health"
+}
+
+output "function_app_name" {
+  description = "Nome da Function App usada pelo fluxo de deploy independente do site."
+  value       = azurerm_function_app_flex_consumption.notifications.name
+}
+
+output "function_campaign_queue_id" {
+  description = "ID da fila privada de campanhas."
+  value       = azurerm_storage_queue.campaigns.id
+}
+
+output "function_storage_account_id" {
+  description = "ID da conta dedicada ao host, artefatos e filas da Function App."
+  value       = azurerm_storage_account.functions.id
+}
+
 output "functions_runtime_identity_id" {
   description = "ID da identidade gerenciada dedicada ao runtime da Function App."
   value       = azurerm_user_assigned_identity.functions_runtime.id

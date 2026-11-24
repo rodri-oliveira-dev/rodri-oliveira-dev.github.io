@@ -16,5 +16,8 @@ cosmos_total_throughput_limit = 1000
 log_analytics_daily_quota_gb = 0.1
 log_analytics_retention_days = 30
 
+function_instance_memory_mb     = 2048
+function_maximum_instance_count = 2
+
 # As atribuições exigem uma etapa IAM separada e aprovação explícita.
 manage_runtime_role_assignments = false

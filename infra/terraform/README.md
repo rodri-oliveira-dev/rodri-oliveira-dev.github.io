@@ -50,6 +50,33 @@ O código agora modela operações nos providers `Microsoft.ManagedIdentity`, `M
 
 As atribuições de runtime são responsabilidade de operador ou fluxo IAM separado: `Microsoft.Authorization/roleAssignments/*` para Key Vault e `Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments/*` para Cosmos. Revisar também registros dos resource providers, ações auxiliares exigidas pelo plano e separação da identidade de deploy da aplicação. Esta documentação deriva permissões; não concede nenhuma delas.
 
+## Function App, filas e limites de consumo (#145)
+
+A segunda fatia modela uma Function App Linux em Flex Consumption (`FC1`) na região `brazilsouth`, com runtime .NET isolated 10, 2.048 MB por instância e limite máximo de duas instâncias. Não há instância always-ready, portanto não existe baseline fixa de execução. A única rota HTTP continua sendo `/api/health`; operações administrativas e publicação de campanhas não são expostas por HTTP.
+
+A conta StorageV2 Standard LRS é exclusiva do workload. Shared Key, usuários locais, acesso anônimo a blobs e replicação cross-tenant ficam desabilitados; host, deploy e Queue Trigger usam a identidade gerenciada atribuída pelo usuário. O endpoint de rede permanece público para compatibilidade com runner hospedado e Flex sem VNet, mas containers e filas são privados e exigem Entra/RBAC. O container `function-releases` tem versionamento e soft delete por sete dias. As filas `web-push-campaigns` e `web-push-campaigns-poison` separam processamento e mensagens esgotadas.
+
+O host processa uma mensagem por lote, sem prefetch adicional, tenta no máximo três dequeues, aplica visibility timeout de um minuto e timeout de função de cinco minutos. Com no máximo duas instâncias, o fan-out previsto é de até dois processamentos simultâneos por grupo de escala. O provider AzureRM 5.14.0 ainda não expõe o ajuste específico de concorrência HTTP do Flex; isso não amplia o processamento da fila e deve ser reavaliado quando o provider suportar a propriedade. Os limites de memória e instâncias são validados por testes Terraform.
+
+As funções `Storage Blob Data Owner` e `Storage Queue Data Contributor` estão declaradas no escopo da conta dedicada, mas continuam ausentes do plano padrão enquanto `manage_runtime_role_assignments=false`. A Function só ficará operacional após uma execução IAM separada, revisada e aprovada. Não há connection string, access key ou segredo em HCL, plano ou State. Application Insights não foi criado: logs e métricas de plataforma são enviados diretamente ao Log Analytics, evitando introduzir uma connection string sensível no State nesta fase.
+
+### Custo incremental estimado
+
+Consulta à Azure Retail Prices API em 24/11/2026 para Brazil South e USD:
+
+| Serviço | Premissa | Estimativa pública |
+| --- | --- | --- |
+| Functions Flex On Demand | Sem always-ready | franquia publicada de 100 mil GB-s e 250 mil execuções/mês por assinatura elegível; excedente a USD 0,000037/GB-s e cerca de USD 0,40/milhão de execuções |
+| Blob Storage Standard LRS Hot | Capacidade | USD 0,03032/GB-mês, além de operações e versões retidas |
+| Queue Storage LRS | Operações classe 1 | USD 0,004 por 10 mil operações |
+| Log Analytics | Logs adicionais do runtime/Storage | permanece sujeito a USD 4,60/GB e ao cap preventivo descrito acima |
+
+Franquias são compartilhadas no escopo da assinatura e não garantem custo zero. Antes do provisionamento, confirmar disponibilidade e cota Flex em `brazilsouth`, elegibilidade da franquia, preço contratual, orçamento e impacto do limite de duas instâncias. Fontes: [Flex Consumption](https://learn.microsoft.com/azure/azure-functions/flex-consumption-plan), [escala e concorrência](https://learn.microsoft.com/azure/azure-functions/functions-concurrency), [identidade para conexões do host](https://learn.microsoft.com/azure/azure-functions/functions-reference#connecting-to-host-storage-with-an-identity) e [Azure Retail Prices API](https://prices.azure.com/api/retail/prices).
+
+### Permissões futuras derivadas para a #145
+
+O provisionador passa a precisar de ações create/read/update/delete estritamente necessárias em `Microsoft.Web/serverfarms`, `Microsoft.Web/sites`, `Microsoft.Storage/storageAccounts`, blob containers, queues e diagnostic settings, além das operações já derivadas na #144. Ele não precisa de acesso ao conteúdo das filas, artefatos, segredos ou deploy de código. O operador IAM separado precisa atribuir somente os dois papéis de dados modelados à identidade de runtime. A identidade de deploy da #148 deve receber escopo próprio na Function App e não reutilizar automaticamente Terraform, State ou runtime.
+
 ## Bootstrap manual do state remoto (#139)
 
 O armazenamento foi preparado manualmente em 24/11/2026, fora do state do workload. Não recrie nem importe esses recursos para este root module.

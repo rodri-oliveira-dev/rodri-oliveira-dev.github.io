@@ -41,6 +41,30 @@ variable "environment" {
   }
 }
 
+variable "function_instance_memory_mb" {
+  description = "Memória por instância FC1 em MB."
+  type        = number
+  default     = 2048
+  nullable    = false
+
+  validation {
+    condition     = contains([512, 2048, 4096], var.function_instance_memory_mb)
+    error_message = "function_instance_memory_mb deve ser 512, 2048 ou 4096."
+  }
+}
+
+variable "function_maximum_instance_count" {
+  description = "Limite rígido de escala horizontal do plano Flex para conter custo e fan-out."
+  type        = number
+  default     = 2
+  nullable    = false
+
+  validation {
+    condition     = var.function_maximum_instance_count >= 1 && var.function_maximum_instance_count <= 2
+    error_message = "function_maximum_instance_count deve ficar entre 1 e 2 nesta baseline."
+  }
+}
+
 variable "location" {
   description = "Região Azure prevista para os recursos de dados do backend Web Push."
   type        = string

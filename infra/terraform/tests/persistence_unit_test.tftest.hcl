@@ -27,6 +27,20 @@ mock_provider "azurerm" {
       principal_id = "11111111-1111-1111-1111-111111111111"
     }
   }
+
+  mock_resource "azurerm_storage_account" {
+    defaults = {
+      id                    = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-portfolio-push-dev/providers/Microsoft.Storage/storageAccounts/stportpushdev1350159615"
+      primary_blob_endpoint = "https://stportpushdev1350159615.blob.core.windows.net/"
+    }
+  }
+
+  mock_resource "azurerm_function_app_flex_consumption" {
+    defaults = {
+      default_hostname = "func-portpush-dev-1350159615.azurewebsites.net"
+      id               = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-portfolio-push-dev/providers/Microsoft.Web/sites/func-portpush-dev-1350159615"
+    }
+  }
 }
 
 variables {
@@ -63,8 +77,28 @@ run "default_cost_and_security_baseline" {
   }
 
   assert {
-    condition     = length(azurerm_role_assignment.functions_key_vault_secrets_user) == 0 && length(azurerm_cosmosdb_sql_role_assignment.functions_subscriptions_contributor) == 0
+    condition     = length(azurerm_role_assignment.functions_key_vault_secrets_user) == 0 && length(azurerm_cosmosdb_sql_role_assignment.functions_subscriptions_contributor) == 0 && length(azurerm_role_assignment.functions_storage_blob_data_owner) == 0 && length(azurerm_role_assignment.functions_storage_queue_data_contributor) == 0
     error_message = "Atribuições IAM não podem ser aplicadas pelo fluxo padrão."
+  }
+
+  assert {
+    condition     = azurerm_service_plan.functions.sku_name == "FC1" && azurerm_function_app_flex_consumption.notifications.runtime_name == "dotnet-isolated" && azurerm_function_app_flex_consumption.notifications.runtime_version == "10.0"
+    error_message = "A Function deve usar Flex Consumption FC1 com .NET 10 isolated."
+  }
+
+  assert {
+    condition     = azurerm_function_app_flex_consumption.notifications.maximum_instance_count == 2 && azurerm_function_app_flex_consumption.notifications.instance_memory_in_mb == 2048
+    error_message = "A Function deve limitar escala a duas instâncias de 2048 MB."
+  }
+
+  assert {
+    condition     = !azurerm_storage_account.functions.shared_access_key_enabled && azurerm_storage_container.function_releases.container_access_type == "private"
+    error_message = "Storage deve bloquear Shared Key e manter artefatos privados."
+  }
+
+  assert {
+    condition     = azurerm_storage_queue.campaigns.name == "web-push-campaigns" && azurerm_storage_queue.campaigns_poison.name == "web-push-campaigns-poison"
+    error_message = "As filas privada e poison devem ter nomes estáveis."
   }
 }
 
@@ -82,7 +116,7 @@ run "eligible_free_tier_and_separate_runtime_iam" {
   }
 
   assert {
-    condition     = length(azurerm_role_assignment.functions_key_vault_secrets_user) == 1 && length(azurerm_cosmosdb_sql_role_assignment.functions_subscriptions_contributor) == 1
+    condition     = length(azurerm_role_assignment.functions_key_vault_secrets_user) == 1 && length(azurerm_cosmosdb_sql_role_assignment.functions_subscriptions_contributor) == 1 && length(azurerm_role_assignment.functions_storage_blob_data_owner) == 1 && length(azurerm_role_assignment.functions_storage_queue_data_contributor) == 1
     error_message = "A execução IAM aprovada deve modelar somente os acessos de runtime necessários."
   }
 }
