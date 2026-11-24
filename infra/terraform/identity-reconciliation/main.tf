@@ -2,7 +2,7 @@ locals {
   application_display_name = "app-portfolio-push-deploy-dev"
   github_actions_audiences = ["api://AzureADTokenExchange"]
   github_actions_issuer    = "https://token.actions.githubusercontent.com"
-  main_oidc_subject        = "repo:rodri-oliveira-dev/rodri-oliveira-dev.github.io:ref:refs/heads/main"
+  main_oidc_subject        = "repo:rodri-oliveira-dev@3470248/rodri-oliveira-dev.github.io@1350159615:ref:refs/heads/main"
   resource_group_name      = "rg-portfolio-push-dev"
 }
 
