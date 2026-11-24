@@ -1,12 +1,107 @@
 /* Screen-only preferences preserve the printable resume. */
 @media screen {
-  .contrast-preference { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; max-width: 100%; font: inherit; }
-  .contrast-preference select { font: inherit; color: #edf2ff; background: #111a2d; border: 1px solid currentColor; border-radius: .35rem; padding: .35rem; min-height: 44px; max-width: 100%; color-scheme: dark; }
+  .contrast-preference {
+    --contrast-control-bg: #111a2d;
+    --contrast-control-text: #edf2ff;
+    --contrast-control-border: #91a5bf;
+    --contrast-control-selected: #233b56;
+    --contrast-control-focus: #a8d2ff;
+    box-sizing: border-box;
+    width: min(calc(100% - 40px), var(--max, 1080px));
+    margin: .5rem auto;
+    min-width: 0;
+    color: var(--contrast-control-text);
+    font-size: .875rem;
+    color-scheme: dark;
+  }
+  .contrast-preference-light {
+    --contrast-control-bg: #fff;
+    --contrast-control-text: #17283b;
+    --contrast-control-border: #526b82;
+    --contrast-control-selected: #e4edf7;
+    --contrast-control-focus: #003e70;
+    color-scheme: light;
+  }
+  main[data-pwa-offline] .contrast-preference { width: 100%; margin: 1rem 0 0; }
+  .contrast-preference summary {
+    box-sizing: border-box;
+    width: fit-content;
+    max-width: 100%;
+    min-height: 44px;
+    margin-inline-start: auto;
+    padding: .625rem .875rem;
+    border: 1px solid var(--contrast-control-border);
+    border-radius: .5rem;
+    background: var(--contrast-control-bg);
+    color: var(--contrast-control-text);
+    cursor: pointer;
+    overflow-wrap: anywhere;
+  }
+  .contrast-preference summary:hover { border-color: var(--contrast-control-focus); }
+  .contrast-preference fieldset {
+    box-sizing: border-box;
+    width: min(100%, 37rem);
+    min-inline-size: 0;
+    margin: .5rem 0 0 auto;
+    padding: .75rem;
+    border: 1px solid var(--contrast-control-border);
+    border-radius: .5rem;
+    background: var(--contrast-control-bg);
+    color: var(--contrast-control-text);
+  }
+  .contrast-preference legend {
+    max-width: 100%;
+    padding-inline: .25rem;
+    color: var(--contrast-control-text);
+    background: var(--contrast-control-bg);
+    overflow-wrap: anywhere;
+    font-weight: 600;
+  }
+  .contrast-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+    gap: .375rem;
+  }
+  .contrast-options label {
+    box-sizing: border-box;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: .375rem;
+    min-width: 0;
+    min-height: 44px;
+    padding: .5rem;
+    border: 1px solid var(--contrast-control-border);
+    border-radius: .375rem;
+    background: var(--contrast-control-bg);
+    color: var(--contrast-control-text);
+    cursor: pointer;
+  }
+  .contrast-options label:has(input:checked) {
+    border-color: var(--contrast-control-focus);
+    background: var(--contrast-control-selected);
+    font-weight: 600;
+  }
+  .contrast-options input { flex: 0 0 auto; margin: 0; accent-color: var(--contrast-control-focus); }
+  .contrast-options svg { width: 1.125em; height: 1.125em; flex: 0 0 auto; }
+  .contrast-options label span { min-width: 0; overflow-wrap: anywhere; }
+  .contrast-preference summary:focus-visible,
+  .contrast-options label:has(input:focus-visible) {
+    outline: 3px solid var(--contrast-control-focus);
+    outline-offset: 2px;
+  }
+  .contrast-preference .contrast-description {
+    margin: .75rem 0 0;
+    color: var(--contrast-control-text);
+    overflow-wrap: anywhere;
+  }
   .site-footer { background: var(--bg); }
-  .contrast-preference option { background: #111a2d; color: #fff; }
-  .resume-footer .contrast-preference select { color-scheme: light; color: #17283b; background: #fff; }
-  .resume-footer .contrast-preference option { background: #fff; color: #17283b; }
-  .contrast-preference select:focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
+  @media (forced-colors: active) {
+    .contrast-options label:has(input:checked) { border: 2px solid Highlight; }
+    .contrast-preference summary:focus-visible,
+    .contrast-options label:has(input:focus-visible) { outline-color: Highlight; }
+  }
 html[data-contrast="high"] {
   --bg: #000000; --bg-elevated: #000000; --surface: #111111; --surface-soft: #000000;
   --text: #ffffff; --muted: #ffffff; --accent: #a8e5ff; --accent-2: #e0d4ff;
@@ -24,7 +119,6 @@ html[data-contrast="high"] .sheet :focus-visible, html[data-contrast="high"] .to
 html[data-contrast="high"] main[data-pwa-offline] { background: #000; color: #fff; border-color: #fff; }
 html[data-contrast="high"] main[data-pwa-offline] p { color: #fff; }
 html[data-contrast="high"] main[data-pwa-offline] a { color: #a8e5ff; }
-html[data-contrast="high"] .contrast-preference select { border-color: currentColor; }
 
   @media (prefers-contrast: more) {
 html:not([data-contrast="normal"]):not([data-contrast="high"]) {
@@ -44,7 +138,6 @@ html:not([data-contrast="normal"]):not([data-contrast="high"]) .sheet :focus-vis
 html:not([data-contrast="normal"]):not([data-contrast="high"]) main[data-pwa-offline] { background: #000; color: #fff; border-color: #fff; }
 html:not([data-contrast="normal"]):not([data-contrast="high"]) main[data-pwa-offline] p { color: #fff; }
 html:not([data-contrast="normal"]):not([data-contrast="high"]) main[data-pwa-offline] a { color: #a8e5ff; }
-html:not([data-contrast="normal"]):not([data-contrast="high"]) .contrast-preference select { border-color: currentColor; }
 
   }
 }
