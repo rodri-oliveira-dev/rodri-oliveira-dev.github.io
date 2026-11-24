@@ -36,6 +36,15 @@ const results = require("./accessibility-results.cjs").createResults("Contrast p
           });
           assert.ok(rect.width >= 44 && rect.height >= 44 && rect.left >= 0 && rect.right <= width + 1,
             `${url} at ${width}px: ${JSON.stringify(rect)}`);
+          const languageHeight = await page.$eval(selector, el => {
+            const language = el.previousElementSibling;
+            return language?.matches(".language-switcher, .language-nav")
+              ? language.getBoundingClientRect().height : null;
+          });
+          if (languageHeight !== null) {
+            assert.ok(Math.abs(rect.height - languageHeight) <= 1,
+              `${url} at ${width}px: contrast height ${rect.height}, language height ${languageHeight}`);
+          }
         }
         await page.setViewport({ width: 390, height: 844 });
         await choose(page, "high");

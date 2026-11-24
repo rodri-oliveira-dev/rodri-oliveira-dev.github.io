@@ -4,6 +4,17 @@
   @media (max-width: 900px) {
     .header-inner:has(> .contrast-preference) { column-gap: 8px; }
   }
+  /* Keep the adjacent controls aligned without reducing mobile touch targets. */
+  .site-header .language-switcher,
+  .topbar .language-nav {
+    box-sizing: border-box;
+    min-height: 44px;
+    align-items: center;
+  }
+  @media (max-width: 900px) {
+    .site-header .language-switcher,
+    .site-header .contrast-preference { min-height: 52px; }
+  }
   .contrast-preference {
     --contrast-control-bg: #111a2d;
     --contrast-control-text: #edf2ff;
