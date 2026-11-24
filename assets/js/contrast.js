@@ -34,7 +34,11 @@
     try { localStorage.setItem(key, preference); } catch { /* retain current page choice */ }
   });
   window.addEventListener("storage", (event) => {
-    if (event.key === key || event.key === null) apply(event.newValue);
+    if (event.key !== key && event.key !== null) return;
+    try {
+      if (event.storageArea !== localStorage) return;
+      apply(localStorage.getItem(key));
+    } catch { /* retain current choice if storage is unavailable */ }
   });
   window.addEventListener("pageshow", (event) => {
     if (event.persisted) {

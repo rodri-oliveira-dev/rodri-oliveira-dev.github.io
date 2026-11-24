@@ -21,6 +21,19 @@ const results = require("./accessibility-results.cjs").createResults("Contrast p
       assert.equal(await page.$eval("html", el => el.dataset.contrast), "system", url);
       });
     }
+    await results.run("Stale storage event does not replace current contrast", async () => {
+      await page.goto(urls[0], { waitUntil: "load" });
+      await page.select("#contrast-preference", "high");
+      try {
+        await page.evaluate(() => {
+          window.dispatchEvent(new StorageEvent("storage", {
+            key: "portfolio-contrast", newValue: "normal", storageArea: localStorage
+          }));
+        });
+        assert.equal(await page.$eval("html", el => el.dataset.contrast), "high");
+        assert.equal(await page.$eval("#contrast-preference", el => el.value), "high");
+      } finally { await page.select("#contrast-preference", "system"); }
+    });
     await results.run("System contrast precedence", async () => {
     await page.goto(urls[0], { waitUntil: "load" });
     const session = await page.createCDPSession();

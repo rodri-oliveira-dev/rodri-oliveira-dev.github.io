@@ -47,6 +47,7 @@ if (typeof document !== "undefined" && typeof window !== "undefined") (() => {
     const syncHeaderOffset = () => {
       const height = Math.ceil(siteHeader.getBoundingClientRect().height);
       document.documentElement.style.scrollPaddingTop = (height + 16) + "px";
+      document.documentElement.style.setProperty("--site-header-height", height + "px");
     };
     const headerObserver = new window.ResizeObserver(syncHeaderOffset);
     headerObserver.observe(siteHeader);

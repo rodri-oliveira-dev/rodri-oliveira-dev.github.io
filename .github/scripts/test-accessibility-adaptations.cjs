@@ -11,20 +11,43 @@ const inspectContent = () => {
   const controls = [...document.querySelectorAll("a[href], button, input, select, textarea, summary, [role=button], [role=link]")]
     .filter(isVisible);
   const clipped = [];
-  for (const element of document.querySelectorAll("main *, header *, footer *")) {
-    if (!isVisible(element) || element.closest(".case-study-code, .case-study-table-wrap, svg")) continue;
+  for (const element of document.querySelectorAll("main, header, footer, main *, header *, footer *")) {
+    if (!isVisible(element) || element.closest(".case-study-code, .case-study-table-wrap, svg, .visually-hidden")) continue;
     const style = getComputedStyle(element);
     if (style.position === "absolute" || style.position === "fixed") continue;
     const rect = element.getBoundingClientRect();
     const text = [...element.childNodes].some((node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
-    if (!text && !controls.includes(element)) continue;
-    if (rect.left < -1 || rect.right > innerWidth + 1 ||
-        (["hidden", "clip"].includes(style.overflowX) && element.scrollWidth > element.clientWidth + 1) ||
-        (["hidden", "clip"].includes(style.overflowY) && element.scrollHeight > element.clientHeight + 1)) {
+    const clipsDescendants =
+      (["hidden", "clip"].includes(style.overflowX) && element.scrollWidth > element.clientWidth + 1) ||
+      (["hidden", "clip"].includes(style.overflowY) && element.scrollHeight > element.clientHeight + 1);
+    // A container without direct text can still clip its descendants.
+    if (clipsDescendants || ((text || controls.includes(element)) &&
+        (rect.left < -1 || rect.right > innerWidth + 1))) {
       clipped.push(element.tagName + ": " + element.textContent.trim().slice(0, 60));
     }
   }
+  const main = document.querySelector("main");
+  // Only the explicitly interchangeable hero contact actions may vary by viewport.
+  const alternateContact = ".hero-actions a[href^='mailto:'], .hero-actions .mobile-contact-action";
+  const stableText = [];
+  if (main) {
+    const walker = document.createTreeWalker(main, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      if (node.parentElement && isVisible(node.parentElement) &&
+          !node.parentElement.closest(alternateContact + ", script, style, .visually-hidden")) {
+        const value = node.textContent.replace(/\s+/g, " ").trim();
+        if (value) stableText.push(value);
+      }
+    }
+  }
+  const describe = element => [element.tagName, element.getAttribute("href"), element.textContent.trim(), element.getAttribute("aria-label")];
   return {
+    stableText,
+    mainControls: controls.filter(element => main?.contains(element) && !element.closest(alternateContact)).map(describe),
+    desktopContact: controls.some(element => element.matches(".hero-actions a[href^='mailto:']")),
+    mobileContact: controls.some(element => element.matches(".hero-actions .mobile-contact-action")),
+    alternateEmail: controls.some(element => element.matches(".contact-links a[href^='mailto:']")),
     viewport: innerWidth,
     documentWidth: document.documentElement.scrollWidth,
     clipped,
@@ -33,12 +56,22 @@ const inspectContent = () => {
   };
 };
 
-async function assertLayout(page, url, mode, baseline) {
+async function assertLayout(page, url, mode, baseline, reflow = false) {
   const actual = await page.evaluate(inspectContent);
   await results.run(`${url} | ${mode} | horizontal overflow`, () => assert.ok(actual.documentWidth <= actual.viewport + 1, `document ${actual.documentWidth}px / viewport ${actual.viewport}px`));
   await results.run(`${url} | ${mode} | clipped content`, () => assert.deepEqual(actual.clipped, []));
-  await results.run(`${url} | ${mode} | main text`, () => assert.equal(actual.text, baseline.text));
-  await results.run(`${url} | ${mode} | visible controls`, () => assert.deepEqual(actual.controls, baseline.controls));
+  if (reflow) {
+    await results.run(`${url} | ${mode} | main text`, () => assert.deepEqual(actual.stableText, baseline.stableText));
+    await results.run(`${url} | ${mode} | main controls`, () => assert.deepEqual(actual.mainControls, baseline.mainControls));
+    if (baseline.desktopContact) {
+      await results.run(`${url} | ${mode} | alternate contact actions`, () => {
+        assert.ok(actual.alternateEmail && actual.mobileContact, "Mobile contact download and equivalent email link must remain available");
+      });
+    }
+  } else {
+    await results.run(`${url} | ${mode} | main text`, () => assert.equal(actual.text, baseline.text));
+    await results.run(`${url} | ${mode} | visible controls`, () => assert.deepEqual(actual.controls, baseline.controls));
+  }
 }
 
 async function enlargeText(page) {
@@ -106,6 +139,18 @@ async function assertMobileMenuTree(page, url) {
     args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
   });
   try {
+    await results.run("Clipping inspector regression", async () => {
+      const page = await browser.newPage();
+      try {
+        await page.setContent('<main><div id="clip-fixture" style="height:10px;overflow:hidden"><p style="margin:0">Clipped descendant</p></div></main>');
+        const actual = await page.evaluate(inspectContent);
+        assert.ok(actual.clipped.some(value => value.startsWith("DIV: Clipped descendant")), "Clipping ancestor must be detected");
+        const baseline = actual.stableText;
+        await page.$eval("#clip-fixture", el => { el.style.display = "none"; });
+        const hidden = await page.evaluate(inspectContent);
+        assert.notDeepEqual(hidden.stableText, baseline, "Hidden main text must change the baseline");
+      } finally { await page.close(); }
+    });
     for (const configuredUrl of urls) {
       const url = new URL(new URL(configuredUrl).pathname, ORIGIN).href;
       const scenario = async (name, width, height, check) => {
@@ -122,8 +167,10 @@ async function assertMobileMenuTree(page, url) {
         });
       };
       let desktopHeading;
+      let desktopBaseline;
       await scenario("Desktop accessibility tree", 1280, 900, async page => {
         desktopHeading = await page.$eval("main h1", element => element.innerText.trim());
+        desktopBaseline = await page.evaluate(inspectContent);
         await assertAccessibilityTree(page, url);
       });
       await scenario("200% text", 1280, 900, async page => {
@@ -132,10 +179,10 @@ async function assertMobileMenuTree(page, url) {
         await assertLayout(page, url, "200% computed font-size", baseline);
       });
       await scenario("320px reflow", 320, 256, async page => {
-        const mobile = await page.evaluate(inspectContent);
         const heading = await page.$eval("main h1", element => element.innerText.trim());
         await results.run(url + " | reflow | primary heading", () => assert.equal(heading, desktopHeading, "Desktop and mobile primary heading must match"));
-        await assertLayout(page, url, "320px reflow", mobile);
+        assert.ok(desktopBaseline, "Desktop baseline unavailable");
+        await assertLayout(page, url, "320px reflow", desktopBaseline, true);
       });
       await scenario("Mobile accessibility tree", 320, 256, page => assertAccessibilityTree(page, url));
       await scenario("Mobile menu accessibility tree", 320, 256, page => assertMobileMenuTree(page, url));
