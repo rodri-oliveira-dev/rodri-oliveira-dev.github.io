@@ -111,15 +111,49 @@ O root module separado [`identity-reconciliation/`](identity-reconciliation/) re
 - a atribuição temporária `Contributor` no escopo exato de `rg-portfolio-push-dev`, consultada em vez de criada;
 - a credencial federada já funcional da branch `main`, declarada com `prevent_destroy` e um bloco `import` obrigatório.
 
-A credencial da `main` aceita somente o issuer `https://token.actions.githubusercontent.com`, a audience `api://AzureADTokenExchange` e o subject exato:
+A credencial `github-main-deploy-dev` da `main`, confirmada pelo operador no Entra em 24/11/2026, aceita somente o issuer `https://token.actions.githubusercontent.com`, a audience `api://AzureADTokenExchange` e o subject exato:
 
 ```text
-repo:rodri-oliveira-dev/rodri-oliveira-dev.github.io:ref:refs/heads/main
+repo:rodri-oliveira-dev@3470248/rodri-oliveira-dev.github.io@1350159615:ref:refs/heads/main
 ```
 
-Não execute esse root module com a própria identidade de deploy. As consultas do provider `azuread` exigem leitura de diretório e o import exige uma sessão de operador autorizada; conceder `Application.ReadWrite.All` ao workflow ampliaria desnecessariamente o impacto de um comprometimento. Antes do primeiro `plan`, o operador deve confirmar no Entra o nome e os IDs imutáveis da credencial, copiá-los para um `terraform.tfvars` ignorado e executar somente o import declarativo. Interrompa se o plano indicar criação, substituição ou alteração da credencial existente. Esta etapa não autoriza `apply`.
+Não execute esse root module com a própria identidade de deploy. As consultas do provider `azuread` exigem leitura de diretório e o import exige uma sessão de operador autorizada; conceder `Application.ReadWrite.All` ao workflow ampliaria desnecessariamente o impacto de um comprometimento. Antes do primeiro `plan`, o operador deve confirmar o Object ID da aplicação e o ID da credencial no Entra, copiá-los para um `terraform.tfvars` ignorado e seguir o procedimento de importação abaixo. Interrompa se o plano indicar criação, substituição ou alteração da credencial existente. Esta etapa não autoriza `apply`.
 
 O state de identidade usa uma key separada (`portfolio-push-identity-dev.tfstate`) para não misturar privilégios de diretório com o state do workload. A criação dessa key pelo primeiro `init`/import e a concessão de acesso ao operador continuam ações manuais. Não publique IDs de objeto, credential IDs, conteúdo de State ou tokens em issues, logs ou commits.
+
+### Procedimento de importação (operador autorizado)
+
+Use um checkout limpo da revisão integrada, Terraform na versão fixada pelo CI e uma sessão PowerShell local autenticada como operador (não a identidade de deploy). Confirme acesso de leitura ao diretório, ao Resource Group e acesso ao plano de dados do backend. Não use um diretório com state local ou configuração de backend anterior sem investigar.
+
+1. Execute `az login` e selecione a assinatura correta com `az account set --subscription <subscription-id>`. Confirme tenant e assinatura com `az account show`.
+2. Consulte os metadados da aplicação e da credencial localmente, sem compartilhar a saída:
+
+   ```powershell
+   az ad app list --display-name app-portfolio-push-deploy-dev --query "[?displayName=='app-portfolio-push-deploy-dev'].{objectId:id,clientId:appId}" -o json
+   az ad app federated-credential list --id <application-object-id> --query "[?name=='github-main-deploy-dev'].{id:id,name:name,issuer:issuer,subject:subject,audiences:audiences}" -o json
+   ```
+
+   Substitua os placeholders antes de executar. Confirme uma única aplicação e credencial, o subject imutável acima, issuer e audience. O ID de import usa o **Object ID da aplicação**, não o Client ID ou o ID do service principal: `<application-object-id>/federatedIdentityCredential/<credential-id>`.
+
+3. Em `infra/terraform/identity-reconciliation/`, copie `terraform.tfvars.example` para `terraform.tfvars` (ignorado pelo Git), preencha assinatura, tenant, nome e ID de import. Confirme que não há variáveis de autenticação de automação interferindo na sessão CLI.
+
+   ```powershell
+   terraform init -input=false -lockfile=readonly -backend-config=backend.hcl.example -backend-config=use_oidc=false -backend-config=use_cli=true
+   terraform plan -input=false -lock-timeout=5m
+   ```
+
+   Confirme que a key é `portfolio-push-identity-dev.tfstate`. Não use opções de migração/force-copy. O plano deve indicar somente **1 to import, 0 to add, 0 to change, 0 to destroy** (ou nenhuma alteração se já importado), sem avisos não investigados. Não salve ou publique o plano nem sua saída completa. Se divergir, interrompa.
+
+4. Somente após autorização explícita do operador, importe para o State via CLI (sem `apply`):
+
+   ```powershell
+   terraform import -input=false -lock-timeout=5m azuread_application_federated_identity_credential.github_main "<application-object-id>/federatedIdentityCredential/<credential-id>"
+   terraform plan -input=false -lock-timeout=5m -detailed-exitcode
+   ```
+
+   Use o mesmo ID informado no tfvars. Se a credencial já estiver no State, não repita o import; revise a associação e execute o plano. O segundo plano deve retornar código 0, sem mudanças. O import grava State e pode gerar operações de armazenamento; não cria nem modifica a credencial Entra. O bloco `import` versionado permite a prévia declarativa, mas não autoriza `apply` nesta etapa. Registre apenas a evidência sanitizada de import e ausência de mudanças na issue #142. Não execute `apply`, `destroy`, `force-unlock` ou restauração de State.
+
+Referências: [terraform import](https://developer.hashicorp.com/terraform/cli/commands/import), [credencial federada AzureAD](https://registry.terraform.io/providers/hashicorp/azuread/latest/docs/resources/application_federated_identity_credential).
 
 ### Variáveis GitHub Actions confirmadas
 
@@ -128,16 +162,16 @@ Em 24/11/2026, a API do GitHub confirmou os nomes das variáveis de repositório
 O repositório ainda não possuía proteção da branch `main` nem um GitHub Environment dedicado ao Terraform na mesma verificação. Antes de habilitar um fluxo autenticado, exigir Pull Request na `main`, impedir force-push/exclusão e criar um Environment protegido com aprovação humana. Um job que declara `environment: terraform-dev` muda o subject OIDC para:
 
 ```text
-repo:rodri-oliveira-dev/rodri-oliveira-dev.github.io:environment:terraform-dev
+repo:rodri-oliveira-dev@3470248/rodri-oliveira-dev.github.io@1350159615:environment:terraform-dev
 ```
 
-Esse subject não é coberto pela credencial da branch. A credencial de ambiente deve existir previamente no Entra, com issuer/audience idênticos e IDs imutáveis confirmados, antes de o job tentar autenticar. Não substitua nem edite a credencial funcional da `main` para obter essa correspondência.
+Esse subject não é coberto pela credencial da branch. A credencial `github-terraform-dev` foi cadastrada pelo operador com issuer/audience idênticos. Os IDs numéricos acima identificam publicamente a conta e o repositório GitHub; os IDs de objetos Entra e de credenciais permanecem fora do repositório. Preserve ambas as credenciais.
 
 ### Validação OIDC do Environment `terraform-dev`
 
 Após integrar o PR #184 e cadastrar a credencial federada do Environment no Entra, acesse Actions > Terraform validation > Run workflow, selecione `main` e a operação `validate-oidc`. O job autenticado aguarda a aprovação do Environment `terraform-dev`, usa `azure/login` com OIDC e consulta somente o Resource Group existente `rg-portfolio-push-dev`, sem publicar seus dados.
 
-Esta operação não inicializa o backend remoto, não lê nem altera o State e não executa `plan`, `import` ou `apply`. O sucesso comprova a autenticação do subject de ambiente e a leitura do Resource Group, não o RBAC mínimo, o acesso ao State ou a autorização para provisionamento. Registre o link da execução bem-sucedida na issue #142; o gate continua pendente até a revisão dos demais controles.
+Esta operação não inicializa o backend remoto, não lê nem altera o State e não executa `plan`, `import` ou `apply`. O sucesso comprova a autenticação do subject de ambiente e a leitura do Resource Group, não o RBAC mínimo, o acesso ao State ou a autorização para provisionamento. Em 24/11/2026, a [execução bem-sucedida de validate-oidc](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/runs/45468308172/job/138712302978) comprovou esses dois itens após a correção do subject imutável. O gate #142 continua pendente até a revisão dos demais controles.
 
 ### Plano de menor privilégio
 
