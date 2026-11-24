@@ -29,4 +29,6 @@ El sitio está disponible en [portugués](https://rodri-oliveira-dev.github.io/)
 
 Este repositorio aloja mi sitio web personal y no acepta contribuciones externas. El código, los textos y los materiales visuales son propietarios. Consulta la [licencia](LICENSE) para conocer los términos de uso. Los detalles técnicos de mantenimiento y publicación están en la [documentación del repositorio](.github/AUTOMATION.md) (en portugués). La integración experimental WebMCP está documentada en [español](docs/webmcp.es-419.md), [portugués](docs/webmcp.pt-BR.md) e [inglés](docs/webmcp.en.md).
 
+La [declaración de accesibilidad](ACCESSIBILITY.md#español-américa-latina) describe los objetivos, controles y limitaciones conocidas.
+
 </details>
