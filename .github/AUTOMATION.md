@@ -397,6 +397,8 @@ Além dos workflows, a automação depende destes arquivos:
 
 Ao alterar um workflow ou um desses arquivos de suporte, o Pull Request deve permanecer verde nos gates aplicáveis antes do merge.
 
+A baseline RBAC atual da identidade de deploy é `Reader` no Resource Group e `Storage Blob Data Contributor` no contêiner `tfstate`; não há permissão de provisionamento concedida. A reconciliação de identidade verifica as atribuições diretas nos escopos conhecidos por pós-condições de data sources, em plano local do operador autorizado. O CI sem credenciais não comprova essa baseline efetiva. Antes do primeiro apply, revisar os papéis específicos dos recursos modelados, a separação de IAM e a aprovação do plano efetivo; ver [baseline e riscos](../infra/terraform/README.md#baseline-rbac-de-bootstrap-e-evolução).
+
 ### Azure OIDC Validation
 
 O [workflow](workflows/azure-oidc-validation.yml) é exclusivamente manual e o job autenticado roda apenas na `main`. Reutiliza as três variáveis Azure existentes e `id-token: write`; não executa com credenciais em PRs. Valida o Resource Group, testa escrita, aquisição/liberação de lease de 60 segundos e exclusão de um blob sintético descartável em `tfstate/_validation/`, inicializa o backend remoto com OIDC e executa `terraform validate`. Não executa plan/apply/import nem publica state ou credenciais. O teste de lease não representa concorrência entre dois processos Terraform; a retenção do armazenamento pode manter versões do blob de teste. Veja [bootstrap e riscos](../infra/terraform/README.md). Após aprovação e merge, execute manualmente e registre o link na issue #139.
