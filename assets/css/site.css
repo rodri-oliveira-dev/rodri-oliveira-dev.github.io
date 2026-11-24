@@ -1590,6 +1590,11 @@ h1 {
   background: var(--bg);
 }
 
+.case-study-table .mapping-direction {
+  color: var(--text);
+  background: var(--bg);
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -1778,11 +1783,17 @@ h1 {
   background: var(--surface-soft);
 }
 
+.career-timeline-frame {
+  position: relative;
+  margin-top: 54px;
+  isolation: isolate;
+}
+
 .career-timeline {
   position: relative;
   display: grid;
   gap: 0;
-  margin: 54px 0 0;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
@@ -1817,14 +1828,14 @@ h1 {
   line-height: 1.5;
 }
 
-.career-timeline::before {
+.career-timeline-rail {
   position: absolute;
   top: 10px;
   bottom: 10px;
   left: 175px;
   width: 1px;
   background: var(--line-strong);
-  content: "";
+  pointer-events: none;
 }
 
 .career-entry {
@@ -2159,7 +2170,7 @@ h1 {
     justify-self: start;
   }
 
-  .career-timeline::before {
+  .career-timeline-rail {
     left: 7px;
   }
 

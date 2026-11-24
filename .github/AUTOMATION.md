@@ -113,6 +113,8 @@ Esse último ponto funciona como um gate de drift: se catálogo, homepage, dados
 
 ### Accessibility
 
+Em falhas do Pa11y, `diagnose-rendered-contrast.cjs` registra `violations` e `incomplete` separadamente, incluindo dados dos checks do axe. As suítes de navegador subsequentes executam mesmo se uma anterior falhar, desde que o servidor local tenha iniciado; o job continua bloqueante e o threshold do Pa11y permanece zero.
+
 O contraste textual renderizado é verificado pelo axe no Pa11y CI sem exclusão global de `color-contrast`. O teste de tokens permanece complementar; casos inconclusivos (por exemplo, gradientes e imagens) e contraste não textual exigem avaliação adicional.
 
 A suíte `scripts/test-accessibility-adaptations.cjs` complementa Pa11y com regressões de ampliação de fonte, reflow, espaçamento de texto e árvore AX do Chromium. Não substitui zoom nativo ou testes com leitores de tela.

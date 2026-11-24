@@ -18,7 +18,7 @@ jobs:
   accessibility:
     name: WCAG 2 AA accessibility
     runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
-    timeout-minutes: 10
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repository
@@ -103,6 +103,7 @@ jobs:
           PY
 
       - name: Start local site
+        id: site
         run: |
           python3 -m http.server 8080 --bind 127.0.0.1 > /tmp/portfolio-http.log 2>&1 &
           echo $! > /tmp/portfolio-http.pid
@@ -118,15 +119,23 @@ jobs:
           exit 1
 
       - name: Run WCAG 2 AA checks
+        id: pa11y
         run: npx --no-install pa11y-ci --config .pa11yci.cjs --threshold 0
 
+      - name: Diagnose rendered contrast on Pa11y failure
+        if: ${{ !cancelled() && steps.pa11y.outcome == 'failure' }}
+        run: node .github/scripts/diagnose-rendered-contrast.cjs
+
       - name: Validate responsive layout and keyboard navigation
+        if: ${{ !cancelled() && steps.site.outcome == 'success' }}
         run: node .github/scripts/test-responsive.cjs
 
       - name: Validate text adaptations and accessibility tree
+        if: ${{ !cancelled() && steps.site.outcome == 'success' }}
         run: node .github/scripts/test-accessibility-adaptations.cjs
 
       - name: Validate contrast preferences
+        if: ${{ !cancelled() && steps.site.outcome == 'success' }}
         run: node .github/scripts/test-contrast-preference.cjs
 
       - name: Stop local site

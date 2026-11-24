@@ -201,7 +201,7 @@ public sealed class CustomerMap : EntityMap&lt;Customer&gt;
             <thead><tr><th>Enfoque</th><th>Ejemplo</th><th>Ventaja</th><th>Costo y mejor contexto</th></tr></thead>
             <tbody>
               <tr><td>Alias en SQL</td><td><code>SELECT CUST_NO AS Id, LEGAL_NM AS Name</code></td><td>Sin configuración adicional; intención visible en la consulta.</td><td>Repite alias en varias consultas. Es adecuado para una lectura puntual o para SQL controlado por una sola operación.</td></tr>
-              <tr><td>DTO de persistencia</td><td><code>CustomerRow.CUST_NO</code> → <code>Customer.Id</code></td><td>Límite y transformación totalmente explícitos; DTO puede reflejar uniones y proyecciones.</td><td>Requiere más tipos y código de conversión. Conviene cuando el modelo de persistencia difiere semánticamente del agregado.</td></tr>
+              <tr><td>DTO de persistencia</td><td><code>CustomerRow.CUST_NO</code> <span class="mapping-direction">a</span> <code>Customer.Id</code></td><td>Límite y transformación totalmente explícitos; DTO puede reflejar uniones y proyecciones.</td><td>Requiere más tipos y código de conversión. Conviene cuando el modelo de persistencia difiere semánticamente del agregado.</td></tr>
               <tr><td>FluentMap explícito</td><td><code>Map(x =&gt; x.Id).ToColumn("CUST_NO")</code></td><td>Reutiliza una configuración de mapeo y mantiene la entidad libre de atributos.</td><td>La configuración global requiere disciplina; no elimina SQL. Es adecuado cuando las mismas entidades se utilizan en varias consultas con nombres físicos estables.</td></tr>
             </tbody>
           </table>
