@@ -15,13 +15,15 @@ Os identificadores da assinatura e do tenant não são segredos, mas variam por 
 A primeira fatia do workload modela:
 
 - Cosmos DB for NoSQL com banco de throughput compartilhado de 400 RU/s, limite total de 1.000 RU/s, consistência de sessão, backup periódico LRS e uma única localização em `brazilsouth`;
-- container `subscriptions` particionado por `/partitionKey`, com endpoint e chaves excluídos do índice para evitar RU de escrita sem benefício de consulta;
+- container `subscriptions` particionado por `/partitionKey`, com endpoint e chaves excluídos do índice para evitar RU de escrita sem benefício de consulta e TTL por item habilitado sem prazo padrão;
 - identidade gerenciada atribuída pelo usuário, dedicada ao runtime futuro;
 - Key Vault Standard com RBAC, soft delete de 90 dias e purge protection;
 - Log Analytics `PerGB2018` em `brazilsouth`, retenção de 30 dias e cap preventivo de 0,1 GB/dia;
 - logs de auditoria e métricas de Cosmos DB e Key Vault encaminhados ao workspace.
 
 Não existe `azurerm_key_vault_secret`: a chave privada VAPID deve ser inserida diretamente por operador autorizado em etapa posterior. Assim, seu valor nunca entra em configuração, plano ou State. O Cosmos DB desabilita autenticação local para que o provider e o runtime usem Entra ID, sem chaves de conta. O acesso público aos endpoints permanece habilitado nesta baseline porque não há VNet modelada; RBAC, TLS 1.2 e autenticação local desabilitada reduzem a exposição, mas não equivalem a Private Link. Revisar rede privada e seus custos antes da ativação pública.
+
+O repositório da #146 deriva ID e partition key do hash SHA-256 do endpoint, realiza somente point reads e distribui gravações por um prefixo de 8 bits (`v1-xx`). O throughput compartilhado continua limitado a 400 RU/s e o índice exclui os campos volumosos `endpoint` e `keys`. `default_ttl = -1` apenas habilita TTL por documento; nenhum prazo é gravado enquanto a política de retenção exigida pela ADR-0006 não for aprovada.
 
 `cosmos_enable_free_tier` permanece `false` por padrão. A camada gratuita precisa ser escolhida na criação da conta, aceita somente uma conta por assinatura e cobre os primeiros 1.000 RU/s e 25 GB. Altere para `true` apenas depois de confirmar elegibilidade e ausência de outra conta beneficiada; o plano aprovado deve mostrar a opção correta antes de qualquer apply. Não há georreplicação automática nem multi-write.
 

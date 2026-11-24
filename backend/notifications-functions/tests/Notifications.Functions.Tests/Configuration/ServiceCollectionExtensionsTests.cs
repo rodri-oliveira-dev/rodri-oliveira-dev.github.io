@@ -15,7 +15,10 @@ public sealed class ServiceCollectionExtensionsTests
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Notifications:ServiceName"] = "test-notifications",
-                ["Notifications:DeploymentEnvironment"] = "test"
+                ["Notifications:DeploymentEnvironment"] = "test",
+                ["Notifications:CosmosEndpoint"] = "https://cosmos.example.test",
+                ["Notifications:CosmosDatabaseName"] = "notifications",
+                ["Notifications:CosmosContainerName"] = "subscriptions"
             })
             .Build();
         var services = new ServiceCollection();
@@ -24,10 +27,12 @@ public sealed class ServiceCollectionExtensionsTests
 
         using var provider = services.BuildServiceProvider();
         var options = provider.GetRequiredService<IOptions<NotificationsOptions>>().Value;
+        var cosmosOptions = provider.GetRequiredService<IOptions<CosmosOptions>>().Value;
         var healthStatus = provider.GetRequiredService<IHealthStatusService>();
 
         Assert.Equal("test-notifications", options.ServiceName);
         Assert.Equal("test", options.DeploymentEnvironment);
+        Assert.Equal("https://cosmos.example.test/", cosmosOptions.CosmosEndpoint!.AbsoluteUri);
         Assert.Equal(new HealthResponse("healthy", "test-notifications"), healthStatus.GetStatus());
     }
 

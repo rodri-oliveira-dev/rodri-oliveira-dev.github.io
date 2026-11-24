@@ -29,3 +29,13 @@ dotnet test backend/notifications-functions/Notifications.Functions.slnx --no-bu
 ```
 
 Para iniciar o host local, copie `src/Notifications.Functions/local.settings.example.json` para `local.settings.json`, inicie o Azurite e execute `func start` no diretório do projeto. `local.settings.json` permanece local e não deve receber segredos.
+
+## Persistência de inscrições (#146)
+
+O contrato aceita exclusivamente endpoint HTTPS DNS na porta padrão, chave pública P-256 válida em Base64URL, segredo `auth` de 16 bytes, idioma `pt-BR`, instante UTC e versão de consentimento limitada. Endpoint e material criptográfico são tratados como dados pessoais: não aparecem em logs, IDs, mensagens de erro ou telemetria.
+
+O ID é o SHA-256 hexadecimal do endpoint normalizado. A partition key `v1-xx` usa os dois primeiros dígitos do hash, distribuindo gravações em até 256 valores sem impedir point reads, pois ID e partição são derivados localmente. O repositório não executa consultas cross-partition: leitura e exclusão usam ID + partition key, criação trata conflito `409`, e atualização/exclusão exigem ETag para detectar `412 Precondition Failed`. Duplicatas sem ETag não sobrescrevem consentimento existente.
+
+O container habilita TTL por item com `default_ttl = -1`, mas novos documentos não recebem `ttl`. Isso permite aplicar expiração depois sem recriar o container, enquanto preserva a exigência da ADR-0006: nenhum prazo é inventado antes da aprovação humana da política de retenção. Endpoints rejeitados poderão ser removidos explicitamente pelo sender da #147.
+
+O SDK Cosmos usa `DefaultAzureCredential` e a identidade gerenciada indicada por `AZURE_CLIENT_ID`; não existem chaves ou connection strings. Os testes usam store em memória, endpoints reservados `.test` e chaves geradas durante a execução, sem credenciais, rede ou dados reais.

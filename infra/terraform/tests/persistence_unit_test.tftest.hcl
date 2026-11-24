@@ -67,6 +67,11 @@ run "default_cost_and_security_baseline" {
   }
 
   assert {
+    condition     = azurerm_cosmosdb_sql_container.subscriptions.default_ttl == -1 && azurerm_cosmosdb_sql_container.subscriptions.partition_key_paths[0] == "/partitionKey"
+    error_message = "O container deve habilitar TTL por item sem expiração padrão e usar a partition key documentada."
+  }
+
+  assert {
     condition     = azurerm_key_vault.vapid.rbac_authorization_enabled && azurerm_key_vault.vapid.purge_protection_enabled
     error_message = "Key Vault deve usar RBAC e purge protection."
   }

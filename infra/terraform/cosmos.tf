@@ -61,6 +61,7 @@ resource "azurerm_cosmosdb_sql_container" "subscriptions" {
   database_name         = azurerm_cosmosdb_sql_database.notifications.name
   partition_key_paths   = ["/partitionKey"]
   partition_key_version = 2
+  default_ttl           = -1
 
   indexing_policy {
     indexing_mode = "consistent"

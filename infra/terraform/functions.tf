@@ -87,8 +87,11 @@ resource "azurerm_function_app_flex_consumption" "notifications" {
     CampaignQueue__credential            = "managedidentity"
     CampaignQueue__clientId              = azurerm_user_assigned_identity.functions_runtime.client_id
     Notifications__CosmosEndpoint        = azurerm_cosmosdb_account.notifications.endpoint
+    Notifications__CosmosDatabaseName    = azurerm_cosmosdb_sql_database.notifications.name
+    Notifications__CosmosContainerName   = azurerm_cosmosdb_sql_container.subscriptions.name
     Notifications__KeyVaultUri           = azurerm_key_vault.vapid.vault_uri
     Notifications__DeploymentEnvironment = var.environment
+    AZURE_CLIENT_ID                      = azurerm_user_assigned_identity.functions_runtime.client_id
   }
 
   site_config {

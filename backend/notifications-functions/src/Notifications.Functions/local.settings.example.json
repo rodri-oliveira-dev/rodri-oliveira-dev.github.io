@@ -4,6 +4,9 @@
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
     "Notifications__DeploymentEnvironment": "local",
-    "Notifications__ServiceName": "notifications-functions"
+    "Notifications__ServiceName": "notifications-functions",
+    "Notifications__CosmosEndpoint": "https://localhost:8081",
+    "Notifications__CosmosDatabaseName": "notifications",
+    "Notifications__CosmosContainerName": "subscriptions"
   }
 }
