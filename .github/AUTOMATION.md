@@ -113,6 +113,8 @@ Esse último ponto funciona como um gate de drift: se catálogo, homepage, dados
 
 ### Accessibility
 
+A suíte `scripts/test-accessibility-adaptations.cjs` complementa Pa11y com regressões de ampliação de fonte, reflow, espaçamento de texto e árvore AX do Chromium. Não substitui zoom nativo ou testes com leitores de tela.
+
 O [`accessibility.yml`](workflows/accessibility.yml) sobe o site em um servidor HTTP local e executa Pa11y CI contra as três homepages, currículos e páginas de serviços, além de todos os estudos de caso e das três páginas de fallback offline em português, inglês e espanhol. A avaliação direta do fallback não substitui testes do fluxo offline com service worker.
 
 A configuração usa WCAG 2 AA como baseline e threshold zero para os problemas considerados pelo gate. O objetivo é detectar regressões de semântica, ARIA, estrutura e outras regras automatizáveis de acessibilidade antes do merge.
