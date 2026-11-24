@@ -4,3 +4,17 @@ tenant_id       = "00000000-0000-0000-0000-000000000000"
 
 resource_group_name = "rg-portfolio-push-dev"
 location            = "brazilsouth"
+
+environment          = "dev"
+resource_name_suffix = "1350159615"
+
+# Só altere para true após confirmar que a assinatura tem uma vaga elegível.
+cosmos_enable_free_tier       = false
+cosmos_database_throughput    = 400
+cosmos_total_throughput_limit = 1000
+
+log_analytics_daily_quota_gb = 0.1
+log_analytics_retention_days = 30
+
+# As atribuições exigem uma etapa IAM separada e aprovação explícita.
+manage_runtime_role_assignments = false

@@ -1,6 +1,6 @@
 # Terraform do backend Web Push na Azure
 
-Esta pasta contém apenas a base de infraestrutura definida pela [ADR 0009](../../docs/adr/0009-adotar-azure-para-web-push-por-custo.md). Ela referencia o Resource Group existente `rg-portfolio-push-dev`, valida a região `brazilsouth` e prepara o state remoto no Azure Blob Storage. Nenhum Azure Functions, Cosmos DB ou outro workload é modelado nesta etapa.
+Esta pasta contém a infraestrutura definida pela [ADR 0009](../../docs/adr/0009-adotar-azure-para-web-push-por-custo.md). Ela referencia o Resource Group existente `rg-portfolio-push-dev`, valida a região `brazilsouth`, usa o state remoto no Azure Blob Storage e modela o workload sem provisioná-lo.
 
 ## Versões e autenticação
 
@@ -9,6 +9,46 @@ Esta pasta contém apenas a base de infraestrutura definida pela [ADR 0009](../.
 - Provider e backend usam Microsoft Entra. No GitHub Actions, a autenticação prevista é OIDC, sem client secret nem chave compartilhada do Storage Account.
 
 Os identificadores da assinatura e do tenant não são segredos, mas variam por ambiente. Forneça-os por um `terraform.tfvars` local ignorado pelo Git ou pelas variáveis de ambiente `TF_VAR_subscription_id` e `TF_VAR_tenant_id`. Credenciais devem permanecer fora de arquivos Terraform, planos, logs e commits.
+
+## Persistência, segredos e observabilidade (#144)
+
+A primeira fatia do workload modela:
+
+- Cosmos DB for NoSQL com banco de throughput compartilhado de 400 RU/s, limite total de 1.000 RU/s, consistência de sessão, backup periódico LRS e uma única localização em `brazilsouth`;
+- container `subscriptions` particionado por `/partitionKey`, com endpoint e chaves excluídos do índice para evitar RU de escrita sem benefício de consulta;
+- identidade gerenciada atribuída pelo usuário, dedicada ao runtime futuro;
+- Key Vault Standard com RBAC, soft delete de 90 dias e purge protection;
+- Log Analytics `PerGB2018` em `brazilsouth`, retenção de 30 dias e cap preventivo de 0,1 GB/dia;
+- logs de auditoria e métricas de Cosmos DB e Key Vault encaminhados ao workspace.
+
+Não existe `azurerm_key_vault_secret`: a chave privada VAPID deve ser inserida diretamente por operador autorizado em etapa posterior. Assim, seu valor nunca entra em configuração, plano ou State. O Cosmos DB desabilita autenticação local para que o provider e o runtime usem Entra ID, sem chaves de conta. O acesso público aos endpoints permanece habilitado nesta baseline porque não há VNet modelada; RBAC, TLS 1.2 e autenticação local desabilitada reduzem a exposição, mas não equivalem a Private Link. Revisar rede privada e seus custos antes da ativação pública.
+
+`cosmos_enable_free_tier` permanece `false` por padrão. A camada gratuita precisa ser escolhida na criação da conta, aceita somente uma conta por assinatura e cobre os primeiros 1.000 RU/s e 25 GB. Altere para `true` apenas depois de confirmar elegibilidade e ausência de outra conta beneficiada; o plano aprovado deve mostrar a opção correta antes de qualquer apply. Não há georreplicação automática nem multi-write.
+
+As atribuições de `Key Vault Secrets User` no vault e `Cosmos DB Built-in Data Contributor` restrita ao container estão declaradas, mas `manage_runtime_role_assignments` permanece `false`. A execução normal de provisionamento não recebe nem exerce `Microsoft.Authorization/roleAssignments/write`. Uma etapa IAM separada e aprovada deve ativar as atribuições depois de revisar o principal e os escopos; o controle de acesso à Storage Queue é acrescentado na #145.
+
+### Estimativa inicial de custo
+
+Consulta à API oficial Azure Retail Prices em 24/11/2026, moeda USD e região Brazil South:
+
+| Serviço | Premissa | Estimativa mensal antes de impostos |
+| --- | --- | --- |
+| Cosmos DB | Free Tier confirmado, 400 RU/s e até 25 GB | USD 0 para throughput/armazenamento cobertos; excedentes cobrados |
+| Cosmos DB | Sem Free Tier, 400 RU/s por 730 h | cerca de USD 35,04; armazenamento adicional a USD 0,375/GB-mês |
+| Backup Cosmos LRS | Volume faturável fora da franquia aplicável | USD 0,192/GB-mês |
+| Key Vault Standard | Até 10 mil operações | cerca de USD 0,03; não há segredo criado por Terraform |
+| Log Analytics | Ingestão efetiva | USD 4,60/GB; o cap de 0,1 GB/dia representa teto teórico de cerca de USD 13,80 em 30 dias, podendo haver pequena ultrapassagem faturável |
+| Log Analytics | Retenção | 30 dias; retenção cobrada além do período incluído custa USD 0,20/GB-mês na tabela consultada |
+
+Esses valores são uma estimativa pública, não uma cotação nem garantia de fatura zero. A cobrança real depende de elegibilidade, câmbio, tributos, volume de logs, operações, backup, armazenamento e preços da assinatura. O cap diário pode interromper observabilidade e não corta ingestão no byte exato; configurar alertas de custo continua obrigatório antes do provisionamento. Revalidar preços, cotas e disponibilidade no plano aprovado.
+
+Fontes: [Free Tier do Cosmos DB](https://learn.microsoft.com/azure/cosmos-db/free-tier), [retenção do Log Analytics](https://learn.microsoft.com/azure/azure-monitor/logs/data-retention-configure), [cap diário](https://learn.microsoft.com/azure/azure-monitor/logs/daily-cap) e [Azure Retail Prices API](https://prices.azure.com/api/retail/prices).
+
+### Permissões futuras derivadas
+
+O código agora modela operações nos providers `Microsoft.ManagedIdentity`, `Microsoft.DocumentDB`, `Microsoft.KeyVault`, `Microsoft.OperationalInsights` e `Microsoft.Insights`. Antes do primeiro apply, derivar uma função customizada no escopo do Resource Group contendo somente leitura e create/update/delete dos tipos declarados: identidade atribuída pelo usuário, conta/banco/container Cosmos, vault, workspace e diagnostic settings. Não incluir criação de Resource Group, acesso ao State, leitura de segredos, chaves Cosmos, deploy de código ou administração genérica de IAM.
+
+As atribuições de runtime são responsabilidade de operador ou fluxo IAM separado: `Microsoft.Authorization/roleAssignments/*` para Key Vault e `Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments/*` para Cosmos. Revisar também registros dos resource providers, ações auxiliares exigidas pelo plano e separação da identidade de deploy da aplicação. Esta documentação deriva permissões; não concede nenhuma delas.
 
 ## Bootstrap manual do state remoto (#139)
 
@@ -83,6 +123,7 @@ As verificações de PR não inicializam o backend e não acessam a Azure:
 terraform fmt -check -recursive
 terraform init -backend=false -input=false -lockfile=readonly
 terraform validate -no-color
+terraform test -test-directory=tests -no-color
 ```
 
 ### Manutenção do lockfile de providers

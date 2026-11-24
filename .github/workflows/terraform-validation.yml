@@ -89,6 +89,9 @@ jobs:
             terraform -chdir="$directory" validate -no-color
           done
 
+      - name: Run credential-free Terraform unit tests
+        run: terraform -chdir=infra/terraform test -test-directory=tests -no-color
+
   reject_untrusted_dispatch:
     name: Reject untrusted Terraform dispatch
     if: >-
