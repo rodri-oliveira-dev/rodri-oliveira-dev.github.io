@@ -463,9 +463,24 @@ h1 {
 
 .writing-grid {
   display: grid;
-  grid-template-columns: .9fr 1.1fr;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
   gap: 90px;
   align-items: start;
+}
+
+.writing-grid > *,
+.writing-cards article {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.writing-cards.article-list article {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.writing-grid .text-link {
+  max-width: 100%;
+  white-space: normal;
 }
 
 .text-link {
@@ -587,6 +602,10 @@ h1 {
   .contact-inner {
     grid-template-columns: 1fr;
     gap: 48px;
+  }
+
+  .writing-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .signal-card { max-width: 560px; }
