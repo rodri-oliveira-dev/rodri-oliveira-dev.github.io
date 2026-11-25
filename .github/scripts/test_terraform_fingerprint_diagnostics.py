@@ -45,6 +45,21 @@ class FingerprintDiagnosticsTests(unittest.TestCase):
         self.assertTrue(result["fingerprints_equal"])
         self.assertTrue(result["manifests_equal"])
 
+    def test_release_normalization_matches_only_outer_relevant_attribute_order(self):
+        first = plan()
+        first["relevant_attributes"] = [
+            {"resource": "data.example", "attribute": ["items", 0, "name"]},
+            {"resource": "data.other", "attribute": ["id"]},
+        ]
+        second = copy.deepcopy(first)
+        second["relevant_attributes"].reverse()
+        result = module.diagnose(first, second)
+        self.assertTrue(result["fingerprints_equal"])
+        self.assertTrue(result["manifests_equal"])
+        self.assertEqual(result["sections"]["relevant_attributes"], "array order differs (candidate only)")
+        second["relevant_attributes"][1]["attribute"].reverse()
+        self.assertFalse(module.diagnose(first, second)["fingerprints_equal"])
+
     def test_independent_resource_order(self):
         first = plan()
         second = copy.deepcopy(first)
