@@ -40,7 +40,7 @@ output "key_vault_uri" {
 
 output "log_analytics_workspace_id" {
   description = "ID do workspace regional de observabilidade."
-  value       = azurerm_log_analytics_workspace.notifications.id
+  value       = azapi_resource.log_analytics_workspace.id
 }
 
 output "resource_group_id" {

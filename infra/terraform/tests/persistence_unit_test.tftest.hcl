@@ -66,8 +66,13 @@ run "default_cost_and_security_baseline" {
   }
 
   assert {
-    condition     = azurerm_log_analytics_workspace.notifications.location == "brazilsouth" && azurerm_log_analytics_workspace.notifications.retention_in_days == 30
-    error_message = "Logs devem permanecer em Brazil South com retenção inicial de 30 dias."
+    condition     = azapi_resource.log_analytics_workspace.location == "brazilsouth" && azapi_resource.log_analytics_workspace.body.properties.retentionInDays == 30 && azapi_resource.log_analytics_workspace.body.properties.workspaceCapping.dailyQuotaGb == 0.1
+    error_message = "Logs devem permanecer em Brazil South com retenção inicial de 30 dias e quota diária de 0,1 GB."
+  }
+
+  assert {
+    condition     = azapi_resource.log_analytics_workspace.body.properties.features.disableLocalAuth && azapi_resource.log_analytics_workspace.body.properties.features.enableLogAccessUsingOnlyResourcePermissions
+    error_message = "Log Analytics deve bloquear autenticação local e limitar consultas às permissões do recurso."
   }
 
   assert {
