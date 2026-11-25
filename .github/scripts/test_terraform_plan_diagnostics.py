@@ -1,6 +1,9 @@
 """Regression tests for the public Terraform failure summary."""
 import importlib.util
 import json
+import subprocess
+import sys
+import tempfile
 from pathlib import Path
 import unittest
 
@@ -47,6 +50,47 @@ class DiagnosticsTests(unittest.TestCase):
             self.assertNotIn(forbidden, output)
         self.assertIn("unclassified", output)
         self.assertIn("Terraform address: unknown", output)
+
+    def test_apply_json_ui_diagnostic(self):
+        address = "azurerm_monitor_diagnostic_setting.cosmos_audit"
+        rows = [
+            json.dumps({"type": "apply_start", "hook": {"resource": {"addr": address}}}),
+            json.dumps({"type": "apply_errored", "hook": {"resource": {"addr": address}}}),
+            event('unexpected status 400 (Bad Request) with error: BadRequest: '
+                  'Category AllMetrics is not supported. CANARY_PRIVATE_SECRET',
+                  address, snippet={"code": "CANARY_PRIVATE_SECRET"}),
+        ]
+        output = diagnostics.render(diagnostics.analyze(rows, set()), 1)
+        self.assertIn("Category: validation", output)
+        self.assertIn("HTTP: 400", output)
+        self.assertIn("Azure code: BadRequest", output)
+        self.assertIn("Terraform address: " + address, output)
+        self.assertNotIn("CANARY_PRIVATE_SECRET", output)
+        self.assertNotIn("AllMetrics", output)
+
+    def test_apply_cli_summary_and_stdout_are_sanitized(self):
+        address = "azurerm_monitor_diagnostic_setting.queue_service"
+        with tempfile.TemporaryDirectory() as directory:
+            log = Path(directory) / "apply.log"
+            summary = Path(directory) / "summary.md"
+            log.write_text("\n".join([
+                json.dumps({"type": "apply_start", "hook": {"id_value": "CANARY_SECRET"}}),
+                event("HTTP 403 Code: AuthorizationFailed action "
+                      "'Microsoft.Insights/diagnosticSettings/write' CANARY_SECRET",
+                      address, snippet={"code": "CANARY_SECRET"}),
+                "unstructured CANARY_SECRET",
+            ]), encoding="utf-8")
+            result = subprocess.run([
+                sys.executable, str(Path(__file__).with_name("terraform-plan-diagnostics.py")),
+                str(log), "--exit-code", "7", "--summary", str(summary),
+            ], capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0)
+            output = summary.read_text(encoding="utf-8")
+            self.assertIn("Terraform exit code: 7.", output)
+            self.assertIn("Microsoft.Insights/diagnosticSettings/write", output)
+            self.assertIn("Terraform address: " + address, output)
+            self.assertNotIn("CANARY_SECRET", output + result.stdout + result.stderr)
+            self.assertEqual(output, result.stdout)
 
     def test_state_lock(self):
         items = diagnostics.analyze([event("Error acquiring the state lock")], set())

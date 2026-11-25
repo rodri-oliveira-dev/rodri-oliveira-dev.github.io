@@ -12,6 +12,8 @@ Os identificadores da assinatura e do tenant não são segredos, mas variam por 
 
 ## Persistência, segredos e observabilidade (#144)
 
+Na validação ARM de 25/11/2026 (#149), o grupo `audit` foi confirmado nos recursos existentes. Cosmos DB retornou `SLI` e `Requests` como categorias de métricas, mas não `AllMetrics`; não se presume que aquelas categorias sejam exportáveis. Mantemos a auditoria do Cosmos sem exportar métricas pelo diagnostic setting. Key Vault e Queue Service preservam suas categorias verificadas. A ausência de `AllMetrics` é uma incompatibilidade observada, não uma comprovação isolada da causa da falha anterior de apply.
+
 A primeira fatia do workload modela:
 
 - Cosmos DB for NoSQL Serverless (capability `EnableServerless`, sem throughput provisionado), consistência de sessão, backup periódico LRS e uma única localização em `brazilsouth`;
@@ -19,7 +21,7 @@ A primeira fatia do workload modela:
 - identidade gerenciada atribuída pelo usuário, dedicada ao runtime futuro;
 - Key Vault Standard com RBAC, soft delete de 90 dias e purge protection;
 - Log Analytics `PerGB2018` em `brazilsouth`, retenção de 30 dias e cap preventivo de 0,1 GB/dia;
-- logs de auditoria e métricas de Cosmos DB e Key Vault encaminhados ao workspace.
+- logs do grupo `audit` de Cosmos DB e Key Vault encaminhados ao workspace, além de `AllMetrics` do Key Vault; métricas nativas do Cosmos DB permanecem no Azure Monitor, sem exportação pelo diagnostic setting.
 
 Não existe `azurerm_key_vault_secret`: a chave privada VAPID deve ser inserida diretamente por operador autorizado em etapa posterior. Assim, seu valor nunca entra em configuração, plano ou State. O Cosmos DB desabilita autenticação local para que o provisionamento e o runtime usem Entra ID, sem chaves de conta. A conta, o banco e o container são gerenciados como recursos ARM pelo AzAPI, com saída padrão desabilitada; o endpoint é derivado do nome público da conta. O acesso público aos endpoints permanece habilitado nesta baseline porque não há VNet modelada; RBAC, TLS 1.2 e autenticação local desabilitada reduzem a exposição, mas não equivalem a Private Link. Revisar rede privada e seus custos antes da ativação pública.
 
@@ -273,7 +275,7 @@ Esta operação não inicializa o backend remoto, não lê nem altera o State e 
 
 ### Diagnóstico seguro do plano autenticado
 
-A operação manual `plan` de `Terraform validation` usa a UI JSON do Terraform somente em arquivo temporário no runner. Em caso de falha, um extrator publica no log e no resumo apenas categoria, códigos HTTP/Azure reconhecidos, operações ARM da matriz ou de uma lista explícita de operações auxiliares, endereços Terraform conhecidos e exit code. Campos desconhecidos são omitidos; a classificação é indicativa, não comprova a causa nem autoriza ampliar IAM. O log bruto e o plano permanecem privados no runner e são removidos pelo trap; não há artifact, debug ou mudança de preflight. Se a extração falhar, o workflow continua falhando sem publicar a saída bruta. Os testes da lista de permissão e de não vazamento rodam no CI sem credenciais. O fluxo de release permanece inalterado.
+A operação manual `plan` de `Terraform validation` usa a UI JSON do Terraform somente em arquivo temporário no runner. Em caso de falha, um extrator publica no log e no resumo apenas categoria, códigos HTTP/Azure reconhecidos, operações ARM da matriz ou de uma lista explícita de operações auxiliares, endereços Terraform conhecidos e exit code. Campos desconhecidos são omitidos; a classificação é indicativa, não comprova a causa nem autoriza ampliar IAM. O log bruto e o plano permanecem privados no runner e são removidos pelo trap; não há artifact, debug ou mudança de preflight. Se a extração falhar, o workflow continua falhando sem publicar a saída bruta. Os testes da lista de permissão e de não vazamento rodam no CI sem credenciais. O job de apply da release também captura a UI JSON em arquivo temporário e, somente em caso de falha, reutiliza o mesmo extrator sanitizado, preservando o exit code original. A aprovação do plano, a validação de fingerprint e a proteção contra alterações destrutivas permanecem obrigatórias; falha no extrator não autoriza continuar. Nenhum log bruto ou State é publicado.
 
 ### Diagnóstico de divergência do fingerprint da release (#149)
 
