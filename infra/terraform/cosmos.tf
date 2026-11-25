@@ -1,3 +1,10 @@
+locals {
+  # Keep the parent IDs known during plan so AzAPI preflight uses the actual
+  # workload RG rather than generating a placeholder scope outside its RBAC.
+  cosmos_account_id  = "${data.azurerm_resource_group.web_push.id}/providers/Microsoft.DocumentDB/databaseAccounts/${local.cosmos_account_name}"
+  cosmos_database_id = "${local.cosmos_account_id}/sqlDatabases/${local.subscriptions_database}"
+}
+
 resource "azapi_resource" "cosmos_account" {
   type      = "Microsoft.DocumentDB/databaseAccounts@2024-11-15"
   parent_id = data.azurerm_resource_group.web_push.id
@@ -47,9 +54,12 @@ resource "azapi_resource" "cosmos_account" {
 
 resource "azapi_resource" "cosmos_database" {
   type      = "Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2024-11-15"
-  parent_id = azapi_resource.cosmos_account.id
+  parent_id = local.cosmos_account_id
   name      = local.subscriptions_database
   location  = data.azurerm_resource_group.web_push.location
+
+  # The deterministic ID no longer creates an implicit dependency.
+  depends_on = [azapi_resource.cosmos_account]
 
   body = {
     properties = {
@@ -63,9 +73,11 @@ resource "azapi_resource" "cosmos_database" {
 
 resource "azapi_resource" "subscriptions_container" {
   type      = "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2024-11-15"
-  parent_id = azapi_resource.cosmos_database.id
+  parent_id = local.cosmos_database_id
   name      = local.subscriptions_container
   location  = data.azurerm_resource_group.web_push.location
+
+  depends_on = [azapi_resource.cosmos_database]
 
   body = {
     properties = {

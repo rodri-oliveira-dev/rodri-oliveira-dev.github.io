@@ -41,6 +41,16 @@ run "default_cost_and_security_baseline" {
   command = plan
 
   assert {
+    condition     = azapi_resource.cosmos_database.parent_id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-portfolio-push-workload-dev/providers/Microsoft.DocumentDB/databaseAccounts/cos-portpush-dev-1350159615"
+    error_message = "O parent ID do banco deve ser conhecido no plan e apontar para a conta no RG real, sem placeholder."
+  }
+
+  assert {
+    condition     = azapi_resource.subscriptions_container.parent_id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-portfolio-push-workload-dev/providers/Microsoft.DocumentDB/databaseAccounts/cos-portpush-dev-1350159615/sqlDatabases/notifications"
+    error_message = "O parent ID do container deve ser conhecido no plan e apontar para o banco no RG real."
+  }
+
+  assert {
     condition     = azapi_resource.cosmos_account.body.properties.enableFreeTier == false
     error_message = "Free Tier não é compatível com Cosmos DB Serverless."
   }
@@ -133,6 +143,16 @@ run "foundation_before_runtime_iam" {
   }
 
   assert {
+    condition     = azapi_resource.cosmos_database.parent_id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-portfolio-push-workload-dev/providers/Microsoft.DocumentDB/databaseAccounts/cos-portpush-dev-1350159615"
+    error_message = "O parent ID do banco deve ser conhecido no plan e apontar para a conta no RG real, sem placeholder."
+  }
+
+  assert {
+    condition     = azapi_resource.subscriptions_container.parent_id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-portfolio-push-workload-dev/providers/Microsoft.DocumentDB/databaseAccounts/cos-portpush-dev-1350159615/sqlDatabases/notifications"
+    error_message = "O parent ID do container deve ser conhecido no plan e apontar para o banco no RG real."
+  }
+
+  assert {
     condition     = length(azapi_resource.function_app) == 0 && length(azapi_update_resource.function_publishing_policy) == 0 && length(azurerm_monitor_diagnostic_setting.function_app) == 0
     error_message = "Bootstrap deve criar dependências sem criar Function App ou seu diagnostic setting."
   }
@@ -148,6 +168,11 @@ run "staging_names_fit_azure_limits" {
 
   variables {
     environment = "staging"
+  }
+
+  assert {
+    condition     = azapi_resource.cosmos_database.parent_id == "${data.azurerm_resource_group.web_push.id}/providers/Microsoft.DocumentDB/databaseAccounts/cos-portpush-staging-1350159615" && azapi_resource.subscriptions_container.parent_id == "${data.azurerm_resource_group.web_push.id}/providers/Microsoft.DocumentDB/databaseAccounts/cos-portpush-staging-1350159615/sqlDatabases/notifications"
+    error_message = "Os parent IDs do Cosmos devem acompanhar o nome de conta derivado do ambiente."
   }
 
   assert {
