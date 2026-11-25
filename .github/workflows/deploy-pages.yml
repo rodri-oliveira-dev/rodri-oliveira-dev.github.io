@@ -219,7 +219,16 @@ jobs:
           args=(); if [ "$ALLOW_DESTRUCTIVE" = true ]; then args+=(--allow-destructive); fi
           GITHUB_OUTPUT="$manifest_output" python3 ../../.github/scripts/terraform-release-plan.py "$plan_json" "${args[@]}"
           test "$(sed -n 's/^fingerprint=//p' "$manifest_output")" = "$APPROVED_FINGERPRINT" || { echo 'Terraform actions changed after approval.' >&2; exit 1; }
-          if ! terraform apply -auto-approve -input=false -lock-timeout=5m -no-color "$plan_file" >"$apply_log" 2>&1; then echo 'Terraform apply failed; sensitive log withheld.' >&2; exit 1; fi
+          if terraform apply -json -auto-approve -input=false -lock-timeout=5m -no-color "$plan_file" >"$apply_log" 2>&1; then
+            :
+          else
+            apply_status=$?
+            echo 'Terraform apply failed; sensitive log withheld.' >&2
+            if ! python3 ../../.github/scripts/terraform-plan-diagnostics.py "$apply_log" --exit-code "$apply_status" --summary "$GITHUB_STEP_SUMMARY" 2>/dev/null; then
+              echo 'Safe apply diagnostic extraction failed; raw output withheld.' >&2
+            fi
+            exit "$apply_status"
+          fi
           echo 'Applied the revalidated ephemeral workload plan; no plan, log, or State artifact was retained.' >>"$GITHUB_STEP_SUMMARY"
       - name: Record foundation-only completion
         if: inputs.bootstrap_foundation_only
