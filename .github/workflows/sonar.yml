@@ -1,27 +1,24 @@
 name: SonarQube Cloud
 
 on:
-  pull_request:
-    branches:
-      - main
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      product_tests_result:
+        required: true
+        type: string
+    secrets:
+      SONAR_TOKEN:
+        required: false
 
 permissions:
   contents: read
-
-concurrency:
-  group: sonar-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   analyze:
     name: SonarQube Cloud Quality Gate
     # Trust the PR author, not the actor that last triggered the workflow.
     if: >-
-      vars.SONAR_CI_ENABLED == 'true' &&
+      inputs.product_tests_result == 'success' && vars.SONAR_CI_ENABLED == 'true' &&
       (github.event_name != 'pull_request' ||
       (github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.user.login != 'dependabot[bot]')) &&
@@ -34,6 +31,15 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Download coverage from the same workflow run
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: product-lcov
+          path: coverage
+
+      - name: Verify imported coverage exists
+        run: test -s coverage/lcov.info
 
       - name: Verify Sonar token configuration
         shell: bash
@@ -56,14 +62,15 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SCAN_OUTCOME: ${{ steps.sonar_scan.outcome }}
+          JOB_STATUS: ${{ job.status }}
         run: |
           set -euo pipefail
           {
             echo '## SonarQube Cloud'
             case "$SCAN_OUTCOME" in
               success) echo '**PASS — Quality Gate passed.**' ;;
-              failure) echo '**FAIL — scanner or Quality Gate failed.**' ;;
-              *) echo '**NOT RUN — scanner did not execute.**' ;;
+              failure) echo '**FAIL — coverage preparation, scanner or Quality Gate failed.**' ;;
+              *) if [[ "$JOB_STATUS" == failure ]]; then echo '**FAIL — analysis preparation failed.**'; else echo '**NOT RUN — scanner did not execute.**'; fi ;;
             esac
           } >> "$GITHUB_STEP_SUMMARY"
           if [[ "$SCAN_OUTCOME" != failure ]]; then
@@ -112,10 +119,18 @@ jobs:
             jq -r '.projectStatus.conditions[]? | [.metricKey, .status, .actualValue, .errorThreshold, .comparator] | map(tostring | gsub("[|\\r\\n]"; " ")) | "| " + join(" | ") + " |"' <<< "$gate"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Report file-level coverage and duplication diagnostics
+        if: ${{ !cancelled() && steps.sonar_scan.outcome == 'failure' }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_BRANCH: ${{ github.ref_name }}
+          SONAR_PR: ${{ github.event.pull_request.number }}
+        run: python3 .github/scripts/sonar-file-diagnostics.py
+
   analysis-not-run:
     name: SonarQube Cloud not run
     if: >-
-      vars.SONAR_CI_ENABLED != 'true' ||
+      inputs.product_tests_result != 'success' || vars.SONAR_CI_ENABLED != 'true' ||
       (github.event_name == 'pull_request' &&
       (github.event.pull_request.head.repo.full_name != github.repository ||
       github.event.pull_request.user.login == 'dependabot[bot]')) ||
@@ -125,7 +140,7 @@ jobs:
     steps:
       - name: Explain why no Sonar result is available
         run: |
-          echo "::notice::Sonar analysis not performed (disabled, untrusted PR, or manual dispatch outside main). This is not a passing Quality Gate."
+          echo "::notice::Sonar analysis not performed (disabled, unsuccessful product tests, untrusted PR, or manual dispatch outside main). This is not a passing Quality Gate."
           echo '## SonarQube Cloud' >> "$GITHUB_STEP_SUMMARY"
           echo '**NOT RUN — no Quality Gate result.**' >> "$GITHUB_STEP_SUMMARY"
 
@@ -179,7 +194,7 @@ jobs:
               '',
               '[Workflow summary and diagnostics](' + runUrl + ') | [SonarQube Cloud dashboard](' + dashboard + ')',
               '',
-              'Scope: product code and eligible infrastructure; `.github/**` is covered by independent CI checks.',
+              'Coverage: LCOV produced by product tests in this run. Scope: product code and eligible infrastructure; `.github/**` is covered by independent CI checks.',
             ].join('\n');
             const comments = await github.paginate(github.rest.issues.listComments, {
               owner, repo, issue_number, per_page: 100,
