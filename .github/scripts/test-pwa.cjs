@@ -298,3 +298,22 @@ test("runtime entries are bounded and URLs with query strings are never cached",
   assert.equal(keys.length, 64);
   assert.ok(keys.every((key) => !key.includes("?")));
 });
+
+
+test("PWA and Apple touch icons are PNGs with the declared dimensions", () => {
+  const manifest = JSON.parse(read("site.webmanifest"));
+  const icons = new Map(manifest.icons.map(icon => [icon.src.slice(1), icon.sizes]));
+  for (const file of htmlPages) {
+    for (const match of read(file).matchAll(/<link rel="apple-touch-icon" sizes="(\d+x\d+)" href="\/([^"]+)">/g)) {
+      icons.set(match[2], match[1]);
+    }
+  }
+  assert.equal(icons.size, 7);
+  for (const [file, size] of icons) {
+    const png = fs.readFileSync(path.join(ROOT, file));
+    assert.deepEqual([...png.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10], file);
+    assert.equal(png.toString("ascii", 12, 16), "IHDR", file);
+    assert.equal(png.readUInt32BE(16) + "x" + png.readUInt32BE(20), size, file);
+  }
+  assert.equal(manifest.icons.find(icon => icon.purpose === "maskable")?.sizes, "512x512");
+});
