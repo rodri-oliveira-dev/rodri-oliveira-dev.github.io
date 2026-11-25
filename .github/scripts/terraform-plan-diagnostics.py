@@ -60,7 +60,7 @@ STATUS = re.compile(
     r"\s*[:=]?\s*[\"']?([45]\d{2})\b", re.I
 )
 CODE = re.compile(
-    r"(?<![\w])(?:error\s*code|code)\s*[:=]\s*[\"']?([A-Za-z][A-Za-z0-9]+)\b",
+    r"(?<![\w])(?:error\s*code|code|error)[\"']?\s*[:=]\s*[\"']?([A-Za-z][A-Za-z0-9]+)\b",
     re.I,
 )
 ACTION = re.compile(
