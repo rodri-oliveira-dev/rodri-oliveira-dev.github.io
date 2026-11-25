@@ -1,0 +1,19 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "CampaignQueue": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "Notifications__DeploymentEnvironment": "local",
+    "Notifications__ServiceName": "notifications-functions",
+    "Notifications__CosmosEndpoint": "https://localhost:8081",
+    "Notifications__CosmosDatabaseName": "notifications",
+    "Notifications__CosmosContainerName": "subscriptions",
+    "Notifications__KeyVaultUri": "https://kv-example.vault.azure.net/",
+    "Notifications__VapidSubject": "https://rodri-oliveira-dev.github.io/",
+    "Notifications__VapidPublicKeySecretName": "vapid-public-key",
+    "Notifications__VapidPrivateKeySecretName": "vapid-private-key",
+    "Notifications__PushTimeToLiveSeconds": "86400",
+    "Notifications__RequestTimeoutSeconds": "15"
+  }
+}

@@ -43,10 +43,10 @@ Para manutenção, edite as três traduções no mesmo PR e execute `python3 .gi
 | Workflow | Arquivo | Execução | Objetivo |
 | --- | --- | --- | --- |
 | ADR Guard | [`adr-guard.yml`](workflows/adr-guard.yml) | Pull Request para `main`, push em `main` e manual | Validar ADRs versionadas sem gerar ou aprovar decisões |
-| Terraform validation | [`terraform-validation.yml`](workflows/terraform-validation.yml) | Todo Pull Request e manual; operações autenticadas somente na `main` | Validar IaC sem credenciais em PR e restringir `plan`/`apply` ao Environment protegido |
+| Terraform validation | [`terraform-validation.yml`](workflows/terraform-validation.yml) | Todo Pull Request, push em `main` e manual; operações autenticadas somente na `main` | Validar IaC sem credenciais e manter apenas OIDC/plano diagnóstico fora da release |
 | Azure OIDC Validation | [`azure-oidc-validation.yml`](workflows/azure-oidc-validation.yml) | Manual, somente `main` | Validar autenticação OIDC, acesso ao Resource Group, backend remoto e Blob Lease descartável |
 | Site validation | [`site-validation.yml`](workflows/site-validation.yml) | Pull Request, push em `main` e manual | Validar HTML, links, ortografia e workflows |
-| Publish site with resume PDF | [`deploy-pages.yml`](workflows/deploy-pages.yml) | PR que altera os currículos, push em `main` e manual | Gerar os três PDFs a partir de HTML/CSS e publicar o site via GitHub Pages |
+| Release and Deploy | [`deploy-pages.yml`](workflows/deploy-pages.yml) | CI em PR/push; release manual em `main` | Coordenar workload, Function, Pages, tag, release e pós-release no mesmo SHA |
 | SEO validation | [`seo-validation.yml`](workflows/seo-validation.yml) | Pull Request, push em `main` e manual | Validar JSON-LD, sitemap, RSS discovery e consistência dos artefatos SEO |
 | Accessibility | [`accessibility.yml`](workflows/accessibility.yml) | Pull Request, push em `main` e manual | Aplicar verificações automatizadas de WCAG 2 AA |
 | GitHub Actions security | [`actions-security.yml`](workflows/actions-security.yml) | Pull Request, push em `main` e manual | Auditar a segurança da automação com zizmor |
@@ -56,21 +56,35 @@ Para manutenção, edite as três traduções no mesmo PR e execute `python3 .gi
 | Sync newsletter articles | [`sync-newsletter-articles.yml`](workflows/sync-newsletter-articles.yml) | Manual, somente fallback | Reconciliar manualmente os artefatos da newsletter caso necessário |
 | Sync DEV Community articles | [`sync-devto-articles.yml`](workflows/sync-devto-articles.yml) | Diário e manual | Sincronizar os artigos em inglês a partir do DEV Community |
 | Sync Hashnode articles | [`sync-hashnode-articles.yml`](workflows/sync-hashnode-articles.yml) | Diário e manual | Sincronizar os artigos em espanhol a partir do Hashnode |
-| Notify IndexNow | [`indexnow.yml`](workflows/indexnow.yml) | Push em `main`, diário e manual | Notificar mecanismos compatíveis com IndexNow sobre URLs públicas alteradas |
+| Notify IndexNow | [`indexnow.yml`](workflows/indexnow.yml) | Chamado por Release and Deploy após sucesso | Notificar mecanismos compatíveis com IndexNow sobre URLs publicadas |
 | Optimize Open Graph image | [`optimize-og-image.yml`](workflows/optimize-og-image.yml) | Push específico em `main` e manual | Gerar e validar o WebP e propor a atualização via Pull Request |
 
 ## Currículo HTML e PDF
 
 Os currículos estão em [`../curriculo/index.html`](../curriculo/index.html), [`../en/resume/index.html`](../en/resume/index.html) e [`../es/curriculo/index.html`](../es/curriculo/index.html), com CSS compartilhado em [`../curriculo/curriculo.css`](../curriculo/curriculo.css). Cada botão de download aponta para `rodrigo-de-oliveira.pdf` na rota do idioma ativo.
 
-O workflow [`deploy-pages.yml`](workflows/deploy-pages.yml) instala uma única vez Playwright/Chromium, produz os três PDFs A4 a partir dos HTMLs e do CSS e publica um único artifact com o site inteiro. Em Pull Requests, os PDFs são gerados, têm conteúdo, ordem de leitura e paginação validados e ficam disponíveis em um artifact de prévia, mas não são publicados. Após merge na `main`, o workflow publica HTMLs e PDFs juntos, sem criar commits de binários na branch protegida.
+O workflow [`deploy-pages.yml`](workflows/deploy-pages.yml) instala uma única vez Playwright/Chromium, produz os três PDFs A4 a partir dos HTMLs e do CSS e publica um único artifact com o site inteiro. Em Pull Requests, os PDFs são gerados, têm conteúdo, ordem de leitura e paginação validados e ficam disponíveis em um artifact de prévia, mas não são publicados. Merges na `main` não publicam. Somente o acionamento manual em `main` publica HTMLs e PDFs juntos, sem criar commits de binários na branch protegida.
 
-**Configuração necessária:** em **Settings → Pages → Build and deployment → Source**, selecionar **GitHub Actions**. Sem essa configuração, o PDF não será servido automaticamente pelo site. O ambiente `github-pages` deve permitir deploy somente da `main`. Essa opção substitui o deploy anterior direto da branch; por isso, o workflow publica o site estático completo e não apenas o PDF.
+**Configuração necessária:** em **Settings → Pages → Build and deployment → Source**, selecionar **GitHub Actions**. Sem essa configuração, o deploy nativo por branch pode publicar antes da release; o fluxo manual recusa executar. O ambiente `github-pages` deve permitir deploy somente da `main`. Essa opção substitui o deploy anterior direto da branch; por isso, o workflow publica o site estático completo e não apenas o PDF.
 
 O gerador está em [`scripts/generate-resume-pdf.mjs`](scripts/generate-resume-pdf.mjs). Os PDFs não são mantidos como fonte no Git; o conteúdo editável são os três HTMLs e o CSS compartilhado.
 
 As três versões são URLs canônicas indexáveis (`/curriculo/`, `/en/resume/` e `/es/curriculo/`) com metadados localizados, JSON-LD `ProfilePage`/`Person`/`BreadcrumbList`, `hreflang` recíproco, sitemap e notificações IndexNow. Cada homepage aponta para o currículo correspondente. As verificações de SEO, HTML, ortografia, Lighthouse e WCAG cobrem as três páginas.
 
+
+## Release e publicação manual
+
+O workflow `Release and Deploy` implementa a sequência coordenada proposta na ADR 0012: preflight → plano e apply do workload Terraform → pacote, deploy e health check da Function → build do site/PDFs → deploy e smoke do Pages → tag → GitHub Release → IndexNow. A ADR permanece `Proposed`; a automação não equivale à aceitação humana da decisão. Push e Pull Request executam somente build, testes e validações, sem credenciais Azure nem publicação.
+
+1. Aguarde no SHA da `main` os gates obrigatórios de site, acessibilidade, segurança de Actions, SEO, ADR, Terraform e o CI de `Release and Deploy` disparado por push.
+2. Na primeira implantação, execute antes o modo `bootstrap_foundation_only=true`, com `APPLY`, sem destruição, first deploy ou rollback; esse modo para após a infraestrutura base, sem Function App, Pages, tag ou release. Configure IAM de runtime e VAPID conforme o [runbook](../infra/terraform/README.md#primeiro-provisionamento-em-duas-fases-149). Para a release completa, em **Actions → Release and Deploy → Run workflow**, selecione `main`, o incremento SemVer e informe `APPLY`. Selecione exatamente um modo de recuperação: `allow_first_backend_deploy=true` somente na primeira publicação, ou o run ID de uma release anterior bem-sucedida cujo pacote será usado em rollback.
+3. O Environment `terraform-dev` protege plano e apply. O workflow publica somente endereço e ações do plano, nunca valores; exclusões e substituições exigem o input explícito. Antes do apply, o plano é recriado e seu fingerprint deve ser idêntico ao aprovado. O root de reconciliação de identidade nunca é aplicado.
+4. O Environment `functions-dev` usa identidade OIDC de deploy separada. O pacote inclui manifesto com SHA e checksum, fica retido por 90 dias e um rollback só aceita pacote íntegro de um commit ancestral. Falha de health preserva a execução como falha mesmo quando o rollback recupera o serviço.
+5. O Pages é montado por allowlist; `backend`, `infra`, `.github`, `.agents`, arquivos Terraform e configurações locais não entram no artifact. Tag e release são idempotentes e só ocorrem após os dois smoke tests.
+
+Use **Re-run failed jobs** apenas enquanto o SHA selecionado continuar sendo a ponta da `main`. O workflow nunca move tag, não reaplica um manifesto Terraform diferente e não aceita pacote de rollback de uma linha divergente. Não há rollback automático de infraestrutura: uma reversão exige novo código Terraform, revisão, plano e aprovação.
+
+Configuração externa necessária para a #149: Pages com source `GitHub Actions`; Environments `terraform-dev`, `functions-dev` e `github-pages` protegidos e restritos à `main`; credenciais federadas com subjects imutáveis próprios; permissões mínimas derivadas para provisionamento e deploy; papéis de dados do runtime e secrets VAPID configurados entre as duas fases; RBAC de deploy no recurso criado antes de aprovar `functions-dev`. Campanhas, inscrições públicas e envio permanecem desabilitados. Consulte a [ADR 0012](../docs/adr/0012-controlar-publicacao-por-release-manual.md).
 
 ## Quality gates
 
@@ -78,13 +92,12 @@ As três versões são URLs canônicas indexáveis (`/curriculo/`, `/en/resume/`
 
 O [workflow SonarQube Cloud](workflows/sonar.yml) é chamado por [Site validation](workflows/site-validation.yml) em PRs para main, pushes em main e despacho manual em main, condicionado à ativação explícita, confiança do PR e sucesso dos testes de produto. O job de testes JavaScript gera LCOV uma vez e o scanner consome o artefato da mesma execução. Os demais checks continuam independentes; forks e Dependabot não recebem o token. O [workflow de sincronização](workflows/sonar-quality-issues.yml) é manual e opt-in. Consulte a [configuração, ativação e limites](../docs/sonarcloud-integration.md) e a [ADR 0013](../docs/adr/0013-sonarqube-cloud-no-ci.md). Não adicionar o check obrigatório antes da validação end-to-end.
 
+
 ### Terraform validation
 
-O [`terraform-validation.yml`](workflows/terraform-validation.yml) executa `terraform fmt -check -recursive`, confere os lockfiles assinados para Linux, Windows e macOS, inicializa os dois roots com `terraform init -backend=false -input=false -lockfile=readonly` e aplica `terraform validate -no-color`. O gate roda em todo Pull Request, sem credenciais e sem acessar o backend remoto, para continuar publicando o status mesmo quando a mudança não envolve IaC.
+O [`terraform-validation.yml`](workflows/terraform-validation.yml) executa `terraform fmt -check -recursive`, confere os lockfiles assinados para Linux, Windows e macOS, inicializa os três roots (`workload`, `identity-reconciliation` e `runtime-iam`) com `terraform init -backend=false -input=false -lockfile=readonly` e aplica `terraform validate -no-color`. O gate roda em todo Pull Request, sem credenciais e sem acessar o backend remoto, para continuar publicando o status mesmo quando a mudança não envolve IaC. O root `runtime-iam` possui State exclusivo e nunca é aplicado pela release normal.
 
-Execuções manuais oferecem `validate`, `validate-oidc`, `plan` ou `apply`. As operações autenticadas são rejeitadas fora de `refs/heads/main`, usam serialização por branch e o Environment `terraform-dev`; `plan` e `apply` usam checkout explícito da `main`. `validate-oidc` comprova autenticação e leitura do Resource Group, sem inicializar o backend ou executar operações Terraform. Somente os jobs autenticados recebem `id-token: write`; as variáveis `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` e `AZURE_SUBSCRIPTION_ID` são mapeadas para OIDC/`ARM_*`, sem client secret. O plano e os logs potencialmente sensíveis permanecem apenas em arquivos efêmeros do runner e não são publicados como artefatos.
-
-`apply` exige simultaneamente despacho manual, confirmação textual `APPLY` e aprovação humana configurada no Environment. Ele cria um plano novo após a aprovação e aplica exatamente esse arquivo; um plano de outra execução nunca é reutilizado. Antes de habilitar o job, o Environment deve impedir bypass de administradores e possuir uma credencial Entra com o subject exato documentado em [`infra/terraform/README.md`](../infra/terraform/README.md). A proteção da `main` também deve exigir Pull Request e impedir force-push/exclusão. Enquanto esses controles externos não estiverem comprovados, o job não está autorizado para uso.
+Execuções manuais deste workflow diagnóstico oferecem apenas `validate`, `validate-oidc` e `plan`. Operações autenticadas são rejeitadas fora de `refs/heads/main` e usam o Environment `terraform-dev`; nenhum `apply` independente existe. O único apply autorizado faz parte de `Release and Deploy`, depois do preflight e sob a mesma revisão imutável. `validate-oidc` comprova somente autenticação e leitura do Resource Group. Somente jobs autenticados recebem `id-token: write`; `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` e `AZURE_SUBSCRIPTION_ID` são mapeadas para OIDC/`ARM_*`, sem client secret.
 
 ### Rollback do Terraform
 
@@ -291,11 +304,7 @@ Quando `AUTOMATION_PR_TOKEN` existe, ele é preferido. Caso contrário, os workf
 
 ### IndexNow
 
-O [`indexnow.yml`](workflows/indexnow.yml) notifica o endpoint público do IndexNow quando alterações relevantes chegam à `main`.
-
-O workflow também possui execução manual e uma execução diária de fallback. Esse agendamento é independente da sincronização da newsletter: ele existe apenas para cobrir cenários em que uma alteração tenha sido mesclada por uma credencial de automação que não origine um novo evento `push` de workflow.
-
-A submissão é limitada às URLs públicas pertinentes à alteração, incluindo a homepage, a versão em inglês, estudos de caso descobertos pela estrutura de diretórios e o RSS quando aplicável.
+O [`indexnow.yml`](workflows/indexnow.yml) é chamado somente após deploy e GitHub Release bem-sucedidos. A execução usa o sitemap do mesmo SHA publicado e inclui o RSS. Como uma release pode acumular vários PRs, a submissão inclui todas as URLs do sitemap em vez de usar o diff do último push. Não há agendamento independente nem notificação por merge. Em falha, reexecute o job de notificação.
 
 ## Descoberta e mensuração de SEO e GEO
 

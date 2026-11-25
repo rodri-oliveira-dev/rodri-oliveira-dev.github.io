@@ -1,24 +1,14 @@
 name: Notify IndexNow
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
-  schedule:
-    # Daily fallback for changes merged by automation tokens that do not emit push workflows.
-    - cron: "30 12 * * *"
+  workflow_call:
 
 permissions:
   contents: read
 
-concurrency:
-  group: indexnow-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   notify:
-    name: Submit changed public URLs
+    name: Submit published public URLs
     runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 10
     env:
@@ -30,41 +20,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          fetch-depth: 2
           persist-credentials: false
 
       - name: Build IndexNow payload
         id: payload
         shell: bash
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          BEFORE_SHA: ${{ github.event.before }}
-          CURRENT_SHA: ${{ github.sha }}
         run: |
           python3 - <<'PY'
           import json
           import os
-          import subprocess
           import xml.etree.ElementTree as ET
           from pathlib import Path
 
           site_url = os.environ["SITE_URL"].rstrip("/")
-          event_name = os.environ["EVENT_NAME"]
-          before = os.environ.get("BEFORE_SHA", "")
-          current = os.environ["CURRENT_SHA"]
           key = os.environ["INDEXNOW_KEY"]
-
-          submit_all = event_name in {"workflow_dispatch", "schedule"} or not before or set(before) == {"0"}
-          changed = set()
-
-          if not submit_all:
-              result = subprocess.run(
-                  ["git", "diff", "--name-only", before, current],
-                  text=True,
-                  capture_output=True,
-                  check=True,
-              )
-              changed = {line.strip() for line in result.stdout.splitlines() if line.strip()}
 
           def sitemap_urls() -> set[str]:
               sitemap = Path("sitemap.xml")
@@ -79,44 +48,9 @@ jobs:
                   if loc.text and loc.text.strip()
               }
 
-          urls = set()
-          if submit_all:
-              urls.update(sitemap_urls())
-              urls.add(f"{site_url}/newsletter/feed.xml")
-          else:
-              root_signals = {
-                  "index.html",
-                  "robots.txt",
-                  "assets/data/newsletter-articles.json",
-                  "newsletter/feed.xml",
-              }
-              if changed & root_signals:
-                  urls.add(f"{site_url}/")
-              if "en/index.html" in changed:
-                  urls.add(f"{site_url}/en/")
-              if "es/index.html" in changed:
-                  urls.add(f"{site_url}/es/")
-              if changed & {"curriculo/index.html", "curriculo/curriculo.css"}:
-                  urls.add(f"{site_url}/curriculo/")
-              if changed & {"en/resume/index.html", "curriculo/curriculo.css"}:
-                  urls.add(f"{site_url}/en/resume/")
-              if changed & {"es/curriculo/index.html", "curriculo/curriculo.css"}:
-                  urls.add(f"{site_url}/es/curriculo/")
-              if "newsletter/feed.xml" in changed or "assets/data/newsletter-articles.json" in changed:
-                  urls.add(f"{site_url}/newsletter/feed.xml")
-
-              if "sitemap.xml" in changed:
-                  urls.update(sitemap_urls())
-
-              for path in changed:
-                  page = Path(path)
-                  parts = page.parts
-                  if len(parts) == 3 and parts[0] == "case-studies" and parts[2] == "index.html":
-                      urls.add(f"{site_url}/case-studies/{parts[1]}/")
-                  elif len(parts) == 4 and parts[:2] == ("en", "case-studies") and parts[3] == "index.html":
-                      urls.add(f"{site_url}/en/case-studies/{parts[2]}/")
-                  elif len(parts) == 4 and parts[:2] == ("es", "case-studies") and parts[3] == "index.html":
-                      urls.add(f"{site_url}/es/case-studies/{parts[2]}/")
+          # The caller has successfully deployed this exact commit. Submit its full sitemap.
+          urls = sitemap_urls()
+          urls.add(f"{site_url}/newsletter/feed.xml")
 
           payload = {
               "host": os.environ["SITE_HOST"],

@@ -64,6 +64,21 @@ jobs:
       - name: Test external article synchronization boundaries
         run: python3 -m unittest discover -s .github/scripts -p 'test_sync_*articles.py'
 
+      - name: Test manual release planning
+        run: python3 -m unittest discover -s .github/scripts -p 'test_site_release.py'
+
+      - name: Test Pages artifact allowlist
+        run: python3 -m unittest discover -s .github/scripts -p 'test_assemble_site.py'
+
+      - name: Test Function release packaging
+        run: python3 -m unittest discover -s .github/scripts -p 'test_function_release.py'
+
+      - name: Test Terraform release plan
+        run: python3 -m unittest discover -s .github/scripts -p 'test_terraform_release_plan.py'
+
+      - name: Test Sonar diagnostics
+        run: python3 -m unittest discover -s .github/scripts -p 'test_sonar_file_diagnostics.py'
+
       - name: Test newsletter metadata import
         run: python3 -m unittest discover -s .github/scripts -p 'test_import_newsletter.py'
 

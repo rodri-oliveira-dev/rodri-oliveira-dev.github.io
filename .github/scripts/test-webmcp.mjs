@@ -447,7 +447,7 @@ test("trilingual WebMCP guides and Pages packaging contract stay discoverable", 
   const readmeEn = read("README.en.md");
   const readmeEs = read("README.es.md");
   const automation = read(".github/AUTOMATION.md");
-  const deploy = read(".github/workflows/deploy-pages.yml");
+  const assembler = read(".github/scripts/assemble-site.py");
 
   for (const name of NAMES) {
     assert.ok(pt.includes(name), "PT documentation must cover " + name);
@@ -467,12 +467,9 @@ test("trilingual WebMCP guides and Pages packaging contract stay discoverable", 
   assert.ok(en.includes("node --test .github/scripts/test-webmcp.mjs"));
   assert.ok(es.includes("node --test .github/scripts/test-webmcp.mjs"));
 
-  for (const name of ["webmcp.js", "webmcp-tools.mjs", "webmcp-data.mjs", "webmcp-i18n.mjs"]) {
-    assert.ok(deploy.includes("test -f _site/assets/js/" + name),
-      "Pages artifact must include " + name);
-  }
+  assert.ok(assembler.includes('"assets"'), "Pages allowlist must include WebMCP assets");
   for (const doc of ["webmcp.pt-BR.md", "webmcp.en.md", "webmcp.es-419.md"]) {
-    assert.ok(deploy.includes("test -f _site/docs/" + doc));
+    assert.ok(assembler.includes('"' + doc + '"'));
   }
-  assert.ok(deploy.includes("test -f _site/es/index.html"));
+  assert.ok(assembler.includes('"en"') && assembler.includes('"es"'));
 });

@@ -25,8 +25,55 @@ def value(measures, key):
 def clean(text):
     return str(text).replace("|", "&#124;").replace("\n", " ").replace("\r", " ").replace("<", "&lt;").replace(">", "&gt;")
 
+def security_findings(scope):
+    """Return only safe metadata for open security findings in the analyzed scope."""
+    page_size = 100
+    rows = []
+    for page in range(1, 11):
+        response = get("/api/issues/search", componentKeys=PROJECT, issueStatuses="OPEN",
+                       impactSoftwareQualities="SECURITY", ps=page_size, p=page, **scope)
+        issues = response["issues"]
+        total = response["paging"]["total"]
+        for issue in issues:
+            impacts = [impact for impact in issue.get("impacts", [])
+                       if impact.get("softwareQuality") == "SECURITY"]
+            if not impacts:
+                continue
+            # Do not include source snippets, issue messages, tokens or arbitrary API fields.
+            rows.append({
+                "rule": issue.get("rule", ""),
+                "file": issue.get("component", "").removeprefix(PROJECT + ":"),
+                "line": issue.get("line"),
+                "severity": ",".join(sorted({i.get("severity", "") for i in impacts})),
+            })
+        if page * page_size >= total:
+            return rows, False
+    return rows, True
+
+def report_security(scope):
+    with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+        summary.write("\n### Open security findings (latest branch/PR snapshot)\n\n")
+        try:
+            rows, truncated = security_findings(scope)
+        except Exception:
+            summary.write("Security findings unavailable via API; consult SonarCloud.\n")
+            print("Sonar security findings unavailable via API; consult SonarCloud.")
+            return
+        if not rows:
+            summary.write("No open security findings returned by this query; the analysis-specific gate remains authoritative.\n")
+            print("Sonar security findings query returned no matching open issues.")
+            return
+        summary.write("| Rule | File | Line | Security impact |\n| --- | --- | ---: | --- |\n")
+        for row in rows:
+            summary.write("| " + " | ".join(clean(row[k]) for k in ("rule", "file", "line", "severity")) + " |\n")
+            # JSON escaping and a constant prefix prevent untrusted data from becoming workflow commands.
+            print("Sonar security finding: " + json.dumps(row, ensure_ascii=True))
+        if truncated:
+            summary.write("\nResults truncated after 1000 issues; consult SonarCloud.\n")
+
 def main():
     scope = {"pullRequest": os.environ["SONAR_PR"]} if os.environ.get("SONAR_PR") else {"branch": os.environ["SONAR_BRANCH"]}
+    report_security(scope)
     result = get("/api/measures/component_tree", component=PROJECT, qualifiers="FIL",
                  metricKeys="new_duplicated_lines,new_lines_to_cover,new_uncovered_lines", ps=500, **scope)
     rows = []

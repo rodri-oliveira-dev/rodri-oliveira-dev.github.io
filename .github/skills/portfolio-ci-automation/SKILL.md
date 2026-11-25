@@ -27,7 +27,7 @@ Consultar `.github/AUTOMATION.md` e `.github/workflows/`. Os gates principais in
 - Executar `actionlint` para YAML de workflow e `zizmor` para análise de segurança, conforme suas versões/configurações em CI.
 - Rodar testes unitários dos scripts modificados e `git diff --check`.
 - Avaliar nomes de checks que branch protection exige e conferir jobs no PR.
-- Confirmar comportamento de `deploy-pages.yml`: geração de PDF em PR, publicação somente fora de PR (normalmente `main`).
+- Confirmar comportamento de `deploy-pages.yml`: geração de PDF em PR, publicação somente por `workflow_dispatch` na `main`, após os gates do SHA.
 - Em `indexnow.yml`, manter notificações alinhadas às URLs realmente públicas; IndexNow não substitui sitemap nem SEO.
 
 Documentar na descrição do PR os gatilhos afetados, checks executados e eventuais restrições de teste local.

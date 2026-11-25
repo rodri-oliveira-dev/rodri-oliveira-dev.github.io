@@ -1,0 +1,6 @@
+resource_group_name  = "rg-portfolio-push-dev"
+storage_account_name = "strotfstatepushdev"
+container_name       = "tfstate"
+key                  = "portfolio-push-runtime-iam-dev.tfstate"
+use_azuread_auth     = true
+use_oidc              = true

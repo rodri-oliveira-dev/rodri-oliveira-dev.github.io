@@ -4,3 +4,18 @@ tenant_id       = "00000000-0000-0000-0000-000000000000"
 
 resource_group_name = "rg-portfolio-push-dev"
 location            = "brazilsouth"
+
+environment          = "dev"
+resource_name_suffix = "1350159615"
+
+# Cosmos DB Serverless: sem throughput provisionado ou Free Tier.
+# False somente no primeiro bootstrap (antes de criar a Function).
+create_function_app = true
+
+log_analytics_daily_quota_gb = 0.1
+log_analytics_retention_days = 30
+
+function_instance_memory_mb     = 2048
+function_maximum_instance_count = 2
+
+# As atribuições exigem uma etapa IAM separada e aprovação explícita.
