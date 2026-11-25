@@ -74,6 +74,10 @@ As três versões são URLs canônicas indexáveis (`/curriculo/`, `/en/resume/`
 
 ## Quality gates
 
+### SonarQube Cloud
+
+O [workflow SonarQube Cloud](workflows/sonar.yml) executa análise e aguarda o Quality Gate em PRs internos para main, pushes em main e despacho manual em main, condicionado à ativação explícita. Os demais checks continuam independentes; forks e Dependabot não recebem o token. O [workflow de sincronização](workflows/sonar-quality-issues.yml) é manual e opt-in. Consulte a [configuração, ativação e limites](../docs/sonarcloud-integration.md) e a [ADR 0013](../docs/adr/0013-sonarqube-cloud-no-ci.md). Não adicionar o check obrigatório antes da validação end-to-end.
+
 ### Terraform validation
 
 O [`terraform-validation.yml`](workflows/terraform-validation.yml) executa `terraform fmt -check -recursive`, confere os lockfiles assinados para Linux, Windows e macOS, inicializa os dois roots com `terraform init -backend=false -input=false -lockfile=readonly` e aplica `terraform validate -no-color`. O gate roda em todo Pull Request, sem credenciais e sem acessar o backend remoto, para continuar publicando o status mesmo quando a mudança não envolve IaC.
