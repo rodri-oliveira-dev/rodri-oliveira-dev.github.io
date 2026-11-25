@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -16,4 +16,4 @@ Preservar o RG e a conta existentes para State e criar manualmente o RG `rg-port
 
 A fronteira ARM reduz o blast radius de mudanças do provisionador sobre o State sem custo direto adicional pelo RG. A separação não protege os blobs aos quais o provisionador já tem acesso nem elimina riscos de configuração do workload. As keys do State continuam no mesmo contêiner; isolamento de autorização entre elas permanece uma decisão pendente. O orçamento da assinatura continua abrangendo os recursos.
 
-A alternativa de mover o Storage foi descartada por alterar seu resource ID e exigir revisão de locks e atribuições. A adoção operacional exige revisão do PR, criação manual do RG, validação da Custom Role e aprovação de IAM. O status permanece Proposed até a revisão formal; não autoriza apply, concessão de RBAC, publicação ou inscrições.
+A alternativa de mover o Storage foi descartada por alterar seu resource ID e exigir revisão de locks e atribuições. A adoção operacional exige revisão do PR, criação manual do RG, validação da Custom Role e aprovação de IAM. Decisão aprovada pelo responsável pelo projeto em 25/11/2026, no contexto da issue #149. A aprovação arquitetural não autoriza apply, concessão de RBAC, publicação ou inscrições.
