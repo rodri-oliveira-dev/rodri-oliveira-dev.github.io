@@ -29,8 +29,13 @@ variable "key_vault_name" {
 variable "resource_group_name" {
   description = "Resource Group existente do backend Web Push."
   type        = string
-  default     = "rg-portfolio-push-dev"
+  default     = "rg-portfolio-push-workload-dev"
   nullable    = false
+
+  validation {
+    condition     = lower(trimspace(var.resource_group_name)) != "rg-portfolio-push-dev"
+    error_message = "O Resource Group do Terraform State não pode receber recursos do workload."
+  }
 }
 
 variable "runtime_identity_name" {
@@ -45,6 +50,11 @@ variable "storage_account_name" {
   type        = string
   default     = "stportpushdev1350159615"
   nullable    = false
+
+  validation {
+    condition     = lower(trimspace(var.storage_account_name)) != "strotfstatepushdev"
+    error_message = "A identidade de runtime não pode receber acesso à conta do Terraform State."
+  }
 }
 
 variable "subscription_id" {

@@ -1,6 +1,6 @@
 # Terraform do backend Web Push na Azure
 
-Esta pasta contém a infraestrutura definida pela [ADR 0009](../../docs/adr/0009-adotar-azure-para-web-push-por-custo.md). Ela referencia o Resource Group existente `rg-portfolio-push-dev`, valida a região `brazilsouth`, usa o state remoto no Azure Blob Storage e modela o workload sem provisioná-lo.
+Esta pasta contém a infraestrutura definida pela [ADR 0009](../../docs/adr/0009-adotar-azure-para-web-push-por-custo.md). Ela referencia o Resource Group de workload `rg-portfolio-push-workload-dev`, criado previamente pelo operador, preserva o State existente em `rg-portfolio-push-dev`, valida a região `brazilsouth`, usa o state remoto no Azure Blob Storage e modela o workload sem provisioná-lo.
 
 ## Versões e autenticação
 
@@ -83,6 +83,12 @@ Franquias são compartilhadas no escopo da assinatura e não garantem custo zero
 ### Permissões futuras derivadas para a #145
 
 O provisionador passa a precisar de ações create/read/update/delete estritamente necessárias em `Microsoft.Web/serverfarms`, `Microsoft.Web/sites`, `Microsoft.Storage/storageAccounts`, blob containers, queues e diagnostic settings, além das operações já derivadas na #144. Ele não precisa de acesso ao conteúdo das filas, artefatos, segredos ou deploy de código. O operador IAM separado precisa atribuir somente os dois papéis de dados modelados à identidade de runtime. A identidade de deploy da #148 deve receber escopo próprio na Function App e não reutilizar automaticamente Terraform, State ou runtime.
+
+## Separação de escopos do State e workload (#149)
+
+O operador confirmou que `rg-portfolio-push-dev` contém somente a Storage Account do State. A [ADR 0015](../../docs/adr/0015-segregar-resource-groups-state-workload.md) preserva esse RG e os três backends, sem movimentação, migração ou import. O novo RG `rg-portfolio-push-workload-dev` deve ser criado manualmente em `brazilsouth` antes de qualquer plano autenticado. Não reutilize o RG do State em tfvars locais. O orçamento atual no escopo da assinatura continua abrangendo ambos.
+
+A [matriz candidata de permissões](rbac/README.md) é insumo de revisão, não autorização de concessão. Validar catálogo ARM e chamadas reais dos providers, revisar exceções e somente então criar/atribuir a Custom Role no RG do workload. Não conceder Reader/Contributor na assinatura nem permissões de gerenciamento do Storage de State. Preservar Reader no RG de State e Blob Data Contributor no contêiner existente. Revalidar acesso efetivo e ausência de privilégios adicionais.
 
 ## Release coordenada e separação de identidades (#148)
 
@@ -259,7 +265,7 @@ Esse subject não é coberto pela credencial da branch. A credencial `github-ter
 
 ### Validação OIDC do Environment `terraform-dev`
 
-Após integrar o PR #184 e cadastrar a credencial federada do Environment no Entra, acesse Actions > Terraform validation > Run workflow, selecione `main` e a operação `validate-oidc`. O job autenticado aguarda a aprovação do Environment `terraform-dev`, usa `azure/login` com OIDC e consulta somente o Resource Group existente `rg-portfolio-push-dev`, sem publicar seus dados.
+Após integrar o PR #184 e cadastrar a credencial federada do Environment no Entra, acesse Actions > Terraform validation > Run workflow, selecione `main` e a operação `validate-oidc`. O job autenticado aguarda a aprovação do Environment `terraform-dev`, usa `azure/login` com OIDC e consulta os Resource Groups de State `rg-portfolio-push-dev` e workload `rg-portfolio-push-workload-dev`, sem publicar seus dados.
 
 Esta operação não inicializa o backend remoto, não lê nem altera o State e não executa `plan`, `import` ou `apply`. O sucesso comprova a autenticação do subject de ambiente e a leitura do Resource Group, não o RBAC mínimo, o acesso ao State ou a autorização para provisionamento. Em 24/11/2026, a [execução bem-sucedida de validate-oidc](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/runs/45468308172/job/138712302978) comprovou esses dois itens após a correção do subject imutável. O gate #142 continua pendente até a revisão dos demais controles.
 
@@ -271,10 +277,11 @@ Em 24/11/2026, o operador confirmou a substituição da atribuição temporária
 | --- | --- |
 | Assinatura | Nenhuma |
 | Resource Group `rg-portfolio-push-dev` | `Reader` |
+| Resource Group `rg-portfolio-push-workload-dev` | Nenhuma antes da concessão; depois, somente Custom Role aprovada |
 | Storage Account `strotfstatepushdev` | Nenhuma |
 | Contêiner `tfstate` | `Storage Blob Data Contributor` |
 
-O root de reconciliação verifica as atribuições diretas nesses quatro escopos por data sources, comparando os IDs públicos dos papéis integrados e o escopo exato. Uma pós-condição bloqueia o plano caso falte uma função esperada ou haja função adicional (inclusive `Contributor`). Essa baseline não altera RBAC, não é um inventário de permissões efetivas de todo o tenant e não verifica grupos transitivos, management groups, condições ABAC ou outros recursos descendentes. O operador autorizado deve revisar essas dimensões separadamente quando aplicáveis.
+O root de reconciliação verifica as atribuições diretas nesses cinco escopos por data sources, comparando IDs dos papéis e o escopo exato. O RG do workload deve existir antes da consulta. Mantenha `workload_provisioner_role_id = null` antes da concessão; depois, informe em tfvars local o UUID da Custom Role cuja definição e escopo foram revisados separadamente. A comparação de IDs não valida as ações da definição da Custom Role. Uma pós-condição bloqueia o plano caso falte uma função esperada ou haja função adicional (inclusive `Contributor`). Essa baseline não altera RBAC, não é um inventário de permissões efetivas de todo o tenant e não verifica grupos transitivos, management groups, condições ABAC ou outros recursos descendentes. O operador autorizado deve revisar essas dimensões separadamente quando aplicáveis.
 
 Evidências após a redução de RBAC:
 
