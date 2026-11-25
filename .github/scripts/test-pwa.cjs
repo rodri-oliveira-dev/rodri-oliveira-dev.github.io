@@ -122,7 +122,7 @@ function createWorker() {
       });
     }
   };
-  vm.runInNewContext(read("sw.js"), context, { filename: "sw.js" });
+  vm.runInNewContext(read("sw.js"), context, { filename: path.join(ROOT, "sw.js") });
 
   const dispatch = async (type, request) => {
     let response;
