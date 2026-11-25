@@ -10,15 +10,15 @@ A [ADR 0013](adr/0013-sonarqube-cloud-no-ci.md) registra a migração para CI-ba
 2. Confirmar projeto, organização, definição de New Code e associação ao Sonar way. Não alterar regras para contornar o resultado.
 3. Em GitHub Settings > Secrets and variables > Actions, criar o secret SONAR_TOKEN com privilégio mínimo no projeto. A identidade é fixa no arquivo versionado, e não depende de variables duplicadas.
 4. Definir a repository variable SONAR_CI_ENABLED como true somente após os passos anteriores. Enquanto desabilitado, o job informativo declara que não houve análise.
-5. Executar uma análise manual em main após o merge (ou reexecutar o PR interno após habilitação). Conferir o SHA, os arquivos indexados, a classificação dos testes, o resultado e a decoração no PR. Falha do scanner ou Quality Gate não é mascarada.
+5. Executar uma análise manual em main após o merge (ou reexecutar o PR interno após habilitação). Conferir o SHA, os arquivos indexados, a exclusão de `.github/**`, o resultado e a publicação no PR. Falha do scanner ou Quality Gate não é mascarada.
 6. Não tornar o check obrigatório antes da validação, da política explícita para forks/Dependabot e da instrumentação de cobertura. Um job ignorado não comprova qualidade. Não adicionar badges antes de validar dados reais.
 
 ### Operação
 
 - [SonarQube Cloud](../.github/workflows/sonar.yml): PR interno para main, push em main e despacho manual em main. Checkout completo, token somente nos steps necessários, actions por SHA e permissão contents: read. Não executa em forks ou Dependabot, não utiliza pull_request_target e não acessa OIDC, Terraform State, Pages ou releases.
-- Quality Gate: espera de até 300 segundos; falha do scanner, timeout ou reprovação falham o job. Os demais gates continuam independentes.
-- Escopo: código mantido de frontend, automação, workflows e Terraform elegível ao analisador; testes são classificados separadamente. Excluir arquivos gerados, dependências, state, planos e tfvars potencialmente sensíveis. Conferir cobertura real do analisador de IaC no painel; terraform fmt/validate e zizmor continuam obrigatórios independentemente do Sonar.
-- Cobertura: os testes atuais não produzem relatórios LCOV/Cobertura validados. Este PR não cria cobertura artificial, não adiciona exclusões de cobertura nem muda thresholds. A instrumentação de JS/Python e a estratégia do futuro backend são etapas próprias. O Sonar way pode reprovar por ausência de cobertura.
+- Quality Gate: espera de até 300 segundos; falha do scanner, timeout ou reprovação falham o job. Os demais gates continuam independentes. O resumo da execução registra o resultado e as condições reprovadas quando disponíveis. Em PRs internos confiáveis, um job separado mantém um comentário com o resultado, a revisão e links para execução e painel; não analisa código nem recebe o token Sonar.
+- Escopo: código mantido de frontend e Terraform elegível ao analisador. Todo `.github/**` fica fora da análise Sonar por separação de responsabilidades; scripts e workflows permanecem sujeitos aos testes, actionlint e zizmor. Excluir também arquivos gerados, dependências, state, planos e tfvars potencialmente sensíveis. Conferir cobertura real do analisador de IaC no painel; terraform fmt/validate e zizmor continuam obrigatórios independentemente do Sonar.
+- Cobertura: os testes atuais não produzem relatórios LCOV/Cobertura validados. Este PR não cria cobertura artificial, não adiciona exclusões de cobertura nem muda thresholds. A instrumentação de cobertura do código de produto e a estratégia do futuro backend são etapas próprias. O Sonar way pode reprovar por ausência de cobertura.
 - Publicação: não se altera o fluxo de deploy, tags ou releases. A futura integração com preflight de release deverá verificar o resultado do SHA publicado, sem repetir scans desnecessários.
 
 ### Sincronização de findings
