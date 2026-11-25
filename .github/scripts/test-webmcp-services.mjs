@@ -394,7 +394,7 @@ test("CSP, read-only behavior and Pages bundle checks remain enforced", () => {
   const assembler = read(".github/scripts/assemble-site.py");
   assert.ok(assembler.includes('"assets"'), "Pages allowlist must include service modules");
   const site = read(".github/workflows/site-validation.yml");
-  assert.ok(site.includes("node --test .github/scripts/test-webmcp-services.mjs"));
+  assert.ok(site.includes("bash .github/scripts/product-coverage.sh") && read(".github/scripts/product-coverage.sh").includes(".github/scripts/test-webmcp-services.mjs"));
   for (const file of [
     "assets/js/webmcp-services.mjs", "assets/js/webmcp-services-data.mjs",
   ]) {

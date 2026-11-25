@@ -372,6 +372,9 @@ jobs:
           test -s "$RUNNER_TEMP/pages-site/es/curriculo/rodrigo-de-oliveira.pdf"
           test ! -e "$RUNNER_TEMP/pages-site/backend"
           test ! -e "$RUNNER_TEMP/pages-site/infra"
+          test ! -e "$RUNNER_TEMP/pages-site/sonar-project.properties"
+          test ! -e "$RUNNER_TEMP/pages-site/.scannerwork"
+          test ! -e "$RUNNER_TEMP/pages-site/coverage"
       - name: Upload localized PDF previews
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

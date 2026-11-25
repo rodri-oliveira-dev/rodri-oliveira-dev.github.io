@@ -198,7 +198,7 @@ test("WCAG, Lighthouse, responsive, HTML and spelling gates include the service 
       variant.file + " viewport coverage");
     assert.ok(fs.existsSync(path.join(ROOT, servicePath, "index.html")));
   }
-  assert.ok(site.includes("node .github/scripts/test-services.cjs"), "service test in CI");
+  assert.ok(site.includes("bash .github/scripts/product-coverage.sh") && read(".github/scripts/product-coverage.sh").includes(".github/scripts/test-services.cjs"), "service test in CI");
   assert.ok(responsive.includes('href.startsWith("/")'), "mobile navigation handles full-page routes");
   assert.ok(responsive.includes("waitForNavigation"), "mobile navigation waits for document load");
 });

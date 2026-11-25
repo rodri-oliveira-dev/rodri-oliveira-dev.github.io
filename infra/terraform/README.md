@@ -5,7 +5,7 @@ Esta pasta contém a infraestrutura definida pela [ADR 0009](../../docs/adr/0009
 ## Versões e autenticação
 
 - Terraform CLI `>= 1.15.0, < 1.18.0`; o CI usa exatamente `1.17.2`.
-- Providers `hashicorp/azurerm ~> 5.14.0` e `Azure/azapi ~> 2.14.0`; o `.terraform.lock.hcl` versionado fixa as seleções e seus checksums. Conforme a [ADR 0013](../../docs/adr/0013-gerenciar-cosmos-sem-chaves-e-separar-iam.md), somente os recursos Cosmos usam AzAPI para que o refresh ARM não execute `listKeys` nem grave chaves de conta no State.
+- Providers `hashicorp/azurerm ~> 5.14.0` e `Azure/azapi ~> 2.14.0`; o `.terraform.lock.hcl` versionado fixa as seleções e seus checksums. Conforme a [ADR 0014](../../docs/adr/0014-gerenciar-cosmos-sem-chaves-e-separar-iam.md), somente os recursos Cosmos usam AzAPI para que o refresh ARM não execute `listKeys` nem grave chaves de conta no State.
 - Provider e backend usam Microsoft Entra. No GitHub Actions, a autenticação prevista é OIDC, sem client secret nem chave compartilhada do Storage Account.
 
 Os identificadores da assinatura e do tenant não são segredos, mas variam por ambiente. Forneça-os por um `terraform.tfvars` local ignorado pelo Git ou pelas variáveis de ambiente `TF_VAR_subscription_id` e `TF_VAR_tenant_id`. Credenciais devem permanecer fora de arquivos Terraform, planos, logs e commits.
@@ -65,7 +65,7 @@ O sender da #147 recebe pela fila o identificador da campanha e, nas unidades se
 
 ### Root separado de IAM do runtime
 
-[`runtime-iam/`](runtime-iam/) usa a backend key `portfolio-push-runtime-iam-dev.tfstate` e não é referenciado pelos workflows de plan/apply do workload. O CI apenas executa `fmt`, `init -backend=false` e `validate`. Um operador autorizado deve revisar os nomes, o Object ID da identidade resolvida, as quatro atribuições, seus escopos e um plano sanitizado antes de qualquer aplicação separada. Não importar recursos, migrar State, conceder `listKeys` ou executar esse root com a identidade normal de release. A ADR 0013 permanece `Proposed`; esta configuração não autoriza alteração real de IAM.
+[`runtime-iam/`](runtime-iam/) usa a backend key `portfolio-push-runtime-iam-dev.tfstate` e não é referenciado pelos workflows de plan/apply do workload. O CI apenas executa `fmt`, `init -backend=false` e `validate`. Um operador autorizado deve revisar os nomes, o Object ID da identidade resolvida, as quatro atribuições, seus escopos e um plano sanitizado antes de qualquer aplicação separada. Não importar recursos, migrar State, conceder `listKeys` ou executar esse root com a identidade normal de release. A ADR 0014 permanece `Proposed`; esta configuração não autoriza alteração real de IAM.
 
 ### Custo incremental estimado
 

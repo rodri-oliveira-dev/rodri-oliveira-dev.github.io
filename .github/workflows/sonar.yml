@@ -1,0 +1,211 @@
+name: SonarQube Cloud
+
+on:
+  workflow_call:
+    inputs:
+      product_tests_result:
+        required: true
+        type: string
+    secrets:
+      SONAR_TOKEN:
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: SonarQube Cloud Quality Gate
+    # Trust the PR author, not the actor that last triggered the workflow.
+    if: >-
+      inputs.product_tests_result == 'success' && vars.SONAR_CI_ENABLED == 'true' &&
+      (github.event_name != 'pull_request' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]')) &&
+      (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main')
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 20
+    steps:
+      - name: Checkout analyzed revision
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download coverage from the same workflow run
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: product-lcov
+          path: coverage
+
+      - name: Verify imported coverage exists
+        run: test -s coverage/lcov.info
+
+      - name: Verify Sonar token configuration
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$SONAR_TOKEN" || { echo "::error::Set SONAR_TOKEN before enabling SONAR_CI_ENABLED"; exit 1; }
+
+      - name: Scan and wait for the Quality Gate
+        id: sonar_scan
+        uses: SonarSource/sonarqube-scan-action@70bad232163b09d998ea0707ee80c0ec80798c16 # v8.5.1
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+
+      - name: Summarize Quality Gate result
+        if: ${{ !cancelled() }}
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SCAN_OUTCOME: ${{ steps.sonar_scan.outcome }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          set -euo pipefail
+          {
+            echo '## SonarQube Cloud'
+            case "$SCAN_OUTCOME" in
+              success) echo '**PASS — Quality Gate passed.**' ;;
+              failure) echo '**FAIL — coverage preparation, scanner or Quality Gate failed.**' ;;
+              *) if [[ "$JOB_STATUS" == failure ]]; then echo '**FAIL — analysis preparation failed.**'; else echo '**NOT RUN — scanner did not execute.**'; fi ;;
+            esac
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$SCAN_OUTCOME" != failure ]]; then
+            exit 0
+          fi
+          report=.scannerwork/report-task.txt
+          if [[ ! -f "$report" ]]; then
+            echo "::notice::No Sonar task report was produced; inspect the scanner log."
+            exit 0
+          fi
+
+          task_id=$(sed -n 's/^ceTaskId=//p' "$report")
+          if [[ -z "$task_id" ]]; then
+            echo "::notice::No Sonar compute task ID was reported."
+            exit 0
+          fi
+
+          # Use the fixed trusted host, not a URL from scanner output.
+          if ! task=$(curl --fail --silent --show-error --max-time 30 \
+            --header "Authorization: Bearer $SONAR_TOKEN" \
+            --get --data-urlencode "id=$task_id" \
+            https://sonarcloud.io/api/ce/task); then
+            echo "::notice::Unable to retrieve the Sonar compute task."
+            exit 0
+          fi
+          analysis_id=$(jq -r '.task.analysisId // empty' <<< "$task")
+          if [[ -z "$analysis_id" ]]; then
+            echo "::notice::No completed Sonar analysis ID is available."
+            exit 0
+          fi
+
+          if ! gate=$(curl --fail --silent --show-error --max-time 30 \
+            --header "Authorization: Bearer $SONAR_TOKEN" \
+            --get --data-urlencode "analysisId=$analysis_id" \
+            https://sonarcloud.io/api/qualitygates/project_status); then
+            echo "::notice::Unable to retrieve the Quality Gate conditions."
+            exit 0
+          fi
+
+          echo "Quality Gate conditions for analysis $analysis_id:"
+          jq -c '.projectStatus | {status, conditions: [.conditions[]? | {metricKey, status, comparator, errorThreshold, actualValue}]}' <<< "$gate"
+          {
+            echo
+            echo '| Metric | Status | Actual | Threshold | Comparator |'
+            echo '| --- | --- | --- | --- | --- |'
+            jq -r '.projectStatus.conditions[]? | [.metricKey, .status, .actualValue, .errorThreshold, .comparator] | map(tostring | gsub("[|\\r\\n]"; " ")) | "| " + join(" | ") + " |"' <<< "$gate"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Report file-level coverage and duplication diagnostics
+        if: ${{ !cancelled() && steps.sonar_scan.outcome == 'failure' }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_BRANCH: ${{ github.ref_name }}
+          SONAR_PR: ${{ github.event.pull_request.number }}
+        run: python3 .github/scripts/sonar-file-diagnostics.py
+
+  analysis-not-run:
+    name: SonarQube Cloud not run
+    if: >-
+      inputs.product_tests_result != 'success' || vars.SONAR_CI_ENABLED != 'true' ||
+      (github.event_name == 'pull_request' &&
+      (github.event.pull_request.head.repo.full_name != github.repository ||
+      github.event.pull_request.user.login == 'dependabot[bot]')) ||
+      (github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main')
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 2
+    steps:
+      - name: Explain why no Sonar result is available
+        run: |
+          echo "::notice::Sonar analysis not performed (disabled, unsuccessful product tests, untrusted PR, or manual dispatch outside main). This is not a passing Quality Gate."
+          echo '## SonarQube Cloud' >> "$GITHUB_STEP_SUMMARY"
+          echo '**NOT RUN — no Quality Gate result.**' >> "$GITHUB_STEP_SUMMARY"
+
+  report-pr:
+    name: Publish Sonar result to PR
+    needs: [analyze, analysis-not-run]
+    if: >-
+      ${{ !cancelled() && github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]' }}
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 3
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Create or update Sonar result comment
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        env:
+          ANALYSIS_RESULT: ${{ needs.analyze.result }}
+        with:
+          script: |
+            const {owner, repo} = context.repo;
+            const issue_number = context.issue.number;
+            const expectedHead = context.payload.pull_request.head.sha;
+            const {data: pr} = await github.rest.pulls.get({
+              owner, repo, pull_number: issue_number,
+            });
+            if (pr.state !== 'open' || pr.head.sha !== expectedHead) {
+              core.notice('PR head changed or PR closed; skipping stale result.');
+              return;
+            }
+            const marker = '<!-- sonar-quality-gate-ci -->';
+            const result = process.env.ANALYSIS_RESULT;
+            const status = result === 'success'
+              ? 'PASS — Quality Gate passed'
+              : result === 'failure'
+                ? 'FAIL — scanner or Quality Gate failed'
+                : 'NOT RUN — no Quality Gate result';
+            const runUrl = 'https://github.com/' + owner + '/' + repo
+              + '/actions/runs/' + context.runId;
+            const dashboard = 'https://sonarcloud.io/dashboard?id='
+              + encodeURIComponent('rodri-oliveira-dev_rodri-oliveira-dev.github.io')
+              + '&pullRequest=' + issue_number;
+            const body = [
+              marker,
+              '## SonarQube Cloud',
+              '',
+              '**' + status + '**',
+              '',
+              'PR revision: `' + expectedHead + '`',
+              '',
+              '[Workflow summary and diagnostics](' + runUrl + ') | [SonarQube Cloud dashboard](' + dashboard + ')',
+              '',
+              'Coverage: LCOV produced by product tests in this run. Scope: product code and eligible infrastructure; `.github/**` is covered by independent CI checks.',
+            ].join('\n');
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number, per_page: 100,
+            });
+            const existing = comments.find(comment =>
+              comment.user?.login === 'github-actions[bot]' &&
+              comment.body?.startsWith(marker + '\n'));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner, repo, comment_id: existing.id, body,
+              });
+            } else {
+              await github.rest.issues.createComment({owner, repo, issue_number, body});
+            }

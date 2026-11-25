@@ -15,8 +15,38 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  product-tests:
+    name: Product JavaScript tests and coverage
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Run product tests and generate LCOV
+        run: bash .github/scripts/product-coverage.sh
+
+      - name: Publish LCOV for the same workflow run
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: product-lcov
+          overwrite: true
+          path: coverage/lcov.info
+          if-no-files-found: error
+          retention-days: 7
+
   site-validation:
     name: Site validation
+    needs: product-tests
+    if: ${{ !cancelled() }}
     runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 10
 
@@ -26,11 +56,25 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Require product tests and coverage
+        env:
+          PRODUCT_TESTS_RESULT: ${{ needs.product-tests.result }}
+        run: test "$PRODUCT_TESTS_RESULT" = success
+
       - name: Test external article synchronization boundaries
         run: python3 -m unittest discover -s .github/scripts -p 'test_sync_*articles.py'
 
       - name: Test manual release planning
         run: python3 -m unittest discover -s .github/scripts -p 'test_site_release.py'
+
+      - name: Test Pages artifact allowlist
+        run: python3 -m unittest discover -s .github/scripts -p 'test_assemble_site.py'
+
+      - name: Test Function release packaging
+        run: python3 -m unittest discover -s .github/scripts -p 'test_function_release.py'
+
+      - name: Test Terraform release plan
+        run: python3 -m unittest discover -s .github/scripts -p 'test_terraform_release_plan.py'
 
       - name: Test newsletter metadata import
         run: python3 -m unittest discover -s .github/scripts -p 'test_import_newsletter.py'
@@ -44,23 +88,11 @@ jobs:
           node-version: 24
           package-manager-cache: false
 
-      - name: Test language resolution and navigation labels
-        run: node .github/scripts/test-site-i18n.cjs
-
-      - name: Test PWA policy, security, localization and cache lifecycle
-        run: node --test .github/scripts/test-pwa.cjs
-
-      - name: Test services content, links and accessibility contracts
-        run: node .github/scripts/test-services.cjs
+      - name: Test Sonar finding synchronization offline
+        run: node --test .github/scripts/test-sonar-quality-sync.cjs
 
       - name: Test incremental Lighthouse page selection
         run: node --test .github/scripts/test-select-lighthouse-pages.mjs
-
-      - name: Test WebMCP tools, localization, security and HTML consistency
-        run: node --test .github/scripts/test-webmcp.mjs
-
-      - name: Test WebMCP services contracts and browser registration
-        run: node --test .github/scripts/test-webmcp-services.mjs
 
       - name: Install validation tooling
         run: npm install --no-save --ignore-scripts html-validate@11.15.0 @cspell/dict-pt-br@2.4.2 @cspell/dict-es-es@3.0.9
@@ -180,3 +212,16 @@ jobs:
         uses: docker://rhysd/actionlint:1.7.12
         with:
           args: -color
+
+  sonar:
+    name: SonarQube Cloud
+    needs: product-tests
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || github.base_ref == 'main') }}
+    uses: ./.github/workflows/sonar.yml
+    permissions:
+      contents: read
+      pull-requests: write
+    with:
+      product_tests_result: ${{ needs.product-tests.result }}
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

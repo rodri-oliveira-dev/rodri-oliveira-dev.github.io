@@ -20,6 +20,8 @@ reviews:
   high_level_summary_instructions: >-
     Resuma mudanças funcionais, impacto visual,
     SEO, acessibilidade, idiomas e riscos.
+    Para mudanças internas, destaque CI, segurança, IaC,
+    qualidade e impactos operacionais pertinentes.
     Não invente resultados de testes.
 
   auto_review:
@@ -68,13 +70,14 @@ reviews:
         Preserve significado e localização.
         Verifique lang, hreflang e links internos.
 
-    - path: "assets/css/**"
+    - path: "**/*.css"
       instructions: |
         Priorize responsividade e acessibilidade.
         Verifique telas pequenas, overflow,
         contraste, estados de foco e zoom.
         Sinalize regressões de layout comprováveis.
-        Preserve progressive enhancement.
+        Preserve progressive enhancement, media queries,
+        prefers-contrast, prefers-reduced-motion e estilos de impressão.
 
     - path: "assets/js/**"
       instructions: |
@@ -83,6 +86,8 @@ reviews:
         Avalie navegação por teclado e acessibilidade.
         Evite dependências e trabalho desnecessários.
         Priorize compatibilidade e performance.
+        Considere JavaScript nativo, ES modules e APIs Web;
+        não presuma frameworks ou bundlers inexistentes.
 
     - path: "assets/data/**"
       instructions: |
@@ -98,6 +103,10 @@ reviews:
         tratamento de erros e idempotência.
         Avalie determinismo e integridade
         dos arquivos gerados.
+        Considere Python 3, Node.js 24, CommonJS e ES modules.
+        Verifique subprocessos, escaping, timeouts, paginação,
+        validação de schemas e falhas parciais de APIs.
+        Preserve testes determinísticos sem serviços reais.
         Evite sugestões já cobertas por testes.
 
     - path: ".github/workflows/**"
@@ -106,7 +115,95 @@ reviews:
         uso seguro de secrets e scripts externos.
         Avalie riscos de supply chain e deploy.
         Confira integridade da publicação.
-        Priorize falhas que afetem o site.
+        Verifique pinning por SHA, persist-credentials,
+        isolamento entre PRs confiáveis e forks, concorrência,
+        injeção de expressões e identidade do autor de PR.
+        Preserve gates obrigatórios e separe CI de publicação.
+        Não recomende pull_request_target com código não confiável.
+
+    - path: "{sw.js,site.webmanifest,offline.html,assets/js/pwa-register.js,assets/js/home-screen-install.js}"
+      instructions: |
+        Revise PWA, Service Worker, Cache Storage, manifesto,
+        instalação e experiência offline em Chromium, Firefox,
+        WebKit, Android e iOS conforme suporte real.
+        Confira escopo, ciclo de vida, invalidação de cache,
+        fallback offline, atualização e recuperação de rede.
+        Não armazene respostas sensíveis ou habilite instalação
+        em plataformas sem detectar suporte.
+
+    - path: "assets/js/webmcp*"
+      instructions: |
+        Revise WebMCP experimental e contratos dos tools:
+        schemas, registro condicional, entradas validadas,
+        resultados localizados, compatibilidade e fallback.
+        Preserve ferramentas somente leitura, CSP e limites
+        de exposição de dados; não presuma suporte universal.
+
+    - path: "infra/terraform/**"
+      instructions: |
+        Revise Terraform HCL, AzureRM e AzureAD conforme
+        os providers e versões fixados no repositório.
+        Verifique least privilege, Microsoft Entra ID, OIDC,
+        RBAC, identidade federada e isolamento de ambientes.
+        Avalie backend Azure Storage, locking, proteção do
+        State, drift, dependências e alterações destrutivas.
+        Não recomende credenciais estáticas, exposição de
+        tfstate, apply automático ou remoção de lockfiles.
+        Diferencie recursos existentes, data sources e recursos
+        apenas planejados. Não presuma acesso à Azure.
+
+    - path: ".github/workflows/{terraform-validation,azure-oidc-validation}.yml"
+      instructions: |
+        Preserve validações sem credenciais em PRs e operações
+        autenticadas restritas à main e ao Environment previsto.
+        Confira subject OIDC, permissões por job, aprovação,
+        confirmação explícita e consistência entre plan e apply.
+        Não publique planos, State ou logs sensíveis.
+
+    - path: "{sonar-project.properties,.github/workflows/sonar*.yml,.github/scripts/*sonar*.cjs}"
+      instructions: |
+        Revise SonarQube Cloud via CI, escopo de análise,
+        classificação de testes, exclusões justificadas e
+        Quality Gate associado à revisão analisada.
+        Não combine Automatic Analysis e scanner CI nem
+        invente cobertura ou relaxe thresholds para aprovar.
+        Preserve secrets, opt-in e isolamento dos gates.
+        Na sincronização de findings, verifique paginação,
+        identidade do projeto e do finding, idempotência,
+        autoria do bot, preservação de issues manuais,
+        fechamento e reabertura seguros em falhas parciais.
+
+    - path: "{.pa11yci.cjs,lighthouserc.cjs,.github/workflows/accessibility.yml,.github/workflows/lighthouse.yml,.github/workflows/pwa.yml,.github/scripts/test-*.cjs,.github/scripts/test-*.mjs,.github/scripts/test_*.py}"
+      instructions: |
+        Revise WCAG 2 AA, Pa11y/axe, Lighthouse CI, Playwright,
+        node:test e unittest conforme o arquivo alterado.
+        Confira asserções relevantes, regressões de teclado,
+        contraste, responsividade, offline e seleção de páginas.
+        Preserve limites de qualidade, independência dos gates
+        e cobertura de cenários negativos. Não confunda
+        testes de contrato com cobertura instrumentada.
+
+    - path: "{.github/workflows/actions-security.yml,zizmor.yml,.github/scripts/summarize-zizmor.mjs}"
+      instructions: |
+        Revise zizmor, configuração de auditoria, relatórios
+        e propagação de falhas. Não suprima findings legítimos,
+        reduza severidade mínima ou aceite relatórios incompletos.
+        Distinga falhas operacionais de findings bloqueantes.
+
+    - path: "{.github/workflows/deploy-pages.yml,.github/scripts/generate-resume-pdf.mjs,curriculo/**,en/resume/**,es/curriculo/**}"
+      instructions: |
+        Confira GitHub Pages, geração de PDF por Playwright,
+        paridade dos três idiomas, impressão A4, ordem de leitura
+        e integridade dos artefatos. Preserve os limites do
+        empacotamento e impeça publicação de arquivos internos,
+        caches, credenciais e infraestrutura.
+
+    - path: "{docs/adr/**,.github/workflows/adr-guard.yml}"
+      instructions: |
+        Revise ADRs, ADR Guard, índice, status, relacionamentos
+        e coerência entre decisão, implementação e consequências.
+        Não trate aprovação de CI como aceite arquitetural;
+        preserve histórico e decisões substituídas.
 
     - path: "**/*.md"
       instructions: |
