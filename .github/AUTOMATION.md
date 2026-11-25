@@ -76,7 +76,7 @@ As três versões são URLs canônicas indexáveis (`/curriculo/`, `/en/resume/`
 
 ### SonarQube Cloud
 
-O [workflow SonarQube Cloud](workflows/sonar.yml) executa análise e aguarda o Quality Gate em PRs internos para main, pushes em main e despacho manual em main, condicionado à ativação explícita. Os demais checks continuam independentes; forks e Dependabot não recebem o token. O [workflow de sincronização](workflows/sonar-quality-issues.yml) é manual e opt-in. Consulte a [configuração, ativação e limites](../docs/sonarcloud-integration.md) e a [ADR 0013](../docs/adr/0013-sonarqube-cloud-no-ci.md). Não adicionar o check obrigatório antes da validação end-to-end.
+O [workflow SonarQube Cloud](workflows/sonar.yml) é chamado por [Site validation](workflows/site-validation.yml) em PRs para main, pushes em main e despacho manual em main, condicionado à ativação explícita, confiança do PR e sucesso dos testes de produto. O job de testes JavaScript gera LCOV uma vez e o scanner consome o artefato da mesma execução. Os demais checks continuam independentes; forks e Dependabot não recebem o token. O [workflow de sincronização](workflows/sonar-quality-issues.yml) é manual e opt-in. Consulte a [configuração, ativação e limites](../docs/sonarcloud-integration.md) e a [ADR 0013](../docs/adr/0013-sonarqube-cloud-no-ci.md). Não adicionar o check obrigatório antes da validação end-to-end.
 
 ### Terraform validation
 
