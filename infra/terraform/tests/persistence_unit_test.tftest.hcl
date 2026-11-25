@@ -88,6 +88,11 @@ run "default_cost_and_security_baseline" {
   }
 
   assert {
+    condition     = azurerm_storage_account.functions.identity[0].type == "SystemAssigned" && azurerm_function_app_flex_consumption.notifications[0].identity[0].type == "UserAssigned"
+    error_message = "Storage deve ter identidade própria; a Function deve preservar sua identidade de runtime dedicada."
+  }
+
+  assert {
     condition     = !azurerm_storage_account.functions.shared_access_key_enabled && azurerm_storage_container.function_releases.container_access_type == "private"
     error_message = "Storage deve bloquear Shared Key e manter artefatos privados."
   }

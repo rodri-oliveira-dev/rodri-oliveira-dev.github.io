@@ -15,6 +15,12 @@ resource "azurerm_storage_account" "functions" {
   cross_tenant_replication_enabled = false
   local_user_enabled               = false
 
+  # The storage account has its own principal; it receives no RBAC assignments.
+  # The Function continues to use its dedicated user-assigned runtime identity.
+  identity {
+    type = "SystemAssigned"
+  }
+
   blob_properties {
     versioning_enabled = true
 
