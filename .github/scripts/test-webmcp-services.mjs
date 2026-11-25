@@ -396,7 +396,7 @@ test("CSP, read-only behavior and Pages bundle checks remain enforced", () => {
     assert.ok(deployment.includes("test -f _site/assets/js/" + module), module);
   }
   const site = read(".github/workflows/site-validation.yml");
-  assert.ok(site.includes("node --test .github/scripts/test-webmcp-services.mjs"));
+  assert.ok(site.includes("bash .github/scripts/product-coverage.sh") && read(".github/scripts/product-coverage.sh").includes(".github/scripts/test-webmcp-services.mjs"));
   for (const file of [
     "assets/js/webmcp-services.mjs", "assets/js/webmcp-services-data.mjs",
   ]) {
