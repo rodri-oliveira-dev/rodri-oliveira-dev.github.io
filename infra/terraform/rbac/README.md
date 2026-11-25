@@ -6,10 +6,10 @@ A lista [provisioner-candidate.json](provisioner-candidate.json) contém ações
 | --- | --- |
 | User Assigned Identity | read, write, assign/action para associação à Function |
 | Cosmos ARM | read/write de conta, banco e container; leitura das atribuições SQL para o gate |
-| Vault e workspace | read/write dos recursos, sem acesso aos valores de segredos |
-| Diagnostic settings | read/write e leitura das categorias |
+| Vault e workspace | read/write dos recursos, sem acesso aos valores de segredos ou shared keys; polling do workspace candidato |
+| Diagnostic settings | read/write; as categorias já são declaradas no HCL e não são consultadas pelo provider |
 | Storage do workload | read/write de conta, serviço de blobs, container e filas por ARM; leituras de fileServices e accountMigrations candidatas |
-| Flex | read/write de plano, site e políticas de publicação; app settings no corpo do site |
+| Flex | read/write de plano, site e políticas de publicação; app settings no corpo do site; polling Web candidato |
 | Gate de IAM | leitura de role assignments e definitions, sem criação ou alteração |
 
 A lista inicial não inclui delete; o primeiro provisionamento não autoriza exclusões. Alterações/destruições futuras exigem revisão específica de ações. Não há DataActions, curingas, listKeys, SAS, publicação de código, leitura de segredos, alteração de role assignments/definitions ou registro de providers.
@@ -31,3 +31,19 @@ Referências: [catálogo de operações](https://learn.microsoft.com/azure/role-
 - A saída padrão está desabilitada, mas o Read usa UpdateObject para reconstruir body a partir do retorno ARM. App settings inline não devem receber valores secretos; verificar retorno, drift, planos/State sanitizados e ausência de chaves inclusive do Storage. Não conceder config/list para melhorar drift. Revisão de Key Vault, Log Analytics, diagnóstico, LRO e chamadas auxiliares restantes ainda pendente; nenhum papel pode ser criado com base neste PR.
 
 Fontes: [AzAPI resource v2.14.0](https://github.com/Azure/terraform-provider-azapi/blob/v2.14.0/internal/services/azapi_resource.go), [AzAPI update](https://github.com/Azure/terraform-provider-azapi/blob/v2.14.0/internal/services/azapi_update_resource.go), [preflight](https://github.com/Azure/terraform-provider-azapi/blob/v2.14.0/internal/services/preflight/preflight.go), [Storage v5.14.0](https://github.com/hashicorp/terraform-provider-azurerm/blob/v5.14.0/internal/services/storage/storage_account_resource.go#L2154-L2214), [catálogo Storage](https://learn.microsoft.com/azure/role-based-access-control/permissions/storage).
+
+## Revisão 6.8.5 (candidata, não autorizada)
+
+- `validateResources`: o AzAPI envia `performPreflightWithoutRbacWriteCheck=true`; o teste de aceitação do provider cobre preflight com identidade Reader. Não adicionar write, `Microsoft.Resources/deployments/*` nem uma ação de validação. O plano autenticado continua sendo a prova necessária para este ambiente.
+- Log Analytics: AzureRM 5.14.0 lista soft-deleted workspaces no escopo da assinatura antes da criação e tenta ler shared keys no refresh. A ADR 0017 propõe AzAPI com autenticação local desabilitada para não conceder `deletedworkspaces/read` na assinatura nem `sharedKeys/action`. A leitura `locations/operationstatuses/read` permanece candidata para o LRO.
+- Polling: os clientes fixados seguem os URLs de operação retornados pelo ARM. Foram acrescentadas, como candidatas, as leituras de status de Cosmos, Log Analytics, Storage e Web. A existência no catálogo não prova que o escopo no RG autoriza cada URL; validar em execução controlada e não ampliar para Contributor.
+- Diagnostic settings: AzureRM usa GET, PUT e polling por GET do próprio setting. Como as categorias estão declaradas no HCL, `diagnosticSettingsCategories/read` foi removida da candidata.
+- Key Vault, Managed Identity e diagnostic settings fazem polling por leitura do próprio recurso. A consulta de soft-deleted vault tolera `403`; não adicionar permissão de vault excluído. Service Plan usa o poller ARM e exige validação da leitura de status Web candidata.
+- Storage: criar a conta e configurar blob service usam LRO; container e filas fazem polling por GET. Preservar `listKeys`, ACLs e DataActions negados. As leituras de `fileServices` e `accountMigrations` continuam necessárias ao refresh do AzureRM fixado.
+- Publicação Flex: os filhos `basicPublishingCredentialsPolicies/scm` e `ftp` permanecem declarados com `allow=false`. Não conceder `publishxml`, `publishingcredentials`, `config/list` ou ações de deploy ao provisionador. A identidade de deploy será tratada separadamente e somente no escopo da Function após sua criação.
+- State e drift: o AzAPI reconstrói o body configurado com a resposta ARM; app settings e corpos Terraform não podem receber segredos. AzureRM Storage tenta ListKeys e tolera a negação. A identidade efetiva não pode herdar permissões de chaves, pois isso pode levar valores sensíveis ao State. Não ampliar permissões para melhorar detecção de drift.
+- Escalada indireta: writes de Storage, Cosmos, Key Vault, site e diagnostic settings podem reabrir autenticação local, alterar rede, associar a identidade de runtime ou redirecionar telemetria; Service Plan write pode elevar custo. Mitigar com revisão do plano/fingerprint, segregação do IAM de runtime, ausência de dados reais no bootstrap e políticas preventivas avaliadas separadamente. A candidata não inclui administração IAM, credenciais nem DataActions.
+
+A matriz desta revisão ainda não é uma role definition final. Em 25/11/2026, consulta autenticada ao catálogo ARM confirmou a existência das cinco novas ações de polling e `isDataAction=false` para todas. O catálogo retorna as duas ações Web com o namespace `microsoft.web` em minúsculas; nomes de operações ARM não diferenciam capitalização, e a matriz preserva o padrão `Microsoft.Web` já adotado. Essa evidência confirma catálogo e classificação, não suficiência operacional nem autorização do polling quando a atribuição está restrita ao RG. A ADR 0017 depende de aprovação humana antes de qualquer criação ou atribuição da Custom Role.
+
+Fontes: [validação de recursos ARM](https://learn.microsoft.com/rest/api/resources/resource-validator/validate-resources), [permissões Monitor](https://learn.microsoft.com/azure/role-based-access-control/permissions/monitor), [permissões Web](https://learn.microsoft.com/azure/role-based-access-control/permissions/web-and-mobile), [permissões Storage](https://learn.microsoft.com/azure/role-based-access-control/permissions/storage), [permissões Databases](https://learn.microsoft.com/azure/role-based-access-control/permissions/databases).
