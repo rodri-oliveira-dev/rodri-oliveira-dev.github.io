@@ -33,9 +33,8 @@ resource "azurerm_monitor_diagnostic_setting" "cosmos_audit" {
     category_group = "audit"
   }
 
-  enabled_metric {
-    category = "AllMetrics"
-  }
+  # Cosmos DB does not expose AllMetrics for diagnostic export.
+  # Keep native Azure Monitor metrics and the audit log category group.
 }
 
 resource "azurerm_monitor_diagnostic_setting" "key_vault_audit" {
