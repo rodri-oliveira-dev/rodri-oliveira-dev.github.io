@@ -44,10 +44,55 @@ jobs:
           test -n "$SONAR_TOKEN" || { echo "::error::Set SONAR_TOKEN before enabling SONAR_CI_ENABLED"; exit 1; }
 
       - name: Scan and wait for the Quality Gate
+        id: sonar_scan
         uses: SonarSource/sonarqube-scan-action@70bad232163b09d998ea0707ee80c0ec80798c16 # v8.5.1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
+
+      - name: Report failed Quality Gate conditions
+        if: ${{ failure() && steps.sonar_scan.outcome == 'failure' }}
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          set -euo pipefail
+          report=.scannerwork/report-task.txt
+          if [[ ! -f "$report" ]]; then
+            echo "::notice::No Sonar task report was produced; inspect the scanner log."
+            exit 0
+          fi
+
+          task_id=$(sed -n 's/^ceTaskId=//p' "$report")
+          if [[ -z "$task_id" ]]; then
+            echo "::notice::No Sonar compute task ID was reported."
+            exit 0
+          fi
+
+          # Use the fixed trusted host, not a URL from scanner output.
+          if ! task=$(curl --fail --silent --show-error --max-time 30 \
+            --header "Authorization: Bearer $SONAR_TOKEN" \
+            --get --data-urlencode "id=$task_id" \
+            https://sonarcloud.io/api/ce/task); then
+            echo "::notice::Unable to retrieve the Sonar compute task."
+            exit 0
+          fi
+          analysis_id=$(jq -r '.task.analysisId // empty' <<< "$task")
+          if [[ -z "$analysis_id" ]]; then
+            echo "::notice::No completed Sonar analysis ID is available."
+            exit 0
+          fi
+
+          if ! gate=$(curl --fail --silent --show-error --max-time 30 \
+            --header "Authorization: Bearer $SONAR_TOKEN" \
+            --get --data-urlencode "analysisId=$analysis_id" \
+            https://sonarcloud.io/api/qualitygates/project_status); then
+            echo "::notice::Unable to retrieve the Quality Gate conditions."
+            exit 0
+          fi
+
+          echo "Quality Gate conditions for analysis $analysis_id:"
+          jq -c '.projectStatus | {status, conditions: [.conditions[]? | {metricKey, status, comparator, errorThreshold, actualValue}]}' <<< "$gate"
 
   analysis-not-run:
     name: SonarQube Cloud not run
