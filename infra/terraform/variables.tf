@@ -80,8 +80,13 @@ variable "log_analytics_retention_days" {
 variable "resource_group_name" {
   description = "Nome do Resource Group existente que receberá os recursos do backend Web Push."
   type        = string
-  default     = "rg-portfolio-push-dev"
+  default     = "rg-portfolio-push-workload-dev"
   nullable    = false
+
+  validation {
+    condition     = lower(trimspace(var.resource_group_name)) != "rg-portfolio-push-dev"
+    error_message = "O Resource Group do Terraform State não pode receber recursos do workload."
+  }
 }
 
 variable "resource_name_suffix" {

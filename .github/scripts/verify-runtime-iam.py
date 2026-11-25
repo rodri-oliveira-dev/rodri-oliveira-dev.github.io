@@ -3,7 +3,7 @@ import json
 import os
 import subprocess
 
-RG = "rg-portfolio-push-dev"
+RG = "rg-portfolio-push-workload-dev"
 SUFFIX = "1350159615"
 STORAGE = f"stportpushdev{SUFFIX}"
 VAULT = f"kv-push-dev-{SUFFIX}"

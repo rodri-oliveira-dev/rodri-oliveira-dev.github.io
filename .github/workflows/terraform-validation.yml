@@ -137,7 +137,8 @@ jobs:
         run: |
           set -euo pipefail
           az group show --name rg-portfolio-push-dev --output none
-          echo "Environment OIDC authentication and Resource Group read access succeeded. No Terraform State or Azure resources were modified." >> "$GITHUB_STEP_SUMMARY"
+          az group show --name rg-portfolio-push-workload-dev --output none
+          echo "Environment OIDC authentication and State and workload Resource Group read access succeeded. No Terraform State or Azure resources were modified." >> "$GITHUB_STEP_SUMMARY"
 
   plan:
     name: Terraform plan (protected)

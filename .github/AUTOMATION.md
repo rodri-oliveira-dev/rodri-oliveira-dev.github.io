@@ -84,7 +84,7 @@ O workflow `Release and Deploy` implementa a sequência coordenada definida na A
 
 Use **Re-run failed jobs** apenas enquanto o SHA selecionado continuar sendo a ponta da `main`. O workflow nunca move tag, não reaplica um manifesto Terraform diferente e não aceita pacote de rollback de uma linha divergente. Não há rollback automático de infraestrutura: uma reversão exige novo código Terraform, revisão, plano e aprovação.
 
-Configuração externa necessária para a #149: Pages com source `GitHub Actions`; Environments `terraform-dev`, `functions-dev` e `github-pages` protegidos e restritos à `main`; credenciais federadas com subjects imutáveis próprios; permissões mínimas derivadas para provisionamento e deploy; papéis de dados do runtime e secrets VAPID configurados entre as duas fases; RBAC de deploy no recurso criado antes de aprovar `functions-dev`. Campanhas, inscrições públicas e envio permanecem desabilitados. Consulte a [ADR 0012](../docs/adr/0012-controlar-publicacao-por-release-manual.md).
+Configuração externa necessária para a #149: Pages com source `GitHub Actions`; Environments `terraform-dev`, `functions-dev` e `github-pages` protegidos e restritos à `main`; credenciais federadas com subjects imutáveis próprios; RG de State existente `rg-portfolio-push-dev` preservado; RG de workload `rg-portfolio-push-workload-dev` criado manualmente; permissões mínimas derivadas e validadas para provisionamento e deploy; papéis de dados do runtime e secrets VAPID configurados entre as duas fases; RBAC de deploy no recurso criado antes de aprovar `functions-dev`. Campanhas, inscrições públicas e envio permanecem desabilitados. Consulte a [ADR 0012](../docs/adr/0012-controlar-publicacao-por-release-manual.md).
 
 ## Quality gates
 

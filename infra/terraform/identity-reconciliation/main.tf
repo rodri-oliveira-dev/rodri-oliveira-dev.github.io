@@ -1,9 +1,10 @@
 locals {
-  application_display_name = "app-portfolio-push-deploy-dev"
-  github_actions_audiences = ["api://AzureADTokenExchange"]
-  github_actions_issuer    = "https://token.actions.githubusercontent.com"
-  main_oidc_subject        = "repo:rodri-oliveira-dev@3470248/rodri-oliveira-dev.github.io@1350159615:ref:refs/heads/main"
-  resource_group_name      = "rg-portfolio-push-dev"
+  application_display_name     = "app-portfolio-push-deploy-dev"
+  github_actions_audiences     = ["api://AzureADTokenExchange"]
+  github_actions_issuer        = "https://token.actions.githubusercontent.com"
+  main_oidc_subject            = "repo:rodri-oliveira-dev@3470248/rodri-oliveira-dev.github.io@1350159615:ref:refs/heads/main"
+  state_resource_group_name    = "rg-portfolio-push-dev"
+  workload_resource_group_name = "rg-portfolio-push-workload-dev"
 }
 
 data "azuread_application" "deployment" {
@@ -15,7 +16,11 @@ data "azuread_service_principal" "deployment" {
 }
 
 data "azurerm_resource_group" "web_push" {
-  name = local.resource_group_name
+  name = local.state_resource_group_name
+}
+
+data "azurerm_resource_group" "workload" {
+  name = local.workload_resource_group_name
 }
 
 # Built-in role IDs are public constants, independent of subscription.
@@ -34,6 +39,10 @@ locals {
       scope    = data.azurerm_resource_group.web_push.id
       role_ids = [local.reader_role_id]
     }
+    workload_resource_group = {
+      scope    = data.azurerm_resource_group.workload.id
+      role_ids = var.workload_provisioner_role_id == null ? [] : [lower(var.workload_provisioner_role_id)]
+    }
     storage_account = {
       scope    = local.state_storage_scope
       role_ids = []
@@ -45,7 +54,7 @@ locals {
   }
 }
 
-# Audit direct assignments at the four known scopes. This does not grant IAM
+# Audit direct assignments at the five known scopes. This does not grant IAM
 # permissions or enumerate group membership / management-group inheritance.
 data "azurerm_role_assignments" "deployment_bootstrap" {
   for_each = local.bootstrap_rbac
@@ -61,7 +70,7 @@ data "azurerm_role_assignments" "deployment_bootstrap" {
         lower(basename(assignment.role_definition_id))
         if lower(assignment.role_assignment_scope) == lower(each.value.scope)
       ]) == toset(each.value.role_ids)
-      error_message = "RBAC direto fora da baseline de bootstrap no escopo ${each.key}. Revise as atribuições antes de prosseguir."
+      error_message = "RBAC direto fora da baseline aprovada no escopo ${each.key}. Revise as atribuições antes de prosseguir."
     }
   }
 }

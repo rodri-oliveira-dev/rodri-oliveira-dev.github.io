@@ -36,3 +36,15 @@ variable "tenant_id" {
     error_message = "tenant_id deve ser um UUID válido."
   }
 }
+
+variable "workload_provisioner_role_id" {
+  description = "UUID da Custom Role revisada e atribuída ao RG do workload; null antes da concessão. Não cria atribuições."
+  type        = string
+  default     = null
+  nullable    = true
+
+  validation {
+    condition     = var.workload_provisioner_role_id == null ? true : can(regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", var.workload_provisioner_role_id))
+    error_message = "Informe o UUID da Custom Role aprovada ou null antes da concessão."
+  }
+}

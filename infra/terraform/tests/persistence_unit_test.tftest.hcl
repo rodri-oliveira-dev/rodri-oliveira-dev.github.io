@@ -1,29 +1,29 @@
 mock_provider "azurerm" {
   mock_data "azurerm_resource_group" {
     defaults = {
-      id       = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-portfolio-push-dev"
+      id       = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-portfolio-push-workload-dev"
       location = "brazilsouth"
-      name     = "rg-portfolio-push-dev"
+      name     = "rg-portfolio-push-workload-dev"
     }
   }
 
   mock_resource "azurerm_key_vault" {
     defaults = {
-      id        = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-portfolio-push-dev/providers/Microsoft.KeyVault/vaults/kv-push-dev-1350159615"
+      id        = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-portfolio-push-workload-dev/providers/Microsoft.KeyVault/vaults/kv-push-dev-1350159615"
       vault_uri = "https://kv-push-dev-1350159615.vault.azure.net/"
     }
   }
 
   mock_resource "azurerm_user_assigned_identity" {
     defaults = {
-      id           = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-portfolio-push-dev/providers/Microsoft.ManagedIdentity/userAssignedIdentities/id-portfolio-push-runtime-dev"
+      id           = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-portfolio-push-workload-dev/providers/Microsoft.ManagedIdentity/userAssignedIdentities/id-portfolio-push-runtime-dev"
       principal_id = "11111111-1111-1111-1111-111111111111"
     }
   }
 
   mock_resource "azurerm_storage_account" {
     defaults = {
-      id                     = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-portfolio-push-dev/providers/Microsoft.Storage/storageAccounts/stportpushdev1350159615"
+      id                     = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-portfolio-push-workload-dev/providers/Microsoft.Storage/storageAccounts/stportpushdev1350159615"
       primary_blob_endpoint  = "https://stportpushdev1350159615.blob.core.windows.net/"
       primary_queue_endpoint = "https://stportpushdev1350159615.queue.core.windows.net/"
     }
@@ -32,7 +32,7 @@ mock_provider "azurerm" {
   mock_resource "azurerm_function_app_flex_consumption" {
     defaults = {
       default_hostname = "func-portpush-dev-1350159615.azurewebsites.net"
-      id               = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-portfolio-push-dev/providers/Microsoft.Web/sites/func-portpush-dev-1350159615"
+      id               = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-portfolio-push-workload-dev/providers/Microsoft.Web/sites/func-portpush-dev-1350159615"
     }
   }
 }
@@ -160,5 +160,17 @@ run "reject_non_brazil_south_region" {
 
   expect_failures = [
     var.location,
+  ]
+}
+
+run "reject_state_resource_group_as_workload" {
+  command = plan
+
+  variables {
+    resource_group_name = "rg-portfolio-push-dev"
+  }
+
+  expect_failures = [
+    var.resource_group_name,
   ]
 }

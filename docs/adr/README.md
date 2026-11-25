@@ -18,6 +18,7 @@ Este diretório registra escolhas que alteram responsabilidades, infraestrutura 
 | [0012](0012-controlar-publicacao-por-release-manual.md) | Coordenar releases manuais do monorepo | Accepted |
 | [0013](0013-sonarqube-cloud-no-ci.md) | Executar análise SonarQube Cloud no CI | Proposed |
 | [0014](0014-gerenciar-cosmos-sem-chaves-e-separar-iam.md) | Gerenciar Cosmos sem chaves e separar o IAM de runtime | Accepted |
+| [0015](0015-segregar-resource-groups-state-workload.md) | Segregar os Resource Groups de State e workload | Proposed |
 
 ## Como manter
 
