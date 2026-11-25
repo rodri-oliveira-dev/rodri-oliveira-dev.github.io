@@ -425,7 +425,7 @@ const makeHomeScreenPage = (storage, userAgent = "iPhone") => {
   vm.runInNewContext(read("assets/js/home-screen-install.js"), {
     document: doc,
     window: win,
-  });
+  }, { filename: path.join(ROOT, "assets/js/home-screen-install.js") });
   return { prompt, windowListeners, buttonListeners, toggleButton, steps, androidSteps, nativeButton, closeButton, footer, doc };
 };
 const savedDismissal = new Map();
