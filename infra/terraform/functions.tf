@@ -62,32 +62,9 @@ resource "azurerm_service_plan" "functions" {
   tags = local.common_tags
 }
 
-resource "azurerm_function_app_flex_consumption" "notifications" {
-  count = var.create_function_app ? 1 : 0
-
-  name                = local.function_app_name
-  resource_group_name = data.azurerm_resource_group.web_push.name
-  location            = data.azurerm_resource_group.web_push.location
-  service_plan_id     = azurerm_service_plan.functions.id
-
-  storage_container_type                         = "blobContainer"
-  storage_container_endpoint                     = "${azurerm_storage_account.functions.primary_blob_endpoint}${azurerm_storage_container.function_releases.name}"
-  storage_authentication_type                    = "UserAssignedIdentity"
-  storage_user_assigned_identity_id              = azurerm_user_assigned_identity.functions_runtime.id
-  runtime_name                                   = "dotnet-isolated"
-  runtime_version                                = "10.0"
-  instance_memory_in_mb                          = var.function_instance_memory_mb
-  maximum_instance_count                         = var.function_maximum_instance_count
-  webdeploy_publish_basic_authentication_enabled = false
-  https_only                                     = true
-  public_network_access_enabled                  = true
-
-  identity {
-    type         = "UserAssigned"
-    identity_ids = [azurerm_user_assigned_identity.functions_runtime.id]
-  }
-
-  app_settings = {
+locals {
+  # Apenas configuração não secreta; valores VAPID ficam exclusivamente no Key Vault.
+  function_app_settings = {
     AzureWebJobsStorage__accountName         = azurerm_storage_account.functions.name
     AzureWebJobsStorage__credential          = "managedidentity"
     AzureWebJobsStorage__clientId            = azurerm_user_assigned_identity.functions_runtime.client_id
@@ -106,17 +83,84 @@ resource "azurerm_function_app_flex_consumption" "notifications" {
     Notifications__RequestTimeoutSeconds     = "15"
     AZURE_CLIENT_ID                          = azurerm_user_assigned_identity.functions_runtime.client_id
   }
+}
+
+resource "azapi_resource" "function_app" {
+  count = var.create_function_app ? 1 : 0
+
+  type      = "Microsoft.Web/sites@2024-11-01"
+  parent_id = data.azurerm_resource_group.web_push.id
+  name      = local.function_app_name
+  location  = data.azurerm_resource_group.web_push.location
+  tags      = local.common_tags
+
+  identity {
+    type         = "UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.functions_runtime.id]
+  }
+
+  # A saída padrão já está desabilitada no provider. Não exportar a configuração.
+  response_export_values = ["properties.defaultHostName"]
+
+  body = {
+    kind = "functionapp,linux"
+    properties = {
+      serverFarmId        = azurerm_service_plan.functions.id
+      enabled             = true
+      httpsOnly           = true
+      publicNetworkAccess = "Enabled"
+      functionAppConfig = {
+        deployment = {
+          storage = {
+            type  = "blobContainer"
+            value = "${azurerm_storage_account.functions.primary_blob_endpoint}${azurerm_storage_container.function_releases.name}"
+            authentication = {
+              type                           = "UserAssignedIdentity"
+              userAssignedIdentityResourceId = azurerm_user_assigned_identity.functions_runtime.id
+            }
+          }
+        }
+        runtime = {
+          name    = "dotnet-isolated"
+          version = "10.0"
+        }
+        scaleAndConcurrency = {
+          instanceMemoryMB     = var.function_instance_memory_mb
+          maximumInstanceCount = var.function_maximum_instance_count
+          alwaysReady          = []
+        }
+      }
+      siteConfig = {
+        http20Enabled = true
+        minTlsVersion = "1.2"
+        appSettings = [
+          for name, value in local.function_app_settings : {
+            name  = name
+            value = value
+          }
+        ]
+      }
+    }
+  }
 
   lifecycle {
     prevent_destroy = true
   }
+}
 
-  site_config {
-    health_check_path                 = "/api/health"
-    health_check_eviction_time_in_min = 2
-    http2_enabled                     = true
-    minimum_tls_version               = "1.2"
+# O RP pode materializar estas políticas junto com o site. Atualizar o recurso
+# existente, sem import ou DELETE, em vez de tentar criar um filho já existente.
+# A disponibilidade de ambos os endpoints no Flex precisa de validação operacional.
+resource "azapi_update_resource" "function_publishing_policy" {
+  for_each = var.create_function_app ? toset(["ftp", "scm"]) : toset([])
+
+  type        = "Microsoft.Web/sites/basicPublishingCredentialsPolicies@2024-11-01"
+  resource_id = "${azapi_resource.function_app[0].id}/basicPublishingCredentialsPolicies/${each.key}"
+  locks       = [azapi_resource.function_app[0].id]
+
+  body = {
+    properties = {
+      allow = false
+    }
   }
-
-  tags = local.common_tags
 }
