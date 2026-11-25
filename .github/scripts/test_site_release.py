@@ -8,6 +8,26 @@ spec = importlib.util.spec_from_file_location("site_release", Path(__file__).wit
 release = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(release)
 
+runtime_spec = importlib.util.spec_from_file_location("runtime_iam", Path(__file__).with_name("verify-runtime-iam.py"))
+runtime_iam = importlib.util.module_from_spec(runtime_spec)
+runtime_spec.loader.exec_module(runtime_iam)
+
+
+class RuntimeIamTests(unittest.TestCase):
+    def test_direct_role_requires_exact_scope_principal_and_unconditional_access(self):
+        principal, scope, role = "principal", "/subscriptions/sub/resourceGroups/rg/storage", runtime_iam.ROLES["blob"]
+        assignment = {"principalId": principal.upper(), "scope": scope.upper(), "roleDefinitionId": "/roles/" + role}
+        self.assertTrue(runtime_iam.has_role([assignment], principal, scope, role))
+        for override in ({"scope": scope + "/child"}, {"principalId": "other"}, {"roleDefinitionId": "/roles/other"}, {"condition": "conditional"}):
+            self.assertFalse(runtime_iam.has_role([{**assignment, **override}], principal, scope, role))
+
+    def test_missing_assignments_block_release(self):
+        with patch.dict(runtime_iam.os.environ, {"ARM_SUBSCRIPTION_ID": "sub"}), patch.object(
+            runtime_iam, "az_json", side_effect=["principal", [], [], []]
+        ):
+            with self.assertRaisesRegex(SystemExit, "Runtime IAM incomplete: blob, queue, vault, cosmos"):
+                runtime_iam.main()
+
 
 class ReleaseTests(unittest.TestCase):
     def test_semver(self):

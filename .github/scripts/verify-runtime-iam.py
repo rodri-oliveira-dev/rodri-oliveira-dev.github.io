@@ -40,7 +40,9 @@ def main():
     principal = az_json("identity", "show", "-g", RG, "-n", IDENTITY, "--query", "principalId")
     if not principal:
         raise SystemExit("Runtime identity is absent; complete foundation bootstrap first")
-    assignments = az_json("role", "assignment", "list", "--assignee-object-id", principal, "--all")
+    assignments = []
+    for scope in (storage_scope, vault_scope):
+        assignments.extend(az_json("role", "assignment", "list", "--assignee-object-id", principal, "--scope", scope))
     missing = [
         name for name, scope in (("blob", storage_scope), ("queue", storage_scope), ("vault", vault_scope))
         if not has_role(assignments, principal, scope, ROLES[name])
