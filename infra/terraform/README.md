@@ -65,7 +65,7 @@ O sender da #147 recebe pela fila o identificador da campanha e, nas unidades se
 
 ### Root separado de IAM do runtime
 
-[`runtime-iam/`](runtime-iam/) usa a backend key `portfolio-push-runtime-iam-dev.tfstate` e não é referenciado pelos workflows de plan/apply do workload. O CI apenas executa `fmt`, `init -backend=false` e `validate`. Um operador autorizado deve revisar os nomes, o Object ID da identidade resolvida, as quatro atribuições, seus escopos e um plano sanitizado antes de qualquer aplicação separada. Não importar recursos, migrar State, conceder `listKeys` ou executar esse root com a identidade normal de release. A ADR 0014 permanece `Proposed`; esta configuração não autoriza alteração real de IAM.
+[`runtime-iam/`](runtime-iam/) usa a backend key `portfolio-push-runtime-iam-dev.tfstate` e não é referenciado pelos workflows de plan/apply do workload. O CI apenas executa `fmt`, `init -backend=false` e `validate`. Um operador autorizado deve revisar os nomes, o Object ID da identidade resolvida, as quatro atribuições, seus escopos e um plano sanitizado antes de qualquer aplicação separada. Não importar recursos, migrar State, conceder `listKeys` ou executar esse root com a identidade normal de release. A ADR 0014 está `Accepted`; a decisão não autoriza alteração real de IAM. A execução permanece condicionada às aprovações da #149.
 
 ### Custo incremental estimado
 

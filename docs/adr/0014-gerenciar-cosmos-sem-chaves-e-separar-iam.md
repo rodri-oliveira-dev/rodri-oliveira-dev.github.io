@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -24,4 +24,4 @@ O State do workload deixa de conter propriedades de chaves Cosmos produzidas pel
 
 As releases normais não podem apagar acessos de runtime nem precisam de `roleAssignments/write`. O fluxo IAM ganha State, lockfile, inputs e aprovação próprios. O isolamento por key no mesmo container não é isolamento de autorização; antes de executar o root, revisar o acesso ao backend e os escopos efetivos.
 
-O status permanece Proposed até aprovação humana explícita. A validação do código e do ADR Guard não equivale à aceitação nem autoriza provisionamento.
+A implementação foi integrada no [PR #188](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/pull/188), com validação Terraform sem credenciais e testes unitários aprovados. A aceitação formal desta ADR segue a revisão e o merge deste PR de documentação. O primeiro apply, a verificação de permissões efetivas e propagação IAM, a configuração dos segredos e a validação operacional permanecem condicionados à issue #149. A aceitação da decisão não autoriza provisionamento.
