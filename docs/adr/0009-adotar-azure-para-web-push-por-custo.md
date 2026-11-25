@@ -16,7 +16,7 @@ Os serviços definitivos serão escolhidos após validação de disponibilidade,
 
 Esta é uma mudança de plataforma planejada: não houve migração de dados ou serviços em produção.
 
-A proposta de coordenação do apply do workload, deploy da Function App e publicação do Pages em uma única release manual está registrada na [ADR 0012](0012-controlar-publicacao-por-release-manual.md). A decisão de plataforma permanece Accepted; cadência e controles de release são avaliados separadamente, sem autorizar provisionamento.
+A decisão de coordenar o apply do workload, deploy da Function App e publicação do Pages em uma única release manual está registrada na [ADR 0012](0012-controlar-publicacao-por-release-manual.md). A decisão de plataforma permanece Accepted; a cadência e os controles de release foram formalizados na ADR 0012, sem autorizar provisionamento.
 
 ## Consequences
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -17,7 +17,7 @@ Adotar Continuous Delivery. PRs e pushes na main mantêm CI e quality gates auto
 A ordem de dependência dos jobs será:
 
 1. Preflight: verificar origem GitHub Actions do Pages, revisão confiável, gates obrigatórios (inclusive os condicionais exigidos pelo impacto), versão e registro da última implantação.
-2. Terraform: planejar e aplicar somente o root do workload, após aprovação protegida do plano, com locking. Bootstrap e identity-reconciliation ficam fora do apply de release. Bloquear destruições e substituições críticas sem autorização específica.
+2. Terraform: planejar e aplicar somente o root do workload, após aprovação protegida do plano, com locking. O bootstrap do backend remoto de State, identity-reconciliation e runtime-iam ficam fora do apply de release; o modo de fundação inicial aplica somente os recursos previstos no root do workload. Bloquear destruições e substituições críticas sem autorização específica.
 3. Backend: implantar pacote compilado e testado para o mesmo SHA, usando outputs não sensíveis da infraestrutura; verificar health e compatibilidade.
 4. Frontend build: gerar e validar PDFs PT/EN/ES e montar artefato por allowlist de conteúdo público; excluir infraestrutura, backend, State, planos, configurações e arquivos internos.
 5. Frontend deploy: publicar exclusivamente por GitHub Actions no Pages e verificar a revisão efetiva, rotas e PDFs.
@@ -25,7 +25,7 @@ A ordem de dependência dos jobs será:
 7. Create release: criar GitHub Release e changelog desde a última release publicada, reutilizando a tag validada.
 8. Post-deployment: IndexNow e, futuramente, Web Push conforme ADR 0005; falha de distribuição não desfaz a publicação.
 
-Jobs de implantação devem declarar dependências explícitas por needs; falha ou ausência de pré-requisito obrigatório impede as etapas seguintes. Terraform e backend podem registrar no-op comprovado para mudanças sem impacto, nunca considerar componente obrigatório ausente, falha ou skip inesperado como sucesso. A fase atual, exclusivamente estática, não autoriza apply ou deploy Azure; a integração do workload será concluída na issue #148, respeitando os gates #142 e #150. Distinguir explicitamente a fase estática da fase integrada, sem simular sucesso de jobs inexistentes.
+Jobs de implantação devem declarar dependências explícitas por needs; falha ou ausência de pré-requisito obrigatório impede as etapas seguintes. Terraform e backend podem registrar no-op comprovado para mudanças sem impacto, nunca considerar componente obrigatório ausente, falha ou skip inesperado como sucesso. A integração do workload foi concluída na issue #148. O modo de fundação inicial não publica frontend, backend ou metadados de release; a execução completa depende do gate #142 e das autorizações e verificações da issue #149. A ativação de inscrições e envio permanece sujeita aos gates posteriores, incluindo #150.
 
 A concorrência de releases manuais deve ser exclusiva entre operações que alteram o mesmo ambiente, sem cancelar deploy em andamento. A concorrência de CI usa grupos próprios por Pull Request ou referência e pode cancelar somente a execução anterior do mesmo contexto; CI nunca compartilha nem substitui a fila de release. Revalidar a ordem de publicação e o SHA registrado antes de operações mutáveis e reexecuções; não implantar revisão antiga sobre uma mais recente. Um merge posterior não altera a revisão em implantação nem impede finalizar metadados da revisão já publicada, desde que as evidências confirmem que não foi superada.
 
@@ -43,4 +43,4 @@ A main pode ficar à frente da produção por decisão operacional. A publicaç�
 
 A pipeline não é uma transação distribuída. Um apply bem-sucedido não é revertido automaticamente por falha de backend; backend e frontend devem preservar compatibilidade durante a janela de implantação. Recuperação usa registro do SHA, versão, pacote e resultados por componente. Reexecutar somente estágios necessários quando seguro, sem repetir alterações destrutivas, recriar tags ou reimplantar revisões superadas. Rollback de infraestrutura exige revisão de plano e State, nunca destroy automático.
 
-O PR #185 inicia a transição para publicação manual. Hardening do artefato público, concorrência, SHA, gates, smoke tests e separação tag/release ainda requer implementação e testes; a integração Azure depende das issues #143–#149. A aprovação desta decisão não autoriza provisionamento, ativação de inscrições ou envio real. A hospedagem permanece conforme ADR 0001; privacidade e publicação confirmada permanecem válidas.
+O PR #185 iniciou a transição para publicação manual; o [PR #188](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/pull/188) integrou a implementação das issues #143 a #148, com CI aprovada. A execução autenticada, o primeiro provisionamento, a configuração de IAM/VAPID e os smoke tests reais permanecem na issue #149. A aceitação formal desta ADR segue a revisão e o merge deste PR de documentação. A aprovação desta decisão não autoriza provisionamento, ativação de inscrições ou envio real. A hospedagem permanece conforme ADR 0001; privacidade e publicação confirmada permanecem válidas.
