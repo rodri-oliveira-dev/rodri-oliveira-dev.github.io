@@ -76,6 +76,9 @@ jobs:
       - name: Test Terraform release plan
         run: python3 -m unittest discover -s .github/scripts -p 'test_terraform_release_plan.py'
 
+      - name: Test Sonar diagnostics
+        run: python3 -m unittest discover -s .github/scripts -p 'test_sonar_file_diagnostics.py'
+
       - name: Test newsletter metadata import
         run: python3 -m unittest discover -s .github/scripts -p 'test_import_newsletter.py'
 

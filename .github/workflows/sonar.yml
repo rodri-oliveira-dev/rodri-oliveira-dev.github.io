@@ -119,7 +119,7 @@ jobs:
             jq -r '.projectStatus.conditions[]? | [.metricKey, .status, .actualValue, .errorThreshold, .comparator] | map(tostring | gsub("[|\\r\\n]"; " ")) | "| " + join(" | ") + " |"' <<< "$gate"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Report file-level coverage and duplication diagnostics
+      - name: Report security, coverage and duplication diagnostics
         if: ${{ !cancelled() && steps.sonar_scan.outcome == 'failure' }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
