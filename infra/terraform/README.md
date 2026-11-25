@@ -275,6 +275,14 @@ Esta operação não inicializa o backend remoto, não lê nem altera o State e 
 
 A operação manual `plan` de `Terraform validation` usa a UI JSON do Terraform somente em arquivo temporário no runner. Em caso de falha, um extrator publica no log e no resumo apenas categoria, códigos HTTP/Azure reconhecidos, operações ARM da matriz ou de uma lista explícita de operações auxiliares, endereços Terraform conhecidos e exit code. Campos desconhecidos são omitidos; a classificação é indicativa, não comprova a causa nem autoriza ampliar IAM. O log bruto e o plano permanecem privados no runner e são removidos pelo trap; não há artifact, debug ou mudança de preflight. Se a extração falhar, o workflow continua falhando sem publicar a saída bruta. Os testes da lista de permissão e de não vazamento rodam no CI sem credenciais. O fluxo de release permanece inalterado.
 
+### Diagnóstico de divergência do fingerprint da release (#149)
+
+A operação manual `diagnose-fingerprint` do workflow **Terraform validation** executa apenas na `main`, com aprovação do Environment `terraform-dev`, a identidade de provisionamento e as versões fixadas da release. Ela força `create_function_app=false` e gera dois planos independentes, sequenciais, no mesmo runner, com refresh e lock normais. Não execute simultaneamente com release, outras operações Terraform ou alterações manuais. A operação pode consultar a Azure e adquirir/liberar o lease do State; não executa apply, import, destroy, deploy ou alterações de IAM.
+
+O Summary informa se os fingerprints atuais da release e os manifestos de ações coincidem, além de categorias de divergência por seções conhecidas do JSON e campos de mudanças de recursos. Campos desconhecidos são agregados; endereços, valores, nomes arbitrários, hashes por seção, planos, logs brutos e State não são publicados. Arquivos temporários ficam no runner e são removidos pelo trap, sem artifacts. A classificação de diferença de ordem de arrays é exclusivamente diagnóstica: listas ordenadas podem ter significado. Não é uma prova de equivalência nem permite aprovar um plano. O fingerprint e o bloqueio da release permanecem inalterados.
+
+Resultado idêntico no mesmo runner não descarta variação entre runners, autenticações ou momentos diferentes. Se necessário, definir uma segunda investigação segura, sem publicar JSON ou relaxar o gate. Registrar somente o link e as categorias sanitizadas na #149. A operação não autoriza novo bootstrap.
+
 ### Baseline RBAC de bootstrap e evolução
 
 Em 24/11/2026, o operador confirmou a substituição da atribuição temporária `Contributor` por `Reader` no Resource Group e a preservação de `Storage Blob Data Contributor` no contêiner `tfstate`. A consulta de atribuições do Service Principal com `az role assignment list --all --include-inherited` apresentou somente essas duas funções. A identidade continua sem autorização de provisionamento neste estágio.
