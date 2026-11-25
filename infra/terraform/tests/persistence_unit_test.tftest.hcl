@@ -28,13 +28,6 @@ mock_provider "azurerm" {
       primary_queue_endpoint = "https://stportpushdev1350159615.queue.core.windows.net/"
     }
   }
-
-  mock_resource "azurerm_function_app_flex_consumption" {
-    defaults = {
-      default_hostname = "func-portpush-dev-1350159615.azurewebsites.net"
-      id               = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-portfolio-push-workload-dev/providers/Microsoft.Web/sites/func-portpush-dev-1350159615"
-    }
-  }
 }
 
 mock_provider "azapi" {}
@@ -78,17 +71,17 @@ run "default_cost_and_security_baseline" {
   }
 
   assert {
-    condition     = azurerm_service_plan.functions.sku_name == "FC1" && azurerm_function_app_flex_consumption.notifications[0].runtime_name == "dotnet-isolated" && azurerm_function_app_flex_consumption.notifications[0].runtime_version == "10.0"
+    condition     = azurerm_service_plan.functions.sku_name == "FC1" && azapi_resource.function_app[0].body.properties.functionAppConfig.runtime.name == "dotnet-isolated" && azapi_resource.function_app[0].body.properties.functionAppConfig.runtime.version == "10.0"
     error_message = "A Function deve usar Flex Consumption FC1 com .NET 10 isolated."
   }
 
   assert {
-    condition     = azurerm_function_app_flex_consumption.notifications[0].maximum_instance_count == 2 && azurerm_function_app_flex_consumption.notifications[0].instance_memory_in_mb == 2048
+    condition     = azapi_resource.function_app[0].body.properties.functionAppConfig.scaleAndConcurrency.maximumInstanceCount == 2 && azapi_resource.function_app[0].body.properties.functionAppConfig.scaleAndConcurrency.instanceMemoryMB == 2048
     error_message = "A Function deve limitar escala a duas instâncias de 2048 MB."
   }
 
   assert {
-    condition     = azurerm_storage_account.functions.identity[0].type == "SystemAssigned" && azurerm_function_app_flex_consumption.notifications[0].identity[0].type == "UserAssigned"
+    condition     = azurerm_storage_account.functions.identity[0].type == "SystemAssigned" && azapi_resource.function_app[0].identity[0].type == "UserAssigned"
     error_message = "Storage deve ter identidade própria; a Function deve preservar sua identidade de runtime dedicada."
   }
 
@@ -103,8 +96,27 @@ run "default_cost_and_security_baseline" {
   }
 
   assert {
-    condition     = azurerm_function_app_flex_consumption.notifications[0].app_settings["CampaignQueue__credential"] == "managedidentity" && contains(keys(azurerm_function_app_flex_consumption.notifications[0].app_settings), "CampaignQueue__queueServiceUri") && !contains(keys(azurerm_function_app_flex_consumption.notifications[0].app_settings), "CampaignQueue")
+    condition     = local.function_app_settings["CampaignQueue__credential"] == "managedidentity" && contains(keys(local.function_app_settings), "CampaignQueue__queueServiceUri") && !contains(keys(local.function_app_settings), "CampaignQueue")
     error_message = "O Queue Trigger deve usar endpoint de dados e Managed Identity, sem connection string."
+  }
+  assert {
+    condition     = azapi_resource.function_app[0].body.properties.httpsOnly && azapi_resource.function_app[0].body.properties.siteConfig.minTlsVersion == "1.2" && azapi_resource.function_app[0].body.properties.siteConfig.http20Enabled
+    error_message = "A Function deve exigir HTTPS e TLS 1.2 e preservar HTTP/2."
+  }
+
+  assert {
+    condition     = azapi_resource.function_app[0].body.properties.functionAppConfig.deployment.storage.authentication.type == "UserAssignedIdentity" && length(azapi_resource.function_app[0].body.properties.functionAppConfig.scaleAndConcurrency.alwaysReady) == 0
+    error_message = "O Storage de deploy deve usar identidade gerenciada e não haver Always Ready."
+  }
+
+  assert {
+    condition     = length(azapi_update_resource.function_publishing_policy) == 2 && !azapi_update_resource.function_publishing_policy["scm"].body.properties.allow && !azapi_update_resource.function_publishing_policy["ftp"].body.properties.allow
+    error_message = "SCM e FTP não podem permitir autenticação básica."
+  }
+
+  assert {
+    condition     = length(azapi_resource.function_app[0].response_export_values) == 1 && contains(azapi_resource.function_app[0].response_export_values, "properties.defaultHostName")
+    error_message = "A Function deve exportar somente o hostname público."
   }
 }
 
@@ -116,7 +128,7 @@ run "foundation_before_runtime_iam" {
   }
 
   assert {
-    condition     = length(azurerm_function_app_flex_consumption.notifications) == 0 && length(azurerm_monitor_diagnostic_setting.function_app) == 0
+    condition     = length(azapi_resource.function_app) == 0 && length(azapi_update_resource.function_publishing_policy) == 0 && length(azurerm_monitor_diagnostic_setting.function_app) == 0
     error_message = "Bootstrap deve criar dependências sem criar Function App ou seu diagnostic setting."
   }
 
