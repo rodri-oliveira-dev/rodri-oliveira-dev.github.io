@@ -1,0 +1,37 @@
+name: Validate Functions OIDC
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  validate_oidc:
+    name: Validate Functions Environment OIDC
+    if: github.ref == 'refs/heads/main'
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 5
+    environment: functions-dev
+    permissions:
+      id-token: write
+    env:
+      AZURE_CORE_OUTPUT: none
+    steps:
+      - name: Authenticate with Entra ID without subscription access
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_FUNCTIONS_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: Verify authenticated tenant and service principal
+        shell: bash
+        env:
+          EXPECTED_TENANT: ${{ vars.AZURE_TENANT_ID }}
+          EXPECTED_CLIENT: ${{ vars.AZURE_FUNCTIONS_CLIENT_ID }}
+        run: |
+          set -euo pipefail
+          test "$(az account show --query tenantId --output tsv)" = "$EXPECTED_TENANT"
+          test "$(az account show --query user.name --output tsv)" = "$EXPECTED_CLIENT"
+          test "$(az account show --query user.type --output tsv)" = "servicePrincipal"
+          echo "Functions Environment OIDC authentication succeeded. Subscription access and deployment permissions were not tested. No resources or role assignments were modified." >> "$GITHUB_STEP_SUMMARY"
