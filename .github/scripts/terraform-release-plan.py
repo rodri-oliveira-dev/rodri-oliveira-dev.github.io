@@ -9,6 +9,30 @@ import os
 from pathlib import Path
 
 
+def canonical_relevant_attributes(value: object) -> list:
+    """Normalize only the outer unordered collection; keep complete records.
+
+    Terraform v1.17.2 jsonplan.marshalRelevantAttrs explicitly states that
+    record order is immaterial. Attribute paths themselves are ordered.
+    """
+    if not isinstance(value, list):
+        raise ValueError("Invalid relevant_attributes collection")
+    for record in value:
+        if (
+            not isinstance(record, dict)
+            or not isinstance(record.get("resource"), str)
+            or not record["resource"]
+            or not isinstance(record.get("attribute"), list)
+        ):
+            raise ValueError("Invalid relevant_attributes record")
+    return sorted(
+        value,
+        key=lambda record: json.dumps(
+            record, separators=(",", ":"), sort_keys=True, allow_nan=False
+        ),
+    )
+
+
 def analyze(plan: dict) -> dict:
     changes = []
     for change in plan.get("resource_changes", []):
@@ -24,6 +48,10 @@ def analyze(plan: dict) -> dict:
     # Hash the entire plan so a value-only drift cannot pass approval. Only the
     # digest and the value-free action manifest leave the ephemeral runner.
     stable_plan = {key: value for key, value in plan.items() if key != "timestamp"}
+    if "relevant_attributes" in stable_plan:
+        stable_plan["relevant_attributes"] = canonical_relevant_attributes(
+            stable_plan["relevant_attributes"]
+        )
     encoded = json.dumps(stable_plan, separators=(",", ":"), sort_keys=True).encode()
     return {
         "changes": changes,
@@ -37,7 +65,10 @@ def main() -> None:
     parser.add_argument("plan_json", type=Path)
     parser.add_argument("--allow-destructive", action="store_true")
     args = parser.parse_args()
-    result = analyze(json.loads(args.plan_json.read_text(encoding="utf-8")))
+    try:
+        result = analyze(json.loads(args.plan_json.read_text(encoding="utf-8")))
+    except (OSError, ValueError, TypeError, KeyError, AttributeError):
+        raise SystemExit("Invalid Terraform plan; raw output withheld.") from None
 
     output = Path(os.environ["GITHUB_OUTPUT"])
     with output.open("a", encoding="utf-8") as handle:
