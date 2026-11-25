@@ -1,34 +1,3 @@
-variable "cosmos_database_throughput" {
-  description = "Throughput compartilhado da base Cosmos DB em RU/s; 400 é o mínimo provisionado e limita o custo inicial."
-  type        = number
-  default     = 400
-  nullable    = false
-
-  validation {
-    condition     = var.cosmos_database_throughput >= 400 && var.cosmos_database_throughput <= var.cosmos_total_throughput_limit && var.cosmos_database_throughput % 100 == 0
-    error_message = "cosmos_database_throughput deve ser múltiplo de 100 entre 400 e cosmos_total_throughput_limit."
-  }
-}
-
-variable "cosmos_enable_free_tier" {
-  description = "Habilita o Free Tier somente após confirmar elegibilidade da assinatura; a opção é definida apenas na criação da conta."
-  type        = bool
-  default     = false
-  nullable    = false
-}
-
-variable "cosmos_total_throughput_limit" {
-  description = "Teto de throughput da conta Cosmos DB em RU/s para impedir expansão acidental acima do orçamento aprovado."
-  type        = number
-  default     = 1000
-  nullable    = false
-
-  validation {
-    condition     = var.cosmos_total_throughput_limit >= 400 && var.cosmos_total_throughput_limit <= 1000 && var.cosmos_total_throughput_limit % 100 == 0
-    error_message = "cosmos_total_throughput_limit deve ser múltiplo de 100 entre 400 e 1000 RU/s."
-  }
-}
-
 variable "environment" {
   description = "Ambiente lógico usado em nomes e tags dos recursos."
   type        = string
@@ -39,6 +8,13 @@ variable "environment" {
     condition     = contains(["dev", "staging", "prod"], var.environment)
     error_message = "environment deve ser dev, staging ou prod."
   }
+}
+
+variable "create_function_app" {
+  description = "False somente durante o bootstrap inicial, antes da atribuição separada de IAM de runtime."
+  type        = bool
+  default     = true
+  nullable    = false
 }
 
 variable "function_instance_memory_mb" {

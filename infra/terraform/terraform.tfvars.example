@@ -8,10 +8,9 @@ location            = "brazilsouth"
 environment          = "dev"
 resource_name_suffix = "1350159615"
 
-# Só altere para true após confirmar que a assinatura tem uma vaga elegível.
-cosmos_enable_free_tier       = false
-cosmos_database_throughput    = 400
-cosmos_total_throughput_limit = 1000
+# Cosmos DB Serverless: sem throughput provisionado ou Free Tier.
+# False somente no primeiro bootstrap (antes de criar a Function).
+create_function_app = true
 
 log_analytics_daily_quota_gb = 0.1
 log_analytics_retention_days = 30

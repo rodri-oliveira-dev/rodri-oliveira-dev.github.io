@@ -72,8 +72,17 @@ def plan(repo, sha):
     require_main(repo, sha)
     if os.environ.get("TERRAFORM_CONFIRMATION") != "APPLY":
         raise RuntimeError("Release requires the exact Terraform confirmation APPLY")
+    foundation_only = os.environ.get("BOOTSTRAP_FOUNDATION_ONLY") == "true"
     rollback_run = os.environ.get("BACKEND_ROLLBACK_RUN_ID", "")
     first_deploy = os.environ.get("ALLOW_FIRST_BACKEND_DEPLOY") == "true"
+    if foundation_only:
+        if rollback_run or first_deploy or os.environ.get("ALLOW_DESTRUCTIVE") == "true":
+            raise RuntimeError("Foundation bootstrap cannot deploy, roll back or authorize destructive changes")
+        check_runs(repo, sha)
+        with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as out:
+            out.write(f"sha={sha}\n")
+        print(f"Foundation bootstrap candidate: {sha}; no release tag")
+        return
     if bool(rollback_run) == first_deploy:
         raise RuntimeError("Select exactly one backend recovery mode: first deploy or rollback run ID")
     if rollback_run and not rollback_run.isdecimal():

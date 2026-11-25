@@ -14,7 +14,7 @@ Os identificadores da assinatura e do tenant não são segredos, mas variam por 
 
 A primeira fatia do workload modela:
 
-- Cosmos DB for NoSQL com banco de throughput compartilhado de 400 RU/s, limite total de 1.000 RU/s, consistência de sessão, backup periódico LRS e uma única localização em `brazilsouth`;
+- Cosmos DB for NoSQL Serverless (capability `EnableServerless`, sem throughput provisionado), consistência de sessão, backup periódico LRS e uma única localização em `brazilsouth`;
 - container `subscriptions` particionado por `/partitionKey`, com endpoint e chaves excluídos do índice para evitar RU de escrita sem benefício de consulta e TTL por item habilitado sem prazo padrão;
 - identidade gerenciada atribuída pelo usuário, dedicada ao runtime futuro;
 - Key Vault Standard com RBAC, soft delete de 90 dias e purge protection;
@@ -23,9 +23,9 @@ A primeira fatia do workload modela:
 
 Não existe `azurerm_key_vault_secret`: a chave privada VAPID deve ser inserida diretamente por operador autorizado em etapa posterior. Assim, seu valor nunca entra em configuração, plano ou State. O Cosmos DB desabilita autenticação local para que o provisionamento e o runtime usem Entra ID, sem chaves de conta. A conta, o banco e o container são gerenciados como recursos ARM pelo AzAPI, com saída padrão desabilitada; o endpoint é derivado do nome público da conta. O acesso público aos endpoints permanece habilitado nesta baseline porque não há VNet modelada; RBAC, TLS 1.2 e autenticação local desabilitada reduzem a exposição, mas não equivalem a Private Link. Revisar rede privada e seus custos antes da ativação pública.
 
-O repositório da #146 deriva ID e partition key do hash SHA-256 do endpoint, realiza somente point reads e distribui gravações por um prefixo de 8 bits (`v1-xx`). O throughput compartilhado continua limitado a 400 RU/s e o índice exclui os campos volumosos `endpoint` e `keys`. `default_ttl = -1` apenas habilita TTL por documento; nenhum prazo é gravado enquanto a política de retenção exigida pela ADR-0006 não for aprovada.
+O repositório da #146 deriva ID e partition key do hash SHA-256 do endpoint, realiza somente point reads e distribui gravações por um prefixo de 8 bits (`v1-xx`). O consumo de RU é cobrado por uso e o índice exclui os campos volumosos `endpoint` e `keys`. `default_ttl = -1` apenas habilita TTL por documento; nenhum prazo é gravado enquanto a política de retenção exigida pela ADR-0006 não for aprovada.
 
-`cosmos_enable_free_tier` permanece `false` por padrão. A camada gratuita precisa ser escolhida na criação da conta, aceita somente uma conta por assinatura e cobre os primeiros 1.000 RU/s e 25 GB. Altere para `true` apenas depois de confirmar elegibilidade e ausência de outra conta beneficiada; o plano aprovado deve mostrar a opção correta antes de qualquer apply. Não há georreplicação automática nem multi-write.
+A capacidade é Serverless: o Azure cobra RUs consumidas e armazenamento, sem reserva de 400 RU/s. O Free Tier vitalício não é compatível com Serverless. Não há georreplicação automática nem multi-write; não existe teto mensal rígido de cobrança. Confirmar o preço regional efetivo e eventuais créditos da assinatura antes do apply.
 
 As atribuições de `Key Vault Secrets User` no vault e `Cosmos DB Built-in Data Contributor` restrita ao container ficam no root/state exclusivo [`runtime-iam/`](runtime-iam/). A execução normal de provisionamento não contém atribuições nem recebe `Microsoft.Authorization/roleAssignments/write`. Uma etapa IAM separada e aprovada deve aplicar esse root depois de revisar o principal e os escopos; ele não participa do workflow de release.
 
@@ -35,8 +35,7 @@ Consulta à API oficial Azure Retail Prices em 24/11/2026, moeda USD e região B
 
 | Serviço | Premissa | Estimativa mensal antes de impostos |
 | --- | --- | --- |
-| Cosmos DB | Free Tier confirmado, 400 RU/s e até 25 GB | USD 0 para throughput/armazenamento cobertos; excedentes cobrados |
-| Cosmos DB | Sem Free Tier, 400 RU/s por 730 h | cerca de USD 35,04; armazenamento adicional a USD 0,375/GB-mês |
+| Cosmos DB Serverless | RUs consumidas + armazenamento | Consultar preço por milhão de RU e GB-mês em Brazil South na assinatura; sem cobrança por RU/s provisionada |
 | Backup Cosmos LRS | Volume faturável fora da franquia aplicável | USD 0,192/GB-mês |
 | Key Vault Standard | Até 10 mil operações | cerca de USD 0,03; não há segredo criado por Terraform |
 | Log Analytics | Ingestão efetiva | USD 4,60/GB; o cap de 0,1 GB/dia representa teto teórico de cerca de USD 13,80 em 30 dias, podendo haver pequena ultrapassagem faturável |
@@ -89,9 +88,16 @@ O provisionador passa a precisar de ações create/read/update/delete estritamen
 
 `Release and Deploy` é o único workflow que pode aplicar o root de workload. O `terraform-validation.yml` mantém apenas validação, teste de OIDC e plano diagnóstico; não existe apply independente e o root `identity-reconciliation` permanece somente leitura. Plano, JSON, logs e State nunca são publicados como artifact. O resumo aprovado contém somente endereços, ações e fingerprint; um novo plano idêntico é produzido imediatamente antes do apply.
 
-O Environment `terraform-dev` usa `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` e `AZURE_SUBSCRIPTION_ID`. O Environment separado `functions-dev` usa `AZURE_FUNCTIONS_CLIENT_ID` com tenant e subscription compartilhados apenas como identificadores não secretos. Criar para ele uma credencial federada cujo subject seja `repo:rodri-oliveira-dev/rodri-oliveira-dev.github.io:environment:functions-dev`. A identidade correspondente deve ter somente as ações de deploy de pacote necessárias no escopo da Function App; não deve acessar State, conteúdo de fila, Cosmos, Key Vault, IAM ou provisionar recursos. Derivar e revisar a função efetiva antes do primeiro uso; esta documentação não concede RBAC.
+O Environment `terraform-dev` usa `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` e `AZURE_SUBSCRIPTION_ID`. O Environment separado `functions-dev` usa `AZURE_FUNCTIONS_CLIENT_ID` com tenant e subscription compartilhados apenas como identificadores não secretos. Criar para ele uma credencial federada cujo subject seja `repo:rodri-oliveira-dev@3470248/rodri-oliveira-dev.github.io@1350159615:environment:functions-dev`. A identidade correspondente deve ter somente as ações de deploy de pacote necessárias no escopo da Function App; não deve acessar State, conteúdo de fila, Cosmos, Key Vault, IAM ou provisionar recursos. Derivar e revisar a função efetiva antes do primeiro uso; esta documentação não concede RBAC.
 
-Antes do primeiro release, um operador separado deve: conceder à identidade de provisionamento somente as ações dos recursos realmente presentes no plano; configurar os papéis de dados condicionais do runtime; criar os valores VAPID diretamente no Key Vault; configurar a credencial e o Environment de deploy; e manter campanhas e inscrições públicas ausentes. O input de primeira publicação apenas reconhece que ainda não existe pacote anterior — não contorna aprovação, health check ou controles de acesso.
+### Primeiro provisionamento em duas fases (#149)
+
+1. Confirmar custos/cotas, aprovação das ADRs e permissões mínimas do provisionador. Executar **Release and Deploy** na main com `bootstrap_foundation_only=true`, confirmação `APPLY`, sem autorizar destruição e sem selecionar first deploy ou rollback. O plano/apply protegido cria Storage, filas, identidade, plano FC1, Cosmos, vault e observabilidade, mas não cria a Function App, não publica site, tag ou release. O SHA e fingerprint permanecem protegidos. Não repetir este modo após criar a Function: prevent_destroy impede sua remoção.
+2. Um operador autorizado revisa e aplica separadamente o root `runtime-iam/` com os quatro papéis de dados exatos, aguarda propagação e configura os dois secrets VAPID diretamente no Key Vault. Não usar a identidade de provisionamento nem conceder administração de IAM a ela. Não há necessidade de criar campanha ou inscrição.
+3. Criar identidade de deploy distinta e credencial federada com o subject imutável acima. Configurar `AZURE_FUNCTIONS_CLIENT_ID` e os Environments. Executar o mesmo workflow com `bootstrap_foundation_only=false`, `APPLY` e `allow_first_backend_deploy=true`. Antes do plano e novamente antes do apply, a automação consulta somente as quatro atribuições de runtime; ausência de qualquer uma bloqueia a criação da Function. A verificação comprova atribuições diretas, não propagação de dados nem leitura do VAPID; o operador deve confirmá-las no gate.
+4. Após criação da Function, antes de aprovar o job `functions-dev`, atribuir as permissões mínimas de publicação à identidade de deploy no escopo exato da Function App e aguardar propagação. Validar health e somente então permitir as etapas restantes da release. O input de primeira publicação apenas reconhece a ausência de pacote anterior; não contorna aprovação, IAM ou health check.
+
+Para releases posteriores, manter bootstrap desativado e seguir a política de rollback. Nenhum passo autoriza inscrições ou envio real.
 
 ## Bootstrap manual do state remoto (#139)
 

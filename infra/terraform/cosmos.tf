@@ -16,15 +16,14 @@ resource "azapi_resource" "cosmos_account" {
           backupStorageRedundancy        = "Local"
         }
       }
-      capabilities                       = []
-      capacity                           = { totalThroughputLimit = var.cosmos_total_throughput_limit }
+      capabilities                       = [{ name = "EnableServerless" }]
       consistencyPolicy                  = { defaultConsistencyLevel = "Session" }
       databaseAccountOfferType           = "Standard"
       disableKeyBasedMetadataWriteAccess = true
       disableLocalAuth                   = true
       enableAnalyticalStorage            = false
       enableAutomaticFailover            = false
-      enableFreeTier                     = var.cosmos_enable_free_tier
+      enableFreeTier                     = false
       enableMultipleWriteLocations       = false
       ipRules                            = []
       isVirtualNetworkFilterEnabled      = false
@@ -43,11 +42,6 @@ resource "azapi_resource" "cosmos_account" {
 
   lifecycle {
     prevent_destroy = true
-
-    precondition {
-      condition     = !var.cosmos_enable_free_tier || var.cosmos_total_throughput_limit <= 1000
-      error_message = "A camada gratuita só pode ser modelada com limite total de até 1000 RU/s."
-    }
   }
 }
 
@@ -59,9 +53,7 @@ resource "azapi_resource" "cosmos_database" {
 
   body = {
     properties = {
-      options = {
-        throughput = var.cosmos_database_throughput
-      }
+      options = {}
       resource = {
         id = local.subscriptions_database
       }

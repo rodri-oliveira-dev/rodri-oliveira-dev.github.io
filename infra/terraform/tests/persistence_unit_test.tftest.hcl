@@ -49,7 +49,7 @@ run "default_cost_and_security_baseline" {
 
   assert {
     condition     = azapi_resource.cosmos_account.body.properties.enableFreeTier == false
-    error_message = "Free Tier deve permanecer desabilitado sem confirmação de elegibilidade."
+    error_message = "Free Tier não é compatível com Cosmos DB Serverless."
   }
 
   assert {
@@ -58,8 +58,8 @@ run "default_cost_and_security_baseline" {
   }
 
   assert {
-    condition     = azapi_resource.cosmos_database.body.properties.options.throughput == 400
-    error_message = "A baseline deve limitar o banco compartilhado a 400 RU/s."
+    condition     = contains([for capability in azapi_resource.cosmos_account.body.properties.capabilities : capability.name], "EnableServerless") && !can(azapi_resource.cosmos_account.body.properties.capacity) && !can(azapi_resource.cosmos_database.body.properties.options.throughput) && !can(azapi_resource.subscriptions_container.body.properties.options.throughput)
+    error_message = "Serverless não pode provisionar throughput nem limite de RU/s."
   }
 
   assert {
@@ -78,12 +78,12 @@ run "default_cost_and_security_baseline" {
   }
 
   assert {
-    condition     = azurerm_service_plan.functions.sku_name == "FC1" && azurerm_function_app_flex_consumption.notifications.runtime_name == "dotnet-isolated" && azurerm_function_app_flex_consumption.notifications.runtime_version == "10.0"
+    condition     = azurerm_service_plan.functions.sku_name == "FC1" && azurerm_function_app_flex_consumption.notifications[0].runtime_name == "dotnet-isolated" && azurerm_function_app_flex_consumption.notifications[0].runtime_version == "10.0"
     error_message = "A Function deve usar Flex Consumption FC1 com .NET 10 isolated."
   }
 
   assert {
-    condition     = azurerm_function_app_flex_consumption.notifications.maximum_instance_count == 2 && azurerm_function_app_flex_consumption.notifications.instance_memory_in_mb == 2048
+    condition     = azurerm_function_app_flex_consumption.notifications[0].maximum_instance_count == 2 && azurerm_function_app_flex_consumption.notifications[0].instance_memory_in_mb == 2048
     error_message = "A Function deve limitar escala a duas instâncias de 2048 MB."
   }
 
@@ -98,21 +98,26 @@ run "default_cost_and_security_baseline" {
   }
 
   assert {
-    condition     = azurerm_function_app_flex_consumption.notifications.app_settings["CampaignQueue__credential"] == "managedidentity" && contains(keys(azurerm_function_app_flex_consumption.notifications.app_settings), "CampaignQueue__queueServiceUri") && !contains(keys(azurerm_function_app_flex_consumption.notifications.app_settings), "CampaignQueue")
+    condition     = azurerm_function_app_flex_consumption.notifications[0].app_settings["CampaignQueue__credential"] == "managedidentity" && contains(keys(azurerm_function_app_flex_consumption.notifications[0].app_settings), "CampaignQueue__queueServiceUri") && !contains(keys(azurerm_function_app_flex_consumption.notifications[0].app_settings), "CampaignQueue")
     error_message = "O Queue Trigger deve usar endpoint de dados e Managed Identity, sem connection string."
   }
 }
 
-run "eligible_free_tier" {
+run "foundation_before_runtime_iam" {
   command = plan
 
   variables {
-    cosmos_enable_free_tier = true
+    create_function_app = false
   }
 
   assert {
-    condition     = azapi_resource.cosmos_account.body.properties.enableFreeTier
-    error_message = "Free Tier deve ser habilitado quando explicitamente confirmado."
+    condition     = length(azurerm_function_app_flex_consumption.notifications) == 0 && length(azurerm_monitor_diagnostic_setting.function_app) == 0
+    error_message = "Bootstrap deve criar dependências sem criar Function App ou seu diagnostic setting."
+  }
+
+  assert {
+    condition     = output.function_app_name == null && output.function_app_health_url == null
+    error_message = "Bootstrap não deve exportar coordenadas de deploy inexistentes."
   }
 }
 

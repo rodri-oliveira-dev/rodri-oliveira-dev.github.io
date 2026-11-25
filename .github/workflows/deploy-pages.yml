@@ -6,6 +6,11 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      bootstrap_foundation_only:
+        description: First bootstrap only; create dependencies without Function App or release
+        required: true
+        default: false
+        type: boolean
       bump:
         description: Semantic version increment
         required: true
@@ -88,6 +93,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           BUMP: ${{ inputs.bump }}
+          BOOTSTRAP_FOUNDATION_ONLY: ${{ inputs.bootstrap_foundation_only }}
+          ALLOW_DESTRUCTIVE: ${{ inputs.allow_destructive_terraform_changes }}
           TERRAFORM_CONFIRMATION: ${{ inputs.terraform_confirmation }}
           ALLOW_FIRST_BACKEND_DEPLOY: ${{ inputs.allow_first_backend_deploy }}
           BACKEND_ROLLBACK_RUN_ID: ${{ inputs.backend_rollback_run_id }}
@@ -117,6 +124,7 @@ jobs:
       ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       TF_VAR_tenant_id: ${{ vars.AZURE_TENANT_ID }}
+      TF_VAR_create_function_app: ${{ !inputs.bootstrap_foundation_only }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -131,6 +139,9 @@ jobs:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Verify runtime IAM before planning Function App
+        if: ${{ !inputs.bootstrap_foundation_only }}
+        run: python3 ../../.github/scripts/verify-runtime-iam.py
       - name: Create value-free action manifest
         id: manifest
         env:
@@ -170,6 +181,7 @@ jobs:
       ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       TF_VAR_tenant_id: ${{ vars.AZURE_TENANT_ID }}
+      TF_VAR_create_function_app: ${{ !inputs.bootstrap_foundation_only }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -190,6 +202,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_SHA: ${{ needs.preflight.outputs.sha }}
         run: test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)" = "$RELEASE_SHA"
+      - name: Recheck runtime IAM before creating Function App
+        if: ${{ !inputs.bootstrap_foundation_only }}
+        run: python3 ../../.github/scripts/verify-runtime-iam.py
       - name: Replan and apply the approved action manifest
         env:
           APPROVED_FINGERPRINT: ${{ needs.terraform_plan.outputs.fingerprint }}
@@ -206,7 +221,11 @@ jobs:
           test "$(sed -n 's/^fingerprint=//p' "$manifest_output")" = "$APPROVED_FINGERPRINT" || { echo 'Terraform actions changed after approval.' >&2; exit 1; }
           if ! terraform apply -auto-approve -input=false -lock-timeout=5m -no-color "$plan_file" >"$apply_log" 2>&1; then echo 'Terraform apply failed; sensitive log withheld.' >&2; exit 1; fi
           echo 'Applied the revalidated ephemeral workload plan; no plan, log, or State artifact was retained.' >>"$GITHUB_STEP_SUMMARY"
+      - name: Record foundation-only completion
+        if: inputs.bootstrap_foundation_only
+        run: echo "Foundation ready for operator IAM and VAPID configuration; no Function App, site publication, tag or release." >>"$GITHUB_STEP_SUMMARY"
       - name: Export non-secret deployment coordinates
+        if: ${{ !inputs.bootstrap_foundation_only }}
         id: coordinates
         run: |
           echo "function_app_name=$(terraform output -raw function_app_name)" >>"$GITHUB_OUTPUT"
@@ -215,6 +234,7 @@ jobs:
   backend_package:
     name: Package notifications backend
     needs: [preflight, terraform_apply]
+    if: ${{ !inputs.bootstrap_foundation_only }}
     runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 15
     steps:
@@ -287,6 +307,11 @@ jobs:
           client-id: ${{ vars.AZURE_FUNCTIONS_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Recheck approved revision before backend deploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ needs.preflight.outputs.sha }}
+        run: test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)" = "$RELEASE_SHA"
       - name: Deploy immutable package
         id: deploy
         continue-on-error: true

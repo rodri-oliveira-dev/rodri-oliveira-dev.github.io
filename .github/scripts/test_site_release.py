@@ -62,6 +62,41 @@ class ReleaseTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "successful main release"):
                 release.plan("owner/repo", "a" * 40)
 
+    def test_foundation_does_not_allocate_release_tag(self):
+        environment = {
+            "TERRAFORM_CONFIRMATION": "APPLY",
+            "BOOTSTRAP_FOUNDATION_ONLY": "true",
+            "ALLOW_FIRST_BACKEND_DEPLOY": "false",
+            "BACKEND_ROLLBACK_RUN_ID": "",
+            "ALLOW_DESTRUCTIVE": "false",
+            "GITHUB_OUTPUT": "unused",
+        }
+        from unittest.mock import mock_open
+        output = mock_open()
+        with patch.dict(release.os.environ, environment, clear=True), patch.object(
+            release, "require_main"
+        ), patch.object(release, "check_runs"), patch.object(
+            release, "api"
+        ) as api, patch.object(release.Path, "open", output):
+            release.plan("owner/repo", "a" * 40)
+            api.assert_not_called()
+            output().write.assert_called_once_with("sha=" + "a" * 40 + "\n")
+
+    def test_foundation_rejects_destructive_or_deploy_inputs(self):
+        base = {
+            "TERRAFORM_CONFIRMATION": "APPLY",
+            "BOOTSTRAP_FOUNDATION_ONLY": "true",
+            "ALLOW_FIRST_BACKEND_DEPLOY": "false",
+            "BACKEND_ROLLBACK_RUN_ID": "",
+            "ALLOW_DESTRUCTIVE": "false",
+        }
+        for override in ({"ALLOW_DESTRUCTIVE": "true"}, {"ALLOW_FIRST_BACKEND_DEPLOY": "true"}, {"BACKEND_ROLLBACK_RUN_ID": "42"}):
+            with self.subTest(override=override), patch.dict(
+                release.os.environ, {**base, **override}, clear=True
+            ), patch.object(release, "require_main"):
+                with self.assertRaisesRegex(RuntimeError, "Foundation bootstrap cannot"):
+                    release.plan("owner/repo", "a" * 40)
+
     def test_tag_is_idempotent_and_never_retargeted(self):
         environment = {"RELEASE_TAG": "1.2.3"}
         with patch.dict(release.os.environ, environment), patch.object(

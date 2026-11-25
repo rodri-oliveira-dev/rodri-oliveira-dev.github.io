@@ -12,7 +12,7 @@ Com o backend Web Push em Azure Functions e a infraestrutura Terraform (ADR 0009
 
 ## Decision
 
-Adotar Continuous Delivery. PRs e pushes na main mantêm CI e quality gates automáticos, sem efeitos de implantação. Um único workflow orquestrador, Release and Deploy, iniciado por workflow_dispatch na main, define o incremento SemVer e fixa o SHA da revisão. O acionamento manual não substitui aprovação de Environments nem autorização de custos.
+Adotar Continuous Delivery. PRs e pushes na main mantêm CI e quality gates automáticos, sem efeitos de implantação. Um único workflow orquestrador, Release and Deploy, iniciado por workflow_dispatch na main, define o incremento SemVer e fixa o SHA da revisão. O acionamento manual não substitui aprovação de Environments nem autorização de custos. Excepcionalmente, no primeiro provisionamento, o mesmo workflow oferece um modo de fundação sem criação da Function, publicação ou tag, para permitir a atribuição separada de IAM e configuração de VAPID antes da release completa. O modo normal preserva a ordem de jobs; a segunda execução usa a revisão então aprovada e revalida o plano.
 
 A ordem de dependência dos jobs será:
 

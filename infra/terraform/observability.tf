@@ -38,8 +38,10 @@ resource "azurerm_monitor_diagnostic_setting" "key_vault_audit" {
 }
 
 resource "azurerm_monitor_diagnostic_setting" "function_app" {
+  count = var.create_function_app ? 1 : 0
+
   name                       = "send-runtime-to-log-analytics"
-  target_resource_id         = azurerm_function_app_flex_consumption.notifications.id
+  target_resource_id         = azurerm_function_app_flex_consumption.notifications[0].id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.notifications.id
 
   enabled_log {

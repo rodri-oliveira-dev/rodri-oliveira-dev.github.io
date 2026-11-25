@@ -57,6 +57,8 @@ resource "azurerm_service_plan" "functions" {
 }
 
 resource "azurerm_function_app_flex_consumption" "notifications" {
+  count = var.create_function_app ? 1 : 0
+
   name                = local.function_app_name
   resource_group_name = data.azurerm_resource_group.web_push.name
   location            = data.azurerm_resource_group.web_push.location
@@ -97,6 +99,10 @@ resource "azurerm_function_app_flex_consumption" "notifications" {
     Notifications__PushTimeToLiveSeconds     = "86400"
     Notifications__RequestTimeoutSeconds     = "15"
     AZURE_CLIENT_ID                          = azurerm_user_assigned_identity.functions_runtime.client_id
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 
   site_config {
