@@ -271,6 +271,10 @@ Após integrar o PR #184 e cadastrar a credencial federada do Environment no Ent
 
 Esta operação não inicializa o backend remoto, não lê nem altera o State e não executa `plan`, `import` ou `apply`. O sucesso comprova a autenticação do subject de ambiente e a leitura do Resource Group, não o RBAC mínimo, o acesso ao State ou a autorização para provisionamento. Em 24/11/2026, a [execução bem-sucedida de validate-oidc](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/runs/45468308172/job/138712302978) comprovou esses dois itens após a correção do subject imutável. O gate #142 continua pendente até a revisão dos demais controles.
 
+### Diagnóstico seguro do plano autenticado
+
+A operação manual `plan` de `Terraform validation` usa a UI JSON do Terraform somente em arquivo temporário no runner. Em caso de falha, um extrator publica no log e no resumo apenas categoria, códigos HTTP/Azure reconhecidos, operações ARM da matriz ou de uma lista explícita de operações auxiliares, endereços Terraform conhecidos e exit code. Campos desconhecidos são omitidos; a classificação é indicativa, não comprova a causa nem autoriza ampliar IAM. O log bruto e o plano permanecem privados no runner e são removidos pelo trap; não há artifact, debug ou mudança de preflight. Se a extração falhar, o workflow continua falhando sem publicar a saída bruta. Os testes da lista de permissão e de não vazamento rodam no CI sem credenciais. O fluxo de release permanece inalterado.
+
 ### Baseline RBAC de bootstrap e evolução
 
 Em 24/11/2026, o operador confirmou a substituição da atribuição temporária `Contributor` por `Reader` no Resource Group e a preservação de `Storage Blob Data Contributor` no contêiner `tfstate`. A consulta de atribuições do Service Principal com `az role assignment list --all --include-inherited` apresentou somente essas duas funções. A identidade continua sem autorização de provisionamento neste estágio.
