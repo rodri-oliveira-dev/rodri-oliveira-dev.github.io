@@ -50,13 +50,25 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
 
-      - name: Report failed Quality Gate conditions
-        if: ${{ failure() && steps.sonar_scan.outcome == 'failure' }}
+      - name: Summarize Quality Gate result
+        if: ${{ !cancelled() }}
         shell: bash
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SCAN_OUTCOME: ${{ steps.sonar_scan.outcome }}
         run: |
           set -euo pipefail
+          {
+            echo '## SonarQube Cloud'
+            case "$SCAN_OUTCOME" in
+              success) echo '**PASS — Quality Gate passed.**' ;;
+              failure) echo '**FAIL — scanner or Quality Gate failed.**' ;;
+              *) echo '**NOT RUN — scanner did not execute.**' ;;
+            esac
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$SCAN_OUTCOME" != failure ]]; then
+            exit 0
+          fi
           report=.scannerwork/report-task.txt
           if [[ ! -f "$report" ]]; then
             echo "::notice::No Sonar task report was produced; inspect the scanner log."
@@ -93,6 +105,12 @@ jobs:
 
           echo "Quality Gate conditions for analysis $analysis_id:"
           jq -c '.projectStatus | {status, conditions: [.conditions[]? | {metricKey, status, comparator, errorThreshold, actualValue}]}' <<< "$gate"
+          {
+            echo
+            echo '| Metric | Status | Actual | Threshold | Comparator |'
+            echo '| --- | --- | --- | --- | --- |'
+            jq -r '.projectStatus.conditions[]? | [.metricKey, .status, .actualValue, .errorThreshold, .comparator] | map(tostring | gsub("[|\\r\\n]"; " ")) | "| " + join(" | ") + " |"' <<< "$gate"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   analysis-not-run:
     name: SonarQube Cloud not run
@@ -106,4 +124,73 @@ jobs:
     timeout-minutes: 2
     steps:
       - name: Explain why no Sonar result is available
-        run: echo "::notice::Sonar analysis not performed (disabled, untrusted PR, or manual dispatch outside main). This is not a passing Quality Gate."
+        run: |
+          echo "::notice::Sonar analysis not performed (disabled, untrusted PR, or manual dispatch outside main). This is not a passing Quality Gate."
+          echo '## SonarQube Cloud' >> "$GITHUB_STEP_SUMMARY"
+          echo '**NOT RUN — no Quality Gate result.**' >> "$GITHUB_STEP_SUMMARY"
+
+  report-pr:
+    name: Publish Sonar result to PR
+    needs: [analyze, analysis-not-run]
+    if: >-
+      ${{ !cancelled() && github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]' }}
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 3
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Create or update Sonar result comment
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        env:
+          ANALYSIS_RESULT: ${{ needs.analyze.result }}
+        with:
+          script: |
+            const {owner, repo} = context.repo;
+            const issue_number = context.issue.number;
+            const expectedHead = context.payload.pull_request.head.sha;
+            const {data: pr} = await github.rest.pulls.get({
+              owner, repo, pull_number: issue_number,
+            });
+            if (pr.state !== 'open' || pr.head.sha !== expectedHead) {
+              core.notice('PR head changed or PR closed; skipping stale result.');
+              return;
+            }
+            const marker = '<!-- sonar-quality-gate-ci -->';
+            const result = process.env.ANALYSIS_RESULT;
+            const status = result === 'success'
+              ? 'PASS — Quality Gate passed'
+              : result === 'failure'
+                ? 'FAIL — scanner or Quality Gate failed'
+                : 'NOT RUN — no Quality Gate result';
+            const runUrl = 'https://github.com/' + owner + '/' + repo
+              + '/actions/runs/' + context.runId;
+            const dashboard = 'https://sonarcloud.io/dashboard?id='
+              + encodeURIComponent('rodri-oliveira-dev_rodri-oliveira-dev.github.io')
+              + '&pullRequest=' + issue_number;
+            const body = [
+              marker,
+              '## SonarQube Cloud',
+              '',
+              '**' + status + '**',
+              '',
+              'PR revision: `' + expectedHead + '`',
+              '',
+              '[Workflow summary and diagnostics](' + runUrl + ') | [SonarQube Cloud dashboard](' + dashboard + ')',
+              '',
+              'Scope: product code and eligible infrastructure; `.github/**` is covered by independent CI checks.',
+            ].join('\n');
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number, per_page: 100,
+            });
+            const existing = comments.find(comment =>
+              comment.user?.login === 'github-actions[bot]' &&
+              comment.body?.startsWith(marker + '\n'));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner, repo, comment_id: existing.id, body,
+              });
+            } else {
+              await github.rest.issues.createComment({owner, repo, issue_number, body});
+            }
