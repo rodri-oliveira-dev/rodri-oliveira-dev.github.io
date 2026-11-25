@@ -18,9 +18,9 @@ Este diretório registra escolhas que alteram responsabilidades, infraestrutura 
 | [0012](0012-controlar-publicacao-por-release-manual.md) | Coordenar releases manuais do monorepo | Accepted |
 | [0013](0013-sonarqube-cloud-no-ci.md) | Executar análise SonarQube Cloud no CI | Proposed |
 | [0014](0014-gerenciar-cosmos-sem-chaves-e-separar-iam.md) | Gerenciar Cosmos sem chaves e separar o IAM de runtime | Accepted |
-| [0015](0015-segregar-resource-groups-state-workload.md) | Segregar os Resource Groups de State e workload | Proposed |
-| [0016](0016-gerenciar-flex-via-azapi-sem-credenciais.md) | Gerenciar Function Flex via AzAPI sem credenciais de publicação | Proposed |
-| [0017](0017-gerenciar-log-analytics-via-azapi-sem-chaves.md) | Gerenciar Log Analytics via AzAPI sem chaves locais | Proposed |
+| [0015](0015-segregar-resource-groups-state-workload.md) | Segregar os Resource Groups de State e workload | Accepted |
+| [0016](0016-gerenciar-flex-via-azapi-sem-credenciais.md) | Gerenciar Function Flex via AzAPI sem credenciais de publicação | Accepted |
+| [0017](0017-gerenciar-log-analytics-via-azapi-sem-chaves.md) | Gerenciar Log Analytics via AzAPI sem chaves locais | Accepted |
 
 ## Como manter
 

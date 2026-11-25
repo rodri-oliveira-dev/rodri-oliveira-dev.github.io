@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -20,6 +20,6 @@ O Health Check nativo não é suportado no Flex segundo a documentação Microso
 
 O AzAPI evita as operações auxiliares de leitura de credenciais específicas do AzureRM Flex. GET do recurso ainda pode devolver propriedades sensíveis; a saída mínima não é garantia de ausência de dados sensíveis no body reconstruído pelo provider. Não adicionar segredos aos app settings, inspecionar apenas evidências sanitizadas de plano/State, verificar drift sem conceder list de configurações e manter os logs de debug desabilitados. A ausência de app settings no GET pode limitar a detecção de drift; revisar controles compensatórios antes de produção.
 
-Preflight usa validateResources no endpoint de provedor; RBAC efetivo, polling, políticas de publicação, compatibilidade regional de FC1, suporte ao limite de escala e operações restantes do AzureRM precisam ser comprovados. Atualizar matriz candidata sem autorizá-la. Não conceder privilégios sensíveis para contornar falhas. Nenhum apply, IAM, deploy, merge ou alteração de ADR aceita é autorizado por esta proposta.
+Preflight usa validateResources no endpoint de provedor; RBAC efetivo, polling, políticas de publicação, compatibilidade regional de FC1, suporte ao limite de escala e operações restantes do AzureRM precisam ser comprovados. Preservar a matriz candidata sem autorizá-la. Não conceder privilégios sensíveis para contornar falhas. Decisão aprovada pelo responsável pelo projeto em 25/11/2026, no contexto da issue #149. A aprovação arquitetural não autoriza apply, alterações de IAM ou deploy; os gates operacionais permanecem obrigatórios.
 
 Referências: [AzureRM Flex v5.14.0](https://github.com/hashicorp/terraform-provider-azurerm/blob/v5.14.0/internal/services/appservice/function_app_flex_consumption_resource.go#L598-L617), [AzAPI v2.14.0](https://github.com/Azure/terraform-provider-azapi/blob/v2.14.0/internal/services/azapi_resource.go), [ARM sites](https://learn.microsoft.com/azure/templates/microsoft.web/2024-11-01/sites), [políticas de publicação](https://learn.microsoft.com/azure/templates/microsoft.web/2024-11-01/sites/basicpublishingcredentialspolicies), [Health Check](https://learn.microsoft.com/azure/azure-functions/configure-monitoring).
