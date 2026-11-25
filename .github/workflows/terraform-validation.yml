@@ -88,6 +88,9 @@ jobs:
             terraform -chdir="$directory" validate -no-color
           done
 
+      - name: Test sanitized Terraform plan diagnostics
+        run: python3 .github/scripts/test_terraform_plan_diagnostics.py
+
       - name: Run credential-free Terraform unit tests
         run: terraform -chdir=infra/terraform test -test-directory=tests -no-color
 
@@ -203,6 +206,7 @@ jobs:
 
           set +e
           terraform plan \
+            -json \
             -detailed-exitcode \
             -input=false \
             -lock-timeout=5m \
@@ -220,6 +224,10 @@ jobs:
               ;;
             *)
               echo "Terraform plan failed. The potentially sensitive plan log was not published." >&2
+              if ! python3 ../../.github/scripts/terraform-plan-diagnostics.py "$plan_log" \
+                --exit-code "$plan_status" --summary "$GITHUB_STEP_SUMMARY" 2>/dev/null; then
+                echo "Safe diagnostic extraction failed; raw output withheld." >&2
+              fi
               exit "$plan_status"
               ;;
           esac
