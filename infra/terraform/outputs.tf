@@ -10,12 +10,12 @@ output "cosmos_subscriptions_container_id" {
 
 output "function_app_health_url" {
   description = "URL não secreta do health check usada pelo smoke test; não expõe operação administrativa."
-  value       = var.create_function_app ? "https://${azurerm_function_app_flex_consumption.notifications[0].default_hostname}/api/health" : null
+  value       = var.create_function_app ? "https://${azapi_resource.function_app[0].output.properties.defaultHostName}/api/health" : null
 }
 
 output "function_app_name" {
   description = "Nome da Function App usada pelo job de deploy coordenado."
-  value       = var.create_function_app ? azurerm_function_app_flex_consumption.notifications[0].name : null
+  value       = var.create_function_app ? azapi_resource.function_app[0].name : null
 }
 
 output "function_campaign_queue_id" {
