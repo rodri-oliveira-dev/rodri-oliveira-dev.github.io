@@ -33,7 +33,7 @@ mock_provider "azurerm" {
     override_during = plan
 
     defaults = {
-      id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-portfolio-push-workload-dev/providers/Microsoft.Web/serverFarms/asp-portfolio-push-dev"
+      id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/serverFarms/providers/Microsoft.Web/serverFarms/asp-portfolio-push-dev"
     }
   }
 }
@@ -109,8 +109,8 @@ run "default_cost_and_security_baseline" {
   }
 
   assert {
-    condition     = azapi_resource.function_app[0].body.properties.serverFarmId == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-portfolio-push-workload-dev/providers/Microsoft.Web/serverfarms/asp-portfolio-push-dev"
-    error_message = "O serverFarmId deve normalizar apenas o segmento serverfarms conforme o GET do Microsoft.Web."
+    condition     = azapi_resource.function_app[0].body.properties.serverFarmId == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/serverFarms/providers/Microsoft.Web/serverfarms/asp-portfolio-push-dev"
+    error_message = "O serverFarmId deve normalizar apenas o tipo posterior a Microsoft.Web e preservar os demais segmentos."
   }
 
   assert {

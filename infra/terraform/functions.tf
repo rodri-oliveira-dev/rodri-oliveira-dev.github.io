@@ -84,6 +84,8 @@ locals {
     Notifications__RequestTimeoutSeconds           = "15"
     AZURE_CLIENT_ID                                = azurerm_user_assigned_identity.functions_runtime.client_id
   }
+
+  function_service_plan_id_segments = split("/", azurerm_service_plan.functions.id)
 }
 
 resource "azapi_resource" "function_app" {
@@ -110,8 +112,8 @@ resource "azapi_resource" "function_app" {
       # `serverfarms`; o provider AzureRM expõe `serverFarms`. Preserve os
       # demais segmentos e normalize essa diferença para evitar update eterno.
       serverFarmId = join("/", [
-        for segment in split("/", azurerm_service_plan.functions.id) :
-        segment == "serverFarms" ? "serverfarms" : segment
+        for index, segment in local.function_service_plan_id_segments :
+        segment == "serverFarms" && try(local.function_service_plan_id_segments[index - 1] == "Microsoft.Web", false) ? "serverfarms" : segment
       ])
       enabled             = true
       httpsOnly           = true
