@@ -131,8 +131,13 @@ run "default_cost_and_security_baseline" {
   }
 
   assert {
-    condition     = azapi_resource.function_app[0].body.properties.httpsOnly && azapi_resource.function_app[0].body.properties.siteConfig.minTlsVersion == "1.2" && azapi_resource.function_app[0].body.properties.siteConfig.http20Enabled
-    error_message = "A Function deve exigir HTTPS e TLS 1.2 e preservar HTTP/2."
+    condition     = azapi_resource.function_app[0].body.properties.httpsOnly && azapi_resource.function_app[0].body.properties.siteConfig.http20Enabled
+    error_message = "A Function deve exigir HTTPS e preservar HTTP/2."
+  }
+
+  assert {
+    condition     = length(azapi_update_resource.function_tls_config) == 1 && azapi_update_resource.function_tls_config[0].body.properties.minTlsVersion == "1.2" && azapi_update_resource.function_tls_config[0].body.properties.scmMinTlsVersion == "1.2"
+    error_message = "Os endpoints principal e SCM devem exigir TLS 1.2 pelo recurso config/web do Flex."
   }
 
   assert {
@@ -169,7 +174,7 @@ run "foundation_before_runtime_iam" {
   }
 
   assert {
-    condition     = length(azapi_resource.function_app) == 0 && length(azapi_update_resource.function_publishing_policy) == 0
+    condition     = length(azapi_resource.function_app) == 0 && length(azapi_update_resource.function_tls_config) == 0 && length(azapi_update_resource.function_publishing_policy) == 0
     error_message = "Bootstrap deve criar dependências sem criar Function App."
   }
 

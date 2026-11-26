@@ -44,6 +44,8 @@ ADDRESSES = {
     "azapi_update_resource.function_publishing_policy",
     'azapi_update_resource.function_publishing_policy["ftp"]',
     'azapi_update_resource.function_publishing_policy["scm"]',
+    "azapi_update_resource.function_tls_config",
+    "azapi_update_resource.function_tls_config[0]",
     "azurerm_storage_account.functions", "azurerm_storage_container.function_releases",
     "azurerm_storage_queue.campaigns", "azurerm_storage_queue.campaigns_poison",
     "azurerm_service_plan.functions", "azurerm_user_assigned_identity.functions_runtime",

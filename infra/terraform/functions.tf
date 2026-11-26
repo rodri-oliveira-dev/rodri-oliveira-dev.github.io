@@ -133,7 +133,6 @@ resource "azapi_resource" "function_app" {
       }
       siteConfig = {
         http20Enabled = true
-        minTlsVersion = "1.2"
         appSettings = [
           for name, value in local.function_app_settings : {
             name  = name
@@ -146,6 +145,24 @@ resource "azapi_resource" "function_app" {
 
   lifecycle {
     prevent_destroy = true
+  }
+}
+
+# Flex persiste TLS no filho config/web, mas o GET do site não devolve esse
+# campo. Gerenciá-lo no recurso correto evita update perpétuo do site e inclui
+# o endpoint SCM usado pelo OneDeploy, sem habilitar credenciais básicas.
+resource "azapi_update_resource" "function_tls_config" {
+  count = var.create_function_app ? 1 : 0
+
+  type        = "Microsoft.Web/sites/config@2024-11-01"
+  resource_id = "${azapi_resource.function_app[0].id}/config/web"
+  locks       = [azapi_resource.function_app[0].id]
+
+  body = {
+    properties = {
+      minTlsVersion    = "1.2"
+      scmMinTlsVersion = "1.2"
+    }
   }
 }
 
