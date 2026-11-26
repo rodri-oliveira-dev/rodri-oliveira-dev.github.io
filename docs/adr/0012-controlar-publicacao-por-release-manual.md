@@ -37,7 +37,7 @@ Alternativas consideradas:
 - Workflows independentes: permitem cadências distintas, mas exigem coordenação manual ou mecanismo adicional de consistência. Workflows reutilizáveis continuam adequados como implementação de jobs, sem gatilhos independentes de implantação.
 - Pipeline única manual: oferece sequência auditável, SHA e versão comuns, aprovações por responsabilidade e agrupamento de vários PRs. O custo de coordenação é aceitável para a escala do portfólio.
 
-A [ADR 0018](0018-segregar-diagnostic-settings.md) complementa o fluxo: os Diagnostic Settings são operados em root separado, com verificação da fundação antes do plano/apply completo e gate protegido dos quatro settings antes do deploy do backend. A fundação não implica observabilidade pronta. A release não aplica esse root.
+A [ADR 0018](0018-segregar-diagnostic-settings.md) complementa o fluxo: os Diagnostic Settings são operados em root separado, com verificação da fundação antes do plano/apply completo e gate protegido dos quatro settings antes do deploy do backend. A fundação não implica observabilidade pronta. A release completa chama o workflow reutilizável de diagnostics após aplicar o workload, com confirmação adicional `APPLY-DIAGNOSTICS` e gates de plan/apply independentes; a verificação final continua usando o provisionador com leitura ARM. O acionamento manual de diagnóstico e as operações Terraform autenticadas compartilham a fila de release, sem adquirir a mesma fila dentro do workflow reutilizável.
 
 ## Consequences
 
