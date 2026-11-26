@@ -6,6 +6,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: production-release-${{ github.repository }}
+  cancel-in-progress: false
+
 jobs:
   validate:
     name: Validate Azure authentication
