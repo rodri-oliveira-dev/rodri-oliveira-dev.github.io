@@ -106,7 +106,13 @@ resource "azapi_resource" "function_app" {
   body = {
     kind = "functionapp,linux"
     properties = {
-      serverFarmId        = azurerm_service_plan.functions.id
+      # O GET do Microsoft.Web normaliza somente o segmento do tipo para
+      # `serverfarms`; o provider AzureRM expõe `serverFarms`. Preserve os
+      # demais segmentos e normalize essa diferença para evitar update eterno.
+      serverFarmId = join("/", [
+        for segment in split("/", azurerm_service_plan.functions.id) :
+        segment == "serverFarms" ? "serverfarms" : segment
+      ])
       enabled             = true
       httpsOnly           = true
       publicNetworkAccess = "Enabled"

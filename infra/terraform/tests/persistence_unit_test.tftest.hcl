@@ -28,6 +28,14 @@ mock_provider "azurerm" {
       primary_queue_endpoint = "https://stportpushdev1350159615.queue.core.windows.net/"
     }
   }
+
+  mock_resource "azurerm_service_plan" {
+    override_during = plan
+
+    defaults = {
+      id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-portfolio-push-workload-dev/providers/Microsoft.Web/serverFarms/asp-portfolio-push-dev"
+    }
+  }
 }
 
 mock_provider "azapi" {}
@@ -98,6 +106,11 @@ run "default_cost_and_security_baseline" {
   assert {
     condition     = azurerm_service_plan.functions.sku_name == "FC1" && azapi_resource.function_app[0].body.properties.functionAppConfig.runtime.name == "dotnet-isolated" && azapi_resource.function_app[0].body.properties.functionAppConfig.runtime.version == "10.0"
     error_message = "A Function deve usar Flex Consumption FC1 com .NET 10 isolated."
+  }
+
+  assert {
+    condition     = azapi_resource.function_app[0].body.properties.serverFarmId == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-portfolio-push-workload-dev/providers/Microsoft.Web/serverfarms/asp-portfolio-push-dev"
+    error_message = "O serverFarmId deve normalizar apenas o segmento serverfarms conforme o GET do Microsoft.Web."
   }
 
   assert {
