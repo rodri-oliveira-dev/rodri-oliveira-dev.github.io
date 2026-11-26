@@ -124,6 +124,12 @@ run "default_cost_and_security_baseline" {
     condition     = local.function_app_settings["CampaignQueue__credential"] == "managedidentity" && contains(keys(local.function_app_settings), "CampaignQueue__queueServiceUri") && !contains(keys(local.function_app_settings), "CampaignQueue")
     error_message = "O Queue Trigger deve usar endpoint de dados e Managed Identity, sem connection string."
   }
+
+  assert {
+    condition     = local.function_app_settings["AzureWebJobs.ProcessWebPushCampaign.Disabled"] == "true"
+    error_message = "O primeiro deploy deve manter o processamento de campanhas desabilitado até o gate de ativação da issue #150."
+  }
+
   assert {
     condition     = azapi_resource.function_app[0].body.properties.httpsOnly && azapi_resource.function_app[0].body.properties.siteConfig.minTlsVersion == "1.2" && azapi_resource.function_app[0].body.properties.siteConfig.http20Enabled
     error_message = "A Function deve exigir HTTPS e TLS 1.2 e preservar HTTP/2."

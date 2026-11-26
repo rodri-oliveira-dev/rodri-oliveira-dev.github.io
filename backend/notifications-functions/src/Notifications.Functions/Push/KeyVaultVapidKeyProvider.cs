@@ -1,6 +1,7 @@
 using Azure.Security.KeyVault.Secrets;
 using Microsoft.Extensions.Options;
 using Notifications.Functions.Configuration;
+using System.Security.Cryptography;
 
 namespace Notifications.Functions.Push;
 
@@ -26,6 +27,78 @@ internal interface IVapidKeyProvider
 internal interface ISecretValueReader
 {
     Task<string> GetValueAsync(string secretName, CancellationToken cancellationToken);
+}
+
+internal static class VapidKeyMaterialValidator
+{
+    private const int PrivateKeyLength = 32;
+    private const int PublicKeyLength = 65;
+
+    public static bool IsValidPair(string publicKey, string privateKey)
+    {
+        if (!TryDecode(publicKey, out var publicBytes)
+            || !TryDecode(privateKey, out var privateBytes))
+        {
+            return false;
+        }
+
+        try
+        {
+            if (publicBytes.Length != PublicKeyLength
+                || publicBytes[0] != 0x04
+                || privateBytes.Length != PrivateKeyLength)
+            {
+                return false;
+            }
+
+            using var signer = ECDsa.Create(new ECParameters
+            {
+                Curve = ECCurve.NamedCurves.nistP256,
+                D = privateBytes,
+            });
+            var derived = signer.ExportParameters(includePrivateParameters: false);
+            Span<byte> expected = stackalloc byte[PublicKeyLength];
+            expected[0] = 0x04;
+            derived.Q.X!.CopyTo(expected[1..33]);
+            derived.Q.Y!.CopyTo(expected[33..]);
+            return CryptographicOperations.FixedTimeEquals(publicBytes, expected);
+        }
+        catch (CryptographicException)
+        {
+            return false;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(privateBytes);
+        }
+    }
+
+    private static bool TryDecode(string value, out byte[] bytes)
+    {
+        bytes = [];
+        if (string.IsNullOrWhiteSpace(value)
+            || value.Any(character => !char.IsAsciiLetterOrDigit(character) && character is not '-' and not '_')
+            || value.Length % 4 == 1)
+        {
+            return false;
+        }
+
+        var padded = value.Replace('-', '+').Replace('_', '/');
+        padded += new string('=', (4 - padded.Length % 4) % 4);
+        try
+        {
+            bytes = Convert.FromBase64String(padded);
+            return true;
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+    }
 }
 
 internal sealed class KeyVaultSecretValueReader(SecretClient secretClient) : ISecretValueReader
@@ -84,9 +157,9 @@ internal sealed class KeyVaultVapidKeyProvider : IVapidKeyProvider, IDisposable
                 _options.VapidPrivateKeySecretName,
                 cancellationToken);
 
-            if (string.IsNullOrWhiteSpace(publicKey) || string.IsNullOrWhiteSpace(privateKey))
+            if (!VapidKeyMaterialValidator.IsValidPair(publicKey, privateKey))
             {
-                throw new InvalidOperationException("A configuração VAPID no Key Vault está incompleta.");
+                throw new InvalidOperationException("A configuração VAPID no Key Vault é inválida.");
             }
 
             _cached = new(_options.VapidSubject, publicKey, privateKey);
