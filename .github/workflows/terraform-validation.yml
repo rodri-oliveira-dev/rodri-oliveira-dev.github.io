@@ -23,6 +23,7 @@ on:
           - validate-oidc
           - plan
           - diagnose-fingerprint
+          - plan-foundation
 
 permissions:
   contents: read
@@ -96,6 +97,7 @@ jobs:
         run: |
           python3 .github/scripts/test_terraform_release_plan.py
           python3 .github/scripts/test_terraform_fingerprint_diagnostics.py
+          python3 .github/scripts/test_terraform_foundation_diagnostics.py
 
       - name: Run credential-free Terraform unit tests
         run: terraform -chdir=infra/terraform test -test-directory=tests -no-color
@@ -312,5 +314,84 @@ jobs:
           done
           if ! python3 ../../.github/scripts/terraform-fingerprint-diagnostics.py "$scratch/first.json" "$scratch/second.json" --summary "$GITHUB_STEP_SUMMARY" >"$scratch/comparison.log" 2>&1; then
             echo 'Terraform fingerprint comparison failed; raw output withheld.' >&2
+            exit 1
+          fi
+
+  plan_foundation:
+    name: Plan foundation only (protected)
+    needs: validate
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' &&
+      inputs.operation == 'plan-foundation'
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 20
+    environment: terraform-dev
+    permissions:
+      contents: read
+      id-token: write
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: infra/terraform
+
+    env:
+      ARM_USE_OIDC: 'true'
+      ARM_USE_AZUREAD: 'true'
+      ARM_USE_CLI: 'false'
+      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_tenant_id: ${{ vars.AZURE_TENANT_ID }}
+      TF_VAR_create_function_app: 'false'
+
+    steps:
+      - name: Checkout immutable main candidate
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Authenticate with the release Environment identity
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Generate sanitized foundation plan report
+        run: |
+          set -euo pipefail
+          umask 077
+          scratch="$(mktemp -d "$RUNNER_TEMP/terraform-foundation.XXXXXX")"
+          trap 'rm -rf -- "$scratch"' EXIT
+          trap 'exit 130' INT
+          trap 'exit 143' TERM
+          if ! terraform init -backend-config=backend.hcl.example -input=false -lockfile=readonly -no-color >"$scratch/init.log" 2>&1; then
+            echo 'Terraform foundation initialization failed; raw output withheld.' >&2
+            exit 1
+          fi
+          status=0
+          terraform plan -json -detailed-exitcode -input=false -lock-timeout=5m -no-color -out="$scratch/plan.tfplan" >"$scratch/plan.log" 2>&1 || status=$?
+          if [ "$status" -ne 0 ] && [ "$status" -ne 2 ]; then
+            if ! python3 ../../.github/scripts/terraform-plan-diagnostics.py "$scratch/plan.log" --exit-code "$status" --summary "$GITHUB_STEP_SUMMARY" 2>/dev/null; then
+              echo 'Safe foundation diagnostic extraction failed; raw output withheld.' >&2
+            fi
+            exit "$status"
+          fi
+          if ! terraform show -json "$scratch/plan.tfplan" >"$scratch/plan.json" 2>"$scratch/show.log"; then
+            echo 'Terraform foundation plan conversion failed; raw output withheld.' >&2
+            exit 1
+          fi
+          if ! python3 ../../.github/scripts/terraform-foundation-diagnostics.py "$scratch/plan.json" --summary "$GITHUB_STEP_SUMMARY" 2>"$scratch/report.log"; then
+            echo 'Safe foundation report failed; raw output withheld.' >&2
             exit 1
           fi
