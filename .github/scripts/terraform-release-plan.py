@@ -70,6 +70,10 @@ def main() -> None:
     except (OSError, ValueError, TypeError, KeyError, AttributeError):
         raise SystemExit("Invalid Terraform plan; raw output withheld.") from None
 
+    # A legacy setting requires explicit reconciliation, never deletion by release.
+    if any(item["type"] == "azurerm_monitor_diagnostic_setting" for item in result["changes"]):
+        raise SystemExit("Diagnostic setting change in workload plan; reconcile separate State before release.")
+
     output = Path(os.environ["GITHUB_OUTPUT"])
     with output.open("a", encoding="utf-8") as handle:
         handle.write(f"fingerprint={result['fingerprint']}\n")

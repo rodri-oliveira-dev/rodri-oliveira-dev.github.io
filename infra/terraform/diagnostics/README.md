@@ -1,0 +1,11 @@
+# Diagnostic Settings — root separado dev
+
+Implementação da ADR 0018. Não cria workspace, Function, Storage, IAM ou segredos. Usa IDs ARM fixos do workload dev e backend isolado. Não lê State de outro root.
+
+## Pré-requisitos e execução
+
+A issue #149 deve autorizar separadamente criação do container privado `tfstate-diagnostics` (versionamento da conta existente), identidade distinta e atribuições mínimas: Blob Data Contributor exclusivamente no novo container, diagnosticSettings/read e write nos alvos existentes, workspaces/read e sharedKeys/action no workspace específico, e somente permissões auxiliares comprovadas. Nunca recuperar chaves, conceder permissões ao provisionador normal ou habilitar autenticação local. Confirmar ausência de settings nos States antigos e no ARM antes do primeiro plano; se existir, interromper e reconciliar. Não operar simultaneamente com outro Terraform, exceto a pausa explícita do gate de diagnóstico após término do apply de workload.
+
+Operador autorizado usa checkout imutável da main e Terraform 1.17.2. Autenticar com identidade distinta (não a da release). Informar subscription_id e tenant_id via variáveis de ambiente TF_VAR e configurar autenticação Entra CLI explicitamente no backend e provider; não usar chaves. Inicializar com backend.hcl.example, use_oidc=false, use_cli=true, lockfile readonly, sem migração. A configuração OIDC permanece default para eventual fluxo protegido posterior, não implementado aqui. Revisar plano local e publicar somente endereços/ações sanitizados. Não publicar plano, State, valores, IDs ou logs brutos. Apply depende de autorização explícita separada, plano aprovado e comparação da revisão; não há Apply automatizado neste root.
+
+Na fundação, `include_function=false` (default): três creates esperados. Após criação da Function, durante o gate protegido da release, usar `include_function=true`: somente o quarto create esperado. Manter true nas execuções futuras. Os recursos têm prevent_destroy; não usar opções de destruição, import ou manipulação de State sem procedimento próprio. O gate da release verifica os quatro settings por GET antes do deploy, não comprova ingestão efetiva. Nenhum comando de provisionamento está autorizado por esta documentação.

@@ -37,6 +37,8 @@ Alternativas consideradas:
 - Workflows independentes: permitem cadências distintas, mas exigem coordenação manual ou mecanismo adicional de consistência. Workflows reutilizáveis continuam adequados como implementação de jobs, sem gatilhos independentes de implantação.
 - Pipeline única manual: oferece sequência auditável, SHA e versão comuns, aprovações por responsabilidade e agrupamento de vários PRs. O custo de coordenação é aceitável para a escala do portfólio.
 
+A [ADR 0018](0018-segregar-diagnostic-settings.md) complementa o fluxo: os Diagnostic Settings são operados em root separado, com verificação da fundação antes do plano/apply completo e gate protegido dos quatro settings antes do deploy do backend. A fundação não implica observabilidade pronta. A release não aplica esse root.
+
 ## Consequences
 
 A main pode ficar à frente da produção por decisão operacional. A publicação requer ação humana e validações bem-sucedidas. Pages deve usar GitHub Actions, não publicação por branch.
