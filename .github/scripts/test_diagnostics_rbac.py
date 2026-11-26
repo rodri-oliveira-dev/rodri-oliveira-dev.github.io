@@ -54,20 +54,14 @@ class DiagnosticsRbacTests(unittest.TestCase):
             self.assertNotIn("*", action)
         self.assertEqual(role["dataActions"], [])
 
-    def test_post_diagnostics_candidate_removes_only_write(self):
-        baseline = load("provisioner-candidate.json")
-        candidate = load("provisioner-post-diagnostics-candidate.json")
-        self.assertEqual(candidate["status"], "candidate-awaiting-iam-approval")
-        self.assertEqual(candidate["scopeResourceGroup"], baseline["scopeResourceGroup"])
-        self.assertEqual(candidate["dataActions"], [])
-        self.assertIn(DIAGNOSTIC_READ, candidate["actions"])
-        self.assertNotIn(DIAGNOSTIC_WRITE, candidate["actions"])
-        self.assertEqual(
-            set(baseline["actions"]) - set(candidate["actions"]),
-            {DIAGNOSTIC_WRITE},
-        )
-        self.assertEqual(set(candidate["actions"]) - set(baseline["actions"]), set())
-        self.assertEqual(len(candidate["actions"]), len(set(candidate["actions"])))
+    def test_effective_provisioner_keeps_read_without_diagnostics_write(self):
+        role = load("provisioner-candidate.json")
+        self.assertEqual(role["status"], "approved-effective")
+        self.assertEqual(role["dataActions"], [])
+        self.assertIn(DIAGNOSTIC_READ, role["actions"])
+        self.assertNotIn(DIAGNOSTIC_WRITE, role["actions"])
+        self.assertEqual(len(role["actions"]), 40)
+        self.assertEqual(len(role["actions"]), len(set(role["actions"])))
 
 
 if __name__ == "__main__":

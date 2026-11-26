@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -12,9 +12,9 @@ O gate da release principal continua usando ARM GET para verificar destino e cat
 
 ## Decision
 
-Propor a remoção exclusiva de `Microsoft.Insights/diagnosticSettings/write` da Custom Role `Portfolio Push Workload Provisioner`, preservando `diagnosticSettings/read` e todas as outras Actions até suas dependências serem avaliadas separadamente. A matriz pós-segregação fica registrada em `provisioner-post-diagnostics-candidate.json`; ela não é uma role aplicável nem autoriza mutação de IAM.
+Remover exclusivamente `Microsoft.Insights/diagnosticSettings/write` da Custom Role `Portfolio Push Workload Provisioner`, preservando `diagnosticSettings/read` e todas as outras Actions até suas dependências serem avaliadas separadamente. A matriz canônica fica registrada em `provisioner-candidate.json` com 40 Actions.
 
-A alteração efetiva depende de aprovação humana específica na issue #149. Antes de executá-la, reler a definição e confirmar que ainda coincide com o baseline de 41 Actions, que não há release ou operação Terraform concorrente e que os quatro gates de Diagnostics continuam atribuídos às identidades separadas. Atualizar somente a definição existente, sem trocar escopo, principal, atribuições, NotActions ou DataActions. Depois da propagação, reler a definição completa, executar o gate ARM somente leitura e um Plan protegido da fundação. Não executar Apply da fundação para validar a redução.
+A alteração foi aprovada explicitamente pelo responsável na issue #149 em 26/11/2026. Antes da execução, a definição efetiva foi relida e comparada ao baseline de 41 Actions. A atualização removeu somente a Action aprovada, sem trocar escopo, principal, atribuições, NotActions ou DataActions; a releitura confirmou 40 Actions, `diagnosticSettings/read` presente e `sharedKeys/action` ausente. O gate ARM somente leitura e um Plan protegido da fundação permanecem como validações pós-propagação. Não executar Apply da fundação para validar a redução.
 
 Se a definição divergir do baseline, se o Plan exigir escrita de Diagnostics ou se um gate somente leitura falhar por autorização, interromper. O rollback restaura somente a Action removida na mesma definição e no mesmo escopo, seguido das mesmas verificações; não conceder Contributor, Owner, curingas ou papéis adicionais.
 
