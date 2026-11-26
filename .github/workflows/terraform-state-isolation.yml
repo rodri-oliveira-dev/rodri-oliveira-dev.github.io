@@ -1,0 +1,168 @@
+name: Validate Terraform State isolation
+
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: Exact validated main commit SHA
+        required: true
+        type: string
+      confirmation:
+        description: Enter VALIDATE-STATE-ISOLATION
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-release-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: Validate main revision and credential-free CI
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REVISION: ${{ inputs.revision }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+    steps:
+      - name: Require manual main dispatch and successful exact-revision CI
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = workflow_dispatch
+          test "$GITHUB_REF" = refs/heads/main
+          test "$REVISION" = "$GITHUB_SHA"
+          [[ "$REVISION" =~ ^[0-9a-f]{40}$ ]]
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)" = "$REVISION"
+          test "$CONFIRMATION" = VALIDATE-STATE-ISOLATION
+          result="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/terraform-validation.yml/runs?branch=main&head_sha=$REVISION&event=push&per_page=100" --jq '[.workflow_runs[] | select(.event == "push")] | max_by(.id) | .conclusion')"
+          test "$result" = success || { echo 'Exact-revision Terraform CI must succeed.' >&2; exit 1; }
+
+  foundation:
+    name: Probe foundation identity
+    needs: preflight
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 10
+    environment: terraform-dev
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      REVISION: ${{ inputs.revision }}
+      AZURE_CORE_OUTPUT: none
+      EXPECTED_CLIENT: ${{ secrets.STATE_ISOLATION_CLIENT_ID }}
+      EXPECTED_CONFIGURATION_MATCH: ${{ secrets.STATE_ISOLATION_CLIENT_ID != '' && secrets.STATE_ISOLATION_CLIENT_ID == vars.AZURE_CLIENT_ID && secrets.STATE_ISOLATION_TENANT_ID != '' && secrets.STATE_ISOLATION_TENANT_ID == vars.AZURE_TENANT_ID && secrets.STATE_ISOLATION_SUBSCRIPTION_ID != '' && secrets.STATE_ISOLATION_SUBSCRIPTION_ID == vars.AZURE_SUBSCRIPTION_ID }}
+      EXPECTED_TENANT: ${{ secrets.STATE_ISOLATION_TENANT_ID }}
+      EXPECTED_SUBSCRIPTION: ${{ secrets.STATE_ISOLATION_SUBSCRIPTION_ID }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.revision }}
+      - name: Mask Azure configuration and recheck main after Environment approval
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$EXPECTED_CONFIGURATION_MATCH" = true || { echo "Masked identity configuration absent or inconsistent." >&2; exit 1; }
+          printf 'AZURE_CONFIG_DIR=%s/state-isolation-azure\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+          for value in "$EXPECTED_CLIENT" "$EXPECTED_TENANT" "$EXPECTED_SUBSCRIPTION"; do
+            [[ "$value" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]
+            printf '::add-mask::%s\n' "$value"
+          done
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = workflow_dispatch
+          test "$GITHUB_REF" = refs/heads/main
+          test "$REVISION" = "$GITHUB_SHA"
+          [[ "$REVISION" =~ ^[0-9a-f]{40}$ ]]
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)" = "$REVISION"
+          test "$(git rev-parse HEAD)" = "$REVISION"
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ env.EXPECTED_CLIENT }}
+          tenant-id: ${{ env.EXPECTED_TENANT }}
+          subscription-id: ${{ env.EXPECTED_SUBSCRIPTION }}
+      - name: Probe both containers with the same Entra token
+        run: python3 .github/scripts/verify-state-isolation.py foundation
+
+  diagnostics:
+    name: Probe diagnostics identity
+    needs: preflight
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 10
+    environment: diagnostics-dev
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      REVISION: ${{ inputs.revision }}
+      AZURE_CORE_OUTPUT: none
+      EXPECTED_CLIENT: ${{ secrets.STATE_ISOLATION_CLIENT_ID }}
+      EXPECTED_CONFIGURATION_MATCH: ${{ secrets.STATE_ISOLATION_CLIENT_ID != '' && secrets.STATE_ISOLATION_CLIENT_ID == vars.AZURE_DIAGNOSTICS_CLIENT_ID && secrets.STATE_ISOLATION_TENANT_ID != '' && secrets.STATE_ISOLATION_TENANT_ID == vars.AZURE_TENANT_ID && secrets.STATE_ISOLATION_SUBSCRIPTION_ID != '' && secrets.STATE_ISOLATION_SUBSCRIPTION_ID == vars.AZURE_SUBSCRIPTION_ID }}
+      EXPECTED_TENANT: ${{ secrets.STATE_ISOLATION_TENANT_ID }}
+      EXPECTED_SUBSCRIPTION: ${{ secrets.STATE_ISOLATION_SUBSCRIPTION_ID }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.revision }}
+      - name: Mask Azure configuration and recheck main after Environment approval
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$EXPECTED_CONFIGURATION_MATCH" = true || { echo "Masked identity configuration absent or inconsistent." >&2; exit 1; }
+          printf 'AZURE_CONFIG_DIR=%s/state-isolation-azure\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+          for value in "$EXPECTED_CLIENT" "$EXPECTED_TENANT" "$EXPECTED_SUBSCRIPTION"; do
+            [[ "$value" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]
+            printf '::add-mask::%s\n' "$value"
+          done
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = workflow_dispatch
+          test "$GITHUB_REF" = refs/heads/main
+          test "$REVISION" = "$GITHUB_SHA"
+          [[ "$REVISION" =~ ^[0-9a-f]{40}$ ]]
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)" = "$REVISION"
+          test "$(git rev-parse HEAD)" = "$REVISION"
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ env.EXPECTED_CLIENT }}
+          tenant-id: ${{ env.EXPECTED_TENANT }}
+          subscription-id: ${{ env.EXPECTED_SUBSCRIPTION }}
+      - name: Probe both containers with the same Entra token
+        run: python3 .github/scripts/verify-state-isolation.py diagnostics
+
+  report:
+    name: Require all four expected access results
+    needs: [preflight, foundation, diagnostics]
+    if: always()
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 5
+    permissions: {}
+    env:
+      PREFLIGHT: ${{ needs.preflight.result }}
+      FOUNDATION: ${{ needs.foundation.result }}
+      DIAGNOSTICS: ${{ needs.diagnostics.result }}
+      REVISION: ${{ github.sha }}
+    steps:
+      - name: Consolidate sanitized result
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '### State isolation gate\n\nRevision: %s\n\n' "$REVISION" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Preflight: %s\n\nFoundation: %s\n\nDiagnostics: %s\n\n' "$PREFLIGHT" "$FOUNDATION" "$DIAGNOSTICS" >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$PREFLIGHT" == success && "$FOUNDATION" == success && "$DIAGNOSTICS" == success ]]; then
+            echo 'PASS: all four expected List Blobs results observed.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'FAIL: isolation not established.' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
