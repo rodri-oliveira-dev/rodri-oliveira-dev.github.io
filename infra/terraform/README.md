@@ -277,6 +277,16 @@ Esta operação não inicializa o backend remoto, não lê nem altera o State e 
 
 A operação manual `plan` de `Terraform validation` usa a UI JSON do Terraform somente em arquivo temporário no runner. Em caso de falha, um extrator publica no log e no resumo apenas categoria, códigos HTTP/Azure reconhecidos, operações ARM da matriz ou de uma lista explícita de operações auxiliares, endereços Terraform conhecidos e exit code. Campos desconhecidos são omitidos; a classificação é indicativa, não comprova a causa nem autoriza ampliar IAM. O log bruto e o plano permanecem privados no runner e são removidos pelo trap; não há artifact, debug ou mudança de preflight. Se a extração falhar, o workflow continua falhando sem publicar a saída bruta. Os testes da lista de permissão e de não vazamento rodam no CI sem credenciais. O job de apply da release também captura a UI JSON em arquivo temporário e, somente em caso de falha, reutiliza o mesmo extrator sanitizado, preservando o exit code original. A aprovação do plano, a validação de fingerprint e a proteção contra alterações destrutivas permanecem obrigatórias; falha no extrator não autoriza continuar. Nenhum log bruto ou State é publicado.
 
+### Diagnóstico da fundação e drift (#149)
+
+A operação manual `plan-foundation` de **Terraform validation** executa exclusivamente na `main`, após aprovação do Environment `terraform-dev`, com a mesma identidade OIDC, Terraform e lockfile da release. Força `create_function_app=false`, usa refresh e lock normais e gera um único plano efêmero. Execute somente durante o bootstrap, antes da criação da Function App, e não simultaneamente com release ou outras operações Terraform. O plano pode adquirir/liberar o lease e consultar a Azure; não executa apply, import, restore, deploy ou IAM.
+
+```powershell
+gh workflow run terraform-validation.yml --ref main -f operation=plan-foundation
+```
+
+O relatório no Summary e no log separa ações planejadas de drift reportado pelo refresh. Para updates da conta Cosmos e do container, compara caminhos estáticos permitidos de before/after e sinaliza valores desconhecidos ou campos agregados; não publica valores, nomes arbitrários, IDs, planos ou State. Endereços desconhecidos são substituídos por marcador fixo. Diferenças de serialização e ordem de arrays podem ser legítimas; o relatório não prova causa raiz, equivalência ou idempotência futura. Não é o manifesto de aprovação da release. Arquivos privados no runner são removidos por trap, sem artifacts. Erros de plan usam o extrator sanitizado existente; falhas de extração bloqueiam o workflow. Nenhum Apply é autorizado.
+
 ### Diagnóstico de divergência do fingerprint da release (#149)
 
 A operação manual `diagnose-fingerprint` do workflow **Terraform validation** executa apenas na `main`, com aprovação do Environment `terraform-dev`, a identidade de provisionamento e as versões fixadas da release. Ela força `create_function_app=false` e gera dois planos independentes, sequenciais, no mesmo runner, com refresh e lock normais. Não execute simultaneamente com release, outras operações Terraform ou alterações manuais. A operação pode consultar a Azure e adquirir/liberar o lease do State; não executa apply, import, destroy, deploy ou alterações de IAM.
