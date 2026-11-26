@@ -21,6 +21,11 @@ on:
         description: Type APPLY after reviewing the protected workload plan
         required: true
         type: string
+      diagnostics_confirmation:
+        description: Type APPLY-DIAGNOSTICS for a full release; leave empty for foundation bootstrap
+        required: false
+        type: string
+        default: ''
       allow_destructive_terraform_changes:
         description: Explicitly approve Terraform deletes or replacements
         required: true
@@ -88,6 +93,17 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
           ref: ${{ github.sha }}
+      - name: Validate diagnostic Apply intent
+        env:
+          BOOTSTRAP_ONLY: ${{ inputs.bootstrap_foundation_only }}
+          DIAGNOSTICS_CONFIRMATION: ${{ inputs.diagnostics_confirmation }}
+        run: |
+          set -euo pipefail
+          if [ "$BOOTSTRAP_ONLY" = true ]; then
+            test -z "$DIAGNOSTICS_CONFIRMATION"
+          else
+            test "$DIAGNOSTICS_CONFIRMATION" = APPLY-DIAGNOSTICS || { echo 'Full release requires APPLY-DIAGNOSTICS.' >&2; exit 1; }
+          fi
       - name: Check source, gates, release inputs and version
         id: plan
         env:
@@ -246,9 +262,24 @@ jobs:
           echo "function_app_name=$(terraform output -raw function_app_name)" >>"$GITHUB_OUTPUT"
           echo "health_url=$(terraform output -raw function_app_health_url)" >>"$GITHUB_OUTPUT"
 
+  diagnostics_apply:
+    name: Reconcile diagnostic settings
+    needs: [preflight, terraform_apply]
+    if: ${{ !inputs.bootstrap_foundation_only }}
+    uses: ./.github/workflows/terraform-diagnostics-reusable.yml
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+    with:
+      revision: ${{ needs.preflight.outputs.sha }}
+      include_function: true
+      operation: apply
+      confirmation: ${{ inputs.diagnostics_confirmation }}
+
   diagnostics_gate:
     name: Verify all diagnostic settings before backend deployment
-    needs: [preflight, terraform_apply]
+    needs: [preflight, terraform_apply, diagnostics_apply]
     if: ${{ !inputs.bootstrap_foundation_only }}
     runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 10

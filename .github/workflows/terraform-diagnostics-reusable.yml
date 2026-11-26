@@ -1,0 +1,160 @@
+name: Reusable protected diagnostics
+
+on:
+  workflow_call:
+    inputs:
+      revision:
+        required: true
+        type: string
+      include_function:
+        required: true
+        type: boolean
+      operation:
+        required: true
+        type: string
+      confirmation:
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    name: Validate diagnostic operation and revision
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      DIAGNOSTICS_SHA: ${{ inputs.revision }}
+      DIAGNOSTICS_OPERATION: ${{ inputs.operation }}
+      DIAGNOSTICS_CONFIRMATION: ${{ inputs.confirmation }}
+    steps:
+      - name: Require manual main dispatch and validated SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = workflow_dispatch
+          test "$GITHUB_REF" = refs/heads/main
+          test "$DIAGNOSTICS_SHA" = "$GITHUB_SHA"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)" = "$DIAGNOSTICS_SHA"
+          case "$DIAGNOSTICS_OPERATION" in
+            plan) test -z "$DIAGNOSTICS_CONFIRMATION" ;;
+            apply) test "$DIAGNOSTICS_CONFIRMATION" = APPLY-DIAGNOSTICS ;;
+            *) exit 1 ;;
+          esac
+          result="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/terraform-validation.yml/runs?branch=main&head_sha=$DIAGNOSTICS_SHA&event=push&per_page=100" --jq '[.workflow_runs[] | select(.event == "push")] | max_by(.id) | .conclusion')"
+          test "$result" = success || { echo 'Terraform CI for the exact main revision must succeed.' >&2; exit 1; }
+
+  plan:
+    name: Plan diagnostic settings
+    needs: preflight
+    outputs:
+      fingerprint: ${{ steps.manifest.outputs.fingerprint }}
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 20
+    environment: diagnostics-dev
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        shell: bash
+        working-directory: infra/terraform/diagnostics
+    env:
+      ARM_USE_OIDC: 'true'
+      ARM_USE_AZUREAD: 'true'
+      ARM_USE_CLI: 'false'
+      ARM_CLIENT_ID: ${{ vars.AZURE_DIAGNOSTICS_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_tenant_id: ${{ vars.AZURE_TENANT_ID }}
+      TF_VAR_include_function: ${{ inputs.include_function }}
+      TF_IN_AUTOMATION: 'true'
+      TF_INPUT: 'false'
+      GH_TOKEN: ${{ github.token }}
+      DIAGNOSTICS_SHA: ${{ inputs.revision }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.revision }}
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: '1.17.2'
+          terraform_wrapper: false
+      - name: Recheck main before obtaining Azure credentials
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$DIAGNOSTICS_SHA"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)" = "$DIAGNOSTICS_SHA"
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_DIAGNOSTICS_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Create sanitized diagnostic action manifest
+        id: manifest
+        run: bash ../../../.github/scripts/run-diagnostics-terraform.sh plan
+
+  apply:
+    name: Apply approved diagnostic settings plan
+    needs: [preflight, plan]
+    if: inputs.operation == 'apply'
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 20
+    environment: diagnostics-dev
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        shell: bash
+        working-directory: infra/terraform/diagnostics
+    env:
+      ARM_USE_OIDC: 'true'
+      ARM_USE_AZUREAD: 'true'
+      ARM_USE_CLI: 'false'
+      ARM_CLIENT_ID: ${{ vars.AZURE_DIAGNOSTICS_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_tenant_id: ${{ vars.AZURE_TENANT_ID }}
+      TF_VAR_include_function: ${{ inputs.include_function }}
+      TF_IN_AUTOMATION: 'true'
+      TF_INPUT: 'false'
+      GH_TOKEN: ${{ github.token }}
+      DIAGNOSTICS_SHA: ${{ inputs.revision }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.revision }}
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: '1.17.2'
+          terraform_wrapper: false
+      - name: Recheck main before obtaining Azure credentials
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$DIAGNOSTICS_SHA"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)" = "$DIAGNOSTICS_SHA"
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_DIAGNOSTICS_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Replan, compare fingerprint and apply
+        env:
+          APPROVED_FINGERPRINT: ${{ needs.plan.outputs.fingerprint }}
+        run: bash ../../../.github/scripts/run-diagnostics-terraform.sh apply
+      - name: Verify diagnostic settings via ARM GET
+        run: |
+          args=()
+          if [ "$TF_VAR_include_function" = true ]; then args+=(--include-function); fi
+          python3 ../../../.github/scripts/verify-diagnostics.py "${args[@]}"

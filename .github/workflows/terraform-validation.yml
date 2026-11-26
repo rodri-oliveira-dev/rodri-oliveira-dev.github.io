@@ -29,7 +29,10 @@ permissions:
   contents: read
 
 concurrency:
-  group: terraform-${{ github.repository }}-${{ github.ref }}
+  group: >-
+    ${{ github.event_name == 'workflow_dispatch' && inputs.operation != 'validate'
+      && format('production-release-{0}', github.repository)
+      || format('terraform-ci-{0}-{1}', github.repository, github.ref) }}
   cancel-in-progress: false
 
 env:
