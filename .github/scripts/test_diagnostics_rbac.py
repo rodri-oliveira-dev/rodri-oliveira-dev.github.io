@@ -6,6 +6,8 @@ import unittest
 RBAC = Path(__file__).resolve().parents[2] / "infra" / "terraform" / "rbac"
 SCOPE = "/subscriptions/{subscriptionId}/resourceGroups/rg-portfolio-push-workload-dev"
 SHARED_KEYS = "Microsoft.OperationalInsights/workspaces/sharedKeys/action"
+DIAGNOSTIC_READ = "Microsoft.Insights/diagnosticSettings/read"
+DIAGNOSTIC_WRITE = "Microsoft.Insights/diagnosticSettings/write"
 SOURCE = [
     "Microsoft.Insights/diagnosticSettings/read",
     "Microsoft.Insights/diagnosticSettings/write",
@@ -51,6 +53,21 @@ class DiagnosticsRbacTests(unittest.TestCase):
             self.assertNotEqual(action.casefold(), SHARED_KEYS.casefold())
             self.assertNotIn("*", action)
         self.assertEqual(role["dataActions"], [])
+
+    def test_post_diagnostics_candidate_removes_only_write(self):
+        baseline = load("provisioner-candidate.json")
+        candidate = load("provisioner-post-diagnostics-candidate.json")
+        self.assertEqual(candidate["status"], "candidate-awaiting-iam-approval")
+        self.assertEqual(candidate["scopeResourceGroup"], baseline["scopeResourceGroup"])
+        self.assertEqual(candidate["dataActions"], [])
+        self.assertIn(DIAGNOSTIC_READ, candidate["actions"])
+        self.assertNotIn(DIAGNOSTIC_WRITE, candidate["actions"])
+        self.assertEqual(
+            set(baseline["actions"]) - set(candidate["actions"]),
+            {DIAGNOSTIC_WRITE},
+        )
+        self.assertEqual(set(candidate["actions"]) - set(baseline["actions"]), set())
+        self.assertEqual(len(candidate["actions"]), len(set(candidate["actions"])))
 
 
 if __name__ == "__main__":

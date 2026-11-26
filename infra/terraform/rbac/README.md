@@ -2,6 +2,8 @@
 
 A lista [provisioner-candidate.json](provisioner-candidate.json) contém ações ARM candidatas, derivadas dos tipos declarados e do gate de leitura de IAM. Não é um arquivo de role definition aplicável. Não criar/atribuir uma função a partir dessa lista sem revisão do catálogo real e das chamadas dos providers fixados.
 
+A matriz [provisioner-post-diagnostics-candidate.json](provisioner-post-diagnostics-candidate.json) registra a candidata pós-segregação: mantém a leitura exigida pelos gates ARM e remove exclusivamente `Microsoft.Insights/diagnosticSettings/write`. A [ADR 0019](../../../docs/adr/0019-restringir-escrita-de-diagnostics-do-provisionador.md) está `Proposed`; nem o arquivo nem sua integração autorizam atualizar IAM. A mutação exige aprovação específica, correspondência exata com o baseline, ausência de operação concorrente, validação protegida e plano de reversão.
+
 | Recurso/controle | Operações candidatas |
 | --- | --- |
 | User Assigned Identity | read, write, assign/action para associação à Function |
