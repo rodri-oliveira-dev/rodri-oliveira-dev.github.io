@@ -1,0 +1,41 @@
+name: Terraform diagnostics
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Plan only or apply with a second protected approval
+        required: true
+        type: choice
+        default: plan
+        options: [plan, apply]
+      include_function:
+        description: Include Function App only after creation; keep enabled thereafter
+        required: true
+        type: boolean
+        default: false
+      confirmation:
+        description: Type APPLY-DIAGNOSTICS for apply; leave empty for plan
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-release-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  diagnostics:
+    uses: ./.github/workflows/terraform-diagnostics-reusable.yml
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+    with:
+      revision: ${{ github.sha }}
+      include_function: ${{ inputs.include_function }}
+      operation: ${{ inputs.operation }}
+      confirmation: ${{ inputs.confirmation }}
