@@ -34,10 +34,11 @@ resource "azapi_resource" "cosmos_account" {
       enableMultipleWriteLocations       = false
       ipRules                            = []
       isVirtualNetworkFilterEnabled      = false
+      # ARM returns the canonical display name for this single permitted region.
       locations = [{
         failoverPriority = 0
         isZoneRedundant  = false
-        locationName     = data.azurerm_resource_group.web_push.location
+        locationName     = "Brazil South"
       }]
       minimalTlsVersion           = "Tls12"
       networkAclBypass            = "None"
@@ -94,6 +95,8 @@ resource "azapi_resource" "subscriptions_container" {
           excludedPaths = [
             { path = "/endpoint/?" },
             { path = "/keys/*" },
+            # Cosmos adds this default exclusion in its ARM response.
+            { path = "/\"_etag\"/?" },
           ]
         }
         partitionKey = {
