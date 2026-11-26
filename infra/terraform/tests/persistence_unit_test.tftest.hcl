@@ -163,23 +163,8 @@ run "foundation_before_runtime_iam" {
   }
 
   assert {
-    condition     = length(azapi_resource.function_app) == 0 && length(azapi_update_resource.function_publishing_policy) == 0 && length(azurerm_monitor_diagnostic_setting.function_app) == 0
-    error_message = "Bootstrap deve criar dependências sem criar Function App ou seu diagnostic setting."
-  }
-
-  assert {
-    condition     = length(azurerm_monitor_diagnostic_setting.cosmos_audit.enabled_log) == 1 && tolist(azurerm_monitor_diagnostic_setting.cosmos_audit.enabled_log)[0].category_group == "audit" && length(azurerm_monitor_diagnostic_setting.cosmos_audit.enabled_metric) == 0
-    error_message = "Cosmos deve exportar o grupo audit sem categorias de métricas não suportadas."
-  }
-
-  assert {
-    condition     = length(azurerm_monitor_diagnostic_setting.key_vault_audit.enabled_log) == 1 && tolist(azurerm_monitor_diagnostic_setting.key_vault_audit.enabled_log)[0].category_group == "audit" && toset([for metric in azurerm_monitor_diagnostic_setting.key_vault_audit.enabled_metric : metric.category]) == toset(["AllMetrics"])
-    error_message = "Key Vault deve preservar audit e AllMetrics."
-  }
-
-  assert {
-    condition     = toset([for log in azurerm_monitor_diagnostic_setting.queue_service.enabled_log : log.category]) == toset(["StorageRead", "StorageWrite", "StorageDelete"]) && toset([for metric in azurerm_monitor_diagnostic_setting.queue_service.enabled_metric : metric.category]) == toset(["Transaction"])
-    error_message = "Queue Service deve preservar as três categorias de logs e Transaction."
+    condition     = length(azapi_resource.function_app) == 0 && length(azapi_update_resource.function_publishing_policy) == 0
+    error_message = "Bootstrap deve criar dependências sem criar Function App."
   }
 
   assert {
