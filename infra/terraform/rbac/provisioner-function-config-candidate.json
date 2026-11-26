@@ -1,0 +1,10 @@
+{
+  "status": "proposed",
+  "scopeResourceGroup": "rg-portfolio-push-workload-dev",
+  "base": "provisioner-candidate.json",
+  "additionalActions": [
+    "Microsoft.Web/sites/config/read",
+    "Microsoft.Web/sites/config/write"
+  ],
+  "dataActions": []
+}
