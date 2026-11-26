@@ -57,10 +57,10 @@ jobs:
     env:
       REVISION: ${{ inputs.revision }}
       AZURE_CORE_OUTPUT: none
-      AZURE_CONFIG_DIR: ${{ runner.temp }}/state-isolation-azure
-      EXPECTED_CLIENT: ${{ vars.AZURE_CLIENT_ID }}
-      EXPECTED_TENANT: ${{ vars.AZURE_TENANT_ID }}
-      EXPECTED_SUBSCRIPTION: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      EXPECTED_CLIENT: ${{ secrets.STATE_ISOLATION_CLIENT_ID }}
+      EXPECTED_CONFIGURATION_MATCH: ${{ secrets.STATE_ISOLATION_CLIENT_ID != '' && secrets.STATE_ISOLATION_CLIENT_ID == vars.AZURE_CLIENT_ID && secrets.STATE_ISOLATION_TENANT_ID != '' && secrets.STATE_ISOLATION_TENANT_ID == vars.AZURE_TENANT_ID && secrets.STATE_ISOLATION_SUBSCRIPTION_ID != '' && secrets.STATE_ISOLATION_SUBSCRIPTION_ID == vars.AZURE_SUBSCRIPTION_ID }}
+      EXPECTED_TENANT: ${{ secrets.STATE_ISOLATION_TENANT_ID }}
+      EXPECTED_SUBSCRIPTION: ${{ secrets.STATE_ISOLATION_SUBSCRIPTION_ID }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -72,6 +72,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          test "$EXPECTED_CONFIGURATION_MATCH" = true || { echo "Masked identity configuration absent or inconsistent." >&2; exit 1; }
+          printf 'AZURE_CONFIG_DIR=%s/state-isolation-azure\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
           for value in "$EXPECTED_CLIENT" "$EXPECTED_TENANT" "$EXPECTED_SUBSCRIPTION"; do
             [[ "$value" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]
             printf '::add-mask::%s\n' "$value"
@@ -103,10 +105,10 @@ jobs:
     env:
       REVISION: ${{ inputs.revision }}
       AZURE_CORE_OUTPUT: none
-      AZURE_CONFIG_DIR: ${{ runner.temp }}/state-isolation-azure
-      EXPECTED_CLIENT: ${{ vars.AZURE_DIAGNOSTICS_CLIENT_ID }}
-      EXPECTED_TENANT: ${{ vars.AZURE_TENANT_ID }}
-      EXPECTED_SUBSCRIPTION: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      EXPECTED_CLIENT: ${{ secrets.STATE_ISOLATION_CLIENT_ID }}
+      EXPECTED_CONFIGURATION_MATCH: ${{ secrets.STATE_ISOLATION_CLIENT_ID != '' && secrets.STATE_ISOLATION_CLIENT_ID == vars.AZURE_DIAGNOSTICS_CLIENT_ID && secrets.STATE_ISOLATION_TENANT_ID != '' && secrets.STATE_ISOLATION_TENANT_ID == vars.AZURE_TENANT_ID && secrets.STATE_ISOLATION_SUBSCRIPTION_ID != '' && secrets.STATE_ISOLATION_SUBSCRIPTION_ID == vars.AZURE_SUBSCRIPTION_ID }}
+      EXPECTED_TENANT: ${{ secrets.STATE_ISOLATION_TENANT_ID }}
+      EXPECTED_SUBSCRIPTION: ${{ secrets.STATE_ISOLATION_SUBSCRIPTION_ID }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -118,6 +120,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          test "$EXPECTED_CONFIGURATION_MATCH" = true || { echo "Masked identity configuration absent or inconsistent." >&2; exit 1; }
+          printf 'AZURE_CONFIG_DIR=%s/state-isolation-azure\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
           for value in "$EXPECTED_CLIENT" "$EXPECTED_TENANT" "$EXPECTED_SUBSCRIPTION"; do
             [[ "$value" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]
             printf '::add-mask::%s\n' "$value"

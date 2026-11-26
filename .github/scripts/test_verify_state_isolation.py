@@ -5,7 +5,7 @@ import os
 import subprocess
 import unittest
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, ANY
 
 spec = importlib.util.spec_from_file_location("isolation", Path(__file__).with_name("verify-state-isolation.py"))
 m = importlib.util.module_from_spec(spec)
@@ -74,7 +74,7 @@ class ClassifierTests(unittest.TestCase):
         response.read.return_value = listing()
         self.assertEqual(m.probe("tfstate", "fake"), "ALLOWED")
         connection.request.assert_called_once_with("GET", "/tfstate?restype=container&comp=list&maxresults=1",
-            headers={"Authorization": "Bearer fake", "x-ms-version": m.API_VERSION, "Accept": "application/xml"})
+            headers={"Authorization": "Bearer fake", "x-ms-version": m.API_VERSION, "x-ms-date": ANY, "Accept": "application/xml"})
         response.read.assert_called_once_with(m.LIMIT + 1)
         connection.close.assert_called_once()
         connection.getresponse.side_effect = TimeoutError("private detail")

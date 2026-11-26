@@ -5,10 +5,11 @@ Issue #149, atividade 7.3.7.22.10. Preserva ADRs 0017/0018. Este teste não alte
 ## Execução (somente após autorização específica)
 
 1. Merge revisado do PR; confirmar SHA atual da main e sucesso do workflow Terraform validation (push desse SHA). Confirmar separadamente que terraform-dev e diagnostics-dev possuem restrição de deployment à main e gates de aprovação exigidos; este workflow não configura Environments. Confirmar que as duas variáveis de cliente correspondem às identidades já inventariadas e que não houve alteração de RBAC.
-2. Acionar manualmente Validate Terraform State isolation na main, informando revision (SHA completo) e confirmation = VALIDATE-STATE-ISOLATION. Não iniciar outros workflows de infraestrutura/release enquanto pendente; o grupo production-release é compartilhado e o GitHub pode substituir execuções pendentes.
-3. Aprovar os dois jobs protegidos somente após conferir revisão e escopo. Cada job revalida main e checkout antes de Azure Login; a identidade do contexto CLI é conferida sem divulgação dos identificadores.
-4. Consultar o resumo dos dois jobs e o gate final. Aceitar somente foundation→foundation ALLOWED, foundation→diagnostics DENIED, diagnostics→diagnostics ALLOWED, diagnostics→foundation DENIED e conclusão global success na mesma execução. Qualquer erro, skip, cancelamento, acesso cruzado permitido ou resultado inconclusivo bloqueia aceite. Não repetir automaticamente; reconciliar primeiro.
-5. Registrar URL/SHA/resultados sanitizados na issue #149. Reconciliar main e Plans antes de eventual Apply, que exige autorização distinta.
+2. Pré-requisito de confidencialidade (bloqueante): em cada Environment, provisionar mediante autorização específica os secrets STATE_ISOLATION_CLIENT_ID, STATE_ISOLATION_TENANT_ID e STATE_ISOLATION_SUBSCRIPTION_ID, com os mesmos valores das variáveis existentes correspondentes (AZURE_CLIENT_ID ou AZURE_DIAGNOSTICS_CLIENT_ID, AZURE_TENANT_ID e AZURE_SUBSCRIPTION_ID). Não são credenciais de acesso, mas identificadores que precisam de mascaramento antes do cabeçalho dos steps. O job compara os valores via expressão booleana e falha antes do login se ausentes ou divergentes; não há fallback para vars. Não configurar nesta atividade.
+3. Acionar manualmente Validate Terraform State isolation na main, informando revision (SHA completo) e confirmation = VALIDATE-STATE-ISOLATION. Não iniciar outros workflows de infraestrutura/release enquanto pendente; o grupo production-release é compartilhado e o GitHub pode substituir execuções pendentes.
+4. Aprovar os dois jobs protegidos somente após conferir revisão e escopo. Cada job revalida main e checkout antes de Azure Login; a identidade do contexto CLI é conferida sem divulgação dos identificadores.
+5. Consultar o resumo dos dois jobs e o gate final. Aceitar somente foundation→foundation ALLOWED, foundation→diagnostics DENIED, diagnostics→diagnostics ALLOWED, diagnostics→foundation DENIED e conclusão global success na mesma execução. Qualquer erro, skip, cancelamento, acesso cruzado permitido ou resultado inconclusivo bloqueia aceite. Não repetir automaticamente; reconciliar primeiro.
+6. Registrar URL/SHA/resultados sanitizados na issue #149. Reconciliar main e Plans antes de eventual Apply, que exige autorização distinta.
 
 ## Contrato
 
@@ -29,3 +30,5 @@ Testes sem credenciais: python3 .github/scripts/test_verify_state_isolation.py; 
 - https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments
 - https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax
 - https://docs.github.com/en/actions/reference/security/secure-use
+
+A revisão de segurança identificou que add-mask durante um step não protege valores de vars já impressos pelo runner no cabeçalho. Por isso o workflow usa secrets para mascaramento nativo e compara com vars sem materializar os valores das vars nos logs. O gate externo de configuração permanece pendente. Referência: https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets

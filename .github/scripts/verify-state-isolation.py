@@ -1,4 +1,5 @@
 """Read-only, fail-closed Storage data-plane isolation probe (stdlib only)."""
+from email.utils import formatdate
 import http.client
 import json
 import os
@@ -70,6 +71,7 @@ def probe(container, token):
         connection.request("GET", f"/{container}?restype=container&comp=list&maxresults=1",
                            headers={"Authorization": f"Bearer {token}",
                                     "x-ms-version": API_VERSION,
+                                    "x-ms-date": formatdate(usegmt=True),
                                     "Accept": "application/xml"})
         response = connection.getresponse()
         return classify(response.status, response.getheader("x-ms-error-code"),
