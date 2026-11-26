@@ -51,6 +51,16 @@ run "default_cost_and_security_baseline" {
   }
 
   assert {
+    condition     = azapi_resource.cosmos_account.location == "brazilsouth" && length(azapi_resource.cosmos_account.body.properties.locations) == 1 && azapi_resource.cosmos_account.body.properties.locations[0].locationName == "Brazil South" && azapi_resource.cosmos_account.body.properties.locations[0].failoverPriority == 0 && !azapi_resource.cosmos_account.body.properties.locations[0].isZoneRedundant
+    error_message = "Cosmos deve preservar Brazil South, uma região sem redundância zonal e o nome canônico retornado pelo ARM."
+  }
+
+  assert {
+    condition     = jsonencode([for item in azapi_resource.subscriptions_container.body.properties.resource.indexingPolicy.excludedPaths : item.path]) == jsonencode(["/endpoint/?", "/keys/*", "/\"_etag\"/?"])
+    error_message = "As exclusões devem preservar os paths sensíveis e explicitar a exclusão padrão de _etag na ordem retornada pelo ARM."
+  }
+
+  assert {
     condition     = azapi_resource.cosmos_account.body.properties.enableFreeTier == false
     error_message = "Free Tier não é compatível com Cosmos DB Serverless."
   }
