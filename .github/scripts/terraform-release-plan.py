@@ -60,18 +60,66 @@ def analyze(plan: dict) -> dict:
     }
 
 
+DIAGNOSTIC_TYPE = "azurerm_monitor_diagnostic_setting"
+FOUNDATION_DIAGNOSTICS = {
+    f"{DIAGNOSTIC_TYPE}.cosmos_audit",
+    f"{DIAGNOSTIC_TYPE}.key_vault_audit",
+    f"{DIAGNOSTIC_TYPE}.queue_service",
+}
+FUNCTION_DIAGNOSTIC = f"{DIAGNOSTIC_TYPE}.function_app[0]"
+
+
+def validate_diagnostic_plan(plan: dict, include_function: bool) -> None:
+    """Fail closed before emitting any address or fingerprint for an invalid plan."""
+    if plan.get("complete") is not True or plan.get("errored") is not False:
+        raise ValueError("Incomplete diagnostic plan")
+    allowed = FOUNDATION_DIAGNOSTICS | ({FUNCTION_DIAGNOSTIC} if include_function else set())
+    changes = plan.get("resource_changes", [])
+    if not isinstance(changes, list):
+        raise ValueError("Invalid diagnostic changes")
+    seen = set()
+    for resource in changes:
+        address = resource["address"]
+        change = resource["change"]
+        if (
+            address not in allowed or address in seen
+            or resource["type"] != DIAGNOSTIC_TYPE
+            or resource.get("mode") != "managed"
+            or resource.get("previous_address") is not None
+            or change.get("importing") is not None
+            or change.get("actions") not in (["no-op"], ["create"], ["update"])
+        ):
+            raise ValueError("Unexpected diagnostic resource or action")
+        seen.add(address)
+        if change["actions"] != ["no-op"] and plan.get("applyable") is not True:
+            raise ValueError("Diagnostic plan is not applyable")
+    if seen != allowed:
+        raise ValueError("Missing required diagnostic addresses")
+    if plan.get("deferred_changes") or plan.get("action_invocations"):
+        raise ValueError("Unexpected deferred changes or invocations")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("plan_json", type=Path)
     parser.add_argument("--allow-destructive", action="store_true")
+    parser.add_argument("--scope", choices=("workload", "diagnostics"), default="workload")
+    parser.add_argument("--include-function", action="store_true")
     args = parser.parse_args()
     try:
-        result = analyze(json.loads(args.plan_json.read_text(encoding="utf-8")))
+        plan = json.loads(args.plan_json.read_text(encoding="utf-8"))
+        if args.scope == "diagnostics":
+            if args.allow_destructive:
+                raise ValueError("Diagnostic destruction is never allowed")
+            validate_diagnostic_plan(plan, args.include_function)
+        elif args.include_function:
+            raise ValueError("Diagnostic scope is required")
+        result = analyze(plan)
     except (OSError, ValueError, TypeError, KeyError, AttributeError):
         raise SystemExit("Invalid Terraform plan; raw output withheld.") from None
 
     # A legacy setting requires explicit reconciliation, never deletion by release.
-    if any(item["type"] == "azurerm_monitor_diagnostic_setting" for item in result["changes"]):
+    if args.scope == "workload" and any(item["type"] == DIAGNOSTIC_TYPE for item in result["changes"]):
         raise SystemExit("Diagnostic setting change in workload plan; reconcile separate State before release.")
 
     output = Path(os.environ["GITHUB_OUTPUT"])
@@ -85,7 +133,7 @@ def main() -> None:
         handle.write("### Terraform action manifest\n\n")
         handle.write(f"Fingerprint: `{result['fingerprint']}`\n\n")
         if not result["changes"]:
-            handle.write("No workload changes.\n")
+            handle.write(f"No {args.scope} changes.\n")
         else:
             handle.write("| Address | Actions |\n|---|---|\n")
             for item in result["changes"]:

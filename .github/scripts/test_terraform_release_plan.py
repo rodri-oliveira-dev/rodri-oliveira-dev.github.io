@@ -153,5 +153,69 @@ class TerraformReleasePlanTests(unittest.TestCase):
                 self.assertTrue(result["destructive"])
 
 
+    def diagnostic_plan(self, include_function=False, action="create"):
+        addresses = module.FOUNDATION_DIAGNOSTICS | ({module.FUNCTION_DIAGNOSTIC} if include_function else set())
+        return {"complete": True, "errored": False, "applyable": action != "no-op",
+                "resource_changes": [
+                    {"address": address, "mode": "managed", "type": module.DIAGNOSTIC_TYPE,
+                     "change": {"actions": [action]}} for address in sorted(addresses)
+                ]}
+
+    def test_diagnostic_scope_valid(self):
+        for include in (False, True):
+            for action in ("create", "update", "no-op"):
+                with self.subTest(include=include, action=action):
+                    module.validate_diagnostic_plan(self.diagnostic_plan(include, action), include)
+
+    def test_diagnostic_scope_rejects_unsafe_plans(self):
+        mutations = (
+            lambda p: p.update(complete=False),
+            lambda p: p.update(errored=True),
+            lambda p: p.update(applyable=False),
+            lambda p: p.update(deferred_changes=[{}]),
+            lambda p: p.update(action_invocations=[{}]),
+            lambda p: p["resource_changes"].pop(),
+            lambda p: p["resource_changes"].append(copy.deepcopy(p["resource_changes"][0])),
+            lambda p: p["resource_changes"][0].update(address="PRIVATE_CANARY"),
+            lambda p: p["resource_changes"][0].update(mode="data"),
+            lambda p: p["resource_changes"][0].update(type="azurerm_key_vault"),
+            lambda p: p["resource_changes"][0].update(previous_address="old"),
+            lambda p: p["resource_changes"][0]["change"].update(importing={"id": "secret"}),
+            lambda p: p["resource_changes"][0]["change"].update(actions=["delete"]),
+            lambda p: p["resource_changes"][0]["change"].update(actions=["create", "delete"]),
+            lambda p: p["resource_changes"][0]["change"].update(actions=["forget"]),
+        )
+        for mutation in mutations:
+            plan = self.diagnostic_plan()
+            mutation(plan)
+            with self.assertRaises(ValueError):
+                module.validate_diagnostic_plan(plan, False)
+        with self.assertRaises(ValueError):
+            module.validate_diagnostic_plan(self.diagnostic_plan(True), False)
+        with self.assertRaises(ValueError):
+            module.validate_diagnostic_plan(self.diagnostic_plan(False), True)
+
+    def test_diagnostic_cli_blocks_destruction_and_unexpected_addresses(self):
+        with tempfile.TemporaryDirectory() as directory:
+            plan_file = Path(directory) / "plan.json"
+            output = Path(directory) / "output"
+            summary = Path(directory) / "summary"
+            env = {**os.environ, "GITHUB_OUTPUT": str(output), "GITHUB_STEP_SUMMARY": str(summary)}
+            plan = self.diagnostic_plan()
+            plan["resource_changes"][0]["address"] = "PRIVATE_CANARY"
+            plan_file.write_text(json.dumps(plan), encoding="utf-8")
+            cmd = [sys.executable, str(Path(__file__).with_name("terraform-release-plan.py")),
+                   str(plan_file), "--scope", "diagnostics"]
+            result = subprocess.run(cmd, env=env, capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertFalse(output.exists())
+            self.assertFalse(summary.exists())
+            self.assertNotIn("PRIVATE_CANARY", result.stdout + result.stderr)
+            plan_file.write_text(json.dumps(self.diagnostic_plan()), encoding="utf-8")
+            result = subprocess.run(cmd + ["--allow-destructive"], env=env, capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertFalse(output.exists())
+
+
 if __name__ == "__main__":
     unittest.main()
