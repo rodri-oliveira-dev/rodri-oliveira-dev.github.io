@@ -64,24 +64,9 @@ class DiagnosticsRbacTests(unittest.TestCase):
         self.assertEqual(role["dataActions"], [])
         self.assertIn(DIAGNOSTIC_READ, role["actions"])
         self.assertNotIn(DIAGNOSTIC_WRITE, role["actions"])
-        self.assertEqual(len(role["actions"]), 40)
+        self.assertTrue(FUNCTION_CONFIG.issubset(role["actions"]))
+        self.assertEqual(len(role["actions"]), 42)
         self.assertEqual(len(role["actions"]), len(set(role["actions"])))
-
-    def test_proposed_function_config_delta_is_exact_and_value_free(self):
-        effective = load("provisioner-candidate.json")
-        candidate = load("provisioner-function-config-candidate.json")
-        self.assertEqual(set(candidate), {
-            "status", "scopeResourceGroup", "base", "additionalActions",
-            "dataActions",
-        })
-        self.assertEqual(candidate["status"], "proposed")
-        self.assertEqual(candidate["base"], "provisioner-candidate.json")
-        self.assertEqual(
-            candidate["scopeResourceGroup"], effective["scopeResourceGroup"]
-        )
-        self.assertEqual(set(candidate["additionalActions"]), FUNCTION_CONFIG)
-        self.assertEqual(candidate["dataActions"], [])
-        self.assertTrue(FUNCTION_CONFIG.isdisjoint(effective["actions"]))
 
 
 if __name__ == "__main__":

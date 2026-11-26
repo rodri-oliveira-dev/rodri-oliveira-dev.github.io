@@ -40,6 +40,8 @@
     "Microsoft.Web/serverfarms/write",
     "Microsoft.Web/sites/basicPublishingCredentialsPolicies/read",
     "Microsoft.Web/sites/basicPublishingCredentialsPolicies/write",
+    "Microsoft.Web/sites/config/read",
+    "Microsoft.Web/sites/config/write",
     "Microsoft.Web/sites/read",
     "Microsoft.Web/sites/write"
   ],

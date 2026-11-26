@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -14,7 +14,9 @@ Ignorar todo o `siteConfig` ocultaria drift de configurações operacionais. Man
 
 Remover somente `minTlsVersion` do corpo do recurso `sites` e gerenciar `minTlsVersion=1.2` e `scmMinTlsVersion=1.2` em `Microsoft.Web/sites/config@2024-11-01`, recurso `web`, por `azapi_update_resource`. Preservar `httpsOnly=true`, HTTP/2, OIDC, as políticas SCM/FTP desabilitadas e todas as demais propriedades da ADR 0016.
 
-A mudança exige adicionar exclusivamente `Microsoft.Web/sites/config/read` e `Microsoft.Web/sites/config/write` à Custom Role do provisionador no mesmo Resource Group. O delta não inclui DataActions, curingas, IAM write, credenciais de publicação, Contributor ou Owner. A matriz proposta fica separada do baseline efetivo até aprovação humana específica.
+A mudança exige adicionar exclusivamente `Microsoft.Web/sites/config/read` e `Microsoft.Web/sites/config/write` à Custom Role do provisionador no mesmo Resource Group. O delta não inclui DataActions, curingas, IAM write, credenciais de publicação, Contributor ou Owner.
+
+A decisão e o delta IAM foram aprovados explicitamente pelo responsável na issue #149 em 26/11/2026. Antes da atualização, a definição efetiva correspondia exatamente à matriz de 40 Actions. A releitura posterior confirmou 42 Actions, adição exclusiva das duas Actions aprovadas, zero DataActions/curingas, nenhuma permissão ausente ou inesperada e o mesmo escopo.
 
 Aplicar somente após Plan protegido cujo manifesto contenha a criação lógica de `function_tls_config` e a reconciliação do site sem delete ou replacement. Verificar ambos os valores por `config/web`, executar novo Plan e exigir idempotência. O rollback restaura o baseline de 40 Actions e a modelagem anterior no mesmo PR de reversão; não remover TLS efetivo durante a reversão.
 
@@ -22,4 +24,4 @@ Aplicar somente após Plan protegido cujo manifesto contenha a criação lógica
 
 Terraform passa a usar a superfície ARM que persiste e devolve os limites de TLS do Flex, eliminando o update perpétuo sem ignorar o controle. O endpoint SCM também fica explicitamente limitado a TLS 1.2, independentemente de credenciais básicas continuarem desabilitadas.
 
-O provisionador recebe duas Actions adicionais no escopo já existente. Embora restritas ao tipo `sites/config`, elas permitem alterar outras configurações desse filho em qualquer Function dentro do Resource Group; esse risco residual é menor que papéis genéricos, mas exige aprovação e auditoria do delta efetivo. A decisão não cria capacidade, altera SKU, ativa campanhas, envia Web Push ou adiciona custo direto.
+O provisionador recebe duas Actions adicionais no escopo já existente. Embora restritas ao tipo `sites/config`, elas permitem alterar outras configurações desse filho em qualquer Function dentro do Resource Group; esse risco residual é menor que papéis genéricos e foi aceito com auditoria do delta efetivo. A decisão não cria capacidade, altera SKU, ativa campanhas, envia Web Push ou adiciona custo direto.
