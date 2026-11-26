@@ -110,6 +110,7 @@ jobs:
           python3 .github/scripts/test_verify_diagnostics.py
           python3 .github/scripts/test_diagnostics_rbac.py
           python3 .github/scripts/test_verify_state_isolation.py
+          python3 .github/scripts/test_validate_state_isolation_configuration.py
 
   reject_untrusted_dispatch:
     name: Reject untrusted Terraform dispatch
