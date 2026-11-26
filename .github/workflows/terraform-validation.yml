@@ -63,7 +63,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          for directory in infra/terraform infra/terraform/identity-reconciliation infra/terraform/runtime-iam; do
+          for directory in infra/terraform infra/terraform/identity-reconciliation infra/terraform/runtime-iam infra/terraform/diagnostics; do
             terraform -chdir="$directory" providers lock \
               -platform=linux_amd64 \
               -platform=windows_amd64 \
@@ -74,14 +74,15 @@ jobs:
           git diff --exit-code -- \
             infra/terraform/.terraform.lock.hcl \
             infra/terraform/identity-reconciliation/.terraform.lock.hcl \
-            infra/terraform/runtime-iam/.terraform.lock.hcl
+            infra/terraform/runtime-iam/.terraform.lock.hcl \
+            infra/terraform/diagnostics/.terraform.lock.hcl
 
       - name: Initialize and validate without remote backend
         shell: bash
         run: |
           set -euo pipefail
 
-          for directory in infra/terraform infra/terraform/identity-reconciliation infra/terraform/runtime-iam; do
+          for directory in infra/terraform infra/terraform/identity-reconciliation infra/terraform/runtime-iam infra/terraform/diagnostics; do
             terraform -chdir="$directory" init \
               -backend=false \
               -input=false \
@@ -100,7 +101,10 @@ jobs:
           python3 .github/scripts/test_terraform_foundation_diagnostics.py
 
       - name: Run credential-free Terraform unit tests
-        run: terraform -chdir=infra/terraform test -test-directory=tests -no-color
+        run: |
+          terraform -chdir=infra/terraform test -test-directory=tests -no-color
+          terraform -chdir=infra/terraform/diagnostics test -test-directory=tests -no-color
+          python3 .github/scripts/test_verify_diagnostics.py
 
   reject_untrusted_dispatch:
     name: Reject untrusted Terraform dispatch

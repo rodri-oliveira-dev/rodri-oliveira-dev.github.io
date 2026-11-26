@@ -142,6 +142,9 @@ jobs:
       - name: Verify runtime IAM before planning Function App
         if: ${{ !inputs.bootstrap_foundation_only }}
         run: python3 ../../.github/scripts/verify-runtime-iam.py
+      - name: Verify foundation diagnostic settings before Function
+        if: ${{ !inputs.bootstrap_foundation_only }}
+        run: python3 ../../.github/scripts/verify-diagnostics.py
       - name: Create value-free action manifest
         id: manifest
         env:
@@ -205,6 +208,9 @@ jobs:
       - name: Recheck runtime IAM before creating Function App
         if: ${{ !inputs.bootstrap_foundation_only }}
         run: python3 ../../.github/scripts/verify-runtime-iam.py
+      - name: Verify foundation diagnostic settings before Function
+        if: ${{ !inputs.bootstrap_foundation_only }}
+        run: python3 ../../.github/scripts/verify-diagnostics.py
       - name: Replan and apply the approved action manifest
         env:
           APPROVED_FINGERPRINT: ${{ needs.terraform_plan.outputs.fingerprint }}
@@ -232,13 +238,38 @@ jobs:
           echo 'Applied the revalidated ephemeral workload plan; no plan, log, or State artifact was retained.' >>"$GITHUB_STEP_SUMMARY"
       - name: Record foundation-only completion
         if: inputs.bootstrap_foundation_only
-        run: echo "Foundation ready for operator IAM and VAPID configuration; no Function App, site publication, tag or release." >>"$GITHUB_STEP_SUMMARY"
+        run: echo "Foundation resources ready for separate diagnostics, runtime IAM and VAPID configuration; no Function App, site publication, tag or release." >>"$GITHUB_STEP_SUMMARY"
       - name: Export non-secret deployment coordinates
         if: ${{ !inputs.bootstrap_foundation_only }}
         id: coordinates
         run: |
           echo "function_app_name=$(terraform output -raw function_app_name)" >>"$GITHUB_OUTPUT"
           echo "health_url=$(terraform output -raw function_app_health_url)" >>"$GITHUB_OUTPUT"
+
+  diagnostics_gate:
+    name: Verify all diagnostic settings before backend deployment
+    needs: [preflight, terraform_apply]
+    if: ${{ !inputs.bootstrap_foundation_only }}
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 10
+    environment: terraform-dev
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          ref: ${{ needs.preflight.outputs.sha }}
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Verify diagnostics via read-only ARM
+        run: python3 .github/scripts/verify-diagnostics.py --include-function
 
   backend_package:
     name: Package notifications backend
@@ -273,7 +304,7 @@ jobs:
 
   backend_deploy:
     name: Deploy and verify notifications backend
-    needs: [preflight, terraform_apply, backend_package]
+    needs: [preflight, terraform_apply, backend_package, diagnostics_gate]
     runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 20
     environment: functions-dev
