@@ -21,6 +21,7 @@ Este diretório registra escolhas que alteram responsabilidades, infraestrutura 
 | [0015](0015-segregar-resource-groups-state-workload.md) | Segregar os Resource Groups de State e workload | Accepted |
 | [0016](0016-gerenciar-flex-via-azapi-sem-credenciais.md) | Gerenciar Function Flex via AzAPI sem credenciais de publicação | Accepted |
 | [0017](0017-gerenciar-log-analytics-via-azapi-sem-chaves.md) | Gerenciar Log Analytics via AzAPI sem chaves locais | Accepted |
+| [0018](0018-segregar-diagnostic-settings.md) | Segregar o provisionamento de Diagnostic Settings | Accepted |
 
 ## Como manter
 
