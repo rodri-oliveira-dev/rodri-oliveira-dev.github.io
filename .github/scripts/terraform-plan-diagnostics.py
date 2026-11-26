@@ -25,6 +25,7 @@ CODES = {
     "LeaseIdMissing", "ResourceAlreadyExists",
 }
 EXTRA_ACTIONS = {
+    "Microsoft.Insights/diagnosticSettings/write",
     "Microsoft.Resources/validateResources/action",
     "Microsoft.Resources/deployments/validate/action",
     "Microsoft.Storage/storageAccounts/listKeys/action",
