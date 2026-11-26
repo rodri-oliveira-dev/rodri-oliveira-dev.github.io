@@ -1,0 +1,15 @@
+{
+  "Name": "Portfolio Push Diagnostics Workspace Linker",
+  "IsCustom": true,
+  "Description": "Link diagnostic settings to the explicitly assigned workspace; sensitive shared keys action.",
+  "Actions": [
+    "Microsoft.OperationalInsights/workspaces/read",
+    "Microsoft.OperationalInsights/workspaces/sharedKeys/action"
+  ],
+  "NotActions": [],
+  "DataActions": [],
+  "NotDataActions": [],
+  "AssignableScopes": [
+    "/subscriptions/{subscriptionId}/resourceGroups/rg-portfolio-push-workload-dev"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "Name": "Portfolio Push Diagnostics Source Operator",
+  "IsCustom": true,
+  "Description": "Manage diagnostic settings on explicitly assigned source resources; no deletion or IAM administration.",
+  "Actions": [
+    "Microsoft.Insights/diagnosticSettings/read",
+    "Microsoft.Insights/diagnosticSettings/write",
+    "Microsoft.Insights/diagnosticSettingsCategories/read"
+  ],
+  "NotActions": [],
+  "DataActions": [],
+  "NotDataActions": [],
+  "AssignableScopes": [
+    "/subscriptions/{subscriptionId}/resourceGroups/rg-portfolio-push-workload-dev"
+  ]
+}

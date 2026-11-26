@@ -108,6 +108,7 @@ jobs:
           terraform -chdir=infra/terraform test -test-directory=tests -no-color
           terraform -chdir=infra/terraform/diagnostics test -test-directory=tests -no-color
           python3 .github/scripts/test_verify_diagnostics.py
+          python3 .github/scripts/test_diagnostics_rbac.py
 
   reject_untrusted_dispatch:
     name: Reject untrusted Terraform dispatch
