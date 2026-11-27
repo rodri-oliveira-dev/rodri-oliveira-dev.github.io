@@ -62,4 +62,23 @@ public sealed class ServiceCollectionExtensionsTests
 
         Assert.Throws<OptionsValidationException>(() => _ = options.Value);
     }
+
+    [Fact]
+    public void AddNotificationsBackend_RejectsPushTtlBeyondServiceWorkerLifetime()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Notifications:KeyVaultUri"] = "https://kv-example.vault.azure.net/",
+                ["Notifications:PushTimeToLiveSeconds"] = "86401",
+            })
+            .Build();
+        var services = new ServiceCollection();
+        services.AddNotificationsBackend(configuration);
+
+        using var provider = services.BuildServiceProvider();
+        var options = provider.GetRequiredService<IOptions<WebPushOptions>>();
+
+        Assert.Throws<OptionsValidationException>(() => _ = options.Value);
+    }
 }

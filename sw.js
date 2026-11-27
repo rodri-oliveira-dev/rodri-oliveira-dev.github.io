@@ -79,7 +79,7 @@ const parsePushPayload = (rawPayload) => {
   try {
     const payload = JSON.parse(rawPayload);
     if (!payload || Array.isArray(payload) || typeof payload !== "object" ||
-        JSON.stringify(Object.keys(payload).sort()) !== JSON.stringify(PUSH_PAYLOAD_FIELDS) ||
+        JSON.stringify(Object.keys(payload).sort((left, right) => left.localeCompare(right))) !== JSON.stringify(PUSH_PAYLOAD_FIELDS) ||
         payload.version !== PUSH_PAYLOAD_VERSION || payload.lang !== "pt-BR") return null;
 
     const title = boundedText(payload.title, 80);
