@@ -55,6 +55,13 @@ test("an unmapped published resource falls back to a full audit", () => {
   assert.deepEqual(result.pages, pages);
 });
 
+test("published documentation and shared artifacts are not treated as internal", () => {
+  for (const file of ["docs/pwa.md", "docs/webmcp.pt-BR.md",
+    "docs/contracts/webmcp-services.v1.json", ".well-known/ard.json", "sw.js", "newsletter/feed.xml"]) {
+    assert.equal(select([{ status: "M", paths: [file] }]).mode, "full", file);
+  }
+});
+
 test("Lighthouse configuration changes force a full audit", () => {
   const result = select([{ status: "M", paths: ["lighthouserc.cjs"] }]);
   assert.equal(result.mode, "full");

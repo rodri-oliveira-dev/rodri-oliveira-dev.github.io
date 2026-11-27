@@ -22,6 +22,10 @@ Consultar `.github/AUTOMATION.md` e `.github/workflows/`. Os gates principais in
 6. Quando o workflow gerar alterações efetivas no site, ele deve publicar no mesmo PR os artefatos associados, incluindo `sitemap.xml` e `lastmod` das URLs afetadas.
 7. Não enfraquecer thresholds de WCAG, Lighthouse, segurança ou validação SEO para mascarar regressões.
 
+## Mudanças exclusivamente documentais
+
+Usar o seletor conservador de PR documentado em `.github/AUTOMATION.md`. Documentos públicos, arquivos mistos e contexto incerto exigem validação; manter os checks obrigatórios, Sonar com LCOV, ADR Guard e segurança. Push em main e release manual não recebem a dispensa de checks do site.
+
 ## Verificação
 
 - Executar `actionlint` para YAML de workflow e `zizmor` para análise de segurança, conforme suas versões/configurações em CI.

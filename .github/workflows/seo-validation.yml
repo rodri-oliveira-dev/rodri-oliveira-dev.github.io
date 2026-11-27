@@ -27,13 +27,26 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Select site validation scope
+        id: docs_scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 .github/scripts/select-docs-impact.py
+
+      - name: Document internal-only changes
+        if: steps.docs_scope.outputs.run == 'false'
+        run: echo 'Internal documentation only; site-specific checks not applicable. No site audit performed.' >> "$GITHUB_STEP_SUMMARY"
+
       - name: Test deterministic SEO synchronization
         run: python3 -m unittest discover -s .github/scripts -p 'test_sync_seo.py'
 
       - name: Regenerate SEO artifacts
+        if: steps.docs_scope.outputs.run != 'false'
         run: python3 .github/scripts/sync-seo.py
 
       - name: Validate generated files are committed
+        if: steps.docs_scope.outputs.run != 'false'
         shell: bash
         run: |
           git diff --check
@@ -45,6 +58,7 @@ jobs:
           fi
 
       - name: Validate structured data and sitemap
+        if: steps.docs_scope.outputs.run != 'false'
         run: |
           python3 - <<'PY'
           import json

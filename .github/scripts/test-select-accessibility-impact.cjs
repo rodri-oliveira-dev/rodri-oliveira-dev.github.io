@@ -23,6 +23,9 @@ test("site, shared inputs, validation tooling and unknown paths require full aud
     ".github/scripts/test-responsive.cjs", ".github/scripts/check-contrast.mjs",
     ".github/scripts/select-accessibility-impact.cjs", ".github/scripts/test-select-accessibility-impact.cjs",
     "package-lock.json", "new-directory/new-page.html", "docs/example.html",
+    "docs/pwa.md", "docs/accessibility-audit.md", "docs/webmcp-services-contract.md",
+    "docs/webmcp.en.md", "docs/webmcp.es-419.md", "docs/webmcp.pt-BR.md",
+    "docs/contracts/webmcp-services.v1.json",
   ]) assert.equal(isInternal(file), false, file);
 });
 
