@@ -54,22 +54,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          fetch-depth: 0
           persist-credentials: false
-
-      - name: Select site validation scope
-        id: docs_scope
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: python3 .github/scripts/select-docs-impact.py
-
-      - name: Document internal-only changes
-        if: steps.docs_scope.outputs.run == 'false'
-        run: echo 'Internal documentation only; site-specific checks not applicable. No site audit performed.' >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Test documentation impact selector
-        run: python3 -m unittest discover -s .github/scripts -p 'test_select_docs_impact.py'
 
       - name: Require product tests and coverage
         env:
@@ -118,11 +103,9 @@ jobs:
         run: node --test .github/scripts/test-select-lighthouse-pages.mjs
 
       - name: Install validation tooling
-        if: steps.docs_scope.outputs.run != 'false'
         run: npm install --no-save --ignore-scripts html-validate@11.15.0 @cspell/dict-pt-br@2.4.2 @cspell/dict-es-es@3.0.9
 
       - name: Validate HTML
-        if: steps.docs_scope.outputs.run != 'false'
         shell: bash
         run: |
           pages=(index.html en/index.html es/index.html pt-br/index.html curriculo/index.html en/resume/index.html es/curriculo/index.html servicos/index.html en/services/index.html es/servicios/index.html)
@@ -134,7 +117,6 @@ jobs:
       # Localized resume routes are checked as source files before publication;
       # generated PDFs are validated by deploy-pages.yml and are not versioned.
       - name: Validate links (excluding GitHub)
-        if: steps.docs_scope.outputs.run != 'false'
         uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2
         with:
           args: >-
@@ -178,7 +160,6 @@ jobs:
       # reconsidered here; 404/410 still fail, while GitHub 503 is tolerated.
       # Scheduled External link health continues to report all 503s strictly.
       - name: Validate GitHub links (tolerate 503)
-        if: steps.docs_scope.outputs.run != 'false'
         uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2
         with:
           args: >-
@@ -212,7 +193,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check spelling
-        if: steps.docs_scope.outputs.run != 'false'
         uses: streetsidesoftware/cspell-action@ce1816e4ce36532956ac6e983737392774b6e169 # v9.2.0
         with:
           config: .cspell.json

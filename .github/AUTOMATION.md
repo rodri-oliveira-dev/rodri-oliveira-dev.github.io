@@ -8,12 +8,6 @@ A estratégia é manter o site estático simples, mas protegido por verificaçõ
 
 Agentes que modificam este repositório devem seguir o `AGENTS.md` da raiz, incluindo a regra obrigatória de atualizar `sitemap.xml` (datas `lastmod` das URLs afetadas) em toda mudança efetiva do site. As instruções especializadas ficam em `.github/skills/`, cobrindo SEO, idiomas, serviços, estudos de caso, acessibilidade, importação de conteúdo, WebMCP, currículo e workflows. Mudanças somente em documentação interna não alteram artificialmente o sitemap.
 
-## Otimização de PRs exclusivamente documentais internos
-
-Em PRs que alterem somente Markdown conhecido de `docs/adr/`, `docs/privacy/web-push/`, `docs/validation/`, `AGENTS.md` ou `.github/AUTOMATION.md`, o seletor `.github/scripts/select-docs-impact.py` dispensa a validação HTML, links e ortografia do site, a regeneração/validação SEO e a geração de PDFs/assembly Pages. Os jobs continuam publicando seus checks e registram que o trabalho de site não se aplica; não se declara auditoria executada. Os testes de produto, Sonar, testes de automação, actionlint, ADR Guard, Terraform e segurança permanecem. Accessibility e Lighthouse mantêm suas próprias regras de seleção e não dispensam documentos da allowlist pública do assembly. PWA mantém os gatilhos existentes.
-
-A comparação usa o diff completo do PR (três pontos, sem ocultar caminhos antigos de renames); qualquer caminho desconhecido, alteração mista, contexto ausente ou erro executa os checks. README e documentos publicados não entram nessa exceção. Pushes em `main` e execuções manuais mantêm validação completa, pois a release exige checks bem-sucedidos do SHA exato, sem herdar evidências de uma revisão anterior. Não alterar a proteção da branch ou os gates de release para implementar esta otimização.
-
 ## WebMCP experimental (pt-BR, en e es-419)
 
 A integração com agentes de navegador é feita por módulos JavaScript locais, somente leitura, sem backend. O registro das ferramentas depende de `document.modelContext` e de contexto seguro; navegadores sem suporte continuam usando o site normalmente.

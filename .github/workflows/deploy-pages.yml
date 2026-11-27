@@ -433,27 +433,13 @@ jobs:
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          fetch-depth: 0
           persist-credentials: false
           ref: ${{ needs.preflight.outputs.sha || github.sha }}
-      - name: Select site validation scope
-        id: docs_scope
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: python3 .github/scripts/select-docs-impact.py
-
-      - name: Document internal-only changes
-        if: steps.docs_scope.outputs.run == 'false'
-        run: echo 'Internal documentation only; site-specific checks not applicable. No site audit performed.' >> "$GITHUB_STEP_SUMMARY"
-
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        if: steps.docs_scope.outputs.run != 'false'
         with:
           node-version: 24
           package-manager-cache: false
       - name: Generate and validate localized resume PDFs
-        if: steps.docs_scope.outputs.run != 'false'
         run: |
           npm install --no-save --no-package-lock --ignore-scripts playwright@1.65.0
           npx --no-install playwright install --with-deps chromium
@@ -461,7 +447,6 @@ jobs:
           if ! command -v pdftotext >/dev/null 2>&1; then sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends poppler-utils; fi
           python3 .github/scripts/test_resume_pdf_order.py
       - name: Assemble allowlisted Pages artifact
-        if: steps.docs_scope.outputs.run != 'false'
         run: |
           python3 .github/scripts/assemble-site.py . "$RUNNER_TEMP/pages-site"
           test -s "$RUNNER_TEMP/pages-site/curriculo/rodrigo-de-oliveira.pdf"
@@ -476,7 +461,7 @@ jobs:
           test ! -e "$RUNNER_TEMP/pages-site/.scannerwork"
           test ! -e "$RUNNER_TEMP/pages-site/coverage"
       - name: Upload localized PDF previews
-        if: github.event_name == 'pull_request' && steps.docs_scope.outputs.run != 'false'
+        if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: localized-resume-pdf-previews

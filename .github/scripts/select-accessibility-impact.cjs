@@ -12,14 +12,7 @@ const INTERNAL_FILES = new Set([
   ".github/workflows/actions-security.yml",
 ]);
 
-const PUBLIC_DOCS = new Set([
-  "docs/accessibility-audit.md", "docs/pwa.md", "docs/webmcp-services-contract.md",
-  "docs/webmcp.en.md", "docs/webmcp.es-419.md", "docs/webmcp.pt-BR.md",
-  "docs/contracts/webmcp-services.v1.json",
-]);
-
 function isInternal(file) {
-  if (PUBLIC_DOCS.has(file)) return false;
   return INTERNAL_FILES.has(file)
     || file.startsWith("infra/terraform/")
     || file.startsWith(".agents/skills/")

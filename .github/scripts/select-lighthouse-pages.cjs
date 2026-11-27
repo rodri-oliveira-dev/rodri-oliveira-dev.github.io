@@ -86,15 +86,9 @@ function dependencyMap(pages, readFile) {
   return result;
 }
 
-const PUBLIC_DOCS = new Set([
-  "docs/accessibility-audit.md", "docs/pwa.md", "docs/webmcp-services-contract.md",
-  "docs/webmcp.en.md", "docs/webmcp.es-419.md", "docs/webmcp.pt-BR.md",
-  "docs/contracts/webmcp-services.v1.json",
-]);
-
 function isPotentialSiteInput(file) {
-  return PUBLIC_DOCS.has(file) || /^(?:assets|case-studies|curriculo|en|es|pt-br|servicos|newsletter|\.well-known)(?:\/|$)/.test(file)
-    || ["index.html", "favicon.svg", "site.webmanifest", "robots.txt", "sitemap.xml", "sw.js", "offline.html", ".nojekyll", "CNAME"].includes(file);
+  return /^(?:assets|case-studies|curriculo|en|es|pt-br|servicos)(?:\/|$)/.test(file)
+    || ["index.html", "favicon.svg", "site.webmanifest", "robots.txt", "sitemap.xml", ".nojekyll", "CNAME"].includes(file);
 }
 
 function fullResult(pages, reason, runs = 2) {
