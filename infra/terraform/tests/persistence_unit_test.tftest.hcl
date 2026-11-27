@@ -94,13 +94,18 @@ run "default_cost_and_security_baseline" {
   }
 
   assert {
-    condition     = azapi_resource.log_analytics_workspace.location == "brazilsouth" && azapi_resource.log_analytics_workspace.body.properties.retentionInDays == 30 && azapi_resource.log_analytics_workspace.body.properties.workspaceCapping.dailyQuotaGb == 0.1
+    condition     = azapi_resource.log_analytics_workspace.location == "brazilsouth" && azapi_resource.log_analytics_workspace.body.properties.retentionInDays == 30 && azapi_resource.log_analytics_workspace.body.properties.features.immediatePurgeDataOn30Days && azapi_resource.log_analytics_workspace.body.properties.workspaceCapping.dailyQuotaGb == 0.1
     error_message = "Logs devem permanecer em Brazil South com retenção inicial de 30 dias e quota diária de 0,1 GB."
   }
 
   assert {
     condition     = azapi_resource.log_analytics_workspace.body.properties.features.disableLocalAuth && azapi_resource.log_analytics_workspace.body.properties.features.enableLogAccessUsingOnlyResourcePermissions
     error_message = "Log Analytics deve bloquear autenticação local e limitar consultas às permissões do recurso."
+  }
+
+  assert {
+    condition     = local.function_app_settings["Notifications__SubscriptionRecoveryEpoch"] == "baseline-2026-11-26"
+    error_message = "A Function deve exigir uma epoch de recuperacao externa ao backup do Cosmos."
   }
 
   assert {

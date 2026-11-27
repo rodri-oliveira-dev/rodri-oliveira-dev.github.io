@@ -82,6 +82,18 @@ public sealed class SubscriptionFunctionsTests
     }
 
     [Fact]
+    public async Task DistributedRateLimitDependencyFailure_BlocksOperationWithGenericServiceUnavailable()
+    {
+        var repository = new FakeRepository();
+        var function = CreateFunction(repository, new ThrowingAbuseProtection());
+
+        var result = await function.RegisterAsync(CreateRequest(ValidJson()));
+
+        Assert.Equal(503, Assert.IsType<StatusCodeResult>(result).StatusCode);
+        Assert.Equal(0, repository.RegisterCalls);
+    }
+
+    [Fact]
     public async Task Revocation_IsIndistinguishableForValidAndInvalidIdentifiers()
     {
         var repository = new FakeRepository();
@@ -179,6 +191,12 @@ public sealed class SubscriptionFunctionsTests
         public Task<bool> TryAcquireAsync(string operation, string discriminator, DateTimeOffset now, CancellationToken cancellationToken) => Task.FromResult(allowed);
     }
 
+    private sealed class ThrowingAbuseProtection : IAbuseProtection
+    {
+        public Task<bool> TryAcquireAsync(string operation, string discriminator, DateTimeOffset now, CancellationToken cancellationToken) =>
+            throw new InvalidOperationException("simulated rate-limit dependency failure");
+    }
+
     private sealed class FakeConcurrencyLimiter : IApiConcurrencyLimiter
     {
         public Task<bool> TryEnterAsync(CancellationToken cancellationToken) => Task.FromResult(true);
@@ -211,6 +229,7 @@ public sealed class SubscriptionFunctionsTests
 
         public Task<SubscriptionPage> ListActivePageAsync(string locale, string? continuationToken, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<SubscriptionRecord?> GetEligibleAsync(string id, string generation, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<SubscriptionMutationResult> InvalidateGenerationAsync(string id, string generation, string expectedETag, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<SubscriptionMutationResult> DeleteGenerationAsync(string id, string generation, string expectedETag, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 
