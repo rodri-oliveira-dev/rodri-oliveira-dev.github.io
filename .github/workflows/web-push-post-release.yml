@@ -1,0 +1,260 @@
+name: Reconcile Web Push publication
+
+on:
+  workflow_call:
+    inputs:
+      revision:
+        description: Full SHA already published by GitHub Pages and GitHub Release
+        required: true
+        type: string
+      mode:
+        description: dry-run is side-effect free; enqueue remains fail-closed behind later gates
+        required: false
+        default: dry-run
+        type: string
+      confirmation:
+        description: Exact ENQUEUE confirmation required only for real processing
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_VERSION: '10.0.x'
+
+jobs:
+  evidence:
+    name: Validate durable publication evidence
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      deployments: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.revision }}
+      - name: Validate mode and exact published SHA
+        env:
+          MODE: ${{ inputs.mode }}
+          REVISION: ${{ inputs.revision }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$MODE" == dry-run || "$MODE" == enqueue ]]
+          python3 .github/scripts/web-push-release.py evidence \
+            --repo "$GITHUB_REPOSITORY" \
+            --expected-sha "$REVISION" \
+            --mode "$MODE" \
+            --output "$RUNNER_TEMP/publication-evidence.json" \
+            --summary "$RUNNER_TEMP/web-push-summary.md"
+          cat "$RUNNER_TEMP/web-push-summary.md" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: web-push-evidence-${{ inputs.revision }}
+          path: ${{ runner.temp }}/publication-evidence.json
+          if-no-files-found: error
+          retention-days: 1
+
+  real_processing_gate:
+    name: Enforce privacy and kill-switch gates
+    needs: evidence
+    if: inputs.mode == 'enqueue'
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 5
+    environment: web-push-notifications-dev
+    permissions:
+      contents: read
+      issues: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.revision }}
+      - name: Fail closed until privacy gates and switches are explicit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WEB_PUSH_CONFIRMATION: ${{ inputs.confirmation }}
+          WEB_PUSH_REAL_PROCESSING_ENABLED: ${{ vars.WEB_PUSH_REAL_PROCESSING_ENABLED || 'false' }}
+          WEB_PUSH_SENDER_ENABLED: ${{ vars.WEB_PUSH_SENDER_ENABLED || 'false' }}
+        run: python3 .github/scripts/web-push-release.py gate --repo "$GITHUB_REPOSITORY"
+
+  prepare:
+    name: Reconcile campaigns and claim bounded work
+    needs: [evidence, real_processing_gate]
+    if: inputs.mode == 'enqueue'
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 10
+    environment: web-push-notifications-dev
+    permissions:
+      contents: read
+      deployments: read
+      id-token: write
+    env:
+      Notifications__CosmosEndpoint: ${{ vars.WEB_PUSH_COSMOS_ENDPOINT }}
+      Notifications__CosmosDatabaseName: notifications
+      Notifications__CosmosContainerName: subscriptions
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.revision }}
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: web-push-evidence-${{ inputs.revision }}
+          path: ${{ runner.temp }}/evidence
+      - name: Revalidate publication immediately before campaign writes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          python3 .github/scripts/web-push-release.py evidence \
+            --repo "$GITHUB_REPOSITORY" \
+            --expected-sha "$REVISION" \
+            --mode enqueue \
+            --output "$RUNNER_TEMP/revalidated-evidence.json" \
+            --summary "$RUNNER_TEMP/revalidated-summary.md"
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_WEB_PUSH_COORDINATOR_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Prepare idempotent enqueue manifest
+        run: |
+          dotnet run --project backend/notifications-functions/src/Notifications.Orchestration/Notifications.Orchestration.csproj --configuration Release -- \
+            prepare \
+            "$RUNNER_TEMP/evidence/publication-evidence.json" \
+            "$RUNNER_TEMP/enqueue-manifest.json" \
+            "$RUNNER_TEMP/prepare-summary.json"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          summary = json.loads((Path(os.environ["RUNNER_TEMP"]) / "prepare-summary.json").read_text())
+          detected = summary["detectedByLocale"]
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
+              out.write("# Reconciliação de campanhas\n\n")
+              out.write(f"- **Artigos:** PT-BR `{detected.get('pt-BR', 0)}`, EN `{detected.get('en', 0)}`, ES-419 `{detected.get('es-419', 0)}`\n")
+              out.write(f"- **Elegíveis / criadas / deduplicadas:** `{summary['eligibleCampaigns']}` / `{summary['createdCampaigns']}` / `{summary['deduplicatedCampaigns']}`\n")
+              out.write(f"- **Pendentes / reivindicadas / superadas:** `{summary['pendingCampaigns']}` / `{summary['claimedCampaigns']}` / `{summary['supersededCampaigns']}`\n")
+              out.write(f"- **Campanhas reconciliadas:** `{summary['reconciledCampaigns']}`\n")
+              out.write(f"- **Limite por rodada atingido:** `{summary['processingLimitReached']}`\n")
+              out.write(f"- **Duração:** `{summary['durationMilliseconds']} ms`\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: web-push-enqueue-plan-${{ inputs.revision }}
+          path: |
+            ${{ runner.temp }}/enqueue-manifest.json
+            ${{ runner.temp }}/prepare-summary.json
+          if-no-files-found: error
+          retention-days: 1
+
+  enqueue:
+    name: Enqueue validated campaign IDs
+    needs: prepare
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 5
+    environment: web-push-notifications-dev
+    permissions:
+      contents: read
+      deployments: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.revision }}
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: web-push-enqueue-plan-${{ inputs.revision }}
+          path: ${{ runner.temp }}/plan
+      - name: Revalidate publication immediately before enqueue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          python3 .github/scripts/web-push-release.py evidence \
+            --repo "$GITHUB_REPOSITORY" \
+            --expected-sha "$REVISION" \
+            --mode enqueue \
+            --output "$RUNNER_TEMP/revalidated-evidence.json" \
+            --summary "$RUNNER_TEMP/revalidated-summary.md"
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_WEB_PUSH_ENQUEUE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Send campaign IDs only
+        env:
+          WEB_PUSH_QUEUE_URI: ${{ vars.WEB_PUSH_QUEUE_URI }}
+        run: |
+          dotnet run --project backend/notifications-functions/src/Notifications.Orchestration/Notifications.Orchestration.csproj --configuration Release -- \
+            enqueue \
+            "$RUNNER_TEMP/plan/enqueue-manifest.json" \
+            "$RUNNER_TEMP/enqueue-results.json" \
+            "$WEB_PUSH_QUEUE_URI"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: web-push-enqueue-results-${{ inputs.revision }}
+          path: ${{ runner.temp }}/enqueue-results.json
+          if-no-files-found: error
+          retention-days: 1
+
+  complete:
+    name: Persist enqueue outcomes
+    needs: enqueue
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 5
+    environment: web-push-notifications-dev
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      Notifications__CosmosEndpoint: ${{ vars.WEB_PUSH_COSMOS_ENDPOINT }}
+      Notifications__CosmosDatabaseName: notifications
+      Notifications__CosmosContainerName: subscriptions
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.revision }}
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: web-push-enqueue-results-${{ inputs.revision }}
+          path: ${{ runner.temp }}/results
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_WEB_PUSH_COORDINATOR_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Complete durable state and write operational summary
+        run: |
+          dotnet run --project backend/notifications-functions/src/Notifications.Orchestration/Notifications.Orchestration.csproj --configuration Release -- \
+            complete \
+            "$RUNNER_TEMP/results/enqueue-results.json" \
+            "$RUNNER_TEMP/complete-summary.json"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          summary = json.loads((Path(os.environ["RUNNER_TEMP"]) / "complete-summary.json").read_text())
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
+              out.write("# Resultado Web Push\n\n")
+              out.write(f"- **Tentativas de enqueue:** {summary['attempted']}\n")
+              out.write(f"- **Mensagens enfileiradas:** {summary['enqueued']}\n")
+              out.write(f"- **Falhas classificadas:** {summary['failed']}\n")
+              out.write(f"- **Campanhas esgotadas:** {summary['exhausted']}\n")
+              out.write(f"- **Duração:** {summary['durationMilliseconds']} ms\n")
+              out.write("- **Consumo/custo:** revisar RU do Cosmos, transações da fila, execuções da Function e ingestão do Log Analytics; esta execução não comprova retenção nem custo faturado.\n")
+          PY

@@ -13,12 +13,14 @@ internal sealed record CampaignDefinition(
     ArticleOrigin Origin = ArticleOrigin.LinkedIn,
     string Locale = "pt-BR",
     string PublicationSha = "",
+    long PublicationSequence = 0,
     string CanonicalArticleUrl = "",
     DateTimeOffset AudienceCutoffUtc = default)
 {
     public static CampaignDefinition FromArticle(
         PublishedArticle article,
         string publicationSha,
+        long publicationSequence,
         DateTimeOffset audienceCutoffUtc) => new(
             Truncate(article.Title, 80),
             "Novo artigo em português publicado no portfólio.",
@@ -28,6 +30,7 @@ internal sealed record CampaignDefinition(
             article.Origin,
             article.Locale,
             publicationSha,
+            publicationSequence,
             article.CanonicalUrl,
             audienceCutoffUtc);
 

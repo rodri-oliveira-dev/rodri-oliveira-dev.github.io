@@ -40,6 +40,17 @@ on:
         description: Previous successful run ID used only if backend smoke fails
         required: false
         type: string
+      web_push_mode:
+        description: Web Push post-release mode; keep dry-run until later privacy and pilot gates
+        required: true
+        default: dry-run
+        type: choice
+        options: [dry-run, enqueue]
+      web_push_confirmation:
+        description: Type ENQUEUE only after explicit authorization; ignored by dry-run
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -553,3 +564,17 @@ jobs:
     permissions:
       contents: read
     uses: ./.github/workflows/indexnow.yml
+
+  web_push:
+    name: Reconcile Web Push after release
+    needs: [preflight, release]
+    permissions:
+      contents: read
+      deployments: read
+      id-token: write
+      issues: read
+    uses: ./.github/workflows/web-push-post-release.yml
+    with:
+      revision: ${{ needs.preflight.outputs.sha }}
+      mode: ${{ inputs.web_push_mode }}
+      confirmation: ${{ inputs.web_push_confirmation }}

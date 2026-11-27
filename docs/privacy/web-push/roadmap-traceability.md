@@ -83,6 +83,18 @@ A [ADR 0022](../../adr/0022-consolidar-privacidade-web-push-antes-do-piloto.md) 
 
 Deduplicação at-least-once, autorização mínima de enqueue, budget/alertas, transferências internacionais, segredo VAPID temporariamente em memória e endpoints Azure com rede pública não foram resolvidos pelo aceite da #150. A decisão de rede privada tem impacto de custo/complexidade e exige avaliação arquitetural e FinOps separada; este gate não a adota implicitamente.
 
+### Evidência implementada em #164–#165
+
+- pós-release usa deployment Pages + GitHub Release do mesmo SHA e nunca `HEAD` isoladamente;
+- reconciliação manual reutiliza esse registro e não reexecuta Terraform, backend ou Pages;
+- dry-run é o padrão sem autenticação Azure; o caminho real exige #155/#156 fechadas, confirmação e dois switches;
+- identidade coordenadora e sender da fila são separadas; o sender recebe somente permissão de adicionar mensagem na fila exata;
+- campanhas usam claim/ETag, lease, três tentativas, backoff limitado e no máximo 25 itens por rodada;
+- mensagens duplicadas permanecem possíveis entre enqueue e confirmação; a deduplicação persistente do sender limita efeitos, sem promessa de exactly-once;
+- resumos e logs usam contagens e classes estáveis, sem identificadores de assinantes, endpoints ou capacidades.
+
+Permissões/credenciais reais, propagação RBAC, ingestão e retenção efetivas, RU, transações/fila, custo, alertas, restauração e piloto continuam sem comprovação operacional. Validar em #156 e #167; não inferir execução a partir do Terraform versionado.
+
 ## Evidência de implementação das issues #152–#154
 
 | Critério | Implementação/teste | Estado e limite |

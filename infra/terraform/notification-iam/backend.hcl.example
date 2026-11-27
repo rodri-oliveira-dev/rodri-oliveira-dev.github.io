@@ -1,0 +1,6 @@
+resource_group_name  = "rg-portfolio-push-dev"
+storage_account_name = "strotfstatepushdev"
+container_name       = "tfstate"
+key                  = "notification-iam.dev.tfstate"
+use_azuread_auth     = true
+use_oidc             = true

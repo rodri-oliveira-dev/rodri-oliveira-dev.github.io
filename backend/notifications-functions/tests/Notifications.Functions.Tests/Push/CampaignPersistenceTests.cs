@@ -117,7 +117,7 @@ public sealed class CampaignPersistenceTests
             "https://www.linkedin.com/pulse/test",
             "Novo artigo",
             "Descrição");
-        return CampaignDefinition.FromArticle(article, new string('a', 40), Now);
+        return CampaignDefinition.FromArticle(article, new string('a', 40), 1, Now);
     }
 
     internal static SubscriptionRecord CreateSubscription(string generation, DateTimeOffset createdAt)

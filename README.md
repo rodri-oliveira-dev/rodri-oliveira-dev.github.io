@@ -26,8 +26,16 @@ O site está disponível em [português](https://rodri-oliveira-dev.github.io/),
 
 [![WCAG 2.2 AA: objetivo de conformidade](https://img.shields.io/badge/WCAG%202.2-AA%20Target-blue)](docs/accessibility-audit.md)
 [![Testes automatizados de acessibilidade](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/accessibility.yml/badge.svg?branch=main)](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/accessibility.yml)
-[![Validação dos registros de decisões arquiteturais com ADR Guard](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/adr-guard.yml/badge.svg?branch=main)](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/adr-guard.yml)
 [![Validação de qualidade com Lighthouse CI](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/lighthouse.yml/badge.svg?branch=main)](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/lighthouse.yml)
+
+[![Validação dos registros de decisões arquiteturais com ADR Guard](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/adr-guard.yml/badge.svg?branch=main)](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/adr-guard.yml)
+[![Status do Quality Gate no SonarQube Cloud](https://sonarcloud.io/api/project_badges/measure?project=rodri-oliveira-dev_rodri-oliveira-dev.github.io&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=rodri-oliveira-dev_rodri-oliveira-dev.github.io)
+[![Cobertura de código no SonarQube Cloud](https://sonarcloud.io/api/project_badges/measure?project=rodri-oliveira-dev_rodri-oliveira-dev.github.io&metric=coverage)](https://sonarcloud.io/summary/new_code?id=rodri-oliveira-dev_rodri-oliveira-dev.github.io)
+[![Classificação de segurança no SonarQube Cloud](https://sonarcloud.io/api/project_badges/measure?project=rodri-oliveira-dev_rodri-oliveira-dev.github.io&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=rodri-oliveira-dev_rodri-oliveira-dev.github.io)
+[![Auditoria de segurança do GitHub Actions com zizmor](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/actions-security.yml/badge.svg?branch=main)](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/actions-security.yml)
+
+[![Testes de PWA em múltiplos navegadores](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/pwa.yml/badge.svg?branch=main)](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/pwa.yml)
+[![Integração experimental WebMCP](https://img.shields.io/badge/WebMCP-Experimental-orange)](docs/webmcp.pt-BR.md)
 
 <details>
 <summary>Sobre este repositório</summary>

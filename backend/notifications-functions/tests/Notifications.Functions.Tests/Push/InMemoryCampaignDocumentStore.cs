@@ -29,6 +29,33 @@ internal sealed class InMemoryCampaignDocumentStore : ICampaignDocumentStore
             : null);
     }
 
+    public Task<IReadOnlyList<StoredCampaignDocument>> ListCampaignsForEnqueueAsync(
+        DateTimeOffset now,
+        int maximumAttempts,
+        int limit,
+        CancellationToken cancellationToken)
+    {
+        var results = _items.Values
+            .Where(value => value.Document is CampaignDocument)
+            .Select(value => (Document: (CampaignDocument)value.Document, value.Version))
+            .Where(value => value.Document.EnqueueStatus is not CampaignEnqueueStatus.Enqueued and not CampaignEnqueueStatus.Exhausted &&
+                value.Document.EnqueueAttemptCount < maximumAttempts &&
+                (value.Document.NextEnqueueAttemptAtUtc is null || value.Document.NextEnqueueAttemptAtUtc <= now) &&
+                (value.Document.EnqueueStatus != CampaignEnqueueStatus.Claimed ||
+                    value.Document.EnqueueLeaseUntilUtc is null || value.Document.EnqueueLeaseUntilUtc <= now))
+            .OrderBy(value => value.Document.CreatedAtUtc)
+            .ThenBy(value => value.Document.Id, StringComparer.Ordinal)
+            .Take(limit)
+            .Select(value => new StoredCampaignDocument(value.Document, ETag(value.Version), 1))
+            .ToArray();
+        return Task.FromResult<IReadOnlyList<StoredCampaignDocument>>(results);
+    }
+
+    public Task<CampaignWriteResult> ReplaceCampaignAsync(
+        CampaignDocument document,
+        string expectedETag,
+        CancellationToken cancellationToken) => Replace(document.PartitionKey, document.Id, document, expectedETag);
+
     public Task<CampaignWriteResult> CreateDeliveryAsync(CampaignDeliveryDocument document, CancellationToken cancellationToken) =>
         Task.FromResult(Create(Key(document.PartitionKey, document.Id), document));
 
@@ -49,7 +76,16 @@ internal sealed class InMemoryCampaignDocumentStore : ICampaignDocumentStore
             throw new InvalidOperationException("simulated persistence failure");
         }
 
-        var key = Key(document.PartitionKey, document.Id);
+        return Replace(document.PartitionKey, document.Id, document, expectedETag);
+    }
+
+    private Task<CampaignWriteResult> Replace(
+        string partitionKey,
+        string id,
+        object document,
+        string expectedETag)
+    {
+        var key = Key(partitionKey, id);
         while (_items.TryGetValue(key, out var existing))
         {
             if (ETag(existing.Version) != expectedETag)
