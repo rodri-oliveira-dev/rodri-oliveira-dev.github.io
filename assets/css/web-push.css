@@ -1,0 +1,126 @@
+.web-push-section [hidden] {
+  display: none !important;
+}
+
+.web-push-section {
+  padding-block: clamp(48px, 7vw, 88px);
+}
+
+.web-push-card {
+  display: grid;
+  grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+  gap: clamp(24px, 5vw, 64px);
+  padding: clamp(24px, 5vw, 48px);
+  border: 1px solid rgba(125, 211, 252, .24);
+  border-radius: 24px;
+  background: var(--surface);
+}
+
+.web-push-heading h2 {
+  margin-top: 8px;
+}
+
+.web-push-content {
+  max-width: 65ch;
+}
+
+.web-push-content > :first-child {
+  margin-top: 0;
+}
+
+.web-push-status {
+  color: var(--text);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.web-push-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.web-push-actions button,
+.web-push-recovery button {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  color: #071321;
+  background: var(--accent);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.web-push-actions button:disabled {
+  cursor: not-allowed;
+  opacity: .6;
+}
+
+.web-push-consent {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 10px;
+  align-items: start;
+  margin-top: 18px;
+}
+
+.web-push-consent input {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+}
+
+.web-push-recovery {
+  display: grid;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.web-push-recovery label {
+  display: grid;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.web-push-recovery input {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid rgba(226, 232, 240, .42);
+  border-radius: 8px;
+  color: var(--text);
+  background: #0b1220;
+  font: inherit;
+}
+
+.web-push-actions button:focus-visible,
+.web-push-recovery button:focus-visible,
+.web-push-recovery input:focus-visible,
+.web-push-consent input:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+
+.web-push-contact {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: .94rem;
+}
+
+@media (max-width: 768px) {
+  .web-push-card {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (forced-colors: active) {
+  .web-push-card,
+  .web-push-actions button,
+  .web-push-recovery button,
+  .web-push-recovery input {
+    border: 1px solid CanvasText;
+  }
+}
