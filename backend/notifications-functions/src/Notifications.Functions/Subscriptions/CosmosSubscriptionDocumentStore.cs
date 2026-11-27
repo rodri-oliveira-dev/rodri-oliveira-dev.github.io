@@ -16,14 +16,16 @@ internal sealed class CosmosSubscriptionDocumentStore : ISubscriptionDocumentSto
 
     public async Task<StoredSubscriptionPage> ListActivePageAsync(
         string locale,
+        string recoveryEpoch,
         DateTimeOffset now,
         int pageSize,
         string? continuationToken,
         CancellationToken cancellationToken)
     {
         var query = new QueryDefinition(
-                "SELECT * FROM c WHERE c.type = 'subscription' AND c.locale = @locale AND c.status = 'active' AND c.revokedAtUtc = null AND c.expiresAtUtc > @now")
+                "SELECT * FROM c WHERE c.type = 'subscription' AND c.locale = @locale AND c.recoveryEpoch = @recoveryEpoch AND c.status = 'active' AND c.revokedAtUtc = null AND c.expiresAtUtc > @now")
             .WithParameter("@locale", locale)
+            .WithParameter("@recoveryEpoch", recoveryEpoch)
             .WithParameter("@now", now);
         using var iterator = _container.GetItemQueryIterator<SubscriptionDocument>(
             query,

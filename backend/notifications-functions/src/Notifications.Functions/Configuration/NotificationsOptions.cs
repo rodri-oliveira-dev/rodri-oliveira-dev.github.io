@@ -26,6 +26,10 @@ public sealed class CosmosOptions : IValidatableObject
     [Required]
     public string CosmosContainerName { get; init; } = "subscriptions";
 
+    [Required]
+    [RegularExpression("^[a-z0-9][a-z0-9-]{0,63}$")]
+    public string SubscriptionRecoveryEpoch { get; init; } = "baseline-2026-11-26";
+
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (CosmosEndpoint is null || !CosmosEndpoint.IsAbsoluteUri || CosmosEndpoint.Scheme != Uri.UriSchemeHttps)

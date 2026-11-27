@@ -1,5 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.Extensions.Options;
+using Notifications.Functions.Configuration;
 
 namespace Notifications.Functions.Subscriptions;
 
@@ -9,6 +11,7 @@ public interface ISubscriptionRepository
     Task<SubscriptionRecord?> GetEligibleAsync(string id, string generation, CancellationToken cancellationToken = default);
     Task<RegistrationResult> RegisterAsync(WebPushSubscriptionInput subscription, CancellationToken cancellationToken = default);
     Task RevokeAsync(string id, string capability, CancellationToken cancellationToken = default);
+    Task<SubscriptionMutationResult> InvalidateGenerationAsync(string id, string generation, string expectedETag, CancellationToken cancellationToken = default);
     Task<SubscriptionMutationResult> DeleteGenerationAsync(string id, string generation, string expectedETag, CancellationToken cancellationToken = default);
 }
 
@@ -22,13 +25,19 @@ internal sealed class CosmosSubscriptionRepository : ISubscriptionRepository
     private const int RevokedRetentionSeconds = 3600;
     private readonly ISubscriptionDocumentStore _store;
     private readonly TimeProvider _timeProvider;
+    private readonly string _recoveryEpoch;
 
-    public CosmosSubscriptionRepository(ISubscriptionDocumentStore store) : this(store, TimeProvider.System) { }
+    public CosmosSubscriptionRepository(
+        ISubscriptionDocumentStore store,
+        IOptions<CosmosOptions> options) : this(store, TimeProvider.System, options.Value.SubscriptionRecoveryEpoch) { }
 
-    internal CosmosSubscriptionRepository(ISubscriptionDocumentStore store, TimeProvider timeProvider)
+    internal CosmosSubscriptionRepository(ISubscriptionDocumentStore store, TimeProvider timeProvider, string recoveryEpoch = "baseline-2026-11-26")
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
+        _recoveryEpoch = !string.IsNullOrWhiteSpace(recoveryEpoch)
+            ? recoveryEpoch
+            : throw new ArgumentException("A epoch de recuperaÃ§Ã£o Ã© obrigatÃ³ria.", nameof(recoveryEpoch));
     }
 
     public async Task<RegistrationResult> RegisterAsync(WebPushSubscriptionInput subscription, CancellationToken cancellationToken = default)
@@ -52,6 +61,7 @@ internal sealed class CosmosSubscriptionRepository : ISubscriptionRepository
             ConsentMethod = normalized.ConsentMethod,
             ConsentId = GenerateOpaqueId("consent"),
             Generation = GenerateOpaqueId("generation"),
+            RecoveryEpoch = _recoveryEpoch,
             ConsentGrantedAtUtc = now,
             ExpiresAtUtc = expiresAt,
             Status = "active",
@@ -102,7 +112,7 @@ internal sealed class CosmosSubscriptionRepository : ISubscriptionRepository
             throw new ArgumentException("Idioma inválido.", nameof(locale));
         }
 
-        var page = await _store.ListActivePageAsync(locale, _timeProvider.GetUtcNow(), QueryPageSize, continuationToken, cancellationToken);
+        var page = await _store.ListActivePageAsync(locale, _recoveryEpoch, _timeProvider.GetUtcNow(), QueryPageSize, continuationToken, cancellationToken);
         return new(page.Items.Select(Map).ToArray(), page.ContinuationToken);
     }
 
@@ -118,9 +128,35 @@ internal sealed class CosmosSubscriptionRepository : ISubscriptionRepository
         return stored is not null &&
             string.Equals(stored.Document.Status, "active", StringComparison.Ordinal) &&
             stored.Document.RevokedAtUtc is null && stored.Document.ExpiresAtUtc > now &&
+            string.Equals(stored.Document.RecoveryEpoch, _recoveryEpoch, StringComparison.Ordinal) &&
             string.Equals(stored.Document.Generation, generation, StringComparison.Ordinal)
                 ? Map(stored)
                 : null;
+    }
+
+    public async Task<SubscriptionMutationResult> InvalidateGenerationAsync(
+        string id,
+        string generation,
+        string expectedETag,
+        CancellationToken cancellationToken = default)
+    {
+        var stored = await _store.ReadAsync(id, id, cancellationToken);
+        if (stored is null || !string.Equals(stored.Document.Generation, generation, StringComparison.Ordinal) ||
+            !string.Equals(stored.ETag, expectedETag, StringComparison.Ordinal))
+        {
+            return new(SubscriptionMutationStatus.ConcurrencyConflict, id, id, null, stored?.RequestCharge ?? 0);
+        }
+
+        var now = _timeProvider.GetUtcNow();
+        var invalid = Copy(stored.Document, status: "invalid", revokedAtUtc: now, updatedAtUtc: now, ttl: RevokedRetentionSeconds);
+        var replaced = await _store.ReplaceAsync(invalid, expectedETag, cancellationToken);
+        if (replaced.Status != SubscriptionMutationStatus.Updated || replaced.ETag is null)
+        {
+            return new(replaced.Status, id, id, replaced.ETag, replaced.RequestCharge + stored.RequestCharge);
+        }
+
+        var deleted = await _store.DeleteAsync(id, id, replaced.ETag, cancellationToken);
+        return new(deleted.Status, id, id, deleted.ETag, deleted.RequestCharge + replaced.RequestCharge + stored.RequestCharge);
     }
 
     public async Task<SubscriptionMutationResult> DeleteGenerationAsync(string id, string generation, string expectedETag, CancellationToken cancellationToken = default)
@@ -181,6 +217,7 @@ internal sealed class CosmosSubscriptionRepository : ISubscriptionRepository
         ConsentMethod = source.ConsentMethod,
         ConsentId = source.ConsentId,
         Generation = source.Generation,
+        RecoveryEpoch = source.RecoveryEpoch,
         ConsentGrantedAtUtc = source.ConsentGrantedAtUtc,
         ExpiresAtUtc = source.ExpiresAtUtc,
         Status = status,

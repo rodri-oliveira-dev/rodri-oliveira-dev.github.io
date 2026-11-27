@@ -14,6 +14,7 @@ create_function_app = true
 
 log_analytics_daily_quota_gb = 0.1
 log_analytics_retention_days = 30
+subscription_recovery_epoch  = "baseline-2026-11-26"
 
 function_instance_memory_mb     = 2048
 function_maximum_instance_count = 2

@@ -16,6 +16,7 @@ internal sealed class SubscriptionDocument
     [JsonProperty("consentMethod")] public required string ConsentMethod { get; init; }
     [JsonProperty("consentId")] public required string ConsentId { get; init; }
     [JsonProperty("generation")] public required string Generation { get; init; }
+    [JsonProperty("recoveryEpoch")] public required string RecoveryEpoch { get; init; }
     [JsonProperty("consentGrantedAtUtc")] public required DateTimeOffset ConsentGrantedAtUtc { get; init; }
     [JsonProperty("expiresAtUtc")] public required DateTimeOffset ExpiresAtUtc { get; init; }
     [JsonProperty("status")] public required string Status { get; init; }
@@ -38,7 +39,7 @@ internal sealed record DocumentWriteResult(SubscriptionMutationStatus Status, st
 
 internal interface ISubscriptionDocumentStore
 {
-    Task<StoredSubscriptionPage> ListActivePageAsync(string locale, DateTimeOffset now, int pageSize, string? continuationToken, CancellationToken cancellationToken);
+    Task<StoredSubscriptionPage> ListActivePageAsync(string locale, string recoveryEpoch, DateTimeOffset now, int pageSize, string? continuationToken, CancellationToken cancellationToken);
     Task<StoredSubscriptionDocument?> ReadAsync(string id, string partitionKey, CancellationToken cancellationToken);
     Task<DocumentWriteResult> CreateAsync(SubscriptionDocument document, CancellationToken cancellationToken);
     Task<DocumentWriteResult> ReplaceAsync(SubscriptionDocument document, string expectedETag, CancellationToken cancellationToken);

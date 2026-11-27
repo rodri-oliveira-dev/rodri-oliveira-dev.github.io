@@ -32,7 +32,52 @@ internal sealed class ApiConcurrencyLimiter : IApiConcurrencyLimiter
     public void Exit() => _semaphore.Release();
 }
 
-internal sealed class CosmosAbuseProtection(Container container) : IAbuseProtection
+internal interface IRateLimitCounterStore
+{
+    Task<bool> TryCreateAsync(RateLimitDocument document, CancellationToken cancellationToken);
+    Task<bool> TryIncrementBelowAsync(string id, string partitionKey, int limit, CancellationToken cancellationToken);
+}
+
+internal sealed class CosmosRateLimitCounterStore(Container container) : IRateLimitCounterStore
+{
+    public async Task<bool> TryCreateAsync(RateLimitDocument document, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await container.CreateItemAsync(document, new PartitionKey(document.PartitionKey), cancellationToken: cancellationToken);
+            return true;
+        }
+        catch (CosmosException exception) when (exception.StatusCode == HttpStatusCode.Conflict)
+        {
+            return false;
+        }
+    }
+
+    public async Task<bool> TryIncrementBelowAsync(
+        string id,
+        string partitionKey,
+        int limit,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await container.PatchItemAsync<RateLimitDocument>(
+                id,
+                new PartitionKey(partitionKey),
+                [PatchOperation.Increment("/count", 1)],
+                new PatchItemRequestOptions { FilterPredicate = $"FROM c WHERE c.count < {limit}" },
+                cancellationToken);
+            return true;
+        }
+        catch (CosmosException exception) when (
+            exception.StatusCode is HttpStatusCode.PreconditionFailed or HttpStatusCode.NotFound)
+        {
+            return false;
+        }
+    }
+}
+
+internal sealed class CosmosAbuseProtection(IRateLimitCounterStore store) : IAbuseProtection
 {
     private const int WindowSeconds = 60;
     private const int ShardCount = 16;
@@ -54,38 +99,21 @@ internal sealed class CosmosAbuseProtection(Container container) : IAbuseProtect
             TimeToLiveSeconds = WindowSeconds * 2,
         };
 
-        try
+        if (await store.TryCreateAsync(document, cancellationToken))
         {
-            await container.CreateItemAsync(document, new PartitionKey(partitionKey), cancellationToken: cancellationToken);
             return true;
         }
-        catch (CosmosException exception) when (exception.StatusCode == HttpStatusCode.Conflict)
-        {
-            try
-            {
-                await container.PatchItemAsync<RateLimitDocument>(
-                    id,
-                    new PartitionKey(partitionKey),
-                    [PatchOperation.Increment("/count", 1)],
-                    new PatchItemRequestOptions { FilterPredicate = $"FROM c WHERE c.count < {limit}" },
-                    cancellationToken);
-                return true;
-            }
-            catch (CosmosException patchException) when (
-                patchException.StatusCode is HttpStatusCode.PreconditionFailed or HttpStatusCode.NotFound)
-            {
-                return false;
-            }
-        }
-    }
 
-    private sealed class RateLimitDocument
-    {
-        [JsonProperty("id")] public required string Id { get; init; }
-        [JsonProperty("partitionKey")] public required string PartitionKey { get; init; }
-        [JsonProperty("type")] public string Type { get; init; } = "rate-limit";
-        [JsonProperty("operation")] public required string Operation { get; init; }
-        [JsonProperty("count")] public required int Count { get; init; }
-        [JsonProperty("ttl")] public required int TimeToLiveSeconds { get; init; }
+        return await store.TryIncrementBelowAsync(id, partitionKey, limit, cancellationToken);
     }
+}
+
+internal sealed class RateLimitDocument
+{
+    [JsonProperty("id")] public required string Id { get; init; }
+    [JsonProperty("partitionKey")] public required string PartitionKey { get; init; }
+    [JsonProperty("type")] public string Type { get; init; } = "rate-limit";
+    [JsonProperty("operation")] public required string Operation { get; init; }
+    [JsonProperty("count")] public required int Count { get; init; }
+    [JsonProperty("ttl")] public required int TimeToLiveSeconds { get; init; }
 }
