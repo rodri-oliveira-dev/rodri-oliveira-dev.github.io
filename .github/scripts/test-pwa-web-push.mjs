@@ -107,7 +107,12 @@ test("public PT-BR shell is gated off and EN/ES remain free of Web Push controls
   assert.match(config, /enabled: false/);
   assert.match(config, /apiBaseUrl: null/);
   assert.match(config, /vapidPublicKey: null/);
-  assert.match(config, /privacyNoticeVersion: null/);
+  assert.match(config, /privacyNoticeVersion: "1\.0\.0"/);
+  assert.match(config, /privacyNoticeUrl: "https:\/\/rodri-oliveira-dev\.github\.io\/#privacidade-web-push"/);
+  assert.match(pt, /id="privacidade-web-push"/);
+  assert.match(pt, /candidata à revisão jurídica/);
+  assert.doesNotMatch(en, /privacidade-web-push/);
+  assert.doesNotMatch(es, /privacidade-web-push/);
   assert.doesNotMatch(pt, new RegExp(consentFixture.consentText.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 });
 
@@ -383,7 +388,7 @@ test("frontend implementation contains no logging or public endpoint/key literal
     "assets/js/web-push-platform.mjs", "assets/js/web-push-view.mjs", "assets/js/web-push.mjs",
   ].map(read).join("\n");
   assert.doesNotMatch(sources, /console\.|sendBeacon|analytics|telemetry/i);
-  assert.doesNotMatch(read("assets/js/web-push-config.mjs"), /https:\/\/|api\/subscriptions|[A-Za-z0-9_-]{80,}/);
+  assert.doesNotMatch(read("assets/js/web-push-config.mjs"), /api\/subscriptions|[A-Za-z0-9_-]{80,}/);
 });
 
 const createViewFixture = () => {

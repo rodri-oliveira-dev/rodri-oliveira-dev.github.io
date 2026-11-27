@@ -49,7 +49,7 @@ public static partial class WebPushSubscriptionValidator
     public const string SupportedLocale = "pt-BR";
     public const string SupportedPurposeId = "new-articles-pt-br";
     public const string SupportedConsentVersion = "1.0.0";
-    public const string SupportedPrivacyNoticeVersion = "draft-1";
+    public const string SupportedPrivacyNoticeVersion = "1.0.0";
     public const string SupportedConsentMethod = "explicit-button";
     public const int MaximumEndpointLength = 2048;
     public const int SubscriptionIdLength = 47;

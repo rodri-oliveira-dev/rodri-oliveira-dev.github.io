@@ -1,8 +1,10 @@
-# Minuta do aviso de privacidade do Web Push
+# Aviso de privacidade do Web Push — versão candidata
 
-> **MINUTA PARA REVISÃO JURÍDICA — NÃO PUBLICAR COMO AVISO DEFINITIVO**
+> **VERSÃO CANDIDATA PARA REVISÃO JURÍDICA — PUBLICAÇÃO AINDA NÃO AUTORIZADA**
 >
-> Versão documental: `draft-1` · elaborada em 26/11/2026 · publicação prevista na issue #155 somente após revisão jurídica.
+> Versão documental: `1.0.0` · elaborada em 26/11/2026 e consolidada em 27/11/2026 · publicação condicionada à revisão jurídica e à release manual.
+
+A versão pública candidata está integrada à seção `#privacidade-web-push` da homepage PT-BR. O recurso, a API pública e os envios permanecem desativados. Se a revisão jurídica exigir mudança material, a versão e o contrato do backend devem ser atualizados antes de qualquer inscrição; uma versão já usada como evidência de consentimento não pode ter seu significado alterado silenciosamente.
 
 ## Quem controla os dados
 
@@ -28,7 +30,7 @@ Não solicitaremos nome, e-mail, telefone ou localização para a inscrição. P
 
 ## Base legal proposta
 
-A base legal proposta para a inscrição e o envio é o consentimento do titular, nos termos dos arts. 7º, I, e 8º da LGPD. A permissão nativa do navegador é um controle técnico adicional e não substitui o consentimento informado apresentado pelo portfólio. A adequação dessa base e bases eventualmente aplicáveis a segurança, atendimento de direitos e obrigações legais dependem de revisão jurídica.
+A base legal proposta para a inscrição e o envio é o consentimento do titular, nos termos dos arts. 7º, I, e 8º da LGPD. A permissão nativa do navegador é um controle técnico adicional e não substitui o consentimento informado apresentado pelo portfólio. A adequação dessa base e de bases eventualmente aplicáveis a segurança, atendimento de direitos e obrigações legais depende de revisão jurídica.
 
 ## Fornecedores e compartilhamentos
 
@@ -60,4 +62,4 @@ Pelo canal `rodrigodotnet@outlook.com`, o titular poderá pedir confirmação, a
 
 A perda do dispositivo e das duas credenciais não elimina direitos, mas pode impedir a identificação segura de um registro específico sem evidência adicional. O caso será tratado manualmente, sem exigir cadastro; se não houver prova proporcional suficiente, o controlador explicará a limitação e a expiração automática continuará aplicável.
 
-O titular também pode peticionar perante a ANPD. Esta minuta deve ser ajustada pela revisão jurídica antes de virar informação pública.
+O titular também pode peticionar perante a ANPD. Esta versão candidata deve ser confirmada ou ajustada pela revisão jurídica antes da publicação efetiva e da coleta de qualquer inscrição.

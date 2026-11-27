@@ -80,6 +80,7 @@ SARIF
 serialização
 Selenium
 sept
+subprocessadores
 SPA
 stdio
 TechArticle
@@ -95,6 +96,7 @@ weme
 YamlDotNet
 zizmor
 ZAP
+LGPD
 Auditabilidad
 auditables
 atomicidad

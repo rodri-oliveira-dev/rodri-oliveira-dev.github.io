@@ -121,14 +121,65 @@
   font-size: .94rem;
 }
 
+.web-push-privacy-link {
+  margin-bottom: 0;
+}
+
+.web-push-privacy-card {
+  display: grid;
+  grid-template-columns: minmax(220px, .65fr) minmax(0, 1.35fr);
+  gap: clamp(24px, 5vw, 64px);
+  padding: clamp(24px, 5vw, 48px);
+  border: 1px solid var(--line-strong);
+  border-radius: 24px;
+  background: var(--surface-soft);
+}
+
+.web-push-privacy-heading h2 {
+  margin-bottom: 12px;
+}
+
+.web-push-privacy-heading > :last-child,
+.web-push-privacy-content p {
+  color: var(--muted);
+}
+
+.web-push-privacy-content {
+  max-width: 72ch;
+}
+
+.web-push-privacy-content h3 {
+  margin: 28px 0 8px;
+}
+
+.web-push-privacy-content > :first-child {
+  margin-top: 0;
+}
+
+.web-push-privacy-content code {
+  color: var(--text);
+}
+
+.web-push-privacy-status {
+  padding: 16px 18px;
+  border-left: 4px solid var(--accent);
+  background: rgba(125, 211, 252, .06);
+}
+
+.web-push-privacy-status strong {
+  color: var(--text);
+}
+
 @media (max-width: 768px) {
-  .web-push-card {
+  .web-push-card,
+  .web-push-privacy-card {
     grid-template-columns: 1fr;
   }
 }
 
 @media (forced-colors: active) {
   .web-push-card,
+  .web-push-privacy-card,
   .web-push-actions button,
   .web-push-recovery button,
   .web-push-recovery input {

@@ -26,7 +26,7 @@ O aceite permite implementar e testar os controles nas issues seguintes. Ele nã
 
 | Documento | Responsabilidade |
 | --- | --- |
-| [`privacy-notice-draft.md`](privacy-notice-draft.md) | Minuta do aviso que a issue #155 deverá publicar somente após revisão jurídica. |
+| [`privacy-notice-draft.md`](privacy-notice-draft.md) | Fonte da versão candidata `1.0.0`, integrada à homepage PT-BR e ainda condicionada à revisão jurídica e à release manual. |
 | [`consent/1.0.0.md`](consent/1.0.0.md) | Texto aprovado, finalidade e contrato de evidência do consentimento. |
 | [`processing-inventory.md`](processing-inventory.md) | Inventário de operações, fornecedores, localização e transferências. |
 | [`retention-rights-incidents.md`](retention-rights-incidents.md) | Retenção, exclusão, capacidades, concorrência, direitos e incidentes. |
@@ -35,6 +35,7 @@ O aceite permite implementar e testar os controles nas issues seguintes. Ele nã
 | [`backup-recovery-runbook.md`](backup-recovery-runbook.md) | Recuperação fail-closed, invalidação de inscrições restauradas e novo opt-in. |
 | [`operational-retention-validation.md`](operational-retention-validation.md) | Comandos somente leitura e critérios para comprovar retenção por workspace, tabela e categoria. |
 | [`closure-evidence.md`](closure-evidence.md) | Matriz para encerramento humano de #151–#154 e comentários individuais preparados. |
+| [`pilot-readiness-review.md`](pilot-readiness-review.md) | Parecer consolidado das issues #155/#156, separando controles testados, validações operacionais, jurídico, bloqueios e melhorias opcionais. |
 
 ## Classificação usada
 

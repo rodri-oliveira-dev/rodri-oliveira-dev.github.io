@@ -15,7 +15,7 @@ Requer `Content-Type: application/json`. Corpo máximo: 8 KiB. Campos desconheci
   "locale": "pt-BR",
   "purposeId": "new-articles-pt-br",
   "consentVersion": "1.0.0",
-  "privacyNoticeVersion": "draft-1",
+  "privacyNoticeVersion": "1.0.0",
   "consentGranted": true,
   "consentMethod": "explicit-button"
 }
