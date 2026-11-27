@@ -672,10 +672,13 @@ internal sealed class CosmosCampaignDocumentStore(Container container) : ICampai
             "(c.enqueueStatus != @enqueued AND c.enqueueStatus != @exhausted)) " +
             "AND (NOT IS_DEFINED(c.enqueueAttemptCount) OR c.enqueueAttemptCount < @maximumAttempts) " +
             "AND (NOT IS_DEFINED(c.nextEnqueueAttemptAtUtc) OR c.nextEnqueueAttemptAtUtc <= @now) " +
+            "AND (NOT IS_DEFINED(c.enqueueStatus) OR c.enqueueStatus != @claimed OR " +
+            "NOT IS_DEFINED(c.enqueueLeaseUntilUtc) OR c.enqueueLeaseUntilUtc <= @now) " +
             "ORDER BY c.createdAtUtc ASC")
             .WithParameter("@limit", limit)
             .WithParameter("@enqueued", (int)CampaignEnqueueStatus.Enqueued)
             .WithParameter("@exhausted", (int)CampaignEnqueueStatus.Exhausted)
+            .WithParameter("@claimed", (int)CampaignEnqueueStatus.Claimed)
             .WithParameter("@maximumAttempts", maximumAttempts)
             .WithParameter("@now", now);
         using var iterator = container.GetItemQueryIterator<CampaignDocument>(

@@ -87,7 +87,7 @@ async Task EnqueueAsync(string manifestPath, string resultsPath, string queueUri
 
     var queue = new QueueClient(endpoint, new DefaultAzureCredential(), new QueueClientOptions
     {
-        MessageEncoding = QueueMessageEncoding.None,
+        MessageEncoding = QueueMessageEncoding.Base64,
         Retry = { MaxRetries = 0, NetworkTimeout = TimeSpan.FromSeconds(10) },
     });
     var outcomes = new List<CampaignEnqueueOutcome>(manifest.Length);

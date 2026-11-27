@@ -31,6 +31,22 @@ public sealed class CampaignEnqueueReconciliationTests
     }
 
     [Fact]
+    public async Task ActiveLeaseDoesNotConsumeCandidateLimit()
+    {
+        var store = new InMemoryCampaignDocumentStore();
+        var repository = new CampaignRepository(store);
+        await repository.CreateAsync(CreateCampaign("article-1"), CancellationToken.None);
+        await repository.CreateAsync(CreateCampaign("article-2"), CancellationToken.None);
+        var first = Assert.Single((await repository.ListEnqueueCandidatesAsync(Now, 3, 1, CancellationToken.None)));
+        Assert.NotNull(await repository.TryClaimEnqueueAsync(
+            first, Now, TimeSpan.FromMinutes(10), CancellationToken.None));
+
+        var available = Assert.Single(await repository.ListEnqueueCandidatesAsync(Now, 3, 1, CancellationToken.None));
+
+        Assert.NotEqual(first.Definition.CampaignId, available.Definition.CampaignId);
+    }
+
+    [Fact]
     public async Task TransientAndUnknownFailuresUseBoundedBackoffAndEventuallyExhaust()
     {
         var repository = await CreateRepositoryAsync();
@@ -156,6 +172,19 @@ public sealed class CampaignEnqueueReconciliationTests
         var repository = new CampaignRepository(new InMemoryCampaignDocumentStore());
         await repository.CreateAsync(CampaignPersistenceTests.CreateCampaign(), CancellationToken.None);
         return repository;
+    }
+
+    private static CampaignDefinition CreateCampaign(string slug)
+    {
+        var url = $"https://www.linkedin.com/pulse/{slug}";
+        var article = new PublishedArticle(
+            JsonArticleCatalogReader.DeriveArticleId(ArticleOrigin.LinkedIn, "pt-BR", url),
+            ArticleOrigin.LinkedIn,
+            "pt-BR",
+            url,
+            $"Artigo {slug}",
+            "Descrição");
+        return CampaignDefinition.FromArticle(article, new string('a', 40), 1, Now);
     }
 
     private sealed class ReplayPublicationCoordinator(
