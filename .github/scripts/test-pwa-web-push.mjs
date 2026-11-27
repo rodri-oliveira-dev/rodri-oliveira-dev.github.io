@@ -122,7 +122,7 @@ test("disabled public gate never inspects browser, storage, permission or API", 
   assert.equal(disabled.calls.register, 0);
 });
 
-test("capability detection combines secure APIs and iOS standalone context", () => {
+test("capability detection covers iOS installation, Android and desktop contexts", () => {
   const Notification = { permission: "default" };
   const baseWindow = { isSecureContext: true, Notification, PushManager: class {}, matchMedia: () => ({ matches: false }) };
   const ios = { serviceWorker: {}, platform: "MacIntel", maxTouchPoints: 5, userAgent: "Synthetic browser" };
@@ -132,6 +132,15 @@ test("capability detection combines secure APIs and iOS standalone context", () 
   assert.equal(detectWebPushCapabilities({
     windowLike: { ...baseWindow, matchMedia: () => ({ matches: true }) }, navigatorLike: ios,
   }).supported, true);
+  for (const navigatorLike of [
+    { serviceWorker: {}, platform: "Linux armv8l", maxTouchPoints: 5, userAgent: "Synthetic Android" },
+    { serviceWorker: {}, platform: "Win32", maxTouchPoints: 0, userAgent: "Synthetic desktop" },
+    { serviceWorker: {}, platform: "MacIntel", maxTouchPoints: 0, userAgent: "Synthetic desktop Safari" },
+  ]) {
+    assert.deepEqual(detectWebPushCapabilities({ windowLike: baseWindow, navigatorLike }), {
+      supported: true, installRequired: false, permission: "default",
+    });
+  }
   assert.equal(detectWebPushCapabilities({
     windowLike: { ...baseWindow, isSecureContext: false }, navigatorLike: { serviceWorker: {}, platform: "Linux", maxTouchPoints: 0 },
   }).supported, false);

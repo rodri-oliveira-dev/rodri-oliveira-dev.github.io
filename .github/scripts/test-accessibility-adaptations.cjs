@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const puppeteer = require("puppeteer");
 const { urls } = require("../../.pa11yci.cjs");
 const ORIGIN = process.env.SITE_ORIGIN || "http://127.0.0.1:8080";
+const URL_FILTER = process.env.ACCESSIBILITY_URL_FILTER;
 const results = require("./accessibility-results.cjs").createResults("Text adaptations and accessibility tree");
 
 // These checks supplement Pa11y. They are not browser zoom or AT conformance tests.
@@ -137,6 +138,10 @@ async function assertMobileMenuTree(page, url) {
 }
 
 (async () => {
+  const selectedUrls = URL_FILTER
+    ? urls.filter((configuredUrl) => new URL(configuredUrl).pathname === URL_FILTER)
+    : urls;
+  if (!selectedUrls.length) throw new Error(`No accessibility URL matches ${URL_FILTER}`);
   const browser = await puppeteer.launch({
     headless: true,
     args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
@@ -168,7 +173,7 @@ async function assertMobileMenuTree(page, url) {
         assert.notDeepEqual(mobile.stableText, desktop.stableText, "Hidden service CTA text must be detected");
       } finally { await page.close(); }
     });
-    for (const configuredUrl of urls) {
+    for (const configuredUrl of selectedUrls) {
       const url = new URL(new URL(configuredUrl).pathname, ORIGIN).href;
       const scenario = async (name, width, height, check) => {
         await results.run(url + " | " + name, async () => {

@@ -2,6 +2,7 @@
 const assert = require("node:assert/strict");
 const { chromium, firefox, webkit } = require("playwright");
 const fs = require("node:fs");
+const http = require("node:http");
 const { spawn } = require("node:child_process");
 
 const browsers = { chromium, firefox, webkit };
@@ -13,17 +14,19 @@ if (!browsers[name]) throw new Error("Set PWA_BROWSER to chromium, firefox, or w
 // initiated inside Firefox's Service Worker. Stop the actual local server as
 // well, so every engine exercises the same real network failure.
 const pidFile = "/tmp/pwa-http.pid";
+let serverPid = process.env.PWA_SERVER_PID ? Number(process.env.PWA_SERVER_PID) : null;
+const pythonCommand = process.env.PWA_PYTHON || "python3";
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const serverResponds = async () => {
-  try {
-    const response = await fetch(origin + "/", { signal: AbortSignal.timeout(500) });
-    return response.ok;
-  } catch {
-    return false;
-  }
-};
+const serverResponds = () => new Promise((resolve) => {
+  const request = http.get(origin + "/", (response) => {
+    response.resume();
+    resolve(response.statusCode >= 200 && response.statusCode < 400);
+  });
+  request.setTimeout(500, () => request.destroy());
+  request.on("error", () => resolve(false));
+});
 const stopServer = async () => {
-  const pid = Number(fs.readFileSync(pidFile, "utf8").trim());
+  const pid = serverPid || Number(fs.readFileSync(pidFile, "utf8").trim());
   process.kill(pid, "SIGTERM");
   for (let attempt = 0; attempt < 40; attempt += 1) {
     if (!(await serverResponds())) return;
@@ -32,12 +35,13 @@ const stopServer = async () => {
   throw new Error("Local fixture server did not stop");
 };
 const restartServer = async () => {
-  const server = spawn("python3", ["-m", "http.server", "8765", "--bind", "127.0.0.1"], {
+  const server = spawn(pythonCommand, [".github/scripts/serve-test-site.py", "--port", "8765", "--bind", "127.0.0.1", "--directory", "."], {
     detached: true,
     stdio: "ignore"
   });
   server.unref();
-  fs.writeFileSync(pidFile, String(server.pid));
+  serverPid = server.pid;
+  if (!process.env.PWA_SERVER_PID) fs.writeFileSync(pidFile, String(server.pid));
   for (let attempt = 0; attempt < 40; attempt += 1) {
     if (await serverResponds()) return;
     await delay(100);
@@ -80,6 +84,34 @@ const restartServer = async () => {
           };
         }
       });
+      const fixture = origin + "/.github/scripts/fixtures/web-push-manual.html";
+      await page.goto(fixture + "?scenario=inactive", { waitUntil: "load" });
+      await page.waitForFunction(() => document.querySelector("[data-web-push]")?.dataset.state === "inactive");
+      assert.equal(await page.locator("[data-web-push]").getAttribute("data-state"), "inactive");
+      await page.locator("[data-web-push-consent-input]").check();
+      await page.locator("[data-web-push-activate]").click();
+      await page.waitForFunction(() => document.querySelector("[data-web-push]")?.dataset.state === "active");
+      assert.deepEqual(await page.evaluate(() => window.__webPushNativeCalls), {
+        permission: 0, subscribe: 0, unsubscribe: 0
+      }, "manual fixture must not invoke native Web Push capabilities");
+
+      await page.goto(fixture + "?scenario=active", { waitUntil: "load" });
+      await page.waitForFunction(() => document.querySelector("[data-web-push]")?.dataset.state === "active");
+      await page.locator("[data-web-push-cancel]").click();
+      await page.waitForFunction(() => document.querySelector("[data-web-push]")?.dataset.state === "inactive");
+
+      await page.goto(fixture + "?scenario=backend-unavailable", { waitUntil: "load" });
+      await page.waitForFunction(() => document.querySelector("[data-web-push]")?.dataset.state === "active");
+      await page.locator("[data-web-push-cancel]").click();
+      await page.waitForFunction(() => document.querySelector("[data-web-push]")?.dataset.state === "cancel-pending-remote");
+
+      await page.goto(fixture + "?scenario=recovery-required", { waitUntil: "load" });
+      await page.waitForFunction(() => document.querySelector("[data-web-push]")?.dataset.state === "recovery-required");
+      await page.locator("[data-web-push-recovery-id]").fill("sub_" + "R".repeat(43));
+      await page.locator("[data-web-push-recovery-capability]").fill("S".repeat(43));
+      await page.locator("[data-web-push-recover]").click();
+      await page.waitForFunction(() => document.querySelector("[data-web-push]")?.dataset.state === "inactive");
+
       await page.goto(origin + "/", { waitUntil: "load" });
       assert.equal(await page.locator("[data-web-push]").getAttribute("data-state"), "disabled");
       assert.equal(await page.locator("[data-web-push-activate]:visible").count(), 0);
