@@ -32,7 +32,7 @@ Para iniciar o host local, copie `src/Notifications.Functions/local.settings.exa
 
 ## Registro, consentimento e persistência (#152)
 
-O contrato aceita exclusivamente provedores Web Push na allowlist, HTTPS/443/DNS, chave P-256 válida, `auth` de 16 bytes, idioma `pt-BR`, finalidade `new-articles-pt-br`, consentimento afirmativo `1.0.0`, aviso `draft-1` e método `explicit-button`. O servidor fixa o instante UTC e a expiração absoluta em 365 dias; dados operacionais nunca prorrogam esse prazo.
+O contrato aceita exclusivamente provedores Web Push na allowlist, HTTPS/443/DNS, chave P-256 válida, `auth` de 16 bytes, idioma `pt-BR`, finalidade `new-articles-pt-br`, consentimento afirmativo `1.0.0`, aviso `1.0.0` e método `explicit-button`. O servidor fixa o instante UTC e a expiração absoluta em 365 dias; dados operacionais nunca prorrogam esse prazo.
 
 O identificador público opaco é `sub_` mais SHA-256 Base64URL do endpoint normalizado e também funciona como partition key, permitindo point reads de revogação. Ele é pseudonimizado, não anônimo. A criação condicional é a barreira de unicidade: um conflito nunca troca chaves, capacidades, evidência ou validade, mesmo sob concorrência.
 

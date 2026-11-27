@@ -484,6 +484,7 @@
         <div class="web-push-content">
           <output class="web-push-status" data-web-push-status aria-live="polite">Notificações indisponíveis</output>
           <p data-web-push-description>A ativação e o cancelamento ainda não estão disponíveis.</p>
+          <p class="web-push-privacy-link"><a href="#privacidade-web-push">Leia o aviso de privacidade das notificações.</a></p>
           <p data-web-push-expiration hidden></p>
           <div data-web-push-consent hidden>
             <label class="web-push-consent"><input type="checkbox" data-web-push-consent-input> <span><span data-web-push-consent-text></span> <a href="#contact" data-web-push-privacy hidden>Consulte o aviso de privacidade.</a></span></label>
@@ -501,6 +502,34 @@
             <button type="button" data-web-push-recover>Recuperar e cancelar</button>
           </fieldset>
           <p class="web-push-contact">Se você não tiver mais acesso às credenciais, use o <a href="#contact">canal de contato</a>. Não envie credenciais por e-mail.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section web-push-privacy-section" id="privacidade-web-push" aria-labelledby="web-push-privacy-title">
+      <div class="container web-push-privacy-card">
+        <header class="web-push-privacy-heading">
+          <p class="eyebrow">Privacidade</p>
+          <h2 id="web-push-privacy-title">Aviso de privacidade das notificações</h2>
+          <p>Versão 1.0.0 · candidata à revisão jurídica</p>
+        </header>
+        <div class="web-push-privacy-content">
+          <p class="web-push-privacy-status"><strong>As notificações ainda estão desativadas.</strong> Este aviso será aplicável somente após revisão jurídica e autorização de publicação. Enquanto a inscrição estiver indisponível, o portfólio não coletará dados de Web Push.</p>
+
+          <h3>Finalidade e consentimento</h3>
+          <p>A inscrição será usada exclusivamente para avisar quando um novo artigo em português for publicado. Não haverá conta, publicidade, venda de dados, segmentação ou perfil comportamental. Antes de o navegador solicitar permissão, você deverá marcar um controle de consentimento. A inscrição valerá por até 365 dias e não será renovada automaticamente.</p>
+
+          <h3>Dados tratados</h3>
+          <p>Serão tratados o endpoint e as chaves de entrega criados pelo navegador, idioma <code>pt-BR</code>, finalidade, versão e instante do consentimento, data de expiração, estado da inscrição e metadados mínimos para segurança, deduplicação, cancelamento e exclusão. Não serão solicitados nome, e-mail, telefone ou localização para a inscrição. Logs do projeto serão sanitizados para não registrar endpoint, chaves ou credenciais.</p>
+
+          <h3>Fornecedores e transferências</h3>
+          <p>O site usa GitHub Pages. O serviço de notificações foi projetado com Microsoft Azure em Brazil South e o navegador poderá usar serviços Web Push da Google, Mozilla, Apple ou Microsoft. GitHub, Microsoft, provedores e subprocessadores podem tratar dados fora do Brasil, inclusive em planos de controle, suporte e entrega. A região Azure não garante que todo o tratamento permaneça no país; papéis, países e mecanismos jurídicos ainda dependem de validação jurídica.</p>
+
+          <h3>Retenção, cancelamento e recuperação</h3>
+          <p>A inscrição ficará inelegível ao expirar ou após cancelamento. Você poderá cancelar pelo site com a credencial mantida no dispositivo ou com uma credencial de recuperação entregue uma única vez. Se ambas forem perdidas, o atendimento continuará pelo canal de contato, com verificação proporcional e sem cadastro obrigatório. Logs sob controle do projeto terão retenção prevista de 30 dias; backups periódicos do Cosmos DB são previstos a cada quatro horas, com retenção de oito horas. Retenções gerenciadas por fornecedores e prazos adicionais ainda precisam de validação.</p>
+
+          <h3>Seus direitos e contato</h3>
+          <p>Você poderá solicitar confirmação, acesso, correção quando aplicável, informações sobre compartilhamentos, revogação, bloqueio ou eliminação e exercer outros direitos previstos na LGPD. Escreva para <a href="mailto:rodrigodotnet@outlook.com">rodrigodotnet@outlook.com</a>. Não envie endpoint, chaves ou credenciais por e-mail. Uma notificação já entregue ou aceita pelo provedor pode continuar em trânsito mesmo após o cancelamento.</p>
         </div>
       </div>
     </section>

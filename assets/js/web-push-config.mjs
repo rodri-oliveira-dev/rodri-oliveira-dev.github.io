@@ -3,9 +3,9 @@ export const WEB_PUSH_CONFIG = Object.freeze({
   locale: "pt-BR",
   purposeId: "new-articles-pt-br",
   consentVersion: "1.0.0",
-  privacyNoticeVersion: null,
-  consentText: null,
-  privacyNoticeUrl: null,
+  privacyNoticeVersion: "1.0.0",
+  consentText: "Receba notificações quando novos artigos em português forem publicados. Não é necessário criar uma conta. Você poderá cancelar sua inscrição a qualquer momento.",
+  privacyNoticeUrl: "https://rodri-oliveira-dev.github.io/#privacidade-web-push",
   apiBaseUrl: null,
   vapidPublicKey: null,
 });
