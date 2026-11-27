@@ -95,6 +95,8 @@ resource "azapi_resource" "subscriptions_container" {
           excludedPaths = [
             { path = "/endpoint/?" },
             { path = "/keys/*" },
+            { path = "/cancellationCapabilityHash/?" },
+            { path = "/recoveryCapabilityHash/?" },
             # Cosmos adds this default exclusion in its ARM response.
             { path = "/\"_etag\"/?" },
           ]

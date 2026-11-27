@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using Notifications.Functions.Push;
 
 namespace Notifications.Functions.Subscriptions;
 
@@ -9,13 +10,19 @@ public sealed record WebPushSubscriptionInput(
     string P256Dh,
     string Auth,
     string Locale,
-    DateTimeOffset ConsentGrantedAtUtc,
-    string ConsentVersion);
+    string PurposeId,
+    string ConsentVersion,
+    string PrivacyNoticeVersion,
+    bool ConsentGranted,
+    string ConsentMethod);
 
 public sealed record SubscriptionRecord(
     string Id,
     string PartitionKey,
     WebPushSubscriptionInput Subscription,
+    DateTimeOffset ConsentGrantedAtUtc,
+    DateTimeOffset ExpiresAtUtc,
+    string Generation,
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset UpdatedAtUtc,
     string ETag);
@@ -40,35 +47,29 @@ public sealed record SubscriptionMutationResult(
 public static partial class WebPushSubscriptionValidator
 {
     public const string SupportedLocale = "pt-BR";
-    private const int MaximumEndpointLength = 2048;
-    private static readonly DateTimeOffset MinimumConsentDate = new(2020, 1, 1, 0, 0, 0, TimeSpan.Zero);
+    public const string SupportedPurposeId = "new-articles-pt-br";
+    public const string SupportedConsentVersion = "1.0.0";
+    public const string SupportedPrivacyNoticeVersion = "draft-1";
+    public const string SupportedConsentMethod = "explicit-button";
+    public const int MaximumEndpointLength = 2048;
+    public const int SubscriptionIdLength = 47;
 
-    public static WebPushSubscriptionInput ValidateAndNormalize(
-        WebPushSubscriptionInput input,
-        DateTimeOffset utcNow)
+    public static WebPushSubscriptionInput ValidateAndNormalize(WebPushSubscriptionInput input)
     {
         ArgumentNullException.ThrowIfNull(input);
 
         var endpoint = ValidateEndpoint(input.Endpoint);
-        ValidateKey(input.P256Dh, expectedLength: 65, requireUncompressedPoint: true, nameof(input.P256Dh));
-        ValidateKey(input.Auth, expectedLength: 16, requireUncompressedPoint: false, nameof(input.Auth));
+        ValidateKey(input.P256Dh, 65, true, nameof(input.P256Dh));
+        ValidateKey(input.Auth, 16, false, nameof(input.Auth));
 
-        if (!string.Equals(input.Locale, SupportedLocale, StringComparison.Ordinal))
+        if (!input.ConsentGranted ||
+            !string.Equals(input.Locale, SupportedLocale, StringComparison.Ordinal) ||
+            !string.Equals(input.PurposeId, SupportedPurposeId, StringComparison.Ordinal) ||
+            !string.Equals(input.ConsentVersion, SupportedConsentVersion, StringComparison.Ordinal) ||
+            !string.Equals(input.PrivacyNoticeVersion, SupportedPrivacyNoticeVersion, StringComparison.Ordinal) ||
+            !string.Equals(input.ConsentMethod, SupportedConsentMethod, StringComparison.Ordinal))
         {
-            throw new ArgumentException("Somente o idioma pt-BR é aceito nesta versão.", nameof(input));
-        }
-
-        if (input.ConsentGrantedAtUtc.Offset != TimeSpan.Zero ||
-            input.ConsentGrantedAtUtc < MinimumConsentDate ||
-            input.ConsentGrantedAtUtc > utcNow.AddMinutes(5))
-        {
-            throw new ArgumentException("O consentimento deve usar UTC e um instante válido.", nameof(input));
-        }
-
-        if (string.IsNullOrWhiteSpace(input.ConsentVersion) ||
-            !ConsentVersionPattern().IsMatch(input.ConsentVersion))
-        {
-            throw new ArgumentException("A versão do consentimento é inválida.", nameof(input));
+            throw new ArgumentException("O consentimento informado não é aceito.", nameof(input));
         }
 
         return input with { Endpoint = endpoint };
@@ -77,81 +78,83 @@ public static partial class WebPushSubscriptionValidator
     public static (string Id, string PartitionKey) DeriveIdentity(string normalizedEndpoint)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(normalizedEndpoint);
-
         var digest = SHA256.HashData(Encoding.UTF8.GetBytes(normalizedEndpoint));
-        var id = Convert.ToHexStringLower(digest);
-        return (id, $"v1-{id[..2]}");
+        var id = $"sub_{Base64Url.Encode(digest)}";
+        return (id, id);
     }
 
-    public static string NormalizeEndpoint(string endpoint) => ValidateEndpoint(endpoint);
+    public static bool IsValidSubscriptionId(string? value) =>
+        value is not null && value.Length == SubscriptionIdLength && SubscriptionIdPattern().IsMatch(value);
 
     private static string ValidateEndpoint(string value)
     {
         if (string.IsNullOrWhiteSpace(value) || value.Length > MaximumEndpointLength ||
             !Uri.TryCreate(value, UriKind.Absolute, out var uri) ||
-            uri.Scheme != Uri.UriSchemeHttps ||
-            !string.IsNullOrEmpty(uri.UserInfo) ||
-            !string.IsNullOrEmpty(uri.Fragment) ||
-            uri.HostNameType != UriHostNameType.Dns ||
-            (!uri.IsDefaultPort && uri.Port != 443))
+            !PushEndpointPolicy.IsAllowed(uri) ||
+            (!string.IsNullOrEmpty(uri.Query) && uri.Query.Length > 1024))
         {
-            throw new ArgumentException("O endpoint Web Push deve ser uma URI HTTPS válida.", nameof(value));
+            throw new ArgumentException("O endpoint Web Push é inválido.", nameof(value));
         }
 
         return uri.GetComponents(UriComponents.HttpRequestUrl, UriFormat.UriEscaped);
     }
 
-    private static void ValidateKey(
-        string value,
-        int expectedLength,
-        bool requireUncompressedPoint,
-        string parameterName)
+    private static void ValidateKey(string value, int expectedLength, bool requirePoint, string parameterName)
     {
-        if (string.IsNullOrWhiteSpace(value) || !Base64UrlPattern().IsMatch(value))
+        if (!Base64Url.TryDecode(value, out var bytes) || bytes.Length != expectedLength ||
+            (requirePoint && bytes[0] != 0x04))
         {
-            throw new ArgumentException("A chave deve usar Base64URL sem padding.", parameterName);
+            throw new ArgumentException("O material criptográfico Web Push é inválido.", parameterName);
         }
 
-        byte[] bytes;
+        if (!requirePoint)
+        {
+            return;
+        }
+
         try
         {
-            var padded = value.Replace('-', '+').Replace('_', '/').PadRight((value.Length + 3) / 4 * 4, '=');
-            bytes = Convert.FromBase64String(padded);
-        }
-        catch (FormatException exception)
-        {
-            throw new ArgumentException("A chave Base64URL é inválida.", parameterName, exception);
-        }
-
-        if (bytes.Length != expectedLength || (requireUncompressedPoint && bytes[0] != 0x04))
-        {
-            throw new ArgumentException("A chave Web Push possui tamanho ou formato inválido.", parameterName);
-        }
-
-        if (requireUncompressedPoint)
-        {
-            try
+            using var key = ECDiffieHellman.Create(new ECParameters
             {
-                using var key = ECDiffieHellman.Create(new ECParameters
-                {
-                    Curve = ECCurve.NamedCurves.nistP256,
-                    Q = new ECPoint
-                    {
-                        X = bytes[1..33],
-                        Y = bytes[33..65],
-                    },
-                });
-            }
-            catch (CryptographicException exception)
-            {
-                throw new ArgumentException("A chave pública P-256 é inválida.", parameterName, exception);
-            }
+                Curve = ECCurve.NamedCurves.nistP256,
+                Q = new ECPoint { X = bytes[1..33], Y = bytes[33..65] },
+            });
+        }
+        catch (CryptographicException exception)
+        {
+            throw new ArgumentException("O material criptográfico Web Push é inválido.", parameterName, exception);
         }
     }
 
-    [GeneratedRegex("^[A-Za-z0-9_-]+$", RegexOptions.CultureInvariant)]
-    private static partial Regex Base64UrlPattern();
+    [GeneratedRegex("^sub_[A-Za-z0-9_-]{43}$", RegexOptions.CultureInvariant)]
+    private static partial Regex SubscriptionIdPattern();
+}
 
-    [GeneratedRegex("^[a-z0-9][a-z0-9._-]{0,63}$", RegexOptions.CultureInvariant)]
-    private static partial Regex ConsentVersionPattern();
+internal static class Base64Url
+{
+    public static string Encode(ReadOnlySpan<byte> value) => Convert.ToBase64String(value)
+        .TrimEnd('=')
+        .Replace('+', '-')
+        .Replace('/', '_');
+
+    public static bool TryDecode(string? value, out byte[] bytes)
+    {
+        bytes = [];
+        if (string.IsNullOrWhiteSpace(value) || value.Length > 256 ||
+            value.Any(character => !char.IsAsciiLetterOrDigit(character) && character is not '-' and not '_'))
+        {
+            return false;
+        }
+
+        try
+        {
+            bytes = Convert.FromBase64String(value.Replace('-', '+').Replace('_', '/')
+                .PadRight((value.Length + 3) / 4 * 4, '='));
+            return true;
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+    }
 }

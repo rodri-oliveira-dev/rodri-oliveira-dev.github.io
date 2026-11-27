@@ -108,10 +108,11 @@ public sealed class WebPushTransportTests
 
     private static SubscriptionRecord CreateRecord(string endpoint)
     {
-        var subscription = Subscriptions.WebPushSubscriptionValidatorTests.CreateValid() with { Endpoint = endpoint };
-        var normalized = WebPushSubscriptionValidator.ValidateAndNormalize(subscription, DateTimeOffset.UtcNow);
+        var normalized = WebPushSubscriptionValidator.ValidateAndNormalize(
+            Subscriptions.WebPushSubscriptionValidatorTests.CreateValid());
         var (id, partitionKey) = WebPushSubscriptionValidator.DeriveIdentity(normalized.Endpoint);
-        return new(id, partitionKey, normalized, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, "etag-test");
+        return new(id, partitionKey, normalized with { Endpoint = endpoint }, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(365),
+            "generation-test", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, "etag-test");
     }
 
     private static VapidCredentials CreateVapidCredentials()

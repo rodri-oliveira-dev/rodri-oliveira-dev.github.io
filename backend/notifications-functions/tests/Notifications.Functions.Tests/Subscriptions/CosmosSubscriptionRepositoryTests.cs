@@ -7,157 +7,178 @@ public sealed class CosmosSubscriptionRepositoryTests
     private static readonly DateTimeOffset Now = new(2026, 11, 24, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    public async Task CreateAsync_ReturnsDuplicateWithoutOverwritingExistingSubscription()
+    public async Task RegisterAsync_CreatesConsentEvidenceAndStoresOnlyCapabilityHashes()
     {
-        var store = new FakeSubscriptionDocumentStore();
+        var store = new FakeStore();
         var repository = CreateRepository(store);
-        var subscription = WebPushSubscriptionValidatorTests.CreateValid();
 
-        var created = await repository.CreateAsync(subscription);
-        var duplicate = await repository.CreateAsync(subscription);
+        var result = await repository.RegisterAsync(WebPushSubscriptionValidatorTests.CreateValid());
+        var document = Assert.Single(store.Documents).Value.Document;
 
-        Assert.Equal(SubscriptionMutationStatus.Created, created.Status);
-        Assert.Equal(SubscriptionMutationStatus.Duplicate, duplicate.Status);
-        Assert.Equal(created.Id, duplicate.Id);
+        Assert.True(result.Created);
+        Assert.Equal(Now, document.ConsentGrantedAtUtc);
+        Assert.Equal(Now.AddDays(365), document.ExpiresAtUtc);
+        Assert.Equal(365 * 24 * 60 * 60, document.TimeToLiveSeconds);
+        Assert.DoesNotContain(result.CancellationCapability!, document.CancellationCapabilityHash, StringComparison.Ordinal);
+        Assert.DoesNotContain(result.RecoveryCapability!, document.RecoveryCapabilityHash, StringComparison.Ordinal);
+        Assert.Equal(43, result.CancellationCapability!.Length);
+        Assert.Equal(43, result.RecoveryCapability!.Length);
+    }
+
+    [Fact]
+    public async Task DuplicateRegistration_IsIdempotentAndCannotTakeOverOrRecoverCapabilities()
+    {
+        var store = new FakeStore();
+        var repository = CreateRepository(store);
+        var first = await repository.RegisterAsync(WebPushSubscriptionValidatorTests.CreateValid());
+        var firstDocument = Assert.Single(store.Documents).Value.Document;
+
+        var duplicate = await repository.RegisterAsync(WebPushSubscriptionValidatorTests.CreateValid() with { Auth = Encode(Enumerable.Repeat((byte)7, 16).ToArray()) });
+
+        Assert.False(duplicate.Created);
+        Assert.Null(duplicate.CancellationCapability);
+        Assert.Same(firstDocument, Assert.Single(store.Documents).Value.Document);
+        Assert.NotNull(first.CancellationCapability);
+    }
+
+    [Fact]
+    public async Task ConcurrentRegistrations_HaveOneWinnerAndDoNotReplaceCapabilities()
+    {
+        var store = new FakeStore();
+        var repository = CreateRepository(store);
+
+        var results = await Task.WhenAll(
+            repository.RegisterAsync(WebPushSubscriptionValidatorTests.CreateValid()),
+            repository.RegisterAsync(WebPushSubscriptionValidatorTests.CreateValid()));
+
+        Assert.Equal(1, results.Count(result => result.Created));
+        Assert.Equal(1, results.Count(result => !result.Created));
         Assert.Single(store.Documents);
     }
 
-    [Fact]
-    public async Task UpsertAsync_UsesETagAndPreservesCreationTimestamp()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task RevokeAsync_AcceptsEitherCapabilityAndDeletesAfterAtomicRevocation(bool useRecovery)
     {
-        var store = new FakeSubscriptionDocumentStore();
+        var store = new FakeStore();
         var repository = CreateRepository(store);
-        var subscription = WebPushSubscriptionValidatorTests.CreateValid();
-        var created = await repository.CreateAsync(subscription);
+        var created = await repository.RegisterAsync(WebPushSubscriptionValidatorTests.CreateValid());
+        var capability = useRecovery ? created.RecoveryCapability! : created.CancellationCapability!;
 
-        var updated = await repository.UpsertAsync(
-            subscription with { ConsentVersion = "privacy-v2" },
-            created.ETag);
-        var stored = await repository.GetAsync(subscription.Endpoint);
+        await repository.RevokeAsync(created.SubscriptionId!, capability);
+        await repository.RevokeAsync(created.SubscriptionId!, capability);
 
-        Assert.Equal(SubscriptionMutationStatus.Updated, updated.Status);
-        Assert.NotNull(stored);
-        Assert.Equal("privacy-v2", stored.Subscription.ConsentVersion);
-        Assert.Equal(Now, stored.CreatedAtUtc);
-        Assert.Equal(Now, stored.UpdatedAtUtc);
+        Assert.Empty(store.Documents);
+        Assert.Equal(1, store.ReplaceCalls);
+        Assert.Equal("revoked", store.LastReplaced!.Status);
     }
 
     [Fact]
-    public async Task UpsertAndDelete_ReturnConcurrencyConflictForStaleETag()
+    public async Task RevokeAsync_InvalidCapabilityDoesNotRevealOrModifySubscription()
     {
-        var store = new FakeSubscriptionDocumentStore();
+        var store = new FakeStore();
         var repository = CreateRepository(store);
-        var subscription = WebPushSubscriptionValidatorTests.CreateValid();
-        await repository.CreateAsync(subscription);
+        var created = await repository.RegisterAsync(WebPushSubscriptionValidatorTests.CreateValid());
 
-        var update = await repository.UpsertAsync(subscription, "stale-etag");
-        var delete = await repository.DeleteAsync(subscription.Endpoint, "stale-etag");
+        await repository.RevokeAsync(created.SubscriptionId!, Encode(new byte[32]));
 
-        Assert.Equal(SubscriptionMutationStatus.ConcurrencyConflict, update.Status);
-        Assert.Equal(SubscriptionMutationStatus.ConcurrencyConflict, delete.Status);
         Assert.Single(store.Documents);
+        Assert.Equal(0, store.ReplaceCalls);
     }
 
     [Fact]
-    public async Task UpsertAsync_WhenCreateLosesRace_ReturnsDuplicateWithoutReplacingWinner()
+    public async Task ExpirationIsAbsoluteAndBlocksListingAndFinalEligibility()
     {
-        var store = new FakeSubscriptionDocumentStore { SimulateDuplicateOnNextCreate = true };
+        var store = new FakeStore();
+        var clock = new MutableTimeProvider(Now);
+        var repository = new CosmosSubscriptionRepository(store, clock);
+        var created = await repository.RegisterAsync(WebPushSubscriptionValidatorTests.CreateValid());
+        var document = Assert.Single(store.Documents).Value.Document;
+        clock.UtcNow = Now.AddDays(365);
+
+        var page = await repository.ListActivePageAsync("pt-BR", null);
+        var eligible = await repository.GetEligibleAsync(created.SubscriptionId!, document.Generation);
+
+        Assert.Empty(page.Items);
+        Assert.Null(eligible);
+        Assert.Equal(Now.AddDays(365), document.ExpiresAtUtc);
+    }
+
+    [Fact]
+    public async Task DeleteFailureLeavesLogicallyRevokedRecordIneligibleForRetry()
+    {
+        var store = new FakeStore { FailDelete = true };
         var repository = CreateRepository(store);
+        var created = await repository.RegisterAsync(WebPushSubscriptionValidatorTests.CreateValid());
 
-        var result = await repository.UpsertAsync(WebPushSubscriptionValidatorTests.CreateValid(), null);
+        await repository.RevokeAsync(created.SubscriptionId!, created.CancellationCapability!);
+        var stored = Assert.Single(store.Documents).Value;
 
-        Assert.Equal(SubscriptionMutationStatus.Duplicate, result.Status);
-        Assert.Equal(0, store.UpsertCalls);
+        Assert.Equal("revoked", stored.Document.Status);
+        Assert.Null(await repository.GetEligibleAsync(created.SubscriptionId!, stored.Document.Generation));
     }
 
-    private static CosmosSubscriptionRepository CreateRepository(FakeSubscriptionDocumentStore store) =>
-        new(store, new FixedTimeProvider(Now));
+    private static CosmosSubscriptionRepository CreateRepository(FakeStore store) => new(store, new MutableTimeProvider(Now));
+    private static string Encode(byte[] value) => Convert.ToBase64String(value).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
-    private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    private sealed class MutableTimeProvider(DateTimeOffset value) : TimeProvider
     {
-        public override DateTimeOffset GetUtcNow() => utcNow;
+        public DateTimeOffset UtcNow { get; set; } = value;
+        public override DateTimeOffset GetUtcNow() => UtcNow;
     }
 
-    private sealed class FakeSubscriptionDocumentStore : ISubscriptionDocumentStore
+    private sealed class FakeStore : ISubscriptionDocumentStore
     {
         private int _version;
         public Dictionary<string, StoredSubscriptionDocument> Documents { get; } = [];
-        public bool SimulateDuplicateOnNextCreate { get; init; }
-        public int UpsertCalls { get; private set; }
+        public int ReplaceCalls { get; private set; }
+        public SubscriptionDocument? LastReplaced { get; private set; }
+        public bool FailDelete { get; init; }
 
-        public Task<StoredSubscriptionPage> ListByLocalePageAsync(
-            string locale,
-            int pageSize,
-            string? continuationToken,
-            CancellationToken cancellationToken)
+        public Task<StoredSubscriptionPage> ListActivePageAsync(string locale, DateTimeOffset now, int pageSize, string? continuationToken, CancellationToken cancellationToken)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            var items = Documents.Values
-                .Where(item => item.Document.Locale == locale)
-                .Take(pageSize)
-                .ToArray();
+            var items = Documents.Values.Where(item => item.Document.Locale == locale && item.Document.Status == "active" &&
+                item.Document.RevokedAtUtc is null && item.Document.ExpiresAtUtc > now).Take(pageSize).ToArray();
             return Task.FromResult(new StoredSubscriptionPage(items, null));
         }
 
-        public Task<StoredSubscriptionDocument?> ReadAsync(
-            string id,
-            string partitionKey,
-            CancellationToken cancellationToken)
+        public Task<StoredSubscriptionDocument?> ReadAsync(string id, string partitionKey, CancellationToken cancellationToken)
         {
             Documents.TryGetValue(Key(id, partitionKey), out var stored);
             return Task.FromResult(stored);
         }
 
-        public Task<DocumentWriteResult> CreateAsync(
-            SubscriptionDocument document,
-            CancellationToken cancellationToken)
+        public Task<DocumentWriteResult> CreateAsync(SubscriptionDocument document, CancellationToken cancellationToken)
         {
-            var key = Key(document.Id, document.PartitionKey);
-            if (SimulateDuplicateOnNextCreate || Documents.ContainsKey(key))
+            lock (Documents)
             {
-                return Task.FromResult(new DocumentWriteResult(SubscriptionMutationStatus.Duplicate, null, 1));
+                var key = Key(document.Id, document.PartitionKey);
+                if (Documents.ContainsKey(key)) return Task.FromResult(new DocumentWriteResult(SubscriptionMutationStatus.Duplicate, null, 1));
+                var etag = NextETag();
+                Documents[key] = new(document, etag, 1);
+                return Task.FromResult(new DocumentWriteResult(SubscriptionMutationStatus.Created, etag, 1));
             }
-
-            var etag = NextETag();
-            Documents[key] = new(document, etag, 1);
-            return Task.FromResult(new DocumentWriteResult(SubscriptionMutationStatus.Created, etag, 1));
         }
 
-        public Task<DocumentWriteResult> UpsertAsync(
-            SubscriptionDocument document,
-            string? expectedETag,
-            CancellationToken cancellationToken)
+        public Task<DocumentWriteResult> ReplaceAsync(SubscriptionDocument document, string expectedETag, CancellationToken cancellationToken)
         {
-            UpsertCalls++;
+            ReplaceCalls++;
             var key = Key(document.Id, document.PartitionKey);
-            if (Documents.TryGetValue(key, out var stored) && expectedETag != stored.ETag)
-            {
+            if (!Documents.TryGetValue(key, out var current) || current.ETag != expectedETag)
                 return Task.FromResult(new DocumentWriteResult(SubscriptionMutationStatus.ConcurrencyConflict, null, 1));
-            }
-
-            var status = stored is null ? SubscriptionMutationStatus.Created : SubscriptionMutationStatus.Updated;
             var etag = NextETag();
+            LastReplaced = document;
             Documents[key] = new(document, etag, 1);
-            return Task.FromResult(new DocumentWriteResult(status, etag, 1));
+            return Task.FromResult(new DocumentWriteResult(SubscriptionMutationStatus.Updated, etag, 1));
         }
 
-        public Task<DocumentWriteResult> DeleteAsync(
-            string id,
-            string partitionKey,
-            string expectedETag,
-            CancellationToken cancellationToken)
+        public Task<DocumentWriteResult> DeleteAsync(string id, string partitionKey, string expectedETag, CancellationToken cancellationToken)
         {
             var key = Key(id, partitionKey);
-            if (!Documents.TryGetValue(key, out var stored))
-            {
-                return Task.FromResult(new DocumentWriteResult(SubscriptionMutationStatus.NotFound, null, 1));
-            }
-
-            if (stored.ETag != expectedETag)
-            {
+            if (FailDelete) return Task.FromResult(new DocumentWriteResult(SubscriptionMutationStatus.ConcurrencyConflict, null, 1));
+            if (!Documents.TryGetValue(key, out var current) || current.ETag != expectedETag)
                 return Task.FromResult(new DocumentWriteResult(SubscriptionMutationStatus.ConcurrencyConflict, null, 1));
-            }
-
             Documents.Remove(key);
             return Task.FromResult(new DocumentWriteResult(SubscriptionMutationStatus.Deleted, null, 1));
         }

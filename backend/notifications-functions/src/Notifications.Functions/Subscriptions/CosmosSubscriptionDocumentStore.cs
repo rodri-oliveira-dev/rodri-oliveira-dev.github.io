@@ -9,24 +9,22 @@ internal sealed class CosmosSubscriptionDocumentStore : ISubscriptionDocumentSto
 {
     private readonly Container _container;
 
-    public CosmosSubscriptionDocumentStore(CosmosClient client, IOptions<CosmosOptions> options)
+    public CosmosSubscriptionDocumentStore(Container container)
     {
-        ArgumentNullException.ThrowIfNull(client);
-        ArgumentNullException.ThrowIfNull(options);
-
-        _container = client.GetContainer(
-            options.Value.CosmosDatabaseName,
-            options.Value.CosmosContainerName);
+        _container = container ?? throw new ArgumentNullException(nameof(container));
     }
 
-    public async Task<StoredSubscriptionPage> ListByLocalePageAsync(
+    public async Task<StoredSubscriptionPage> ListActivePageAsync(
         string locale,
+        DateTimeOffset now,
         int pageSize,
         string? continuationToken,
         CancellationToken cancellationToken)
     {
-        var query = new QueryDefinition("SELECT * FROM c WHERE c.locale = @locale")
-            .WithParameter("@locale", locale);
+        var query = new QueryDefinition(
+                "SELECT * FROM c WHERE c.type = 'subscription' AND c.locale = @locale AND c.status = 'active' AND c.revokedAtUtc = null AND c.expiresAtUtc > @now")
+            .WithParameter("@locale", locale)
+            .WithParameter("@now", now);
         using var iterator = _container.GetItemQueryIterator<SubscriptionDocument>(
             query,
             continuationToken,
@@ -78,34 +76,27 @@ internal sealed class CosmosSubscriptionDocumentStore : ISubscriptionDocumentSto
         }
     }
 
-    public async Task<DocumentWriteResult> UpsertAsync(
+    public async Task<DocumentWriteResult> ReplaceAsync(
         SubscriptionDocument document,
-        string? expectedETag,
+        string expectedETag,
         CancellationToken cancellationToken)
     {
         try
         {
-            var partitionKey = new PartitionKey(document.PartitionKey);
-            var response = expectedETag is null
-                ? await _container.UpsertItemAsync(document, partitionKey, cancellationToken: cancellationToken)
-                : await _container.ReplaceItemAsync(
-                    document,
-                    document.Id,
-                    partitionKey,
-                    new ItemRequestOptions { IfMatchEtag = expectedETag },
-                    cancellationToken);
-
-            var status = response.StatusCode == HttpStatusCode.Created
-                ? SubscriptionMutationStatus.Created
-                : SubscriptionMutationStatus.Updated;
-            return new(status, response.ETag, response.RequestCharge);
+            var response = await _container.ReplaceItemAsync(
+                document,
+                document.Id,
+                new PartitionKey(document.PartitionKey),
+                new ItemRequestOptions { IfMatchEtag = expectedETag },
+                cancellationToken);
+            return new(SubscriptionMutationStatus.Updated, response.ETag, response.RequestCharge);
         }
         catch (CosmosException exception) when (exception.StatusCode == HttpStatusCode.PreconditionFailed)
         {
             return new(SubscriptionMutationStatus.ConcurrencyConflict, null, exception.RequestCharge);
         }
         catch (CosmosException exception) when (
-            expectedETag is not null && exception.StatusCode == HttpStatusCode.NotFound)
+            exception.StatusCode == HttpStatusCode.NotFound)
         {
             return new(SubscriptionMutationStatus.ConcurrencyConflict, null, exception.RequestCharge);
         }

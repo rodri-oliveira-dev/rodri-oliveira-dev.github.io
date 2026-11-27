@@ -49,8 +49,14 @@ resource "azurerm_monitor_diagnostic_setting" "function_app" {
   target_resource_id         = local.function_id
   log_analytics_workspace_id = local.workspace_id
 
+  # HTTP access logs can contain client network metadata and request URLs that
+  # are unnecessary for the capability-based API.
   enabled_log {
-    category_group = "allLogs"
+    category = "FunctionAppLogs"
+  }
+
+  enabled_log {
+    category = "AppServicePlatformLogs"
   }
 
   enabled_metric {

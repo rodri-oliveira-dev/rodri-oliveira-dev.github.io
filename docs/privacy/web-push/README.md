@@ -27,6 +27,7 @@ O aceite permite implementar e testar os controles nas issues seguintes. Ele nã
 | [`processing-inventory.md`](processing-inventory.md) | Inventário de operações, fornecedores, localização e transferências. |
 | [`retention-rights-incidents.md`](retention-rights-incidents.md) | Retenção, exclusão, capacidades, concorrência, direitos e incidentes. |
 | [`roadmap-traceability.md`](roadmap-traceability.md) | Divergências atuais e requisitos para #152–#167. |
+| [`api-contract.md`](api-contract.md) | Contratos, idempotência, concorrência, antiabuso e riscos residuais implementados em #152–#154. |
 
 ## Classificação usada
 

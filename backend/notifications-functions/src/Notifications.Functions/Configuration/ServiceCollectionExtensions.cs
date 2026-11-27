@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Notifications.Functions.Health;
 using Notifications.Functions.Push;
+using Notifications.Functions.Security;
 using Notifications.Functions.Subscriptions;
 
 namespace Notifications.Functions.Configuration;
@@ -34,7 +35,14 @@ public static class ServiceCollectionExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services
+            .AddOptions<PublicApiOptions>()
+            .Bind(configuration.GetSection(PublicApiOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         services.AddSingleton<IHealthStatusService, HealthStatusService>();
+        services.AddSingleton(TimeProvider.System);
         services.AddSingleton(static serviceProvider =>
         {
             var options = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<CosmosOptions>>().Value;
@@ -51,8 +59,17 @@ public static class ServiceCollectionExtensions
                     },
                 });
         });
+        services.AddSingleton(static serviceProvider =>
+        {
+            var options = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<CosmosOptions>>().Value;
+            return serviceProvider.GetRequiredService<CosmosClient>().GetContainer(
+                options.CosmosDatabaseName,
+                options.CosmosContainerName);
+        });
         services.AddSingleton<ISubscriptionDocumentStore, CosmosSubscriptionDocumentStore>();
         services.AddSingleton<ISubscriptionRepository, CosmosSubscriptionRepository>();
+        services.AddSingleton<IAbuseProtection, CosmosAbuseProtection>();
+        services.AddSingleton<IApiConcurrencyLimiter, ApiConcurrencyLimiter>();
         services.AddSingleton(static serviceProvider =>
         {
             var options = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<WebPushOptions>>().Value;
