@@ -1,5 +1,9 @@
 # Rastreabilidade do gate LGPD
 
+## Sequenciamento aprovado em 27/11/2026
+
+A [ADR 0022](../../adr/0022-consolidar-privacidade-web-push-antes-do-piloto.md) reorganiza exclusivamente a ordem de execução: #157–#165 precedem #155 e #156, que continuam obrigatórias antes de #166 (piloto real) e #167 (produção). A minuta e o consentimento versionado podem ser usados em testes isolados com mocks, sem permissões, inscrição, enqueue ou entrega reais. Não há dispensa de requisitos legais, mudança de política de retenção, aprovação jurídica ou autorização de lançamento. As evidências históricas de #151–#154 permanecem válidas no escopo em que foram produzidas.
+
 ## Divergências da arquitetura atual
 
 | Evidência na `main` em 26/11/2026 | Divergência | Destino |
