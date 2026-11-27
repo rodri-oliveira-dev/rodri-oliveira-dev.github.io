@@ -29,7 +29,9 @@ public enum PublicationProcessingStatus
 public sealed record PublicationProcessingResult(
     PublicationProcessingStatus Status,
     int DetectedArticles,
-    int EligibleCampaigns);
+    int EligibleCampaigns,
+    int DeduplicatedCampaigns,
+    IReadOnlyList<string> CampaignIds);
 
 internal sealed record PublicationBaseline(
     string Sha,
@@ -97,7 +99,7 @@ internal sealed partial class PublicationCampaignCoordinator : IPublicationCampa
                 var created = await _baselineStore.CreateAsync(seed, cancellationToken);
                 if (created.Status == BaselineWriteStatus.Created)
                 {
-                    return new(PublicationProcessingStatus.Seeded, articles.Count, 0);
+                    return new(PublicationProcessingStatus.Seeded, articles.Count, 0, 0, []);
                 }
 
                 continue;
@@ -105,7 +107,7 @@ internal sealed partial class PublicationCampaignCoordinator : IPublicationCampa
 
             if (revision.Sequence < baseline.Sequence)
             {
-                return new(PublicationProcessingStatus.Superseded, 0, 0);
+                return new(PublicationProcessingStatus.Superseded, 0, 0, 0, []);
             }
 
             if (revision.Sequence == baseline.Sequence)
@@ -115,7 +117,9 @@ internal sealed partial class PublicationCampaignCoordinator : IPublicationCampa
                         ? PublicationProcessingStatus.Replayed
                         : PublicationProcessingStatus.Superseded,
                     0,
-                    0);
+                    0,
+                    0,
+                    []);
             }
 
             var newArticles = articles
@@ -126,11 +130,20 @@ internal sealed partial class PublicationCampaignCoordinator : IPublicationCampa
 
             // Campaigns are conditionally created before the baseline advances. If any
             // write fails, replay repeats idempotent creates and no article is lost.
+            var deduplicated = 0;
             foreach (var article in eligible)
             {
-                await _campaigns.CreateAsync(
-                    CampaignDefinition.FromArticle(article, revision.Sha, revision.PublishedAtUtc),
+                var created = await _campaigns.CreateAsync(
+                    CampaignDefinition.FromArticle(
+                        article,
+                        revision.Sha,
+                        revision.Sequence,
+                        revision.PublishedAtUtc),
                     cancellationToken);
+                if (created.Status == CampaignWriteStatus.Duplicate)
+                {
+                    deduplicated++;
+                }
             }
 
             var known = new HashSet<string>(baseline.KnownArticleIds, StringComparer.Ordinal);
@@ -139,7 +152,12 @@ internal sealed partial class PublicationCampaignCoordinator : IPublicationCampa
             var replaced = await _baselineStore.ReplaceAsync(next, baseline.ETag, cancellationToken);
             if (replaced.Status == BaselineWriteStatus.Updated)
             {
-                return new(PublicationProcessingStatus.Processed, newArticles.Length, eligible.Length);
+                return new(
+                    PublicationProcessingStatus.Processed,
+                    newArticles.Length,
+                    eligible.Length,
+                    deduplicated,
+                    eligible.Select(article => CampaignIdentity.ForArticle(article.Id)).ToArray());
             }
         }
 

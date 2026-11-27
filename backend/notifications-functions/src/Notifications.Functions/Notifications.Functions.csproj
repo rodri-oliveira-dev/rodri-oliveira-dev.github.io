@@ -19,5 +19,6 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Notifications.Functions.Tests" />
+    <InternalsVisibleTo Include="Notifications.Orchestration" />
   </ItemGroup>
 </Project>

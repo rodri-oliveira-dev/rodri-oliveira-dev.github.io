@@ -109,6 +109,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IArticleCatalogReader, JsonArticleCatalogReader>();
         services.AddSingleton<INotificationEligibilityPolicy, PtBrNotificationEligibilityPolicy>();
         services.AddSingleton<IPublicationCampaignCoordinator, PublicationCampaignCoordinator>();
+        services.AddSingleton<ICampaignReconciliationService, CampaignReconciliationService>();
         services.AddSingleton<ICampaignProcessor, CampaignProcessor>();
 
         return services;

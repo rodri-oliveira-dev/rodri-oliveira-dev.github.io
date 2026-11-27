@@ -69,7 +69,7 @@ internal sealed partial class CampaignProcessor : ICampaignProcessor
 
         if (campaign is null)
         {
-            _logger.LogWarning("Campanha {CampaignId} inexistente ou inválida.", requestedCampaignId);
+            _logger.LogWarning("Campanha inexistente ou inválida rejeitada.");
             return new(null);
         }
 
@@ -197,8 +197,7 @@ internal sealed partial class CampaignProcessor : ICampaignProcessor
         }
 
         _logger.LogInformation(
-            "Campanha {CampaignId} concluída: sucesso={Succeeded}, expiradas={Expired}, permanentes={Permanent}, transitórias={Transient}, incertas={Unknown}, duplicadas={Duplicates}.",
-            campaignId,
+            "Campanha concluída: sucesso={Succeeded}, expiradas={Expired}, permanentes={Permanent}, transitórias={Transient}, incertas={Unknown}, duplicadas={Duplicates}.",
             succeeded,
             expired,
             permanentFailures,
@@ -246,6 +245,7 @@ internal sealed partial class CampaignProcessor : ICampaignProcessor
             CampaignId = CampaignIdentity.ForArticle(articleId),
             ArticleId = articleId,
             PublicationSha = new string('0', 40),
+            PublicationSequence = 1,
             CanonicalArticleUrl = $"https://www.linkedin.com/pulse/configured-{articleId}",
             AudienceCutoffUtc = audienceCutoffUtc,
         };
