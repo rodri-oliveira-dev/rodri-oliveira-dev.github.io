@@ -46,7 +46,7 @@ Sucesso, registro ausente, capacidade incorreta, registro já removido e identif
 - A allowlist de destino aceita somente FCM, Mozilla, Apple e WNS conhecidos, em HTTPS/443, DNS, sem userinfo, fragmento ou redirect.
 - Respostas incluem `Cache-Control: no-store`, `X-Content-Type-Options: nosniff` e `Referrer-Policy: no-referrer`.
 - Nenhuma resposta reflete endpoint, chave, capacidade, IP, exceção, ETag ou metadado Cosmos.
-- O Diagnostic Setting exclui `AppServiceHTTPLogs`/`allLogs` e mantém somente `FunctionAppLogs` e `AppServicePlatformLogs`; a retenção efetiva das tabelas gerenciadas ainda precisa ser comprovada no ambiente.
+- O Diagnostic Setting exclui `AppServiceHTTPLogs`/`allLogs` e mantém somente `FunctionAppLogs`, além de `AllMetrics`; `AppServicePlatformLogs` não é oferecida pela Function Flex implantada. A retenção efetiva das tabelas gerenciadas ainda precisa ser comprovada no ambiente.
 - Os kill switches `AzureWebJobs.register-subscription.Disabled`, `AzureWebJobs.revoke-subscription.Disabled` e `AzureWebJobs.ProcessWebPushCampaign.Disabled` permanecem `true`.
 
 ## Rate limiting e FinOps

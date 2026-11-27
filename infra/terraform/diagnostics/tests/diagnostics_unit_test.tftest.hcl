@@ -52,7 +52,7 @@ run "function_diagnostics" {
   }
 
   assert {
-    condition     = toset([for log in azurerm_monitor_diagnostic_setting.function_app[0].enabled_log : log.category]) == toset(["AppServicePlatformLogs", "FunctionAppLogs"]) && toset([for metric in azurerm_monitor_diagnostic_setting.function_app[0].enabled_metric : metric.category]) == toset(["AllMetrics"])
-    error_message = "A Function deve excluir logs HTTP e preservar somente logs sanitizados de aplicação/plataforma e AllMetrics."
+    condition     = toset([for log in azurerm_monitor_diagnostic_setting.function_app[0].enabled_log : log.category]) == toset(["FunctionAppLogs"]) && toset([for metric in azurerm_monitor_diagnostic_setting.function_app[0].enabled_metric : metric.category]) == toset(["AllMetrics"])
+    error_message = "A Function deve excluir logs HTTP e preservar somente FunctionAppLogs e AllMetrics, categorias suportadas pelo recurso Flex."
   }
 }

@@ -20,7 +20,7 @@ def expected(subscription, include_function=False):
     ]
     if include_function:
         specs.append(("function", f"{rg}/Microsoft.Web/sites/func-portpush-dev-1350159615",
-                      "send-runtime-to-log-analytics", {("categoryGroup", "allLogs")}, {"AllMetrics"}))
+                      "send-runtime-to-log-analytics", {("category", "FunctionAppLogs")}, {"AllMetrics"}))
     return workspace, specs
 
 
