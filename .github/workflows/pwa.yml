@@ -8,6 +8,7 @@ on:
       - 'site.webmanifest'
       - 'assets/**'
       - '.github/scripts/test-pwa*.cjs'
+      - '.github/scripts/test-pwa-web-push.mjs'
       - '.github/workflows/pwa.yml'
   push:
     branches:
@@ -18,6 +19,7 @@ on:
       - 'site.webmanifest'
       - 'assets/**'
       - '.github/scripts/test-pwa*.cjs'
+      - '.github/scripts/test-pwa-web-push.mjs'
       - '.github/workflows/pwa.yml'
   workflow_dispatch:
 
@@ -52,7 +54,7 @@ jobs:
           package-manager-cache: false
 
       - name: Check PWA unit and source contracts
-        run: node --test .github/scripts/test-pwa.cjs
+        run: node --test .github/scripts/test-pwa.cjs .github/scripts/test-pwa-web-push.mjs
 
       - name: Install pinned browser test runner
         run: |

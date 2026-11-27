@@ -1,0 +1,7 @@
+{
+  "consentVersion": "1.0.0",
+  "purposeId": "new-articles-pt-br",
+  "privacyNoticeVersion": "draft-1",
+  "consentText": "Receba notificações quando novos artigos em português forem publicados. Não é necessário criar uma conta. Você poderá cancelar sua inscrição a qualquer momento.",
+  "privacyNoticeUrl": "https://fixture.invalid/aviso-de-privacidade/"
+}
