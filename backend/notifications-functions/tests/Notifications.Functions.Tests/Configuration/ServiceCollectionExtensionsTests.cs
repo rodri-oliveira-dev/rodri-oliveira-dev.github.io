@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Notifications.Functions.Configuration;
 using Notifications.Functions.Health;
+using Notifications.Functions.Security;
 
 namespace Notifications.Functions.Tests.Configuration;
 
@@ -30,12 +31,16 @@ public sealed class ServiceCollectionExtensionsTests
         var options = provider.GetRequiredService<IOptions<NotificationsOptions>>().Value;
         var cosmosOptions = provider.GetRequiredService<IOptions<CosmosOptions>>().Value;
         var webPushOptions = provider.GetRequiredService<IOptions<WebPushOptions>>().Value;
+        var apiOptions = provider.GetRequiredService<IOptions<PublicApiOptions>>().Value;
         var healthStatus = provider.GetRequiredService<IHealthStatusService>();
+        var concurrencyLimiter = provider.GetRequiredService<IApiConcurrencyLimiter>();
 
         Assert.Equal("test-notifications", options.ServiceName);
         Assert.Equal("test", options.DeploymentEnvironment);
         Assert.Equal("https://cosmos.example.test/", cosmosOptions.CosmosEndpoint!.AbsoluteUri);
         Assert.Equal("https://kv-example.vault.azure.net/", webPushOptions.KeyVaultUri!.AbsoluteUri);
+        Assert.Equal("https://rodri-oliveira-dev.github.io", apiOptions.AllowedOrigin);
+        Assert.NotNull(concurrencyLimiter);
         Assert.Equal(new HealthResponse("healthy", "test-notifications"), healthStatus.GetStatus());
     }
 

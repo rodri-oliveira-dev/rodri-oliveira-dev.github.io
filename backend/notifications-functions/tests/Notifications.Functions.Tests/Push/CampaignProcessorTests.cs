@@ -83,6 +83,18 @@ public sealed class CampaignProcessorTests
         Assert.Equal("next-page", result.ContinuationToken);
     }
 
+    [Fact]
+    public async Task ProcessAsync_DoesNotSendWhenRevocationWinsFinalEligibilityCheck()
+    {
+        var repository = new FakeRepository([CreateRecord()]) { Eligible = false };
+        var transport = new FakeTransport(PushDeliveryStatus.Succeeded);
+        var processor = CreateProcessor(repository, transport, new CollectingLogger<CampaignProcessor>());
+
+        await processor.ProcessAsync(new("article-2026-11"), CancellationToken.None);
+
+        Assert.Empty(transport.Deliveries);
+    }
+
     [Theory]
     [InlineData("https://fcm.googleapis.com/fcm/send/test", true)]
     [InlineData("https://updates.push.services.mozilla.com/wpush/v2/test", true)]
@@ -128,7 +140,8 @@ public sealed class CampaignProcessorTests
             Endpoint = "https://fcm.googleapis.com/fcm/send/test-only",
         };
         var (id, partitionKey) = WebPushSubscriptionValidator.DeriveIdentity(subscription.Endpoint);
-        return new(id, partitionKey, subscription, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, "etag-test");
+        return new(id, partitionKey, subscription, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(365),
+            "generation-test", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, "etag-test");
     }
 
     private sealed class FakeCampaignCatalog : ICampaignCatalog
@@ -171,6 +184,7 @@ public sealed class CampaignProcessorTests
     {
         public int DeleteCalls { get; private set; }
         public string? ReceivedContinuationToken { get; private set; }
+        public bool Eligible { get; init; } = true;
 
         public Task<SubscriptionPage> ListActivePageAsync(
             string locale,
@@ -181,16 +195,16 @@ public sealed class CampaignProcessorTests
             return Task.FromResult(new SubscriptionPage(records, nextContinuationToken));
         }
 
-        public Task<SubscriptionRecord?> GetAsync(string endpoint, CancellationToken cancellationToken = default) =>
-            Task.FromResult<SubscriptionRecord?>(null);
+        public Task<SubscriptionRecord?> GetEligibleAsync(string id, string generation, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Eligible ? records.FirstOrDefault(record => record.Id == id && record.Generation == generation) : null);
 
-        public Task<SubscriptionMutationResult> CreateAsync(WebPushSubscriptionInput subscription, CancellationToken cancellationToken = default) =>
+        public Task<RegistrationResult> RegisterAsync(WebPushSubscriptionInput subscription, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 
-        public Task<SubscriptionMutationResult> UpsertAsync(WebPushSubscriptionInput subscription, string? expectedETag, CancellationToken cancellationToken = default) =>
+        public Task RevokeAsync(string id, string capability, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 
-        public Task<SubscriptionMutationResult> DeleteAsync(string endpoint, string expectedETag, CancellationToken cancellationToken = default)
+        public Task<SubscriptionMutationResult> DeleteGenerationAsync(string id, string generation, string expectedETag, CancellationToken cancellationToken = default)
         {
             DeleteCalls++;
             return Task.FromResult(new SubscriptionMutationResult(

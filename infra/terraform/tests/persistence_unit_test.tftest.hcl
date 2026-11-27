@@ -64,7 +64,7 @@ run "default_cost_and_security_baseline" {
   }
 
   assert {
-    condition     = jsonencode([for item in azapi_resource.subscriptions_container.body.properties.resource.indexingPolicy.excludedPaths : item.path]) == jsonencode(["/endpoint/?", "/keys/*", "/\"_etag\"/?"])
+    condition     = jsonencode([for item in azapi_resource.subscriptions_container.body.properties.resource.indexingPolicy.excludedPaths : item.path]) == jsonencode(["/endpoint/?", "/keys/*", "/cancellationCapabilityHash/?", "/recoveryCapabilityHash/?", "/\"_etag\"/?"])
     error_message = "As exclusões devem preservar os paths sensíveis e explicitar a exclusão padrão de _etag na ordem retornada pelo ARM."
   }
 
@@ -141,6 +141,11 @@ run "default_cost_and_security_baseline" {
   assert {
     condition     = local.function_app_settings["AzureWebJobs.ProcessWebPushCampaign.Disabled"] == "true"
     error_message = "O primeiro deploy deve manter o processamento de campanhas desabilitado até o gate de ativação da issue #150."
+  }
+
+  assert {
+    condition     = local.function_app_settings["AzureWebJobs.register-subscription.Disabled"] == "true" && local.function_app_settings["AzureWebJobs.revoke-subscription.Disabled"] == "true"
+    error_message = "Registro e revogação devem permanecer desabilitados até os gates humanos de piloto e produção."
   }
 
   assert {
