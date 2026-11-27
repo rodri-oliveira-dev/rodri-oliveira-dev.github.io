@@ -85,8 +85,19 @@ internal sealed partial class CampaignProcessor : ICampaignProcessor
                 continue;
             }
 
+            // Re-read immediately before transport. Revocation/expiry that wins before
+            // this point prevents a send; a provider request already in flight cannot be recalled.
+            var eligible = await _subscriptions.GetEligibleAsync(
+                subscription.Id,
+                subscription.Generation,
+                cancellationToken);
+            if (eligible is null)
+            {
+                continue;
+            }
+
             var status = await _transport.SendAsync(
-                subscription,
+                eligible,
                 payload,
                 topic,
                 credentials,
@@ -98,11 +109,12 @@ internal sealed partial class CampaignProcessor : ICampaignProcessor
                     break;
                 case PushDeliveryStatus.SubscriptionExpired:
                     expired++;
-                    if (!string.IsNullOrEmpty(subscription.ETag))
+                    if (!string.IsNullOrEmpty(eligible.ETag))
                     {
-                        await _subscriptions.DeleteAsync(
-                            subscription.Subscription.Endpoint,
-                            subscription.ETag,
+                        await _subscriptions.DeleteGenerationAsync(
+                            eligible.Id,
+                            eligible.Generation,
+                            eligible.ETag,
                             cancellationToken);
                     }
                     break;

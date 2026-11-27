@@ -65,24 +65,29 @@ resource "azurerm_service_plan" "functions" {
 locals {
   # Apenas configuração não secreta; valores VAPID ficam exclusivamente no Key Vault.
   function_app_settings = {
-    AzureWebJobsStorage__accountName               = azurerm_storage_account.functions.name
-    AzureWebJobsStorage__credential                = "managedidentity"
-    AzureWebJobsStorage__clientId                  = azurerm_user_assigned_identity.functions_runtime.client_id
-    CampaignQueue__queueServiceUri                 = azurerm_storage_account.functions.primary_queue_endpoint
-    CampaignQueue__credential                      = "managedidentity"
-    CampaignQueue__clientId                        = azurerm_user_assigned_identity.functions_runtime.client_id
-    "AzureWebJobs.ProcessWebPushCampaign.Disabled" = "true"
-    Notifications__CosmosEndpoint                  = "https://${local.cosmos_account_name}.documents.azure.com:443/"
-    Notifications__CosmosDatabaseName              = local.subscriptions_database
-    Notifications__CosmosContainerName             = local.subscriptions_container
-    Notifications__KeyVaultUri                     = azurerm_key_vault.vapid.vault_uri
-    Notifications__DeploymentEnvironment           = var.environment
-    Notifications__VapidSubject                    = "https://rodri-oliveira-dev.github.io/"
-    Notifications__VapidPublicKeySecretName        = "vapid-public-key"
-    Notifications__VapidPrivateKeySecretName       = "vapid-private-key"
-    Notifications__PushTimeToLiveSeconds           = "86400"
-    Notifications__RequestTimeoutSeconds           = "15"
-    AZURE_CLIENT_ID                                = azurerm_user_assigned_identity.functions_runtime.client_id
+    AzureWebJobsStorage__accountName                    = azurerm_storage_account.functions.name
+    AzureWebJobsStorage__credential                     = "managedidentity"
+    AzureWebJobsStorage__clientId                       = azurerm_user_assigned_identity.functions_runtime.client_id
+    CampaignQueue__queueServiceUri                      = azurerm_storage_account.functions.primary_queue_endpoint
+    CampaignQueue__credential                           = "managedidentity"
+    CampaignQueue__clientId                             = azurerm_user_assigned_identity.functions_runtime.client_id
+    "AzureWebJobs.ProcessWebPushCampaign.Disabled"      = "true"
+    "AzureWebJobs.register-subscription.Disabled"       = "true"
+    "AzureWebJobs.revoke-subscription.Disabled"         = "true"
+    Notifications__CosmosEndpoint                       = "https://${local.cosmos_account_name}.documents.azure.com:443/"
+    Notifications__CosmosDatabaseName                   = local.subscriptions_database
+    Notifications__CosmosContainerName                  = local.subscriptions_container
+    Notifications__KeyVaultUri                          = azurerm_key_vault.vapid.vault_uri
+    Notifications__DeploymentEnvironment                = var.environment
+    Notifications__VapidSubject                         = "https://rodri-oliveira-dev.github.io/"
+    Notifications__VapidPublicKeySecretName             = "vapid-public-key"
+    Notifications__VapidPrivateKeySecretName            = "vapid-private-key"
+    Notifications__PushTimeToLiveSeconds                = "86400"
+    Notifications__RequestTimeoutSeconds                = "15"
+    Notifications__AllowedOrigin                        = "https://rodri-oliveira-dev.github.io"
+    Notifications__MaximumRequestBodyBytes              = "8192"
+    Notifications__MaximumConcurrentRequestsPerInstance = "8"
+    AZURE_CLIENT_ID                                     = azurerm_user_assigned_identity.functions_runtime.client_id
   }
 
   function_service_plan_id_segments = split("/", azurerm_service_plan.functions.id)
