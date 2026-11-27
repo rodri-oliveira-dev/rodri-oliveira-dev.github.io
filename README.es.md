@@ -26,8 +26,15 @@ El sitio está disponible en [portugués](https://rodri-oliveira-dev.github.io/)
 
 [![WCAG 2.2 AA: objetivo de conformidad](https://img.shields.io/badge/WCAG%202.2-AA%20Target-blue)](docs/accessibility-audit.md)
 [![Pruebas automatizadas de accesibilidad](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/accessibility.yml/badge.svg?branch=main)](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/accessibility.yml)
-[![Validación de registros de decisiones arquitectónicas con ADR Guard](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/adr-guard.yml/badge.svg?branch=main)](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/adr-guard.yml)
 [![Validación de calidad con Lighthouse CI](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/lighthouse.yml/badge.svg?branch=main)](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/lighthouse.yml)
+
+[![Validación de registros de decisiones arquitectónicas con ADR Guard](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/adr-guard.yml/badge.svg?branch=main)](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/adr-guard.yml)
+[![Estado del Quality Gate en SonarQube Cloud](https://sonarcloud.io/api/project_badges/measure?project=rodri-oliveira-dev_rodri-oliveira-dev.github.io&metric=alert_status)](https://sonarcloud.io/dashboard?id=rodri-oliveira-dev_rodri-oliveira-dev.github.io)
+[![Cobertura de código en SonarQube Cloud](https://sonarcloud.io/api/project_badges/measure?project=rodri-oliveira-dev_rodri-oliveira-dev.github.io&metric=coverage)](https://sonarcloud.io/dashboard?id=rodri-oliveira-dev_rodri-oliveira-dev.github.io)
+[![Auditoría de seguridad de GitHub Actions con zizmor](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/actions-security.yml/badge.svg?branch=main)](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/actions-security.yml)
+
+[![Pruebas de PWA en múltiples navegadores](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/pwa.yml/badge.svg?branch=main)](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/actions/workflows/pwa.yml)
+[![Integración experimental de WebMCP](https://img.shields.io/badge/WebMCP-Experimental-orange)](docs/webmcp.es-419.md)
 
 <details>
 <summary>Sobre este repositorio</summary>
