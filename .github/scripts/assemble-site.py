@@ -7,6 +7,7 @@ import shutil
 from pathlib import Path
 
 PUBLIC_PATHS = (
+    ".well-known",
     ".nojekyll",
     "1e7dfc65bd806e29edef5985f15cdb79.txt",
     "BingSiteAuth.xml",

@@ -1,0 +1,62 @@
+{
+  "canonical_origin": "https://rodri-oliveira-dev.github.io",
+  "planned_origin": "https://rodrioliveira.com",
+  "identity": {
+    "name": "Rodrigo de Oliveira",
+    "domain": "rodri-oliveira-dev.github.io",
+    "logo_path": "/assets/brand/ro-architect-mark.svg"
+  },
+  "agent_skills_schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
+  "skills": [
+    {
+      "name": "discover-portfolio",
+      "display_name": "Discover portfolio",
+      "capabilities": ["portfolio-discovery"],
+      "representative_queries": [
+        "Conheça o portfólio profissional de Rodrigo de Oliveira",
+        "Show me Rodrigo de Oliveira's professional portfolio",
+        "Muéstrame el portafolio profesional de Rodrigo de Oliveira"
+      ]
+    },
+    {
+      "name": "discover-projects",
+      "display_name": "Discover projects",
+      "capabilities": ["project-discovery"],
+      "representative_queries": [
+        "Quais projetos open source Rodrigo de Oliveira publicou?",
+        "Which open-source projects has Rodrigo de Oliveira published?",
+        "¿Qué proyectos de código abierto publicó Rodrigo de Oliveira?"
+      ]
+    },
+    {
+      "name": "discover-services",
+      "display_name": "Discover services",
+      "capabilities": ["service-discovery"],
+      "representative_queries": [
+        "Quais serviços profissionais Rodrigo de Oliveira apresenta?",
+        "Which professional services does Rodrigo de Oliveira present?",
+        "¿Qué servicios profesionales presenta Rodrigo de Oliveira?"
+      ]
+    },
+    {
+      "name": "discover-articles",
+      "display_name": "Discover articles",
+      "capabilities": ["article-discovery"],
+      "representative_queries": [
+        "Encontre artigos publicados por Rodrigo de Oliveira",
+        "Find articles published by Rodrigo de Oliveira",
+        "Encuentra artículos publicados por Rodrigo de Oliveira"
+      ]
+    },
+    {
+      "name": "discover-resume",
+      "display_name": "Discover resume",
+      "capabilities": ["resume-discovery"],
+      "representative_queries": [
+        "Consulte o currículo público de Rodrigo de Oliveira",
+        "Read Rodrigo de Oliveira's public resume",
+        "Consulta el currículum público de Rodrigo de Oliveira"
+      ]
+    }
+  ]
+}
