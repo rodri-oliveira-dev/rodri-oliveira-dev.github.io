@@ -66,6 +66,31 @@ public sealed class CampaignProcessorTests
     }
 
     [Fact]
+    public async Task ProcessAsync_CalculatesExpirationImmediatelyBeforeEachSend()
+    {
+        var repository = new FakeRepository([CreateRecord("first"), CreateRecord("second")]);
+        var transport = new FakeTransport(PushDeliveryStatus.Succeeded);
+        var clock = new AdvancingTimeProvider(new DateTimeOffset(2026, 11, 27, 12, 0, 0, TimeSpan.Zero));
+        var processor = CreateProcessor(
+            repository,
+            transport,
+            new CollectingLogger<CampaignProcessor>(),
+            clock);
+
+        await processor.ProcessAsync(new("article-2026-11"), CancellationToken.None);
+
+        Assert.Equal(2, transport.Deliveries.Count);
+        var expirations = transport.Deliveries
+            .Select(delivery =>
+            {
+                using var document = JsonDocument.Parse(delivery.Payload);
+                return document.RootElement.GetProperty("expiresAtUtc").GetDateTimeOffset();
+            })
+            .ToArray();
+        Assert.Equal(TimeSpan.FromMinutes(1), expirations[1] - expirations[0]);
+    }
+
+    [Fact]
     public async Task ProcessAsync_ThrowsAfterTransientFailuresSoQueueRetryIsBoundedByHost()
     {
         var processor = CreateProcessor(
@@ -143,20 +168,21 @@ public sealed class CampaignProcessorTests
     private static CampaignProcessor CreateProcessor(
         FakeRepository repository,
         FakeTransport transport,
-        ILogger<CampaignProcessor> logger) => new(
+        ILogger<CampaignProcessor> logger,
+        TimeProvider? timeProvider = null) => new(
             new FakeCampaignCatalog(),
             repository,
             new FakeVapidKeyProvider(),
             transport,
             logger,
             Options.Create(new WebPushOptions { PushTimeToLiveSeconds = 86400 }),
-            TimeProvider.System);
+            timeProvider ?? TimeProvider.System);
 
-    private static SubscriptionRecord CreateRecord()
+    private static SubscriptionRecord CreateRecord(string endpointSuffix = "test-only")
     {
         var subscription = Subscriptions.WebPushSubscriptionValidatorTests.CreateValid() with
         {
-            Endpoint = "https://fcm.googleapis.com/fcm/send/test-only",
+            Endpoint = $"https://fcm.googleapis.com/fcm/send/{endpointSuffix}",
         };
         var (id, partitionKey) = WebPushSubscriptionValidator.DeriveIdentity(subscription.Endpoint);
         return new(id, partitionKey, subscription, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(365),
@@ -170,7 +196,7 @@ public sealed class CampaignProcessorTests
             campaign = new(
                 "Novo artigo",
                 "Há um novo artigo em português no portfólio.",
-                "https://rodri-oliveira-dev.github.io/artigos/exemplo/");
+                "https://rodri-oliveira-dev.github.io/case-studies/adr-guard/");
             return true;
         }
     }
@@ -194,6 +220,18 @@ public sealed class CampaignProcessorTests
         {
             Deliveries.Add((payload, topic));
             return Task.FromResult(status);
+        }
+    }
+
+    private sealed class AdvancingTimeProvider(DateTimeOffset current) : TimeProvider
+    {
+        private DateTimeOffset _current = current;
+
+        public override DateTimeOffset GetUtcNow()
+        {
+            var result = _current;
+            _current = _current.AddMinutes(1);
+            return result;
         }
     }
 

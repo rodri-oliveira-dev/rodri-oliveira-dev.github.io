@@ -65,15 +65,6 @@ internal sealed partial class CampaignProcessor : ICampaignProcessor
             return new(null);
         }
 
-        var payload = JsonSerializer.Serialize(new
-        {
-            version = 1,
-            title = campaign.Title,
-            body = campaign.Body,
-            url = campaign.Url,
-            lang = WebPushSubscriptionValidator.SupportedLocale,
-            expiresAtUtc = _timeProvider.GetUtcNow().AddSeconds(_options.PushTimeToLiveSeconds).UtcDateTime,
-        });
         var topic = CreateTopic(campaignId);
         var credentials = await _vapidKeys.GetAsync(cancellationToken);
         var seen = new HashSet<string>(StringComparer.Ordinal);
@@ -106,6 +97,15 @@ internal sealed partial class CampaignProcessor : ICampaignProcessor
                 continue;
             }
 
+            var payload = JsonSerializer.Serialize(new
+            {
+                version = 1,
+                title = campaign.Title,
+                body = campaign.Body,
+                url = campaign.Url,
+                lang = WebPushSubscriptionValidator.SupportedLocale,
+                expiresAtUtc = _timeProvider.GetUtcNow().AddSeconds(_options.PushTimeToLiveSeconds).UtcDateTime,
+            });
             var status = await _transport.SendAsync(
                 eligible,
                 payload,

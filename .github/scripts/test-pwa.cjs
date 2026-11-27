@@ -71,6 +71,10 @@ function createWorker() {
   let matchAllFails = false;
   let openWindowFails = false;
   let lastWaitUntilCount = 0;
+  let currentTime = Date.now();
+  class WorkerDate extends Date {
+    static now() { return currentTime; }
+  }
   const keyOf = (request) => typeof request === "string" ? new URL(request, ORIGIN).href : request.url;
   const cacheFor = (name) => {
     if (!stores.has(name)) stores.set(name, new Map());
@@ -120,7 +124,7 @@ function createWorker() {
       addEventListener(type, callback) { listeners.set(type, callback); }
     },
     caches,
-    URL, Response, AbortController, clearTimeout, ReadableStream, TextEncoder,
+    URL, Response, AbortController, clearTimeout, ReadableStream, TextEncoder, Date: WorkerDate,
     setTimeout(callback, timeout, ...args) {
       // Shorten the deadline only for the intentionally stalled-body fixture.
       return setTimeout(callback, stallResponseBody ? Math.min(timeout, 50) : timeout, ...args);
@@ -194,6 +198,7 @@ function createWorker() {
     setShowNotificationFails(value) { showNotificationFails = value; },
     setMatchAllFails(value) { matchAllFails = value; },
     setOpenWindowFails(value) { openWindowFails = value; },
+    setCurrentTime(value) { currentTime = value; },
     get responseWasAborted() { return responseWasAborted; },
     get claimed() { return claimed; },
     get lastWaitUntilCount() { return lastWaitUntilCount; }
@@ -249,6 +254,15 @@ test("missing, malformed, expired and structurally invalid push payloads are ign
     await worker.dispatch("push", undefined, { data });
     assert.equal(worker.lastWaitUntilCount, 1);
   }
+  assert.equal(worker.notifications.length, 0);
+});
+
+test("calendar-invalid expiration is rejected even when Date.parse normalizes it", async () => {
+  const worker = createWorker();
+  worker.setCurrentTime(Date.parse("2026-11-30T23:59:00Z"));
+  await worker.dispatch("push", undefined, {
+    data: pushData(validPushPayload({ expiresAtUtc: "2026-11-31T00:00:00.1234567Z" }))
+  });
   assert.equal(worker.notifications.length, 0);
 });
 

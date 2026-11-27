@@ -4,7 +4,7 @@
 const PREFIX = "rodrigo-portfolio-pwa-";
 // Explicit deploy revision: bump for every SW policy/shell change. Keeping
 // active and installing worker caches separate avoids cross-version mixing.
-const CACHE_VERSION = "2026-11-27.1";
+const CACHE_VERSION = "2026-11-27.2";
 const PRECACHE = PREFIX + "shell-" + CACHE_VERSION;
 const RUNTIME = PREFIX + "runtime-" + CACHE_VERSION;
 const MAX_RUNTIME_ENTRIES = 64;
@@ -85,12 +85,21 @@ const parsePushPayload = (rawPayload) => {
     const title = boundedText(payload.title, 80);
     const body = boundedText(payload.body, 160);
     const url = authorizedNotificationUrl(payload.url);
-    if (!title || !body || !url || typeof payload.expiresAtUtc !== "string" ||
-        !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,7})?Z$/.test(payload.expiresAtUtc)) return null;
+    const timestampMatch = typeof payload.expiresAtUtc === "string" &&
+      /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,7})?Z$/.exec(payload.expiresAtUtc);
+    if (!title || !body || !url || !timestampMatch) return null;
 
     const expiresAt = Date.parse(payload.expiresAtUtc);
+    const parsedExpiration = new Date(expiresAt);
+    const calendarMatches = Number.isFinite(expiresAt) &&
+      parsedExpiration.getUTCFullYear() === Number(timestampMatch[1]) &&
+      parsedExpiration.getUTCMonth() === Number(timestampMatch[2]) - 1 &&
+      parsedExpiration.getUTCDate() === Number(timestampMatch[3]) &&
+      parsedExpiration.getUTCHours() === Number(timestampMatch[4]) &&
+      parsedExpiration.getUTCMinutes() === Number(timestampMatch[5]) &&
+      parsedExpiration.getUTCSeconds() === Number(timestampMatch[6]);
     const remainingLifetime = expiresAt - Date.now();
-    if (!Number.isFinite(expiresAt) || remainingLifetime <= 0 ||
+    if (!calendarMatches || remainingLifetime <= 0 ||
         remainingLifetime > MAX_PUSH_LIFETIME_MS + PUSH_CLOCK_SKEW_MS) return null;
     return { title, body, url };
   } catch {
