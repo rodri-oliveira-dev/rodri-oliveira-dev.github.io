@@ -26,6 +26,7 @@ O registro local contém somente `subscriptionId`, expiração, estado de revoga
 5. `unsubscribe()` ocorre depois do `202` remoto. Até essa resposta, a capacidade é preservada e a falha usa backoff limitado.
 6. Depois do `202`, a capacidade é removida; se a limpeza local falhar, permanece apenas estado mínimo para nova tentativa.
 7. Expiração, perda de APIs, permissão negada ou desaparecimento da inscrição nunca causam reinscrição automática e não removem a opção de revogação remota quando há capacidade.
+8. A recuperação manual permanece disponível mesmo sem registro ou inscrição local. ID e capacidade são removidos dos campos imediatamente após cada tentativa; se a revogação não for confirmada, a interface exige nova inserção em vez de reter a capacidade no DOM.
 
 Não existe atomicidade entre navegador e backend. A interface diferencia pendência remota de limpeza local para não afirmar um cancelamento ainda não confirmado.
 
@@ -33,14 +34,14 @@ Não existe atomicidade entre navegador e backend. A interface diferencia pendê
 
 | Issue | Critério | Evidência isolada |
 | --- | --- | --- |
-| #158 | UI PT-BR acessível e progressiva | Seção semântica em `index.html`, estados anunciados por `role=status`, foco visível, contraste forçado e leiaute responsivo; EN/ES sem alterações. |
+| #158 | UI PT-BR acessível e progressiva | Seção semântica em `index.html`, estados anunciados por `output` com região viva, foco visível, contraste forçado e leiaute responsivo; EN/ES sem alterações. |
 | #158 | Permissão somente após opt-in explícito | Checkbox desmarcado, botão condicionado ao aceite e teste `activation requires affirmative consent...`. |
 | #158 | Capacidades, iOS e falhas recuperáveis | `detectWebPushCapabilities`, estado `install-required`, estados de indisponibilidade/recusa/erro e testes sintéticos. |
 | #158 | Consentimento versionado, VAPID e API preparados | Configuração tipada pelo contrato `1.0.0`, conversão VAPID e cliente `POST`; gate público sem valores reais. |
 | #159 | Opt-out seguro e idempotente | `202` remoto antes de `unsubscribe`, retries limitados e testes de resposta perdida/`503`. |
 | #159 | Falhas parciais e preservação de capacidade | Estados `cancel-pending-remote` e `cancel-pending-local`; testes confirmam preservação até `202` e remoção posterior. |
 | #159 | Expiração, perda de capacidade, concorrência e bfcache | Estados centralizados, mutex por página, rechecagem em `pageshow` e testes sem renovação/reinscrição. |
-| #159 | Recuperação independente | Importação de ID + capacidade de recuperação no corpo, exportação local explícita e rota manual sem usar endpoint como autenticação. |
+| #159 | Recuperação independente | Importação de ID + capacidade de recuperação no corpo, inclusive sem estado local; limpeza imediata dos campos, exportação local explícita e rota manual sem usar endpoint como autenticação. |
 | #158/#159 | Sem segredos, endpoints ou telemetria | Configuração pública nula, ausência de logs, IndexedDB minimizado e testes do transporte/artefatos públicos. |
 
 Os testes não demonstram integração real com provedores, dispositivos ou backend publicado. Essa evidência pertence à #166, depois dos gates obrigatórios.

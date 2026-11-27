@@ -65,7 +65,10 @@ export class WebPushView {
   }
 
   render(state, { recoveryAvailable = false } = {}) {
-    const [status, description] = CONTENT[state.name] || CONTENT.error;
+    const [status, defaultDescription] = CONTENT[state.name] || CONTENT.error;
+    const description = state.name === "recovery-required" && state.detail === "retry-recovery"
+      ? "Não foi possível confirmar a revogação. Por segurança, informe novamente o identificador e a credencial de recuperação."
+      : defaultDescription;
     this.status.textContent = status;
     this.description.textContent = description;
     this.root.dataset.state = state.name;
@@ -80,7 +83,7 @@ export class WebPushView {
     this.cancelButton.hidden = !cancelable;
     this.retryButton.hidden = !["cancel-pending-remote", "cancel-pending-local", "error"].includes(state.name);
     this.exportButton.hidden = !recoveryAvailable;
-    this.recovery.hidden = state.name !== "recovery-required";
+    this.recovery.hidden = !["inactive", "recovery-required"].includes(state.name);
     const expiration = this.root.querySelector("[data-web-push-expiration]");
     expiration.hidden = true;
     expiration.textContent = "";

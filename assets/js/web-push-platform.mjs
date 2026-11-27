@@ -105,18 +105,17 @@ export class WebPushApiClient {
   }
 
   async register({ subscription, ...consent }) {
-    const response = await this.#request("POST", { ...subscription, ...consent, consentGranted: true, consentMethod: "explicit-button" });
-    const data = response.status === 201 ? await parseJsonSafely(response) : null;
-    if (response.status === 201 && !exactRegistrationResponse(data)) throw new Error("Invalid registration response");
-    return { status: response.status, data };
+    const result = await this.#request("POST", { ...subscription, ...consent, consentGranted: true, consentMethod: "explicit-button" });
+    if (result.status === 201 && !exactRegistrationResponse(result.data)) throw new Error("Invalid registration response");
+    return result;
   }
 
   async revoke({ subscriptionId, capability }) {
     if (!/^sub_[A-Za-z0-9_-]{43}$/.test(subscriptionId) || !/^[A-Za-z0-9_-]{43}$/.test(capability)) {
       throw new Error("Invalid revocation credentials");
     }
-    const response = await this.#request("DELETE", { subscriptionId, capability });
-    return { status: response.status };
+    const result = await this.#request("DELETE", { subscriptionId, capability });
+    return { status: result.status };
   }
 
   async #request(method, body) {
@@ -128,7 +127,7 @@ export class WebPushApiClient {
     const controller = new this.AbortController();
     const timeout = this.setTimeout(() => controller.abort(), this.timeoutMs);
     try {
-      return await this.fetch(this.endpoint, {
+      const response = await this.fetch(this.endpoint, {
         method,
         headers: { "Content-Type": "application/json" },
         body: serializedBody,
@@ -138,6 +137,8 @@ export class WebPushApiClient {
         referrerPolicy: "no-referrer",
         signal: controller.signal,
       });
+      const data = method === "POST" && response.status === 201 ? await parseJsonSafely(response) : null;
+      return { status: response.status, data };
     } finally {
       this.clearTimeout(timeout);
     }
@@ -186,8 +187,10 @@ export class WebPushStorage {
       return await new Promise((resolve, reject) => {
         const transaction = database.transaction(STORE_NAME, mode);
         const request = operation(transaction.objectStore(STORE_NAME));
-        request.onsuccess = () => resolve(request.result ?? null);
+        let result = null;
+        request.onsuccess = () => { result = request.result ?? null; };
         request.onerror = () => reject(new Error("Web Push storage operation failed"));
+        transaction.oncomplete = () => resolve(result);
         transaction.onabort = () => reject(new Error("Web Push storage transaction aborted"));
       });
     } finally {

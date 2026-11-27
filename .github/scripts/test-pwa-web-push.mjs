@@ -4,7 +4,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { STATES, WebPushLifecycle, validConfig } from "../../assets/js/web-push-lifecycle.mjs";
-import { WebPushApiClient, WebPushBrowserGateway, base64UrlToUint8Array, detectWebPushCapabilities } from "../../assets/js/web-push-platform.mjs";
+import { WebPushApiClient, WebPushBrowserGateway, WebPushStorage, base64UrlToUint8Array, detectWebPushCapabilities } from "../../assets/js/web-push-platform.mjs";
 import { WebPushView } from "../../assets/js/web-push-view.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -92,7 +92,7 @@ const createHarness = ({
     retryDelays: [10, 20],
     now: () => now,
   });
-  return { lifecycle, calls, actions: () => actions, getStored: () => stored };
+  return { lifecycle, calls, actions: () => actions, getStored: () => stored, setStored: (value) => { stored = value; } };
 };
 
 test("public PT-BR shell is gated off and EN/ES remain free of Web Push controls", () => {
@@ -252,6 +252,29 @@ test("partial local failure removes cancellation capability only after remote 20
   assert.equal(harness.calls.unsubscribe, 2);
 });
 
+test("repeated local cleanup failure remains retryable", async () => {
+  const harness = createHarness({
+    record: ACTIVE_RECORD,
+    subscription: { synthetic: true },
+    unsubscribeResults: [false, false],
+  });
+  await harness.lifecycle.initialize();
+  await harness.lifecycle.cancel();
+  await harness.lifecycle.retry();
+  assert.equal(harness.lifecycle.state.name, STATES.CANCEL_PENDING_LOCAL);
+  assert.equal(harness.calls.unsubscribe, 2);
+  assert.equal(harness.calls.revoke, 1);
+});
+
+test("record loss between initialization and cancellation requests recovery", async () => {
+  const harness = createHarness({ record: ACTIVE_RECORD, subscription: { synthetic: true } });
+  await harness.lifecycle.initialize();
+  harness.setStored(null);
+  await harness.lifecycle.cancel();
+  assert.equal(harness.lifecycle.state.name, STATES.RECOVERY_REQUIRED);
+  assert.equal(harness.calls.revoke, 0);
+});
+
 test("concurrent cancellation actions collapse into one lifecycle operation", async () => {
   let release;
   const harness = createHarness({ record: ACTIVE_RECORD, subscription: { synthetic: true } });
@@ -307,6 +330,15 @@ test("recovery uses an independent capability in the request body and then clean
   assert.equal(harness.lifecycle.state.name, STATES.RECOVERY_REQUIRED);
   await harness.lifecycle.recoverAndCancel({ subscriptionId: "sub_" + "R".repeat(43), recoveryCapability: "S".repeat(43) });
   assert.deepEqual(harness.calls.revocationPayload, { subscriptionId: "sub_" + "R".repeat(43), capability: "S".repeat(43) });
+  assert.equal(harness.lifecycle.state.name, STATES.INACTIVE);
+});
+
+test("recovery remains available without a local record or subscription", async () => {
+  const harness = createHarness();
+  await harness.lifecycle.initialize();
+  assert.equal(harness.lifecycle.state.name, STATES.INACTIVE);
+  await harness.lifecycle.recoverAndCancel({ subscriptionId: "sub_" + "T".repeat(43), recoveryCapability: "U".repeat(43) });
+  assert.equal(harness.calls.revoke, 1);
   assert.equal(harness.lifecycle.state.name, STATES.INACTIVE);
 });
 
@@ -401,6 +433,10 @@ test("view binds explicit actions and renders accessible lifecycle states", () =
   view.render({ name: STATES.RECOVERY_REQUIRED });
   assert.equal(fixture.elements.get("[data-web-push-recovery]").hidden, false);
   assert.equal(fixture.elements.get("[data-web-push-privacy]").href, CONFIG.privacyNoticeUrl);
+  view.render({ name: STATES.RECOVERY_REQUIRED, detail: "retry-recovery" });
+  assert.match(fixture.elements.get("[data-web-push-description]").textContent, /informe novamente/);
+  view.render({ name: STATES.INACTIVE });
+  assert.equal(fixture.elements.get("[data-web-push-recovery]").hidden, false);
 });
 
 test("view exports the one-time recovery bundle without logging or navigation", () => {
@@ -461,4 +497,63 @@ test("API registration validates the exact backend contract and always clears it
     fetchLike: async () => ({ status: 201, json: async () => ({ unexpected: true }) }),
   });
   await assert.rejects(() => invalid.register({ subscription: {}, locale: "pt-BR" }), /Invalid registration response/);
+});
+
+test("API timeout remains armed until the registration body is consumed", async () => {
+  let resolveBody;
+  let cleared = 0;
+  const body = new Promise((resolve) => { resolveBody = resolve; });
+  const client = new WebPushApiClient({
+    baseUrl: CONFIG.apiBaseUrl,
+    fetchLike: async () => ({ status: 201, json: () => body }),
+    setTimeoutLike: () => 7,
+    clearTimeoutLike: () => { cleared += 1; },
+  });
+  const registration = client.register({ subscription: {}, locale: "pt-BR" });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(cleared, 0);
+  resolveBody({
+    subscriptionId: ACTIVE_RECORD.subscriptionId,
+    cancellationCapability: ACTIVE_RECORD.cancellationCapability,
+    recoveryCapability: "V".repeat(43),
+    expiresAtUtc: ACTIVE_RECORD.expiresAtUtc,
+  });
+  await registration;
+  assert.equal(cleared, 1);
+});
+
+const createIndexedDbFixture = ({ abort = false } = {}) => {
+  const database = {
+    objectStoreNames: { contains: () => true },
+    close() {},
+    transaction() {
+      const transaction = {
+        objectStore: () => ({
+          put: () => {
+            const request = { result: undefined };
+            setImmediate(() => {
+              request.onsuccess();
+              if (abort) transaction.onabort(); else transaction.oncomplete();
+            });
+            return request;
+          },
+        }),
+      };
+      return transaction;
+    },
+  };
+  return {
+    open() {
+      const request = { result: database };
+      setImmediate(() => request.onsuccess());
+      return request;
+    },
+  };
+};
+
+test("IndexedDB writes resolve only after transaction commit and reject aborts", async () => {
+  const committed = new WebPushStorage({ indexedDBLike: createIndexedDbFixture() });
+  await committed.write(ACTIVE_RECORD);
+  const aborted = new WebPushStorage({ indexedDBLike: createIndexedDbFixture({ abort: true }) });
+  await assert.rejects(() => aborted.write(ACTIVE_RECORD), /transaction aborted/);
 });

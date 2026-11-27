@@ -54,7 +54,7 @@ const TRANSITIONS = Object.freeze({
   [EVENTS.FAIL]: new Set(Object.values(STATES)),
   [EVENTS.CANCEL_REMOTE]: new Set([
     STATES.ACTIVE, STATES.CAPABILITY_LOST, STATES.EXPIRED, STATES.CANCEL_PENDING_REMOTE,
-    STATES.RECOVERY_REQUIRED,
+    STATES.RECOVERY_REQUIRED, STATES.INACTIVE,
   ]),
   [EVENTS.CANCEL_REMOTE_PENDING]: new Set([STATES.CANCELING_REMOTE]),
   [EVENTS.RESTORE_REMOTE_PENDING]: new Set([STATES.CHECKING]),
@@ -67,6 +67,7 @@ const TRANSITIONS = Object.freeze({
   [EVENTS.EXPIRE]: new Set([STATES.CHECKING, STATES.ACTIVE]),
   [EVENTS.REQUIRE_RECOVERY]: new Set([
     STATES.CHECKING, STATES.ACTIVATING, STATES.CANCELING_REMOTE, STATES.ERROR,
+    STATES.ACTIVE, STATES.CAPABILITY_LOST, STATES.EXPIRED, STATES.CANCEL_PENDING_REMOTE,
   ]),
 });
 
@@ -299,6 +300,7 @@ export class WebPushLifecycle {
       return this.#runOnce("cleanup", async () => {
         try {
           const record = await this.storage.read();
+          this.#move(EVENTS.CANCEL_LOCAL, record);
           await this.#cleanupLocalSubscription(record);
         } catch {
           this.#move(EVENTS.FAIL, "storage-unavailable");
@@ -309,7 +311,7 @@ export class WebPushLifecycle {
   }
 
   async recoverAndCancel(bundle) {
-    if (!validConfig(this.config) || this.#state.name !== STATES.RECOVERY_REQUIRED) return this.#state;
+    if (!validConfig(this.config) || ![STATES.RECOVERY_REQUIRED, STATES.INACTIVE].includes(this.#state.name)) return this.#state;
     if (!bundle || !SUBSCRIPTION_ID_PATTERN.test(bundle.subscriptionId) || !CAPABILITY_PATTERN.test(bundle.recoveryCapability)) return this.#state;
     return this.#runOnce("recover", async () => {
       this.#state = transition(this.#state, EVENTS.CANCEL_REMOTE, "recovery");
