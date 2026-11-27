@@ -55,10 +55,6 @@ resource "azurerm_monitor_diagnostic_setting" "function_app" {
     category = "FunctionAppLogs"
   }
 
-  enabled_log {
-    category = "AppServicePlatformLogs"
-  }
-
   enabled_metric {
     category = "AllMetrics"
   }

@@ -29,7 +29,7 @@ O sistema tolera replays, concorrência e reinício por estado durável e ETags.
 
 ## Observabilidade e FinOps
 
-O Job Summary registra artigos por idioma, campanhas elegíveis/criadas/deduplicadas/pendentes, claims, mensagens enfileiradas, falhas, esgotamento, limite e duração. `FunctionAppLogs`, `AppServicePlatformLogs`, diagnósticos `StorageRead/Write/Delete`, métrica `Transaction`, audit do Cosmos e métricas nativas já previstas alimentam Azure Monitor/Log Analytics. Não usar ID de campanha, inscrição, endpoint, capacidade, URL ou claim como dimensão de métrica.
+O Job Summary registra artigos por idioma, campanhas elegíveis/criadas/deduplicadas/pendentes, claims, mensagens enfileiradas, falhas, esgotamento, limite e duração. `FunctionAppLogs` e `AllMetrics` da Function, diagnósticos `StorageRead/Write/Delete`, métrica `Transaction`, audit do Cosmos e métricas nativas já previstas alimentam Azure Monitor/Log Analytics. `AppServicePlatformLogs` não é oferecida pela Function Flex implantada. Não usar ID de campanha, inscrição, endpoint, capacidade, URL ou claim como dimensão de métrica.
 
 Indicadores de consumo disponíveis para revisão operacional:
 
