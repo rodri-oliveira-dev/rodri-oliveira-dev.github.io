@@ -24,6 +24,7 @@ Este diretório registra escolhas que alteram responsabilidades, infraestrutura 
 | [0018](0018-segregar-diagnostic-settings.md) | Segregar o provisionamento de Diagnostic Settings | Accepted |
 | [0019](0019-restringir-escrita-de-diagnostics-do-provisionador.md) | Restringir escrita de Diagnostics do provisionador | Accepted |
 | [0020](0020-gerenciar-tls-da-function-no-config-web.md) | Gerenciar TLS da Function no recurso config/web | Accepted |
+| [0021](0021-publicar-contratos-estaticos-agent-readiness.md) | Publicar contratos estáticos de Agent Readiness | Accepted |
 
 ## Como manter
 

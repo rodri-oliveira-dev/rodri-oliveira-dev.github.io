@@ -1,0 +1,40 @@
+{
+  "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
+  "skills": [
+    {
+      "name": "discover-portfolio",
+      "type": "skill-md",
+      "description": "Discover Rodrigo de Oliveira's public professional portfolio in pt-BR, English, or es-419. Use for a grounded overview of his published profile, experience, projects, writing, and contact links.",
+      "url": "/.well-known/agent-skills/discover-portfolio/SKILL.md",
+      "digest": "sha256:5db317243f57067c9c25cbe4e8b5e473557227e3b42d5fc3bdd3da988d82bdb6"
+    },
+    {
+      "name": "discover-projects",
+      "type": "skill-md",
+      "description": "Discover Rodrigo de Oliveira's public open-source projects and case studies in pt-BR, English, or es-419. Use when a user asks what he has built or wants evidence from published project pages.",
+      "url": "/.well-known/agent-skills/discover-projects/SKILL.md",
+      "digest": "sha256:1ead09bf064e24e735715f008791b4a6f45094e17ad63967f1d552d12ea9004a"
+    },
+    {
+      "name": "discover-services",
+      "type": "skill-md",
+      "description": "Discover the professional services Rodrigo de Oliveira publicly presents in pt-BR, English, or es-419. Use to identify service areas, delivery approach, and published supporting evidence.",
+      "url": "/.well-known/agent-skills/discover-services/SKILL.md",
+      "digest": "sha256:092d97807892a1909f7bb41e1ece16ea3fb3bd2b589d1aa9ff7963ff750d1ae8"
+    },
+    {
+      "name": "discover-articles",
+      "type": "skill-md",
+      "description": "Discover articles and publications linked from Rodrigo de Oliveira's portfolio in pt-BR, English, or es-419. Use when a user wants public writing by topic or language.",
+      "url": "/.well-known/agent-skills/discover-articles/SKILL.md",
+      "digest": "sha256:6ee0443e8d7650a7370da1a4fa9720a42160e5a9ce1d6de9d67ab9a87bf58f0a"
+    },
+    {
+      "name": "discover-resume",
+      "type": "skill-md",
+      "description": "Discover Rodrigo de Oliveira's public resume in pt-BR, English, or es-419. Use for grounded questions about the professional history, skills, education, and contact details published in the resume.",
+      "url": "/.well-known/agent-skills/discover-resume/SKILL.md",
+      "digest": "sha256:4b81899eb77b5101b0aa6716d460b06e8b753f7e1b1312f2d9a3931c367da307"
+    }
+  ]
+}

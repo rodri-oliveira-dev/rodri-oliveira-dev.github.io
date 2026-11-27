@@ -441,6 +441,9 @@ jobs:
           test -s "$RUNNER_TEMP/pages-site/curriculo/rodrigo-de-oliveira.pdf"
           test -s "$RUNNER_TEMP/pages-site/en/resume/rodrigo-de-oliveira.pdf"
           test -s "$RUNNER_TEMP/pages-site/es/curriculo/rodrigo-de-oliveira.pdf"
+          test -s "$RUNNER_TEMP/pages-site/.well-known/agent-skills/index.json"
+          test -s "$RUNNER_TEMP/pages-site/.well-known/ard.json"
+          test -s "$RUNNER_TEMP/pages-site/.well-known/poppy.json"
           test ! -e "$RUNNER_TEMP/pages-site/backend"
           test ! -e "$RUNNER_TEMP/pages-site/infra"
           test ! -e "$RUNNER_TEMP/pages-site/sonar-project.properties"
@@ -464,6 +467,7 @@ jobs:
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: ${{ runner.temp }}/pages-site
+          include-hidden-files: true
 
   pages_deploy:
     name: Deploy GitHub Pages

@@ -70,6 +70,11 @@ jobs:
       - name: Test Pages artifact allowlist
         run: python3 -m unittest discover -s .github/scripts -p 'test_assemble_site.py'
 
+      - name: Validate agent-readiness contracts
+        run: |
+          python3 -m unittest discover -s .github/scripts -p 'test_agent_readiness.py'
+          python3 .github/scripts/sync-agent-readiness.py --check
+
       - name: Test Function release packaging
         run: python3 -m unittest discover -s .github/scripts -p 'test_function_release.py'
 
