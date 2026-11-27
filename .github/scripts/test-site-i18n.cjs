@@ -508,3 +508,63 @@ assert.equal(blockedPage.prompt.hidden, true, "Dismissal persists on current pag
   assert.equal(prevented, false, "Dismissal must not suppress browser UI");
   console.log(`Validated 3 homepages, 3 resumes, 3 service pages in sitemap, ${slugSets[0].length * 3} localized case studies, legacy redirect, metadata, navigation, local resources, and sitemap.`);
 })().catch(error => { console.error(error); process.exitCode = 1; });
+
+
+/* Localized mobile contact cards: generation, routing and vCard wire format. */
+const expectedContactCards = require("./generate-vcards.cjs").expectedCards();
+const contactLocales = [
+  ["index.html", "pt-br", "pt-BR", "Arquiteto de Software", "/"],
+  ["en/index.html", "en-us", "en-US", "Software Architect", "/en/"],
+  ["es/index.html", "es", "es-419", "Arquitecto de Software", "/es/"],
+];
+const contactIdentities = new Set();
+const contactRevisions = new Set();
+const contactNotes = new Set();
+const contactPortrait = fs.readFileSync(path.join(ROOT, "assets/profile/rodrigo-about.webp"));
+for (const [home, suffix, language, title, route] of contactLocales) {
+  const name = "rodrigo-de-oliveira-" + suffix + ".vcf";
+  const relative = "assets/contact/" + name;
+  assert.ok(read(home).includes('class="button secondary mobile-contact-action" href="/' + relative + '" download>'), home + " localized vCard CTA");
+  const raw = fs.readFileSync(path.join(ROOT, relative));
+  const card = raw.toString("utf8");
+  assert.equal(card, expectedContactCards[name], name + " generated content");
+  assert.ok(raw.length <= 100 * 1024, name + " size limit");
+  assert.ok(card.endsWith("\r\n") && !card.replace(/\r\n/g, "").includes("\n") && !card.replace(/\r\n/g, "").includes("\r"), name + " CRLF");
+  for (const line of card.split("\r\n")) {
+    assert.ok(Buffer.byteLength(line, "utf8") <= 75, name + " 75-octet folding");
+  }
+  const unfolded = card.replace(/\r\n[ \t]/g, "");
+  const lines = unfolded.split("\r\n");
+  assert.equal(lines[0], "BEGIN:VCARD");
+  assert.equal(lines[1], "VERSION:4.0");
+  assert.equal(lines.at(-2), "END:VCARD");
+  assert.ok(lines.includes("FN:Rodrigo de Oliveira"));
+  assert.ok(lines.includes("TITLE;LANGUAGE=" + language + ":" + title));
+  assert.ok(lines.includes("TEL;VALUE=uri;TYPE=cell;PREF=1:tel:+5519998861786"));
+  assert.ok(lines.includes("EMAIL;TYPE=work;PREF=1:rodrigodotnet@outlook.com"));
+  assert.ok(lines.includes("URL;PREF=1:" + SITE_URL + route));
+  assert.ok(lines.includes("URL:https://www.linkedin.com/in/rodri-oliveira-dev"));
+  assert.ok(lines.includes("URL:https://github.com/rodri-oliveira-dev"));
+  assert.ok(lines.includes("URL:https://wa.me/5519998861786"));
+  const note = lines.find(line => line.startsWith("NOTE;LANGUAGE=" + language + ":"));
+  assert.ok(note && note.length > 100, name + " localized biography");
+  contactNotes.add(note.split(":").slice(1).join(":"));
+  assert.ok(lines.some(line => line.startsWith("ROLE;LANGUAGE=" + language + ":")));
+  assert.ok(lines.some(line => line.startsWith("ADR;TYPE=work;LANGUAGE=" + language + ":;;;Limeira;São Paulo;;")));
+  assert.ok(lines.some(line => line.startsWith("CATEGORIES:")));
+  assert.ok(lines.includes("TZ:America/Sao_Paulo"));
+  const portrait = lines.find(line => line.startsWith("PHOTO;MEDIATYPE=image/webp:data:image/webp;base64,"));
+  assert.ok(portrait, name + " embedded photo");
+  assert.deepEqual(Buffer.from(portrait.split(",")[1], "base64"), contactPortrait);
+  const uid = lines.find(line => line.startsWith("UID:"));
+  assert.match(uid ?? "", /^UID:urn:uuid:[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/);
+  contactIdentities.add(uid);
+  const revision = lines.find(line => line.startsWith("REV:"));
+  assert.match(revision ?? "", /^REV:\d{8}T\d{6}Z$/);
+  contactRevisions.add(revision);
+  assert.ok(!lines.some(line => /^(?:ORG|BDAY|LANG)[:;]/.test(line)), name + " public professional data only");
+}
+assert.equal(contactIdentities.size, 1, "All locales share one stable identity");
+assert.equal(contactRevisions.size, 1, "All locales share one content revision");
+assert.equal(contactNotes.size, 3, "Three localized biographies");
+assert.deepEqual(fs.readFileSync(path.join(ROOT, "assets/contact/rodrigo-de-oliveira.vcf")), fs.readFileSync(path.join(ROOT, "assets/contact/rodrigo-de-oliveira-pt-br.vcf")), "Legacy vCard URL remains a PT-BR fallback");
