@@ -1,8 +1,10 @@
 # Evidências para decisão humana sobre as issues 151 a 154
 
+**Atualização aprovada pelo responsável em 27/11/2026, efetiva após merge do PR desta revisão:** a [ADR 0022](../../adr/0022-consolidar-privacidade-web-push-antes-do-piloto.md) distingue testes isolados, piloto individual e abertura pública. A revisão jurídica formal integral fica antes da abertura pública; para o piloto, permanece obrigatória avaliação documentada das obrigações aplicáveis ao fluxo efetivamente usado, inclusive transferências, aviso, segurança e retenção. Nenhum requisito legal é dispensado e nenhuma ativação é autorizada por este documento.
+
 ## Sequenciamento aprovado em 27/11/2026
 
-A [ADR 0022](../../adr/0022-consolidar-privacidade-web-push-antes-do-piloto.md) reorganiza exclusivamente a ordem de execução: #157–#165 precedem #155 e #156, que continuam obrigatórias antes de #166 (piloto real) e #167 (produção). A minuta e o consentimento versionado podem ser usados em testes isolados com mocks, sem permissões, inscrição, enqueue ou entrega reais. Não há dispensa de requisitos legais, mudança de política de retenção, aprovação jurídica ou autorização de lançamento. As evidências históricas de #151–#154 permanecem válidas no escopo em que foram produzidas.
+A [ADR 0022](../../adr/0022-consolidar-privacidade-web-push-antes-do-piloto.md) reorganiza a ordem de execução: #157–#165 precedem #155 e #156, que continuam obrigatórias antes de #166 (piloto real) e #167 (produção). A minuta e o consentimento versionado podem ser usados em testes isolados com mocks, sem permissões, inscrição, enqueue ou entrega reais. Não há dispensa de requisitos legais, mudança de política de retenção, aprovação jurídica ou autorização de lançamento. As evidências históricas de #151–#154 permanecem válidas no escopo em que foram produzidas.
 
 Data da consolidação: 2026-11-26.
 

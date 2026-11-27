@@ -1,5 +1,9 @@
 # Inventário de tratamento e transferências
 
+**Atualização aprovada pelo responsável em 27/11/2026, efetiva após merge do PR desta revisão:** a [ADR 0022](../../adr/0022-consolidar-privacidade-web-push-antes-do-piloto.md) distingue testes isolados, piloto individual e abertura pública. A revisão jurídica formal integral fica antes da abertura pública; para o piloto, permanece obrigatória avaliação documentada das obrigações aplicáveis ao fluxo efetivamente usado, inclusive transferências, aviso, segurança e retenção. Nenhum requisito legal é dispensado e nenhuma ativação é autorizada por este documento.
+
+As lacunas jurídicas deste inventário devem ser avaliadas para os fluxos efetivamente usados antes do piloto; a revisão integral para a abertura pública permanece bloqueante em #167. Não se presume válido qualquer mecanismo de transferência.
+
 Este inventário descreve a arquitetura versionada na `main` em 27/11/2026 e distingue, quando necessário, o que ainda não chegou à última release. Não comprova termos contratuais, localização de toda telemetria nem mecanismo jurídico de transferência. Lacunas são bloqueios, não garantias implícitas.
 
 ## Operações de tratamento
