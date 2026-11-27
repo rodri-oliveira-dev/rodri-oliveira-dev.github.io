@@ -482,11 +482,11 @@
           <h2 id="web-push-title">Notificações em português</h2>
         </div>
         <div class="web-push-content">
-          <p class="web-push-status" data-web-push-status role="status" aria-live="polite">Notificações indisponíveis</p>
+          <output class="web-push-status" data-web-push-status aria-live="polite">Notificações indisponíveis</output>
           <p data-web-push-description>A ativação e o cancelamento ainda não estão disponíveis.</p>
           <p data-web-push-expiration hidden></p>
           <div data-web-push-consent hidden>
-            <label class="web-push-consent"><input type="checkbox" data-web-push-consent-input> <span><span data-web-push-consent-text></span> <a data-web-push-privacy hidden>Consulte o aviso de privacidade.</a></span></label>
+            <label class="web-push-consent"><input type="checkbox" data-web-push-consent-input> <span><span data-web-push-consent-text></span> <a href="#contact" data-web-push-privacy hidden>Consulte o aviso de privacidade.</a></span></label>
           </div>
           <div class="web-push-actions">
             <button type="button" data-web-push-activate hidden disabled>Ativar notificações</button>
@@ -494,11 +494,12 @@
             <button type="button" data-web-push-retry hidden>Tentar novamente</button>
             <button type="button" data-web-push-export hidden>Salvar credencial de recuperação</button>
           </div>
-          <div class="web-push-recovery" data-web-push-recovery role="group" aria-label="Recuperar e cancelar inscrição" hidden>
+          <fieldset class="web-push-recovery" data-web-push-recovery hidden>
+            <legend>Recuperar e cancelar inscrição</legend>
             <label>Identificador da inscrição<input type="text" inputmode="text" autocomplete="off" spellcheck="false" data-web-push-recovery-id></label>
             <label>Credencial de recuperação<input type="password" autocomplete="one-time-code" spellcheck="false" data-web-push-recovery-capability></label>
             <button type="button" data-web-push-recover>Recuperar e cancelar</button>
-          </div>
+          </fieldset>
           <p class="web-push-contact">Se você não tiver mais acesso às credenciais, use o <a href="#contact">canal de contato</a>. Não envie credenciais por e-mail.</p>
         </div>
       </div>

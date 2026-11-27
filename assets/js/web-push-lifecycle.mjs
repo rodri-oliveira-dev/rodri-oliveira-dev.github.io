@@ -234,7 +234,7 @@ export class WebPushLifecycle {
           privacyNoticeVersion: this.config.privacyNoticeVersion,
         });
         if (response.status !== 201) {
-          try { await this.browser.unsubscribe(subscription); } catch { /* best effort */ }
+          await this.#bestEffortUnsubscribe(subscription);
           this.#move(EVENTS.REQUIRE_RECOVERY, "registration-not-created");
           return;
         }
@@ -252,9 +252,7 @@ export class WebPushLifecycle {
         await this.storage.write(record);
         this.#move(EVENTS.ACTIVATE_OK, record);
       } catch {
-        if (subscription) {
-          try { await this.browser.unsubscribe(subscription); } catch { /* best effort */ }
-        }
+        await this.#bestEffortUnsubscribe(subscription);
         this.#move(this.#recoveryBundle ? EVENTS.REQUIRE_RECOVERY : EVENTS.FAIL,
           this.#recoveryBundle ? "local-storage-failed" : "activation-uncertain");
       }
@@ -356,18 +354,26 @@ export class WebPushLifecycle {
     }
   }
 
+  async #bestEffortUnsubscribe(subscription) {
+    if (!subscription) return;
+    try { await this.browser.unsubscribe(subscription); } catch { /* best effort */ }
+  }
+
   async #revokeWithBackoff(credentials) {
-    for (let attempt = 0; attempt <= this.retryDelays.length; attempt += 1) {
-      try {
-        const response = await this.api.revoke(credentials);
-        if (response.status === 202) return true;
-        if (![429, 503].includes(response.status)) return false;
-      } catch {
-        // A lost response is retried with the same idempotency credentials.
-      }
-      if (attempt < this.retryDelays.length) await this.wait(this.retryDelays[attempt]);
+    return this.#revokeAttempt(credentials, 0);
+  }
+
+  async #revokeAttempt(credentials, attempt) {
+    try {
+      const response = await this.api.revoke(credentials);
+      if (response.status === 202) return true;
+      if (![429, 503].includes(response.status)) return false;
+    } catch {
+      // A lost response is retried with the same idempotency credentials.
     }
-    return false;
+    if (attempt >= this.retryDelays.length) return false;
+    await this.wait(this.retryDelays[attempt]);
+    return this.#revokeAttempt(credentials, attempt + 1);
   }
 
   #runOnce(_name, operation) {

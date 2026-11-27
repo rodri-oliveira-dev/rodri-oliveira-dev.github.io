@@ -29,6 +29,8 @@
 }
 
 .web-push-status {
+  display: block;
+  margin-bottom: 1em;
   color: var(--text);
   font-weight: 700;
   font-size: 1.1rem;
@@ -77,6 +79,15 @@
   display: grid;
   gap: 14px;
   margin-top: 20px;
+  padding: 0;
+  border: 0;
+}
+
+.web-push-recovery legend {
+  margin-bottom: 14px;
+  padding: 0;
+  color: var(--text);
+  font-weight: 700;
 }
 
 .web-push-recovery label {

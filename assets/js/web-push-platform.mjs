@@ -7,8 +7,8 @@ const base64UrlToUint8Array = (value) => {
     throw new Error("Invalid public key");
   }
   const padding = "=".repeat((4 - value.length % 4) % 4);
-  const decoded = atob((value + padding).replace(/-/g, "+").replace(/_/g, "/"));
-  return Uint8Array.from(decoded, (character) => character.charCodeAt(0));
+  const decoded = atob((value + padding).replaceAll("-", "+").replaceAll("_", "/"));
+  return Uint8Array.from(decoded, (character) => character.codePointAt(0));
 };
 
 const isAppleMobileContext = (navigatorLike) => {
@@ -84,7 +84,7 @@ const parseJsonSafely = async (response) => {
 
 const exactRegistrationResponse = (data) => data &&
   !Array.isArray(data) &&
-  JSON.stringify(Object.keys(data).sort()) === JSON.stringify(["cancellationCapability", "expiresAtUtc", "recoveryCapability", "subscriptionId"]) &&
+  JSON.stringify(Object.keys(data).sort((left, right) => left.localeCompare(right))) === JSON.stringify(["cancellationCapability", "expiresAtUtc", "recoveryCapability", "subscriptionId"]) &&
   /^sub_[A-Za-z0-9_-]{43}$/.test(data.subscriptionId) &&
   /^[A-Za-z0-9_-]{43}$/.test(data.cancellationCapability) &&
   /^[A-Za-z0-9_-]{43}$/.test(data.recoveryCapability) &&

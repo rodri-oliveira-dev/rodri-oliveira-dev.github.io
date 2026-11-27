@@ -18,8 +18,8 @@ if (root) {
     view,
   });
 
-  lifecycle.initialize();
+  void lifecycle.initialize().catch(() => {});
   window.addEventListener("pageshow", (event) => {
-    if (event.persisted) lifecycle.initialize();
+    if (event.persisted) void lifecycle.initialize().catch(() => {});
   });
 }

@@ -4,7 +4,8 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { STATES, WebPushLifecycle, validConfig } from "../../assets/js/web-push-lifecycle.mjs";
-import { WebPushApiClient, base64UrlToUint8Array, detectWebPushCapabilities } from "../../assets/js/web-push-platform.mjs";
+import { WebPushApiClient, WebPushBrowserGateway, base64UrlToUint8Array, detectWebPushCapabilities } from "../../assets/js/web-push-platform.mjs";
+import { WebPushView } from "../../assets/js/web-push-view.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const read = (relativePath) => fs.readFileSync(path.join(ROOT, relativePath), "utf8");
@@ -342,4 +343,122 @@ test("frontend implementation contains no logging or public endpoint/key literal
   ].map(read).join("\n");
   assert.doesNotMatch(sources, /console\.|sendBeacon|analytics|telemetry/i);
   assert.doesNotMatch(read("assets/js/web-push-config.mjs"), /https:\/\/|api\/subscriptions|[A-Za-z0-9_-]{80,}/);
+});
+
+const createViewFixture = () => {
+  const selectors = [
+    "status", "description", "consent", "consent-input", "consent-text", "privacy", "activate",
+    "cancel", "retry", "export", "recovery", "recovery-id", "recovery-capability", "recover", "expiration",
+  ];
+  const elements = new Map(selectors.map((name) => [`[data-web-push-${name}]`, {
+    hidden: false, disabled: false, checked: false, value: "", textContent: "", href: "", dataset: {},
+    listeners: new Map(),
+    addEventListener(type, listener) { this.listeners.set(type, listener); },
+    dispatch(type) { this.listeners.get(type)?.(); },
+  }]));
+  const root = {
+    dataset: {}, attributes: new Map(),
+    querySelector: (selector) => elements.get(selector) || null,
+    setAttribute(name, value) { this.attributes.set(name, value); },
+  };
+  const download = { clicked: 0 };
+  const documentLike = { createElement: () => ({ ...download, click() { download.clicked += 1; } }) };
+  const urls = { created: [], revoked: [] };
+  const urlLike = {
+    createObjectURL(blob) { urls.created.push(blob); return "blob:synthetic"; },
+    revokeObjectURL(url) { urls.revoked.push(url); },
+  };
+  return { root, elements, documentLike, urlLike, download, urls };
+};
+
+test("view binds explicit actions and renders accessible lifecycle states", () => {
+  const fixture = createViewFixture();
+  const calls = [];
+  const view = new WebPushView(fixture.root, { documentLike: fixture.documentLike, urlLike: fixture.urlLike, config: CONFIG });
+  view.bind({
+    activate: (consent) => calls.push(["activate", consent]), cancel: () => calls.push(["cancel"]),
+    retry: () => calls.push(["retry"]), exportRecovery: () => calls.push(["export"]),
+    recover: (bundle) => calls.push(["recover", bundle]),
+  });
+  const consent = fixture.elements.get("[data-web-push-consent-input]");
+  consent.checked = true;
+  consent.dispatch("change");
+  fixture.elements.get("[data-web-push-activate]").dispatch("click");
+  fixture.elements.get("[data-web-push-cancel]").dispatch("click");
+  fixture.elements.get("[data-web-push-retry]").dispatch("click");
+  fixture.elements.get("[data-web-push-export]").dispatch("click");
+  fixture.elements.get("[data-web-push-recovery-id]").value = " sub_synthetic ";
+  fixture.elements.get("[data-web-push-recovery-capability]").value = " capability ";
+  fixture.elements.get("[data-web-push-recover]").dispatch("click");
+  assert.deepEqual(calls, [
+    ["activate", true], ["cancel"], ["retry"], ["export"],
+    ["recover", { subscriptionId: "sub_synthetic", recoveryCapability: "capability" }],
+  ]);
+  view.render({ name: STATES.ACTIVE, detail: { expiresAtUtc: "2027-11-27T12:00:00Z" } }, { recoveryAvailable: true });
+  assert.equal(fixture.root.dataset.state, STATES.ACTIVE);
+  assert.equal(fixture.root.attributes.get("aria-busy"), "false");
+  assert.equal(fixture.elements.get("[data-web-push-expiration]").hidden, false);
+  view.render({ name: STATES.RECOVERY_REQUIRED });
+  assert.equal(fixture.elements.get("[data-web-push-recovery]").hidden, false);
+  assert.equal(fixture.elements.get("[data-web-push-privacy]").href, CONFIG.privacyNoticeUrl);
+});
+
+test("view exports the one-time recovery bundle without logging or navigation", () => {
+  const fixture = createViewFixture();
+  const view = new WebPushView(fixture.root, { documentLike: fixture.documentLike, urlLike: fixture.urlLike, config: CONFIG });
+  view.downloadRecovery({ subscriptionId: ACTIVE_RECORD.subscriptionId, recoveryCapability: "recover_synthetic" });
+  assert.equal(fixture.download.clicked, 1);
+  assert.equal(fixture.urls.created.length, 1);
+  assert.deepEqual(fixture.urls.revoked, ["blob:synthetic"]);
+});
+
+test("browser gateway delegates only explicit browser operations", async () => {
+  const subscription = {
+    unsubscribe: async () => true,
+    toJSON: () => ({ endpoint: "https://push.fixture.invalid/synthetic", keys: { p256dh: "public", auth: "auth" } }),
+  };
+  const calls = [];
+  const registration = { pushManager: {
+    getSubscription: async () => subscription,
+    subscribe: async (options) => { calls.push(options); return subscription; },
+  } };
+  const windowLike = {
+    isSecureContext: true, Notification: { permission: "default", requestPermission: async () => "granted" },
+    PushManager: class {}, matchMedia: () => ({ matches: false }),
+  };
+  const gateway = new WebPushBrowserGateway({ windowLike, navigatorLike: { serviceWorker: { ready: Promise.resolve(registration) }, platform: "Linux" } });
+  assert.equal((await gateway.requestPermission()), "granted");
+  assert.equal(await gateway.getSubscription(), subscription);
+  assert.equal(await gateway.subscribe(CONFIG.vapidPublicKey), subscription);
+  assert.equal(calls[0].userVisibleOnly, true);
+  assert.equal(await gateway.unsubscribe(subscription), true);
+  assert.deepEqual(gateway.serializeSubscription(subscription), {
+    endpoint: "https://push.fixture.invalid/synthetic", keys: { p256Dh: "public", auth: "auth" },
+  });
+});
+
+test("API registration validates the exact backend contract and always clears its timeout", async () => {
+  let cleared = 0;
+  const validResponse = {
+    subscriptionId: ACTIVE_RECORD.subscriptionId,
+    cancellationCapability: ACTIVE_RECORD.cancellationCapability,
+    recoveryCapability: "C".repeat(43),
+    expiresAtUtc: ACTIVE_RECORD.expiresAtUtc,
+  };
+  const client = new WebPushApiClient({
+    baseUrl: CONFIG.apiBaseUrl,
+    fetchLike: async () => ({ status: 201, json: async () => validResponse }),
+    setTimeoutLike: () => 42,
+    clearTimeoutLike: (timer) => { assert.equal(timer, 42); cleared += 1; },
+  });
+  const result = await client.register({ subscription: { endpoint: "https://push.fixture.invalid/synthetic", keys: {} }, locale: "pt-BR" });
+  assert.equal(result.status, 201);
+  assert.equal(result.data.subscriptionId, ACTIVE_RECORD.subscriptionId);
+  assert.equal(cleared, 1);
+
+  const invalid = new WebPushApiClient({
+    baseUrl: CONFIG.apiBaseUrl,
+    fetchLike: async () => ({ status: 201, json: async () => ({ unexpected: true }) }),
+  });
+  await assert.rejects(() => invalid.register({ subscription: {}, locale: "pt-BR" }), /Invalid registration response/);
 });
