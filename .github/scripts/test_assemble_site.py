@@ -6,6 +6,18 @@ from pathlib import Path
 spec = importlib.util.spec_from_file_location("assemble_site", Path(__file__).with_name("assemble-site.py"))
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
+fixture_spec = importlib.util.spec_from_file_location(
+    "prepare_web_push_manual_fixture",
+    Path(__file__).with_name("prepare-web-push-manual-fixture.py"),
+)
+fixture_module = importlib.util.module_from_spec(fixture_spec)
+fixture_spec.loader.exec_module(fixture_module)
+server_spec = importlib.util.spec_from_file_location(
+    "serve_test_site",
+    Path(__file__).with_name("serve-test-site.py"),
+)
+server_module = importlib.util.module_from_spec(server_spec)
+server_spec.loader.exec_module(server_module)
 
 
 class AssembleSiteTests(unittest.TestCase):
@@ -67,6 +79,29 @@ class AssembleSiteTests(unittest.TestCase):
                 self.skipTest("Symlinks are unavailable")
             with self.assertRaisesRegex(RuntimeError, "symlinks"):
                 module.assemble(source, root / "site")
+
+    def test_manual_web_push_fixture_is_mock_only_and_not_public(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            destination = root / "fixture"
+            fixture_module.prepare(destination)
+            files = sorted(
+                path.relative_to(destination).as_posix()
+                for path in destination.rglob("*")
+                if path.is_file()
+            )
+            self.assertEqual(files, sorted(fixture_module.FILES.values()))
+            script = (destination / "web-push-manual.mjs").read_text(encoding="utf-8")
+            self.assertNotIn("Notification.requestPermission", script)
+            self.assertNotIn("PushManager", script)
+            self.assertNotIn("fetch(", script)
+            self.assertNotIn(".github", module.PUBLIC_PATHS)
+            self.assertTrue(server_module.TestSiteHandler.extensions_map[".mjs"].startswith("text/javascript"))
+
+    def test_manual_web_push_fixture_refuses_existing_destination(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            with self.assertRaises(FileExistsError):
+                fixture_module.prepare(Path(temporary))
 
 
 if __name__ == "__main__":

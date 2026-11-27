@@ -9,6 +9,8 @@ on:
       - 'assets/**'
       - '.github/scripts/test-pwa*.cjs'
       - '.github/scripts/test-pwa-web-push.mjs'
+      - '.github/scripts/fixtures/web-push-manual.*'
+      - '.github/scripts/serve-test-site.py'
       - '.github/workflows/pwa.yml'
   push:
     branches:
@@ -20,6 +22,8 @@ on:
       - 'assets/**'
       - '.github/scripts/test-pwa*.cjs'
       - '.github/scripts/test-pwa-web-push.mjs'
+      - '.github/scripts/fixtures/web-push-manual.*'
+      - '.github/scripts/serve-test-site.py'
       - '.github/workflows/pwa.yml'
   workflow_dispatch:
 
@@ -76,7 +80,7 @@ jobs:
 
       - name: Start local static server
         run: |
-          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/pwa-http.log 2>&1 &
+          python3 .github/scripts/serve-test-site.py --port 8765 --bind 127.0.0.1 --directory . >/tmp/pwa-http.log 2>&1 &
           echo $! >/tmp/pwa-http.pid
           for _ in {1..20}; do
             if curl --fail --silent http://127.0.0.1:8765/ >/dev/null; then

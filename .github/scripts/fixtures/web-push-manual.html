@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Fixture local — ciclo Web Push</title>
+  <link rel="stylesheet" href="/assets/css/site.css">
+  <link rel="stylesheet" href="/assets/css/web-push.css">
+</head>
+<body>
+  <main class="section">
+    <div class="container">
+      <h1>Fixture local do ciclo Web Push</h1>
+      <p><strong>Somente mocks sintéticos:</strong> esta página não usa Notification, PushManager, Service Worker, fetch, endpoints ou inscrições reais.</p>
+      <label for="fixture-scenario">Estado inicial</label>
+      <select id="fixture-scenario">
+        <option value="inactive">Disponível para ativação</option>
+        <option value="active">Inscrição ativa</option>
+        <option value="expired">Inscrição expirada</option>
+        <option value="install-required">Instalação iOS necessária</option>
+        <option value="unsupported">Navegador incompatível</option>
+        <option value="permission-denied">Permissão negada</option>
+        <option value="recovery-required">Recuperação necessária</option>
+        <option value="backend-unavailable">Backend indisponível no cancelamento</option>
+        <option value="activation-error">Falha na ativação</option>
+        <option value="cleanup-error">Falha na limpeza local</option>
+      </select>
+    </div>
+
+    <section class="section web-push-section" aria-labelledby="web-push-title" data-web-push data-state="disabled" aria-busy="false">
+      <div class="container web-push-card">
+        <div class="web-push-heading">
+          <p class="eyebrow">Novos artigos</p>
+          <h2 id="web-push-title">Notificações em português</h2>
+        </div>
+        <div class="web-push-content">
+          <output class="web-push-status" data-web-push-status aria-live="polite">Notificações indisponíveis</output>
+          <p data-web-push-description>Aguarde a inicialização do fixture.</p>
+          <p data-web-push-expiration hidden></p>
+          <div data-web-push-consent hidden>
+            <label class="web-push-consent"><input type="checkbox" data-web-push-consent-input> <span><span data-web-push-consent-text></span> <a href="https://fixture.invalid/privacy" data-web-push-privacy hidden>Consulte o aviso sintético.</a></span></label>
+          </div>
+          <div class="web-push-actions">
+            <button type="button" data-web-push-activate hidden disabled>Ativar notificações</button>
+            <button type="button" data-web-push-cancel hidden>Cancelar notificações</button>
+            <button type="button" data-web-push-retry hidden>Tentar novamente</button>
+            <button type="button" data-web-push-export hidden>Salvar credencial de recuperação</button>
+          </div>
+          <fieldset class="web-push-recovery" data-web-push-recovery hidden>
+            <legend>Recuperar e cancelar inscrição</legend>
+            <label>Identificador da inscrição<input type="text" inputmode="text" autocomplete="off" spellcheck="false" data-web-push-recovery-id></label>
+            <label>Credencial de recuperação<input type="password" autocomplete="one-time-code" spellcheck="false" data-web-push-recovery-capability></label>
+            <button type="button" data-web-push-recover>Recuperar e cancelar</button>
+          </fieldset>
+          <p class="web-push-contact">Valores aceitos pelo fixture: <code>sub_RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR</code> e uma credencial com 43 letras <code>S</code>.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="./web-push-manual.mjs"></script>
+</body>
+</html>

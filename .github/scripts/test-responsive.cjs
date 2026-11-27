@@ -413,6 +413,11 @@ const assertMobileLinkNavigation = async (page, url, profileName) => {
             await page.setViewport({ width: 390, height: 844 });
             await page.evaluateOnNewDocument(() => {
               Object.defineProperty(navigator, "userAgent", { get: () => "Android" });
+              // Keep the scenario deterministic when Chromium also emits its
+              // own installability event after the synthetic fixture event.
+              window.addEventListener("beforeinstallprompt", (event) => {
+                if (event.isTrusted) event.stopImmediatePropagation();
+              }, { capture: true });
             });
             await page.goto(ORIGIN + url, { waitUntil: "load" });
             await page.waitForSelector("#home-screen-install", { visible: true });
