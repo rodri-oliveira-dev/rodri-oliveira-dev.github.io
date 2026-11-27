@@ -67,6 +67,7 @@ observabilidad
 Outbox
 Português
 PubSub
+Qube
 redelivery
 Rediseño
 Redis
@@ -92,6 +93,7 @@ WCAG
 WebMCP
 weme
 YamlDotNet
+zizmor
 ZAP
 Auditabilidad
 auditables
