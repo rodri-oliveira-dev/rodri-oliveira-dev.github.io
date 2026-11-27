@@ -47,6 +47,10 @@ Esses valores são uma estimativa pública, não uma cotação nem garantia de f
 
 Fontes: [Free Tier do Cosmos DB](https://learn.microsoft.com/azure/cosmos-db/free-tier), [retenção do Log Analytics](https://learn.microsoft.com/azure/azure-monitor/logs/data-retention-configure), [cap diário](https://learn.microsoft.com/azure/azure-monitor/logs/daily-cap) e [Azure Retail Prices API](https://prices.azure.com/api/retail/prices).
 
+O workspace declara `immediatePurgeDataOn30Days = true`, mas a prova operacional continua obrigatória por tabela: retenção interativa/total, overrides e exceções gerenciadas como `Usage`/`AzureActivity` não são comprovadas pelo plan. O runbook e os comandos somente leitura estão em [`docs/privacy/web-push/operational-retention-validation.md`](../../docs/privacy/web-push/operational-retention-validation.md).
+
+`subscription_recovery_epoch` é um marcador não secreto, externo ao backup do container. Ele deve ser rotacionado em mudança versionada antes de conectar uma conta restaurada; a rotação invalida todas as inscrições recuperadas e exige novo opt-in. Não alterar a epoch como rotina nem usá-la para renovar consentimento.
+
 ### Permissões futuras derivadas
 
 O código agora modela operações nos providers `Microsoft.ManagedIdentity`, `Microsoft.DocumentDB`, `Microsoft.KeyVault`, `Microsoft.OperationalInsights` e `Microsoft.Insights`. Antes do primeiro apply, derivar uma função customizada no escopo do Resource Group contendo somente leitura e create/update/delete dos tipos declarados: identidade atribuída pelo usuário, conta/banco/container Cosmos, vault, workspace e diagnostic settings. Não incluir criação de Resource Group, acesso ao State, leitura de segredos, chaves Cosmos, deploy de código ou administração genérica de IAM.
