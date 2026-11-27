@@ -108,4 +108,21 @@ O ID de entrega deriva de inscrição pseudonimizada + geração. O documento n�
 
 `AudienceCutoffUtc` impede geração criada depois da campanha de receber conteúdo antigo. A releitura existente ainda exige status ativo, expiração futura, geração e `recoveryEpoch` atuais imediatamente antes de `Sending`. Revogação posterior ao início do transporte não recolhe mensagem em trânsito.
 
-Os testes usam stores concorrentes controlados e exercitam o algoritmo real de create/replace/ETag, sem Azure, em vez de mocks que apenas retornam sucesso. Permanecem para #165 a validação operacional com o emulador/conta de teste autorizada, RU reais, throttling, consistência de sessão, poison queue e reconciliação de `OutcomeUnknown`. Nenhum enqueue ou envio real faz parte de #162–#163.
+Os testes usam stores concorrentes controlados e exercitam o algoritmo real de create/replace/ETag, sem Azure, em vez de mocks que apenas retornam sucesso. Nenhum enqueue ou envio real fez parte de #162–#163.
+
+## Pós-release, enqueue e reconciliação (#164–#165)
+
+O workflow reutilizável `web-push-post-release.yml` valida o último deployment bem-sucedido do Environment `github-pages`, a GitHub Release não draft/não prerelease e a resolução da tag para o mesmo SHA. Os catálogos são lidos do checkout desse SHA, nunca do `HEAD` atual. Push, merge e importação editorial não invocam esse workflow; a integração normal ocorre depois dos jobs `pages_smoke`, `tag` e `release`. O workflow manual `reconcile-web-push.yml` resolve o mesmo registro durável e não executa Terraform, deploy de backend ou Pages.
+
+O modo padrão é `dry-run`: valida evidência e conta os três catálogos, sem OIDC ou acesso de escrita à Azure. O modo `enqueue` exige confirmação `ENQUEUE`, fechamento de #155 e #156 e os dois switches de Environment `WEB_PUSH_REAL_PROCESSING_ENABLED=true` e `WEB_PUSH_SENDER_ENABLED=true`. Enquanto qualquer controle faltar, o gate falha antes da autenticação Azure. O Queue Trigger continua desabilitado declarativamente; alterar esse kill switch pertence aos gates posteriores.
+
+No modo real, responsabilidades e credenciais não se misturam:
+
+1. a identidade coordenadora acessa somente o container Cosmos existente, executa o detector/baseline, cria campanhas idempotentes e reivindica no máximo 25 campanhas por rodada;
+2. um artifact efêmero de um dia contém somente IDs determinísticos de campanha, claim opaco, tentativa e lease;
+3. a identidade de enqueue possui somente `Storage Queue Data Message Sender` na fila `web-push-campaigns` e escreve apenas o ID validado;
+4. a identidade coordenadora persiste sucesso ou classe fixa de falha, sem mensagem de exceção, endpoint, inscrição, chave ou capacidade.
+
+O claim usa ETag e lease de 10 minutos. Há até três tentativas, backoff exponencial de 30 segundos limitado a 15 minutos e limite global de 25 por rodada. Autorização, throttling, falha transitória, timeout/resultado incerto e falha permanente são classes fechadas. Interrupção antes do enqueue libera o claim por expiração; falha após o enqueue e antes da confirmação pode repetir a mensagem. A fila é *at least once* e o sender preserva a deduplicação por campanha/inscrição; não há promessa de exactly-once. Campanhas ausentes do catálogo PT-BR publicado ou vinculadas a sequência futura são esgotadas sem enqueue. Reinício do processo não perde o estado Cosmos.
+
+Os resumos do GitHub Actions registram artigos por idioma, elegíveis, criados, deduplicados, pendentes, claims, mensagens, falhas, reconciliação, limite e duração. Os logs estruturados do backend usam somente contagens e classes estáveis; IDs de inscrição, endpoints e capacidades não são dimensões. Consultas e validações operacionais estão em [`docs/privacy/web-push/notification-operations.md`](../../docs/privacy/web-push/notification-operations.md). Testes locais não comprovam propagação RBAC, ingestão, retenção efetiva, RU, profundidade de fila ou custo; essas evidências permanecem em #156 e #167.

@@ -338,3 +338,9 @@ Referências: [papéis integrados Azure](https://learn.microsoft.com/en-us/azure
 3. Deploy (#148) e publicação (#164): usar identidades/credenciais e permissões específicas de deploy e enqueue, sem reutilização automática dos privilégios do Terraform. A separação atual de subjects em uma mesma aplicação não separa o RBAC do Service Principal.
 4. Gate #142: a baseline de bootstrap não autoriza `apply`, criação de recursos nem avanço automático. Custos, cotas, elegibilidade, riscos residuais e aprovação humana precisam de evidência; antes do primeiro apply, revisar permissões específicas e a aprovação do plano efetivamente aplicado.
 
+## IAM do pós-release Web Push (#164–#165)
+
+O root isolado [`notification-iam/`](notification-iam/README.md) propõe as aplicações OIDC e atribuições mínimas do coordenador de campanhas e do sender da fila. Ele possui State próprio, não participa do apply da release e não tem workflow autenticado. A identidade do enqueue recebe somente `Storage Queue Data Message Sender` na fila individual; Cosmos fica em outra identidade, limitada ao container existente. As credenciais federadas usam o subject imutável do Environment `web-push-notifications-dev`.
+
+As definições não foram aplicadas e não comprovam Environment, credencial, RBAC ou propagação efetivos. Não configurar as variáveis `AZURE_WEB_PUSH_COORDINATOR_CLIENT_ID`, `AZURE_WEB_PUSH_ENQUEUE_CLIENT_ID`, `WEB_PUSH_COSMOS_ENDPOINT` e `WEB_PUSH_QUEUE_URI`, nem habilitar switches, antes das autorizações posteriores. Nenhuma chave VAPID, connection string, Shared Key ou dado de inscrição é necessário no GitHub.
+
