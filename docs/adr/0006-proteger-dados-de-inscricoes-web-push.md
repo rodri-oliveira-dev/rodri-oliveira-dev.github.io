@@ -37,3 +37,7 @@ Os requisitos operacionais, o aviso em minuta, o inventário e a rastreabilidade
 A aplicação poderá operar sem cadastro, reduzindo coleta, fricção e impacto de eventual incidente. Consentimento e cancelamento poderão ser rastreados sem recorrer a dados pessoais adicionais.
 
 Continuarão existindo responsabilidades de segurança, retenção, atendimento a titulares e avaliação de fornecedores. A localização do banco de dados não garante que todo o tratamento permaneça no Brasil. Antes da entrada em produção, será necessário concluir a implementação e os testes das issues dependentes, revisar juridicamente o aviso e as transferências, validar contratos e papéis dos fornecedores e obter os gates humanos posteriores. A ADR permanece `Proposed`; o aceite das decisões de #151 não equivale a parecer jurídico nem ao go-live.
+
+### Sequenciamento de entrega
+
+A [ADR 0022](0022-consolidar-privacidade-web-push-antes-do-piloto.md) complementa esta decisão e altera somente a ordem de implementação e validação das pendências de privacidade: #155 e #156 serão retomadas após #165, antes de qualquer piloto real (#166) ou produção (#167). Os controles, a revisão jurídica, os gates e o status `Proposed` desta ADR permanecem inalterados.
