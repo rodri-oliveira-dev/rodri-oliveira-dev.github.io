@@ -33,6 +33,7 @@
   <link rel="stylesheet" href="/assets/css/site.css">
   <link rel="stylesheet" href="/assets/css/mobile-enhancements.css">
   <link rel="stylesheet" href="/assets/css/home-screen-install.css">
+  <link rel="stylesheet" href="/assets/css/web-push.css">
 
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Rodrigo de Oliveira">
@@ -474,6 +475,36 @@
       </div>
     </section>
 
+    <section class="section web-push-section" aria-labelledby="web-push-title" data-web-push data-state="disabled" aria-busy="false">
+      <div class="container web-push-card">
+        <div class="web-push-heading">
+          <p class="eyebrow">Novos artigos</p>
+          <h2 id="web-push-title">Notificações em português</h2>
+        </div>
+        <div class="web-push-content">
+          <output class="web-push-status" data-web-push-status aria-live="polite">Notificações indisponíveis</output>
+          <p data-web-push-description>A ativação e o cancelamento ainda não estão disponíveis.</p>
+          <p data-web-push-expiration hidden></p>
+          <div data-web-push-consent hidden>
+            <label class="web-push-consent"><input type="checkbox" data-web-push-consent-input> <span><span data-web-push-consent-text></span> <a href="#contact" data-web-push-privacy hidden>Consulte o aviso de privacidade.</a></span></label>
+          </div>
+          <div class="web-push-actions">
+            <button type="button" data-web-push-activate hidden disabled>Ativar notificações</button>
+            <button type="button" data-web-push-cancel hidden>Cancelar notificações</button>
+            <button type="button" data-web-push-retry hidden>Tentar novamente</button>
+            <button type="button" data-web-push-export hidden>Salvar credencial de recuperação</button>
+          </div>
+          <fieldset class="web-push-recovery" data-web-push-recovery hidden>
+            <legend>Recuperar e cancelar inscrição</legend>
+            <label>Identificador da inscrição<input type="text" inputmode="text" autocomplete="off" spellcheck="false" data-web-push-recovery-id></label>
+            <label>Credencial de recuperação<input type="password" autocomplete="one-time-code" spellcheck="false" data-web-push-recovery-capability></label>
+            <button type="button" data-web-push-recover>Recuperar e cancelar</button>
+          </fieldset>
+          <p class="web-push-contact">Se você não tiver mais acesso às credenciais, use o <a href="#contact">canal de contato</a>. Não envie credenciais por e-mail.</p>
+        </div>
+      </div>
+    </section>
+
     <section class="section about-section" id="about">
       <div class="container about-grid">
         <div class="about-heading">
@@ -537,5 +568,6 @@
   <script src="/assets/js/home-screen-install.js" defer></script>
   <script type="module" src="/assets/js/webmcp.js"></script>
   <script src="/assets/js/pwa-register.js" defer></script>
+  <script type="module" src="/assets/js/web-push.mjs"></script>
 </body>
 </html>

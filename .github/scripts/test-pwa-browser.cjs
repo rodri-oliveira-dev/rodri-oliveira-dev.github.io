@@ -55,7 +55,37 @@ const restartServer = async () => {
     const context = await browser.newContext({ serviceWorkers: "allow" });
     try {
       const page = await context.newPage();
+      await page.addInitScript(() => {
+        window.__webPushNativeCalls = { permission: 0, subscribe: 0, unsubscribe: 0 };
+        if (typeof Notification !== "undefined") {
+          try {
+            Object.defineProperty(Notification, "requestPermission", {
+              configurable: true,
+              value: () => { window.__webPushNativeCalls.permission += 1; return Promise.resolve("denied"); }
+            });
+          } catch { /* browser-owned descriptor can be immutable */ }
+        }
+        if (typeof PushManager !== "undefined") {
+          const originalSubscribe = PushManager.prototype.subscribe;
+          PushManager.prototype.subscribe = function (...args) {
+            window.__webPushNativeCalls.subscribe += 1;
+            return originalSubscribe.apply(this, args);
+          };
+        }
+        if (typeof PushSubscription !== "undefined") {
+          const originalUnsubscribe = PushSubscription.prototype.unsubscribe;
+          PushSubscription.prototype.unsubscribe = function (...args) {
+            window.__webPushNativeCalls.unsubscribe += 1;
+            return originalUnsubscribe.apply(this, args);
+          };
+        }
+      });
       await page.goto(origin + "/", { waitUntil: "load" });
+      assert.equal(await page.locator("[data-web-push]").getAttribute("data-state"), "disabled");
+      assert.equal(await page.locator("[data-web-push-activate]:visible").count(), 0);
+      assert.deepEqual(await page.evaluate(() => window.__webPushNativeCalls), {
+        permission: 0, subscribe: 0, unsubscribe: 0
+      }, "public gate must not invoke native Web Push capabilities");
       await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller), null, { timeout: 20000 });
       // One study page is deliberately absent from APP_SHELL: it must be
       // populated by the runtime cache rather than the install precache.
