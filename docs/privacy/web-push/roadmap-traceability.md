@@ -12,7 +12,7 @@
 | Sender remove `404`/`410` por endpoint + ETag. | Preservar, acrescentando geração e conflito seguro com renovação. | #153/#163 |
 | Deduplicação atual é `HashSet` apenas por página/execução. | Não impede retry/replay; persistir claim por artigo + geração antes de enviar. | #163 |
 | Logs do sender usam campanha e contadores, sem endpoint/chaves. | Base boa; revisar exceções, HTTP pipeline, tracing, headers, IP e logs de plataforma. | #154/#165 |
-| Log Analytics usa `retentionInDays=30`. | Azure pode manter 31 dias e tabelas específicas por 90; requisito estrito ainda não está comprovado. | #154/#165 e eventual issue de IaC autorizada |
+| Log Analytics usa `retentionInDays=30` e `immediatePurgeDataOn30Days=true`. | O workspace controlável foi endurecido, mas tabelas específicas podem manter 90 dias; requisito estrito ainda não está comprovado operacionalmente. | Gate obrigatório em #156, requisito em #165 e condição final em #167 |
 | Cosmos em Brazil South, backup LRS 4 h/8 h; demais recursos Azure regionais. | Não elimina plano de controle, suporte, subprocessadores ou provedores push internacionais. | #156/#167 e revisão jurídica |
 | Apenas `GET /api/health`; kill switch `true`; fila sem produtor externo. | Mantém o gate seguro. Não remover até gates posteriores e autorização explícita. | #152–#167 |
 | Não há budget no Resource Group, identidade de enqueue nem produtor. | Definir budget/alertas e OIDC/RBAC mínimo antes do piloto; nenhum endpoint público de enqueue. | #164–#166 |
@@ -35,6 +35,8 @@
 - implementar `expiresAtUtc` como fonte de verdade e TTL restante recalculado sem prorrogação;
 - cobrir corrida envio/revogação/renovação/`404`/`410`, restauração de backup e reinscrição;
 - não prometer cancelamento de mensagem entregue ou em trânsito.
+- invalidar logicamente `404`/`410` antes do delete físico e deixar falha de delete inelegível;
+- exigir `recoveryEpoch` externa ao backup, rotacioná-la após restore e solicitar novo opt-in em vez de reativar inscrição recuperada.
 
 ### #154–#156 — antiabuso, aviso e gate
 
@@ -86,7 +88,16 @@ Deduplicação at-least-once, autorização mínima de enqueue, budget/alertas, 
 | Capacidades e recuperação | duas capacidades CSPRNG de 256 bits, hashes por domínio e comparação constante | Implementado; frontend e atendimento manual permanecem nas issues posteriores. |
 | Revogação, falha parcial e `404`/`410` | replace com ETag antes do delete e exclusão condicionada a geração | Implementado; mensagem já em trânsito não é recuperável. |
 | SSRF e validação estrita | allowlist compartilhada pelo registro e sender; JSON/corpo limitados | Implementado para provedores documentados. Mudança de provedor exige revisão da allowlist. |
-| Rate limiting distribuído | contadores Cosmos shardados, atômicos, temporários e fail-closed; teste do adapter | Implementado sem serviço novo; limite é aproximado e tentativa negada ainda consome RU. |
+| Rate limiting distribuído | contadores Cosmos shardados, atômicos, temporários e fail-closed; testes concorrentes do algoritmo create + incremento condicional | Implementado sem serviço novo; limite é aproximado e tentativa negada ainda consome RU. |
 | CORS, timeout e erros | origem exata, preflight, deadline, headers seguros e respostas genéricas | Implementado; CORS não é autenticação. |
-| Sanitização e retenção | logs fixos sem exception/request; ID fora da URL; diagnóstico sem `allLogs`/HTTP; teste sem dados sensíveis | Aplicação/IaC implementadas. Retenção/tabelas gerenciadas de 30 dias exigem prova Azure antes da produção. |
+| Sanitização e retenção | logs fixos sem exception/request; ID fora da URL; diagnóstico sem `allLogs`/HTTP; `immediatePurgeDataOn30Days=true`; comandos de leitura preparados | Aplicação/IaC implementadas. Retenção total/interativa e tabelas gerenciadas exigem prova Azure em #156/#165/#167. |
 | Kill switch | três app settings `Disabled=true` e asserção Terraform | Preservado; nenhuma inscrição pública, deploy ou envio foi habilitado. |
+
+## Separação entre decisão, evidência e bloqueio
+
+| Categoria | Estado verificável |
+| --- | --- |
+| Decisões humanas aprovadas para implementação | Finalidade PT-BR; consentimento `1.0.0`; 365 dias sem renovação implícita; logs por 30 dias; capacidades; ausência de cadastro/publicidade/perfil; canal existente; mapeamento de transferências; revisão jurídica pré-produção. |
+| Evidências técnicas disponíveis | Contratos e testes locais; hashes de capacidades; criação condicional; expiração absoluta; invalidação fail-closed; recovery epoch; kill switches; IaC de retenção/categorias; runbooks e comandos somente leitura. |
+| Validações operacionais pendentes | Restore/reconciliação real; retenção por tabela e resposta ARM; categorias efetivas; custos/ingestão; budget/alertas; fluxo frontend; piloto controlado. |
+| Bloqueios jurídicos | Aviso, base legal, papéis, contratos, subprocessadores, países/mecanismos de transferência e prazos adicionais ainda não foram validados. Nenhum piloto ou produção é autorizado por estes documentos. |

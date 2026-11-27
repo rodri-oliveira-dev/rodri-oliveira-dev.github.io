@@ -40,11 +40,13 @@ Cada criação gera capacidades independentes de cancelamento e recuperação co
 
 O container usa `defaultTtl = -1`, e cada inscrição recebe o TTL restante derivado de `expiresAtUtc`. A autorização nunca depende do TTL ou de `_ts`: listagem e revalidação imediatamente anterior ao transporte exigem estado ativo, ausência de revogação e validade futura.
 
+Cada geração também guarda `recoveryEpoch`, configurada fora do container. Após restauração, a epoch deve ser rotacionada antes de qualquer troca do endpoint Cosmos; dados recuperados com epoch anterior ficam inelegíveis e devem ser descartados. Como o backup não prova revogações posteriores ao snapshot, a recuperação exige novo opt-in em vez de reativar inscrições.
+
 ## Cancelamento, recuperação e concorrência (#153)
 
 `DELETE /api/subscriptions` recebe identificador e capacidade apenas no corpo JSON, evitando que identificadores apareçam na URL e na telemetria HTTP de plataforma. Os hashes de cancelamento e recuperação são sempre calculados e comparados em tempo constante. ID ausente, capacidade incorreta, segunda exclusão e sucesso retornam o mesmo `202`, sem enumerar registros.
 
-A revogação substitui atomicamente o estado com ETag antes da tentativa de delete físico. Se o delete falhar, o documento revogado permanece inelegível e expira por TTL curto; retry continua idempotente. `404`/`410` do provedor apagam somente a geração e ETag observadas, preservando uma eventual geração concorrente. O sender relê o registro antes do POST; revogação/expiração que vencer antes da releitura impede envio. Não existe transação com o provedor externo: uma mensagem já aceita ou em trânsito não pode ser recolhida.
+A revogação substitui atomicamente o estado com ETag antes da tentativa de delete físico. Se o delete falhar, o documento revogado permanece inelegível e expira por TTL curto; retry continua idempotente. `404`/`410` do provedor seguem a mesma ordem fail-closed: invalidam condicionalmente a geração e ETag observadas antes do delete, preservando uma eventual geração concorrente. O sender relê o registro antes do POST; revogação/expiração que vencer antes da releitura impede envio. Não existe transação com o provedor externo: uma mensagem já aceita ou em trânsito não pode ser recolhida.
 
 ## API pública e antiabuso (#154)
 

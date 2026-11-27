@@ -52,6 +52,8 @@ No atendimento manual, solicitar primeiro a menor prova já disponível: credenc
 
 Pendências de prazo: prova de consentimento depois do término, pedidos de titulares, registros de incidentes e dados de fornecedores. Não adotar prazo indefinido por omissão.
 
+Uma restauração pode recuperar o estado anterior a uma revogação. TTL, ETag, geração e releitura desse mesmo snapshot não provam que a inscrição continua válida. O controle implementado associa cada registro a `recoveryEpoch`, configurada fora do container. Antes de conectar dados restaurados, a epoch deve ser rotacionada; registros com epoch anterior ficam inelegíveis na query e no point read. O trade-off adotado para implementação é perder inscrições recuperadas e exigir novo opt-in, pois o backup periódico não mantém um ledger de revogações posterior e um novo serviço não é proporcional ao portfólio. O procedimento completo está no [runbook de recuperação](backup-recovery-runbook.md).
+
 ## Direitos dos titulares
 
 Canal: `rodrigodotnet@outlook.com`, existente no portfólio. Procedimento:

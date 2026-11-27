@@ -68,6 +68,7 @@ public static class ServiceCollectionExtensions
         });
         services.AddSingleton<ISubscriptionDocumentStore, CosmosSubscriptionDocumentStore>();
         services.AddSingleton<ISubscriptionRepository, CosmosSubscriptionRepository>();
+        services.AddSingleton<IRateLimitCounterStore, CosmosRateLimitCounterStore>();
         services.AddSingleton<IAbuseProtection, CosmosAbuseProtection>();
         services.AddSingleton<IApiConcurrencyLimiter, ApiConcurrencyLimiter>();
         services.AddSingleton(static serviceProvider =>

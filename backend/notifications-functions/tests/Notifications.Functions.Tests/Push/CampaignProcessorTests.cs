@@ -38,7 +38,7 @@ public sealed class CampaignProcessorTests
 
         await processor.ProcessAsync(new("article-2026-11"), CancellationToken.None);
 
-        Assert.Equal(1, repository.DeleteCalls);
+        Assert.Equal(1, repository.InvalidateCalls);
     }
 
     [Fact]
@@ -182,7 +182,7 @@ public sealed class CampaignProcessorTests
         IReadOnlyList<SubscriptionRecord> records,
         string? nextContinuationToken = null) : ISubscriptionRepository
     {
-        public int DeleteCalls { get; private set; }
+        public int InvalidateCalls { get; private set; }
         public string? ReceivedContinuationToken { get; private set; }
         public bool Eligible { get; init; } = true;
 
@@ -204,9 +204,19 @@ public sealed class CampaignProcessorTests
         public Task RevokeAsync(string id, string capability, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 
+        public Task<SubscriptionMutationResult> InvalidateGenerationAsync(string id, string generation, string expectedETag, CancellationToken cancellationToken = default)
+        {
+            InvalidateCalls++;
+            return Task.FromResult(new SubscriptionMutationResult(
+                SubscriptionMutationStatus.Deleted,
+                "id",
+                "partition",
+                null,
+                1));
+        }
+
         public Task<SubscriptionMutationResult> DeleteGenerationAsync(string id, string generation, string expectedETag, CancellationToken cancellationToken = default)
         {
-            DeleteCalls++;
             return Task.FromResult(new SubscriptionMutationResult(
                 SubscriptionMutationStatus.Deleted,
                 "id",

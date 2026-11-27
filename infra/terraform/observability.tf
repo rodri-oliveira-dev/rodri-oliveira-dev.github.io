@@ -10,6 +10,7 @@ resource "azapi_resource" "log_analytics_workspace" {
       features = {
         disableLocalAuth                            = true
         enableLogAccessUsingOnlyResourcePermissions = true
+        immediatePurgeDataOn30Days                  = true
       }
       publicNetworkAccessForIngestion = "Enabled"
       publicNetworkAccessForQuery     = "Enabled"

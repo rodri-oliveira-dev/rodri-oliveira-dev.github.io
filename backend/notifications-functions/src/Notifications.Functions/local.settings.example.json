@@ -12,6 +12,7 @@
     "Notifications__CosmosEndpoint": "https://localhost:8081",
     "Notifications__CosmosDatabaseName": "notifications",
     "Notifications__CosmosContainerName": "subscriptions",
+    "Notifications__SubscriptionRecoveryEpoch": "baseline-2026-11-26",
     "Notifications__KeyVaultUri": "https://kv-example.vault.azure.net/",
     "Notifications__VapidSubject": "https://rodri-oliveira-dev.github.io/",
     "Notifications__VapidPublicKeySecretName": "vapid-public-key",

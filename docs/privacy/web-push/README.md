@@ -28,6 +28,9 @@ O aceite permite implementar e testar os controles nas issues seguintes. Ele nã
 | [`retention-rights-incidents.md`](retention-rights-incidents.md) | Retenção, exclusão, capacidades, concorrência, direitos e incidentes. |
 | [`roadmap-traceability.md`](roadmap-traceability.md) | Divergências atuais e requisitos para #152–#167. |
 | [`api-contract.md`](api-contract.md) | Contratos, idempotência, concorrência, antiabuso e riscos residuais implementados em #152–#154. |
+| [`backup-recovery-runbook.md`](backup-recovery-runbook.md) | Recuperação fail-closed, invalidação de inscrições restauradas e novo opt-in. |
+| [`operational-retention-validation.md`](operational-retention-validation.md) | Comandos somente leitura e critérios para comprovar retenção por workspace, tabela e categoria. |
+| [`closure-evidence.md`](closure-evidence.md) | Matriz para encerramento humano de #151–#154 e comentários individuais preparados. |
 
 ## Classificação usada
 

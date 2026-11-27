@@ -77,6 +77,7 @@ locals {
     Notifications__CosmosEndpoint                       = "https://${local.cosmos_account_name}.documents.azure.com:443/"
     Notifications__CosmosDatabaseName                   = local.subscriptions_database
     Notifications__CosmosContainerName                  = local.subscriptions_container
+    Notifications__SubscriptionRecoveryEpoch            = var.subscription_recovery_epoch
     Notifications__KeyVaultUri                          = azurerm_key_vault.vapid.vault_uri
     Notifications__DeploymentEnvironment                = var.environment
     Notifications__VapidSubject                         = "https://rodri-oliveira-dev.github.io/"

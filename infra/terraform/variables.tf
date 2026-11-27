@@ -77,6 +77,18 @@ variable "log_analytics_retention_days" {
   }
 }
 
+variable "subscription_recovery_epoch" {
+  description = "Non-secret marker stored with subscriptions; rotate it after a restore before any reactivation."
+  type        = string
+  default     = "baseline-2026-11-26"
+  nullable    = false
+
+  validation {
+    condition     = can(regex("^[a-z0-9][a-z0-9-]{0,63}$", var.subscription_recovery_epoch))
+    error_message = "subscription_recovery_epoch must contain 1-64 lowercase letters, digits, or hyphens."
+  }
+}
+
 variable "resource_group_name" {
   description = "Nome do Resource Group existente que receberá os recursos do backend Web Push."
   type        = string

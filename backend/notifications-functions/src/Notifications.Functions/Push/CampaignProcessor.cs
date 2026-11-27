@@ -111,7 +111,7 @@ internal sealed partial class CampaignProcessor : ICampaignProcessor
                     expired++;
                     if (!string.IsNullOrEmpty(eligible.ETag))
                     {
-                        await _subscriptions.DeleteGenerationAsync(
+                        await _subscriptions.InvalidateGenerationAsync(
                             eligible.Id,
                             eligible.Generation,
                             eligible.ETag,
