@@ -30,9 +30,9 @@ Escopo: implementações das issues #157, #158 e #159, sob as ADRs 0007 e 0022.
 | Responsividade e teclado em 320, 360, 390, 768, 1024 e 1440 px | Local, Chrome headless | A primeira execução teve **216 aprovados e 1 timeout** no guia Android de `/es/`. A causa foi uma corrida entre o evento sintético e um `beforeinstallprompt` real do Chromium; após tornar o teste determinístico, a repetição passou **217/217**. |
 | Adaptações de texto e árvore de acessibilidade | Local, Chrome headless | **Aprovado: 437/437** na repetição integral. Uma execução anterior teve 436/437 por recorte transitório em `/es/servicios/`; três repetições isoladas da rota passaram 18/18 e a repetição integral passou limpa. |
 | Preferências de contraste | Local, Chrome headless | **Aprovado: 30/30**. |
-| Fixture, gate público, offline e reconexão | Local, Playwright Chromium | **Aprovado**; Firefox e WebKit permanecem comprovados pela CI do PR #223 e serão repetidos pela CI desta branch. |
-| Offline em Chromium, Firefox e WebKit | CI do PR #223 | **Aprovado nos três engines**. É automação de navegador, não teste em dispositivo nem Safari real. |
-| WCAG, Lighthouse, Site validation, SEO, ADR Guard, Sonar e zizmor | CI do PR #223 | **Aprovado**. Jobs de deploy, release e infraestrutura ficaram ignorados. |
+| Fixture, gate público, offline e reconexão | Local, Playwright Chromium; CI do PR #224 nos três engines | **Aprovado** em Chromium, Firefox e WebKit. |
+| Offline em Chromium, Firefox e WebKit | CI dos PRs #223 e #224 | **Aprovado nos três engines**. É automação de navegador, não teste em dispositivo nem Safari real. |
+| WCAG, Lighthouse, Site validation, SEO, ADR Guard, Sonar e zizmor | CI do PR #224 | **Aprovado**. Jobs de deploy, release e infraestrutura ficaram ignorados. |
 
 A primeira tentativa local de `test-accessibility-adaptations.cjs` foi invocada sem o servidor requerido e falhou somente com `ERR_CONNECTION_REFUSED`. Essa tentativa não é contabilizada como teste do produto; a execução válida com servidor local está registrada acima.
 
@@ -92,4 +92,4 @@ Para inspeção em um dispositivo físico na mesma rede privada, o responsável 
 
 ## Conclusão da #160
 
-Os contratos automatizados e simulados cobrem os fluxos funcionais exigidos sem efeito operacional. A issue permanece **pendente**, pois testes físicos, leitor de tela real, concorrência integrada entre abas e os checks remotos desta branch ainda não devem ser inventados nem substituídos por emulação.
+Os contratos automatizados e simulados cobrem os fluxos funcionais exigidos sem efeito operacional. A issue permanece **pendente**, pois testes físicos, leitor de tela real e concorrência integrada entre abas não devem ser inventados nem substituídos por emulação.

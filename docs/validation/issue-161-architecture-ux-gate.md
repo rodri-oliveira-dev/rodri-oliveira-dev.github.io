@@ -27,7 +27,7 @@ Natureza: parecer técnico para decisão humana; não altera status de ADR, não
 | Compatibilidade multiplataforma | **Pendente** | CI cobre Chromium, Firefox e WebKit; isso não comprova Safari iOS/macOS, Chrome Android, Edge ou políticas nativas do SO. |
 | Regressão PT/EN/ES e offline | **Aprovado na automação** | Contratos de idioma e offline passaram; amostragem física permanece pendente. |
 | Concorrência | **Aprovado com lacuna** | Mutex por página e backend idempotente/concorrente estão testados; falta cenário integrado entre duas abas. |
-| Qualidade e rastreabilidade | **Aprovado localmente; CI da branch pendente** | Testes locais e CI dos PRs dependentes são verificáveis; o timeout local conhecido foi corrigido e a repetição local passou 217/217. |
+| Qualidade e rastreabilidade | **Aprovado** | Testes locais e CI dos PRs dependentes são verificáveis; o timeout local conhecido foi corrigido, a repetição local passou 217/217 e todos os checks do PR #224 ficaram verdes. |
 | Observabilidade operacional | **Não aplicável** | É escopo posterior das issues #162–#165 e não foi antecipado. |
 | Entrega real, piloto e produção | **Não aplicável / proibido** | Permanecem sob #166/#167, depois de #155/#156 e autorização humana. |
 | Revisão jurídica e privacidade operacional | **Pendente fora deste gate** | ADR 0022 posterga #155/#156, mas continua bloqueando piloto e tratamento real. |
@@ -50,12 +50,12 @@ Natureza: parecer técnico para decisão humana; não altera status de ADR, não
 
 ## Parecer consolidado
 
-O estágio apresenta evidência técnica suficiente para revisão humana, sem achado que justifique reprovar a arquitetura isolada. O gate global da #161 permanece **PENDENTE**, não aprovado automaticamente, pelos testes físicos, pela confirmação dos checks desta branch e pela decisão humana explícita.
+O estágio apresenta evidência técnica suficiente para revisão humana, sem achado que justifique reprovar a arquitetura isolada. O gate global da #161 permanece **PENDENTE**, não aprovado automaticamente, pelos testes físicos e pela decisão humana explícita.
 
 Recomendação ao responsável:
 
 - manter #160 e #161 abertas enquanto houver combinações físicas não registradas;
 - executar o roteiro da #160 e anexar resultados sem dados identificáveis;
-- exigir CI verde desta branch antes da decisão;
+- preservar a CI verde do PR #224 até a decisão;
 - se a decisão humana permitir progressão técnica, registrá-la como limitada ao desenvolvimento posterior, sem interpretar como autorização para #162 nesta entrega, piloto, deploy, inscrição ou envio;
 - manter #155/#156 como bloqueios obrigatórios antes de qualquer piloto real.
