@@ -36,3 +36,30 @@ public sealed class CosmosOptions : IValidatableObject
         }
     }
 }
+
+public sealed class PublicApiOptions : IValidatableObject
+{
+    public const string SectionName = "Notifications";
+
+    [Required]
+    public string AllowedOrigin { get; init; } = "https://rodri-oliveira-dev.github.io";
+
+    [Range(1024, 32768)]
+    public int MaximumRequestBodyBytes { get; init; } = 8192;
+
+    [Range(1, 30)]
+    public int RequestTimeoutSeconds { get; init; } = 10;
+
+    [Range(1, 32)]
+    public int MaximumConcurrentRequestsPerInstance { get; init; } = 8;
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (!Uri.TryCreate(AllowedOrigin, UriKind.Absolute, out var origin) ||
+            origin.Scheme != Uri.UriSchemeHttps || origin.AbsolutePath != "/" ||
+            !string.IsNullOrEmpty(origin.Query) || !string.IsNullOrEmpty(origin.Fragment))
+        {
+            yield return new ValidationResult("AllowedOrigin deve ser uma origem HTTPS exata.", [nameof(AllowedOrigin)]);
+        }
+    }
+}

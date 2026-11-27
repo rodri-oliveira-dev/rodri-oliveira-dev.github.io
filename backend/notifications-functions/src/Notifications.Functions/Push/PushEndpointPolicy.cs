@@ -16,14 +16,19 @@ internal static class PushEndpointPolicy
         ".push.apple.com",
     ];
 
-    public static bool IsAllowed(string endpoint)
+    public static bool IsAllowed(string endpoint) =>
+        Uri.TryCreate(endpoint, UriKind.Absolute, out var uri) && IsAllowed(uri);
+
+    public static bool IsAllowed(Uri uri)
     {
-        if (!Uri.TryCreate(endpoint, UriKind.Absolute, out var uri) ||
-            uri.Scheme != Uri.UriSchemeHttps ||
+        ArgumentNullException.ThrowIfNull(uri);
+        if (uri.Scheme != Uri.UriSchemeHttps ||
             !uri.IsDefaultPort ||
             uri.HostNameType != UriHostNameType.Dns ||
             !string.IsNullOrEmpty(uri.UserInfo) ||
-            !string.IsNullOrEmpty(uri.Fragment))
+            !string.IsNullOrEmpty(uri.Fragment) ||
+            string.IsNullOrEmpty(uri.AbsolutePath) ||
+            uri.AbsolutePath == "/")
         {
             return false;
         }
