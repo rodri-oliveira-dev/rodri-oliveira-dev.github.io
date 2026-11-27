@@ -13,6 +13,7 @@ public sealed class WebPushTransportTests
     [Theory]
     [InlineData(HttpStatusCode.Created, (int)PushDeliveryStatus.Succeeded)]
     [InlineData(HttpStatusCode.Gone, (int)PushDeliveryStatus.SubscriptionExpired)]
+    [InlineData(HttpStatusCode.RequestTimeout, (int)PushDeliveryStatus.OutcomeUnknown)]
     [InlineData(HttpStatusCode.TooManyRequests, (int)PushDeliveryStatus.TransientFailure)]
     [InlineData(HttpStatusCode.BadRequest, (int)PushDeliveryStatus.PermanentFailure)]
     public async Task SendAsync_ClassifiesPushServiceResponseWithoutNetwork(
@@ -59,7 +60,7 @@ public sealed class WebPushTransportTests
     }
 
     [Fact]
-    public async Task SendAsync_ResponseDeadlineIsTransientButHostCancellationPropagates()
+    public async Task SendAsync_ResponseDeadlineIsUncertainButHostCancellationPropagates()
     {
         var timeoutTransport = CreateTransport(
             new BoundedResponseContentHandler(new DelayedHttpMessageHandler(), TimeSpan.FromMilliseconds(25)));
@@ -71,7 +72,7 @@ public sealed class WebPushTransportTests
             CreateVapidCredentials(),
             CancellationToken.None);
 
-        Assert.Equal(PushDeliveryStatus.TransientFailure, timeoutResult);
+        Assert.Equal(PushDeliveryStatus.OutcomeUnknown, timeoutResult);
 
         var cancellationTransport = CreateTransport(
             new BoundedResponseContentHandler(new DelayedHttpMessageHandler(), TimeSpan.FromSeconds(5)));
