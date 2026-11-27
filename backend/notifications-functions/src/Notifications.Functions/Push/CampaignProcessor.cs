@@ -3,6 +3,8 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Notifications.Functions.Configuration;
 using Notifications.Functions.Subscriptions;
 
 namespace Notifications.Functions.Push;
@@ -25,19 +27,25 @@ internal sealed partial class CampaignProcessor : ICampaignProcessor
     private readonly IVapidKeyProvider _vapidKeys;
     private readonly IWebPushTransport _transport;
     private readonly ILogger<CampaignProcessor> _logger;
+    private readonly WebPushOptions _options;
+    private readonly TimeProvider _timeProvider;
 
     public CampaignProcessor(
         ICampaignCatalog catalog,
         ISubscriptionRepository subscriptions,
         IVapidKeyProvider vapidKeys,
         IWebPushTransport transport,
-        ILogger<CampaignProcessor> logger)
+        ILogger<CampaignProcessor> logger,
+        IOptions<WebPushOptions> options,
+        TimeProvider timeProvider)
     {
         _catalog = catalog;
         _subscriptions = subscriptions;
         _vapidKeys = vapidKeys;
         _transport = transport;
         _logger = logger;
+        _options = options.Value;
+        _timeProvider = timeProvider;
     }
 
     public async Task<CampaignProcessResult> ProcessAsync(
@@ -59,10 +67,12 @@ internal sealed partial class CampaignProcessor : ICampaignProcessor
 
         var payload = JsonSerializer.Serialize(new
         {
+            version = 1,
             title = campaign.Title,
             body = campaign.Body,
             url = campaign.Url,
             lang = WebPushSubscriptionValidator.SupportedLocale,
+            expiresAtUtc = _timeProvider.GetUtcNow().AddSeconds(_options.PushTimeToLiveSeconds).UtcDateTime,
         });
         var topic = CreateTopic(campaignId);
         var credentials = await _vapidKeys.GetAsync(cancellationToken);

@@ -1,7 +1,10 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using Notifications.Functions.Configuration;
 using Notifications.Functions.Push;
 using Notifications.Functions.Subscriptions;
+using System.Text.Json;
 
 namespace Notifications.Functions.Tests.Push;
 
@@ -21,6 +24,14 @@ public sealed class CampaignProcessorTests
         var delivery = Assert.Single(transport.Deliveries);
         Assert.Contains("\"lang\":\"pt-BR\"", delivery.Payload, StringComparison.Ordinal);
         Assert.Contains("\"title\":\"Novo artigo\"", delivery.Payload, StringComparison.Ordinal);
+        Assert.Contains("\"version\":1", delivery.Payload, StringComparison.Ordinal);
+        Assert.Contains("\"expiresAtUtc\":", delivery.Payload, StringComparison.Ordinal);
+        using var payload = JsonDocument.Parse(delivery.Payload);
+        var root = payload.RootElement;
+        Assert.Equal(6, root.EnumerateObject().Count());
+        Assert.EndsWith("Z", root.GetProperty("expiresAtUtc").GetString(), StringComparison.Ordinal);
+        var expiresAt = root.GetProperty("expiresAtUtc").GetDateTimeOffset();
+        Assert.InRange(expiresAt, DateTimeOffset.UtcNow.AddHours(23), DateTimeOffset.UtcNow.AddHours(25));
         Assert.Equal(32, delivery.Topic.Length);
         Assert.DoesNotContain(subscription.Subscription.Endpoint, logger.Text, StringComparison.Ordinal);
         Assert.DoesNotContain(subscription.Subscription.P256Dh, logger.Text, StringComparison.Ordinal);
@@ -107,20 +118,26 @@ public sealed class CampaignProcessorTests
         Assert.Equal(expected, PushEndpointPolicy.IsAllowed(endpoint));
     }
 
-    [Fact]
-    public void ConfigurationCampaignCatalog_RejectsExternalClickUrl()
+    [Theory]
+    [InlineData("https://rodri-oliveira-dev.github.io/", true)]
+    [InlineData("https://rodri-oliveira-dev.github.io/case-studies/adr-guard/", true)]
+    [InlineData("https://rodri-oliveira-dev.github.io/case-studies/../admin/", false)]
+    [InlineData("https://rodri-oliveira-dev.github.io/case-studies/adr-guard/?next=external", false)]
+    [InlineData("https://rodri-oliveira-dev.github.io/en/case-studies/adr-guard/", false)]
+    [InlineData("https://attacker.example.test/article", false)]
+    public void ConfigurationCampaignCatalog_UsesSameClickUrlAllowlistAsServiceWorker(string url, bool expected)
     {
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["NotificationCampaigns:test:Title"] = "Título",
                 ["NotificationCampaigns:test:Body"] = "Corpo",
-                ["NotificationCampaigns:test:Url"] = "https://attacker.example.test/article",
+                ["NotificationCampaigns:test:Url"] = url,
             })
             .Build();
         var catalog = new ConfigurationCampaignCatalog(configuration);
 
-        Assert.False(catalog.TryGet("test", out _));
+        Assert.Equal(expected, catalog.TryGet("test", out _));
     }
 
     private static CampaignProcessor CreateProcessor(
@@ -131,7 +148,9 @@ public sealed class CampaignProcessorTests
             repository,
             new FakeVapidKeyProvider(),
             transport,
-            logger);
+            logger,
+            Options.Create(new WebPushOptions { PushTimeToLiveSeconds = 86400 }),
+            TimeProvider.System);
 
     private static SubscriptionRecord CreateRecord()
     {
