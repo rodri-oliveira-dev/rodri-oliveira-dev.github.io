@@ -66,7 +66,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          for directory in infra/terraform infra/terraform/identity-reconciliation infra/terraform/runtime-iam infra/terraform/diagnostics; do
+          for directory in infra/terraform infra/terraform/identity-reconciliation infra/terraform/runtime-iam infra/terraform/diagnostics infra/terraform/notification-iam; do
             terraform -chdir="$directory" providers lock \
               -platform=linux_amd64 \
               -platform=windows_amd64 \
@@ -78,14 +78,15 @@ jobs:
             infra/terraform/.terraform.lock.hcl \
             infra/terraform/identity-reconciliation/.terraform.lock.hcl \
             infra/terraform/runtime-iam/.terraform.lock.hcl \
-            infra/terraform/diagnostics/.terraform.lock.hcl
+            infra/terraform/diagnostics/.terraform.lock.hcl \
+            infra/terraform/notification-iam/.terraform.lock.hcl
 
       - name: Initialize and validate without remote backend
         shell: bash
         run: |
           set -euo pipefail
 
-          for directory in infra/terraform infra/terraform/identity-reconciliation infra/terraform/runtime-iam infra/terraform/diagnostics; do
+          for directory in infra/terraform infra/terraform/identity-reconciliation infra/terraform/runtime-iam infra/terraform/diagnostics infra/terraform/notification-iam; do
             terraform -chdir="$directory" init \
               -backend=false \
               -input=false \
@@ -107,6 +108,7 @@ jobs:
         run: |
           terraform -chdir=infra/terraform test -test-directory=tests -no-color
           terraform -chdir=infra/terraform/diagnostics test -test-directory=tests -no-color
+          terraform -chdir=infra/terraform/notification-iam test -test-directory=tests -no-color
           python3 .github/scripts/test_verify_diagnostics.py
           python3 .github/scripts/test_diagnostics_rbac.py
           python3 .github/scripts/test_verify_state_isolation.py

@@ -1,0 +1,61 @@
+name: Reconcile Web Push notifications
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Keep dry-run until issues 155 and 156 and the later operational gates are complete
+        required: true
+        default: dry-run
+        type: choice
+        options: [dry-run, enqueue]
+      confirmation:
+        description: Type ENQUEUE only after explicit authorization; ignored by dry-run
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: >-
+    ${{ inputs.mode == 'enqueue'
+      && format('production-release-{0}', github.repository)
+      || format('web-push-dry-run-{0}', github.repository) }}
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    name: Resolve latest effective publication
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      deployments: read
+    outputs:
+      sha: ${{ steps.publication.outputs.sha }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          ref: main
+      - name: Resolve durable Pages deployment and GitHub Release
+        id: publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/web-push-release.py resolve --repo "$GITHUB_REPOSITORY"
+
+  reconcile:
+    name: Reconcile without redeploying
+    needs: resolve
+    permissions:
+      contents: read
+      deployments: read
+      id-token: write
+      issues: read
+    uses: ./.github/workflows/web-push-post-release.yml
+    with:
+      revision: ${{ needs.resolve.outputs.sha }}
+      mode: ${{ inputs.mode }}
+      confirmation: ${{ inputs.confirmation }}
