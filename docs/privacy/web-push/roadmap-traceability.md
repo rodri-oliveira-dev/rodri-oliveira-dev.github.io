@@ -58,7 +58,8 @@ A [ADR 0022](../../adr/0022-consolidar-privacidade-web-push-antes-do-piloto.md) 
 
 ### #162–#167 — campanha, enqueue, observabilidade e produção
 
-- #163 persiste deduplicação por artigo + geração e faz claim atômico somente para inscrição ativa/não expirada;
+- #162 detecta identidades nos três catálogos publicados, faz seed sem backlog e mantém a distribuição separada e exclusiva para PT-BR;
+- #163 persiste baseline, campanha e deduplicação por artigo + inscrição + geração; o claim precede `Sending`, e resultado incerto é terminal sem retry automático;
 - #164 usa identidade OIDC segregada com permissão mínima para uma fila e mantém dry-run; nenhuma identidade humana ampla ou endpoint HTTP de enqueue;
 - #165 limita retries/fan-out, sanitiza métricas, valida retenção e alerta custo/ingestão sem PII;
 - #166 confirma budget e alertas, revisão jurídica, transferências, kill switch e piloto apenas com dispositivos autorizados;
@@ -96,6 +97,9 @@ Deduplicação at-least-once, autorização mínima de enqueue, budget/alertas, 
 | CORS, timeout e erros | origem exata, preflight, deadline, headers seguros e respostas genéricas | Implementado; CORS não é autenticação. |
 | Sanitização e retenção | logs fixos sem exception/request; ID fora da URL; diagnóstico sem `allLogs`/HTTP; `immediatePurgeDataOn30Days=true`; comandos de leitura preparados | Aplicação/IaC implementadas. Retenção total/interativa e tabelas gerenciadas exigem prova Azure em #156/#165/#167. |
 | Kill switch | três app settings `Disabled=true` e asserção Terraform | Preservado; nenhuma inscrição pública, deploy ou envio foi habilitado. |
+| Detecção editorial e seed | leitor dos três catálogos, identidade origem+idioma+URL, baseline histórica e testes de reorder/edição/reaparecimento | Implementado; a evidência autenticada do deployment e o enqueue pertencem à #164. |
+| Campanha e deduplicação | creates condicionais, ETags, cutoff de audiência e estado por inscrição/geração em partição de campanha | Implementado em store controlado; RU, throttling e reconciliação operacional permanecem na #165. |
+| Resultado incerto | transição durável `Claimed` → `Sending`; timeout/falha pós-transporte termina em `OutcomeUnknown` sem reenvio automático | Implementado como at-most-once sob incerteza; não garante entrega nem exactly-once do provedor. |
 
 ## Separação entre decisão, evidência e bloqueio
 
