@@ -18,7 +18,7 @@ public sealed class WebPushOptions : IValidatableObject
     [Required]
     public string VapidPrivateKeySecretName { get; init; } = "vapid-private-key";
 
-    [Range(60, 604800)]
+    [Range(60, 86400)]
     public int PushTimeToLiveSeconds { get; init; } = 86400;
 
     [Range(1, 30)]

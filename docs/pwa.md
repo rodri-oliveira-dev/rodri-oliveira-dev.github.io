@@ -28,6 +28,8 @@ Após alteração de identidade visual, conferir as dimensões dos arquivos, atu
 
 A CSP mantém restrições existentes, liberando apenas `worker-src 'self'` onde o aplicativo é registrado. O Service Worker é servido na raiz, não intercepta requisições de outras origens e não armazena dados pessoais. Nada altera o WebMCP nem URLs canônicas, hreflang ou conteúdo indexável. As páginas de fallback usam `noindex` e não entram no sitemap. Instalação em tela inicial varia por navegador; o cache offline funciona em navegadores com suporte a Service Worker, inclusive sem instalação.
 
+O evento `push` aceita somente o contrato JSON `version: 1` produzido pelo sender: `title`, `body`, `url`, `lang: "pt-BR"` e `expiresAtUtc`. O worker limita o payload a 4 KiB, rejeita campos extras, conteúdo fora dos limites, mensagens expiradas ou com validade superior ao TTL de 24 horas acrescido de até cinco minutos de tolerância para diferença de relógio, e nunca registra o conteúdo recebido. Ausência ou erro de payload não exibe notificação. O clique revalida o destino e somente foca ou abre a raiz PT-BR ou um estudo de caso PT-BR da própria origem, sem query, fragmento ou credenciais; outros caminhos e origens são ignorados. Esses eventos não solicitam permissão, não registram inscrições e não alteram os kill switches.
+
 ## Verificações
 
 ```sh

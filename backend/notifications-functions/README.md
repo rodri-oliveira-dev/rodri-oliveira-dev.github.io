@@ -68,7 +68,7 @@ O transporte usa `Lib.Net.Http.WebPush` 3.3.1 com VAPID e `aes128gcm`. As chaves
 
 Controles operacionais e de segurança:
 
-- payload JSON enxuto em `pt-BR`, TTL de 24 horas, tópico determinístico por campanha e timeout HTTP de 15 segundos;
+- payload JSON versionado (`version: 1`) em `pt-BR`, com `title`, `body`, URL absoluta da origem publicada e `expiresAtUtc` calculado pelo mesmo TTL de 24 horas aplicado ao transporte; tópico determinístico por campanha e timeout HTTP de 15 segundos;
 - allowlist de push services conhecidos (FCM, Mozilla, Apple e Windows), somente HTTPS/443/DNS, sem userinfo, fragmentos ou redirects, bloqueando destinos arbitrários e SSRF;
 - um item por lote, até duas instâncias, três dequeues e cinco minutos por execução conforme `host.json`/Terraform; retries internos da biblioteca ficam desabilitados;
 - `404`/`410` removem a inscrição com ETag; demais `4xx` são permanentes; `408`, `429`, `5xx`, timeout e falha de rede são transitórios e fazem a Queue repetir até o limite, depois encaminhar à poison queue;

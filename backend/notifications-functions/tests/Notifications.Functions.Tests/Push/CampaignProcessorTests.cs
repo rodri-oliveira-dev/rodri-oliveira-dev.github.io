@@ -1,7 +1,10 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using Notifications.Functions.Configuration;
 using Notifications.Functions.Push;
 using Notifications.Functions.Subscriptions;
+using System.Text.Json;
 
 namespace Notifications.Functions.Tests.Push;
 
@@ -21,6 +24,14 @@ public sealed class CampaignProcessorTests
         var delivery = Assert.Single(transport.Deliveries);
         Assert.Contains("\"lang\":\"pt-BR\"", delivery.Payload, StringComparison.Ordinal);
         Assert.Contains("\"title\":\"Novo artigo\"", delivery.Payload, StringComparison.Ordinal);
+        Assert.Contains("\"version\":1", delivery.Payload, StringComparison.Ordinal);
+        Assert.Contains("\"expiresAtUtc\":", delivery.Payload, StringComparison.Ordinal);
+        using var payload = JsonDocument.Parse(delivery.Payload);
+        var root = payload.RootElement;
+        Assert.Equal(6, root.EnumerateObject().Count());
+        Assert.EndsWith("Z", root.GetProperty("expiresAtUtc").GetString(), StringComparison.Ordinal);
+        var expiresAt = root.GetProperty("expiresAtUtc").GetDateTimeOffset();
+        Assert.InRange(expiresAt, DateTimeOffset.UtcNow.AddHours(23), DateTimeOffset.UtcNow.AddHours(25));
         Assert.Equal(32, delivery.Topic.Length);
         Assert.DoesNotContain(subscription.Subscription.Endpoint, logger.Text, StringComparison.Ordinal);
         Assert.DoesNotContain(subscription.Subscription.P256Dh, logger.Text, StringComparison.Ordinal);
@@ -52,6 +63,31 @@ public sealed class CampaignProcessorTests
         await processor.ProcessAsync(new("article-2026-11"), CancellationToken.None);
 
         Assert.Single(transport.Deliveries);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_CalculatesExpirationImmediatelyBeforeEachSend()
+    {
+        var repository = new FakeRepository([CreateRecord("first"), CreateRecord("second")]);
+        var transport = new FakeTransport(PushDeliveryStatus.Succeeded);
+        var clock = new AdvancingTimeProvider(new DateTimeOffset(2026, 11, 27, 12, 0, 0, TimeSpan.Zero));
+        var processor = CreateProcessor(
+            repository,
+            transport,
+            new CollectingLogger<CampaignProcessor>(),
+            clock);
+
+        await processor.ProcessAsync(new("article-2026-11"), CancellationToken.None);
+
+        Assert.Equal(2, transport.Deliveries.Count);
+        var expirations = transport.Deliveries
+            .Select(delivery =>
+            {
+                using var document = JsonDocument.Parse(delivery.Payload);
+                return document.RootElement.GetProperty("expiresAtUtc").GetDateTimeOffset();
+            })
+            .ToArray();
+        Assert.Equal(TimeSpan.FromMinutes(1), expirations[1] - expirations[0]);
     }
 
     [Fact]
@@ -107,37 +143,46 @@ public sealed class CampaignProcessorTests
         Assert.Equal(expected, PushEndpointPolicy.IsAllowed(endpoint));
     }
 
-    [Fact]
-    public void ConfigurationCampaignCatalog_RejectsExternalClickUrl()
+    [Theory]
+    [InlineData("https://rodri-oliveira-dev.github.io/", true)]
+    [InlineData("https://rodri-oliveira-dev.github.io/case-studies/adr-guard/", true)]
+    [InlineData("https://rodri-oliveira-dev.github.io/case-studies/../admin/", false)]
+    [InlineData("https://rodri-oliveira-dev.github.io/case-studies/adr-guard/?next=external", false)]
+    [InlineData("https://rodri-oliveira-dev.github.io/en/case-studies/adr-guard/", false)]
+    [InlineData("https://attacker.example.test/article", false)]
+    public void ConfigurationCampaignCatalog_UsesSameClickUrlAllowlistAsServiceWorker(string url, bool expected)
     {
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["NotificationCampaigns:test:Title"] = "Título",
                 ["NotificationCampaigns:test:Body"] = "Corpo",
-                ["NotificationCampaigns:test:Url"] = "https://attacker.example.test/article",
+                ["NotificationCampaigns:test:Url"] = url,
             })
             .Build();
         var catalog = new ConfigurationCampaignCatalog(configuration);
 
-        Assert.False(catalog.TryGet("test", out _));
+        Assert.Equal(expected, catalog.TryGet("test", out _));
     }
 
     private static CampaignProcessor CreateProcessor(
         FakeRepository repository,
         FakeTransport transport,
-        ILogger<CampaignProcessor> logger) => new(
+        ILogger<CampaignProcessor> logger,
+        TimeProvider? timeProvider = null) => new(
             new FakeCampaignCatalog(),
             repository,
             new FakeVapidKeyProvider(),
             transport,
-            logger);
+            logger,
+            Options.Create(new WebPushOptions { PushTimeToLiveSeconds = 86400 }),
+            timeProvider ?? TimeProvider.System);
 
-    private static SubscriptionRecord CreateRecord()
+    private static SubscriptionRecord CreateRecord(string endpointSuffix = "test-only")
     {
         var subscription = Subscriptions.WebPushSubscriptionValidatorTests.CreateValid() with
         {
-            Endpoint = "https://fcm.googleapis.com/fcm/send/test-only",
+            Endpoint = $"https://fcm.googleapis.com/fcm/send/{endpointSuffix}",
         };
         var (id, partitionKey) = WebPushSubscriptionValidator.DeriveIdentity(subscription.Endpoint);
         return new(id, partitionKey, subscription, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(365),
@@ -151,7 +196,7 @@ public sealed class CampaignProcessorTests
             campaign = new(
                 "Novo artigo",
                 "Há um novo artigo em português no portfólio.",
-                "https://rodri-oliveira-dev.github.io/artigos/exemplo/");
+                "https://rodri-oliveira-dev.github.io/case-studies/adr-guard/");
             return true;
         }
     }
@@ -175,6 +220,18 @@ public sealed class CampaignProcessorTests
         {
             Deliveries.Add((payload, topic));
             return Task.FromResult(status);
+        }
+    }
+
+    private sealed class AdvancingTimeProvider(DateTimeOffset current) : TimeProvider
+    {
+        private DateTimeOffset _current = current;
+
+        public override DateTimeOffset GetUtcNow()
+        {
+            var result = _current;
+            _current = _current.AddMinutes(1);
+            return result;
         }
     }
 

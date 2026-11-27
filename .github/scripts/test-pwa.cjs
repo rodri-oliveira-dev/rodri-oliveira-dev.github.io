@@ -58,12 +58,23 @@ test("fallbacks have matching languages, noindex and accessible return links", (
 function createWorker() {
   const listeners = new Map();
   const stores = new Map();
+  const notifications = [];
+  const windowClients = [];
+  const openedWindows = [];
   let isOffline = false;
   let serverStatus = 200;
   let cacheDirective = null;
   let stallResponseBody = false;
   let responseWasAborted = false;
   let claimed = false;
+  let showNotificationFails = false;
+  let matchAllFails = false;
+  let openWindowFails = false;
+  let lastWaitUntilCount = 0;
+  let currentTime = Date.now();
+  class WorkerDate extends Date {
+    static now() { return currentTime; }
+  }
   const keyOf = (request) => typeof request === "string" ? new URL(request, ORIGIN).href : request.url;
   const cacheFor = (name) => {
     if (!stores.has(name)) stores.set(name, new Map());
@@ -92,11 +103,28 @@ function createWorker() {
   const context = {
     self: {
       location: new URL(ORIGIN),
-      clients: { async claim() { claimed = true; } },
+      registration: {
+        async showNotification(title, options) {
+          if (showNotificationFails) throw new Error("synthetic notification failure");
+          notifications.push({ title, options });
+        }
+      },
+      clients: {
+        async claim() { claimed = true; },
+        async matchAll() {
+          if (matchAllFails) throw new Error("synthetic client lookup failure");
+          return windowClients;
+        },
+        async openWindow(url) {
+          if (openWindowFails) throw new Error("synthetic window open failure");
+          openedWindows.push(url);
+          return null;
+        }
+      },
       addEventListener(type, callback) { listeners.set(type, callback); }
     },
     caches,
-    URL, Response, AbortController, clearTimeout, ReadableStream,
+    URL, Response, AbortController, clearTimeout, ReadableStream, TextEncoder, Date: WorkerDate,
     setTimeout(callback, timeout, ...args) {
       // Shorten the deadline only for the intentionally stalled-body fixture.
       return setTimeout(callback, stallResponseBody ? Math.min(timeout, 50) : timeout, ...args);
@@ -124,14 +152,16 @@ function createWorker() {
   };
   vm.runInNewContext(read("sw.js"), context, { filename: path.join(ROOT, "sw.js") });
 
-  const dispatch = async (type, request) => {
+  const dispatch = async (type, request, properties = {}) => {
     let response;
     const pending = [];
     listeners.get(type)({
       request,
+      ...properties,
       waitUntil(promise) { pending.push(promise); },
       respondWith(promise) { response = promise; }
     });
+    lastWaitUntilCount = pending.length;
     const result = response ? await response : null;
     await Promise.all(pending);
     return result;
@@ -139,8 +169,164 @@ function createWorker() {
   const request = (pathname, mode = "navigate", destination = "document") => ({
     url: new URL(pathname, ORIGIN).href, method: "GET", mode, destination
   });
-  return { caches, stores, dispatch, request, setOffline(value) { isOffline = value; }, setServerStatus(value) { serverStatus = value; }, setCacheControl(value) { cacheDirective = value; }, setStalledBody(value) { stallResponseBody = value; }, get responseWasAborted() { return responseWasAborted; }, get claimed() { return claimed; } };
+  const addWindow = (url, { focusFails = false, navigateFails = false } = {}) => {
+    const client = {
+      url,
+      focusCalls: 0,
+      navigateCalls: [],
+      async focus() {
+        this.focusCalls += 1;
+        if (focusFails) throw new Error("synthetic focus failure");
+        return this;
+      },
+      async navigate(target) {
+        this.navigateCalls.push(target);
+        if (navigateFails) throw new Error("synthetic navigation failure");
+        this.url = target;
+        return this;
+      }
+    };
+    windowClients.push(client);
+    return client;
+  };
+  return {
+    caches, stores, dispatch, request, notifications, openedWindows, addWindow,
+    setOffline(value) { isOffline = value; },
+    setServerStatus(value) { serverStatus = value; },
+    setCacheControl(value) { cacheDirective = value; },
+    setStalledBody(value) { stallResponseBody = value; },
+    setShowNotificationFails(value) { showNotificationFails = value; },
+    setMatchAllFails(value) { matchAllFails = value; },
+    setOpenWindowFails(value) { openWindowFails = value; },
+    setCurrentTime(value) { currentTime = value; },
+    get responseWasAborted() { return responseWasAborted; },
+    get claimed() { return claimed; },
+    get lastWaitUntilCount() { return lastWaitUntilCount; }
+  };
 }
+
+const validPushPayload = (overrides = {}) => JSON.stringify({
+  version: 1,
+  title: "Novo artigo disponível",
+  body: "Leia o novo artigo em português no portfólio.",
+  url: ORIGIN + "/case-studies/adr-guard/",
+  lang: "pt-BR",
+  expiresAtUtc: new Date(Date.now() + 60_000).toISOString(),
+  ...overrides
+});
+
+const pushData = (payload) => ({ text: () => payload });
+
+test("valid versioned PT-BR push payload displays a bounded notification", async () => {
+  const worker = createWorker();
+  await worker.dispatch("push", undefined, { data: pushData(validPushPayload()) });
+
+  assert.equal(worker.lastWaitUntilCount, 1);
+  assert.equal(worker.notifications.length, 1);
+  assert.deepEqual(JSON.parse(JSON.stringify(worker.notifications[0])), {
+    title: "Novo artigo disponível",
+    options: {
+      body: "Leia o novo artigo em português no portfólio.",
+      data: { url: ORIGIN + "/case-studies/adr-guard/" },
+      icon: "/assets/brand/android-icon-192x192.png",
+      badge: "/assets/brand/android-icon-192x192.png",
+      lang: "pt-BR",
+      tag: "new-article-pt-br"
+    }
+  });
+});
+
+test("missing, malformed, expired and structurally invalid push payloads are ignored", async () => {
+  const worker = createWorker();
+  const invalidPayloads = [
+    undefined,
+    pushData("not-json"),
+    pushData(validPushPayload({ expiresAtUtc: new Date(Date.now() - 1000).toISOString() })),
+    pushData(validPushPayload({ expiresAtUtc: new Date(Date.now() + 25 * 60 * 60 * 1000).toISOString() })),
+    pushData(validPushPayload({ version: 2 })),
+    pushData(validPushPayload({ lang: "en" })),
+    pushData(validPushPayload({ extra: "unexpected" })),
+    pushData(validPushPayload({ title: " titulo inválido" })),
+    pushData(validPushPayload({ body: "controle\u0085inválido" })),
+    pushData("x".repeat(4097))
+  ];
+  for (const data of invalidPayloads) {
+    await worker.dispatch("push", undefined, { data });
+    assert.equal(worker.lastWaitUntilCount, 1);
+  }
+  assert.equal(worker.notifications.length, 0);
+});
+
+test("calendar-invalid expiration is rejected even when Date.parse normalizes it", async () => {
+  const worker = createWorker();
+  worker.setCurrentTime(Date.parse("2026-11-30T23:59:00Z"));
+  await worker.dispatch("push", undefined, {
+    data: pushData(validPushPayload({ expiresAtUtc: "2026-11-31T00:00:00.1234567Z" }))
+  });
+  assert.equal(worker.notifications.length, 0);
+});
+
+test("external, credentialed and unauthorized notification destinations are rejected", async () => {
+  const worker = createWorker();
+  for (const url of [
+    "https://attacker.example.test/case-studies/adr-guard/",
+    "https://rodri-oliveira-dev.github.io.attacker.example/case-studies/adr-guard/",
+    "https://user:password@rodri-oliveira-dev.github.io/case-studies/adr-guard/",
+    ORIGIN + "/case-studies/adr-guard/?next=https://attacker.example",
+    ORIGIN + "/case-studies/adr-guard/#redirect",
+    ORIGIN + "/en/case-studies/adr-guard/",
+    ORIGIN + "/assets/js/site.js"
+  ]) {
+    await worker.dispatch("push", undefined, { data: pushData(validPushPayload({ url })) });
+  }
+  assert.equal(worker.notifications.length, 0);
+});
+
+test("notification click focuses and navigates an existing window to the authorized target", async () => {
+  const worker = createWorker();
+  const client = worker.addWindow(ORIGIN + "/servicos/");
+  let closed = false;
+  await worker.dispatch("notificationclick", undefined, {
+    notification: {
+      data: { url: ORIGIN + "/case-studies/adr-guard/" },
+      close() { closed = true; }
+    }
+  });
+
+  assert.equal(worker.lastWaitUntilCount, 1);
+  assert.equal(closed, true);
+  assert.deepEqual(client.navigateCalls, [ORIGIN + "/case-studies/adr-guard/"]);
+  assert.equal(client.focusCalls, 1);
+  assert.deepEqual(worker.openedWindows, []);
+});
+
+test("notification click opens a new window only for an authorized target", async () => {
+  const worker = createWorker();
+  await worker.dispatch("notificationclick", undefined, {
+    notification: { data: { url: ORIGIN + "/" }, close() {} }
+  });
+  assert.deepEqual(worker.openedWindows, [ORIGIN + "/"]);
+
+  await worker.dispatch("notificationclick", undefined, {
+    notification: { data: { url: "https://attacker.example.test/" }, close() {} }
+  });
+  assert.deepEqual(worker.openedWindows, [ORIGIN + "/"]);
+});
+
+test("asynchronous notification and window failures remain contained", async () => {
+  const worker = createWorker();
+  worker.setShowNotificationFails(true);
+  await worker.dispatch("push", undefined, { data: pushData(validPushPayload()) });
+  await worker.dispatch("push", undefined, { data: { text() { throw new Error("synthetic parse failure"); } } });
+  assert.equal(worker.notifications.length, 0);
+
+  worker.setMatchAllFails(true);
+  worker.setOpenWindowFails(true);
+  await worker.dispatch("notificationclick", undefined, {
+    notification: { data: { url: ORIGIN + "/" }, close() { throw new Error("synthetic close failure"); } }
+  });
+  assert.deepEqual(worker.openedWindows, []);
+});
 
 test("installs localized shell and claims on activation, without deleting unrelated caches", async () => {
   const worker = createWorker();
