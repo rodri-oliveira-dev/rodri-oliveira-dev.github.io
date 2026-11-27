@@ -1,8 +1,12 @@
 # Aviso de privacidade do Web Push — versão candidata
 
-> **VERSÃO CANDIDATA PARA REVISÃO JURÍDICA — PUBLICAÇÃO AINDA NÃO AUTORIZADA**
+**Atualização aprovada pelo responsável em 27/11/2026, efetiva após merge do PR desta revisão:** a [ADR 0022](../../adr/0022-consolidar-privacidade-web-push-antes-do-piloto.md) distingue testes isolados, piloto individual e abertura pública. A revisão jurídica formal integral fica antes da abertura pública; para o piloto, permanece obrigatória avaliação documentada das obrigações aplicáveis ao fluxo efetivamente usado, inclusive transferências, aviso, segurança e retenção. Nenhum requisito legal é dispensado e nenhuma ativação é autorizada por este documento.
+
+A versão candidata pode aparecer em release manual autorizada apenas como informação de recurso indisponível, sem controles acionáveis ou coleta. O texto aplicável ao piloto ainda requer aprovação documentada e os ajustes de controlador, manifestação afirmativa e retenção/exclusão previstos na ADR 0022; esta revisão documental não altera o HTML nem o texto versionado.
+
+> **VERSÃO CANDIDATA PARA REVISÃO JURÍDICA — AVISO DEFINITIVO AINDA NÃO AUTORIZADO**
 >
-> Versão documental: `1.0.0` · elaborada em 26/11/2026 e consolidada em 27/11/2026 · publicação condicionada à revisão jurídica e à release manual.
+> Versão documental: `1.0.0` · elaborada em 26/11/2026 e consolidada em 27/11/2026 · publicação definitiva condicionada à revisão jurídica e à release manual; seção candidata somente em release autorizada com recurso desativado.
 
 A versão pública candidata está integrada à seção `#privacidade-web-push` da homepage PT-BR. O recurso, a API pública e os envios permanecem desativados. Se a revisão jurídica exigir mudança material, a versão e o contrato do backend devem ser atualizados antes de qualquer inscrição; uma versão já usada como evidência de consentimento não pode ter seu significado alterado silenciosamente.
 

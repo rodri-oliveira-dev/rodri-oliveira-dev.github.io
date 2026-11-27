@@ -1,8 +1,10 @@
 # Governança de privacidade do Web Push
 
+**Atualização aprovada pelo responsável em 27/11/2026, efetiva após merge do PR desta revisão:** a [ADR 0022](../../adr/0022-consolidar-privacidade-web-push-antes-do-piloto.md) distingue testes isolados, piloto individual e abertura pública. A revisão jurídica formal integral fica antes da abertura pública; para o piloto, permanece obrigatória avaliação documentada das obrigações aplicáveis ao fluxo efetivamente usado, inclusive transferências, aviso, segurança e retenção. Nenhum requisito legal é dispensado e nenhuma ativação é autorizada por este documento.
+
 ## Sequenciamento aprovado em 27/11/2026
 
-A [ADR 0022](../../adr/0022-consolidar-privacidade-web-push-antes-do-piloto.md) reorganiza exclusivamente a ordem de execução: #157–#165 precedem #155 e #156, que continuam obrigatórias antes de #166 (piloto real) e #167 (produção). A minuta e o consentimento versionado podem ser usados em testes isolados com mocks, sem permissões, inscrição, enqueue ou entrega reais. Não há dispensa de requisitos legais, mudança de política de retenção, aprovação jurídica ou autorização de lançamento. As evidências históricas de #151–#154 permanecem válidas no escopo em que foram produzidas.
+A [ADR 0022](../../adr/0022-consolidar-privacidade-web-push-antes-do-piloto.md) reorganiza a ordem de execução: #157–#165 precedem #155 e #156, que continuam obrigatórias antes de #166 (piloto real) e #167 (produção). A minuta e o consentimento versionado podem ser usados em testes isolados com mocks, sem permissões, inscrição, enqueue ou entrega reais. Não há dispensa de requisitos legais, mudança de política de retenção, aprovação jurídica ou autorização de lançamento. As evidências históricas de #151–#154 permanecem válidas no escopo em que foram produzidas.
 
 Este diretório registra o gate documental da issue [#151](https://github.com/rodri-oliveira-dev/rodri-oliveira-dev.github.io/issues/151). Ele complementa a [ADR 0006](../../adr/0006-proteger-dados-de-inscricoes-web-push.md), sem alterar seu status `Proposed`. A [ADR 0009](../../adr/0009-adotar-azure-para-web-push-por-custo.md) permanece a referência da plataforma Azure e a [ADR 0012](../../adr/0012-controlar-publicacao-por-release-manual.md), da publicação coordenada.
 

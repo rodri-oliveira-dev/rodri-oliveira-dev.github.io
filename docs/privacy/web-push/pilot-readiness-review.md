@@ -1,5 +1,9 @@
 # Parecer consolidado de prontidão do Web Push
 
+**Atualização aprovada pelo responsável em 27/11/2026, efetiva após merge do PR desta revisão:** a [ADR 0022](../../adr/0022-consolidar-privacidade-web-push-antes-do-piloto.md) distingue testes isolados, piloto individual e abertura pública. A revisão jurídica formal integral fica antes da abertura pública; para o piloto, permanece obrigatória avaliação documentada das obrigações aplicáveis ao fluxo efetivamente usado, inclusive transferências, aviso, segurança e retenção. Nenhum requisito legal é dispensado e nenhuma ativação é autorizada por este documento.
+
+O parecer abaixo preserva o no-go e o inventário da data da revisão como evidência histórica. A exigência interna de revisão formal integral antes do piloto foi substituída pelos níveis da ADR; os bloqueios operacionais e as obrigações legais aplicáveis ao piloto não foram removidos.
+
 Data da revisão: 27/11/2026
 
 Escopo: issues #155 e #156, com base na `main` `8c959df5` após o PR #227
