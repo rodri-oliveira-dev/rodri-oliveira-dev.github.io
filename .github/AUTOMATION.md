@@ -21,6 +21,10 @@ A integração com agentes de navegador é feita por módulos JavaScript locais,
 
 Nas páginas de serviços, o WebMCP adiciona quatro ferramentas somente de leitura às seis ferramentas gerais, totalizando dez ferramentas. Em outras páginas permanecem seis. As três versões (português, inglês e espanhol latino-americano) registram ferramentas WebMCP em navegadores compatíveis. A ativação em navegador de teste e a diferença entre CI com mocks e teste real estão descritas nos guias.
 
+## Agent Readiness estático
+
+Os contratos públicos em `.well-known` são gerados a partir de `.github/agent-readiness.json` e das cinco skills públicas por `.github/scripts/sync-agent-readiness.py`. O gate `Site validation` valida frontmatter, digests, referências, ARD v0.91, Poppy v1.0, Content Signals e drift determinístico. O assembly inclui `.well-known` na allowlist do Pages sem publicar `.github/skills` ou `.agents/skills`. Consulte [a documentação de Agent Readiness](../docs/agent-readiness.md) e a [ADR 0021](../docs/adr/0021-publicar-contratos-estaticos-agent-readiness.md).
+
 ## Página de serviços em português, inglês e espanhol
 
 As páginas `/servicos/`, `/en/services/` e `/es/servicios/` utilizam o mesmo CSS `assets/css/servicos.css` e apresentam quatro frentes de atuação, a abordagem de trabalho, três experiências independentes anteriores e quatro estudos de caso públicos por idioma. As experiências históricas não representam contratos vigentes, endossos das empresas ou resultados atribuídos aos estudos de caso open source.
@@ -206,6 +210,8 @@ Os budgets estão definidos em [`../lighthouserc.cjs`](../lighthouserc.cjs):
 | Accessibility | 100% | Blocking |
 | Best Practices | 95% | Blocking |
 | SEO | 95% | Blocking |
+
+O audit `robots-txt` é a única exceção: o Lighthouse 13.0.3 ainda trata a diretiva oficial `Content-Signal` como erro. A configuração o exclui do score, enquanto `test_agent_readiness.py` mantém validação bloqueante da política exata, de `Allow: /` e do sitemap canônico. O threshold SEO e os demais audits não são reduzidos.
 
 Em Pull Requests, o workflow mantém um único comentário atualizado com os scores das homepages e de todos os estudos de caso, os thresholds e o resultado de cada gate.
 

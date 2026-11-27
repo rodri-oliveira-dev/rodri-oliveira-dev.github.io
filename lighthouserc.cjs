@@ -12,6 +12,10 @@ module.exports = {
       numberOfRuns,
       settings: {
         chromeFlags: "--no-sandbox --disable-dev-shm-usage --disable-gpu",
+        // Lighthouse treats the specification-defined Content-Signal directive
+        // as a robots.txt parse error. The blocking policy checks live in
+        // test_agent_readiness.py until Lighthouse supports Content Signals.
+        skipAudits: ["robots-txt"],
       },
     },
     assert: {
