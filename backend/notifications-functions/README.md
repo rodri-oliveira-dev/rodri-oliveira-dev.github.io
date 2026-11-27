@@ -75,3 +75,37 @@ Controles operacionais e de segurança:
 - logs contêm apenas ID validado da campanha e contagens agregadas, nunca endpoint, chaves, payload criptográfico ou resposta do push service.
 
 Azure Queue oferece entrega *at least once*. O processor elimina IDs de inscrição repetidos dentro da execução e usa o mesmo tópico Web Push nas repetições, mas não promete exactly-once após timeout ou interrupção externa. Revisar a poison queue manualmente sem copiar seu conteúdo para issues ou logs.
+
+## Publicações, campanhas e deduplicação (#162–#163)
+
+`PublicationCampaignCoordinator` recebe um contrato já verificado de publicação do Pages: SHA completo, sequência monotônica, instante UTC, `refs/heads/main`, conclusão bem-sucedida e confirmação de que ainda é o deployment mais recente. Ele não consulta `HEAD`, APIs editoriais, RSS ou workflows de importação. A integração que produzirá essa evidência pertence à #164 e deve revalidá-la imediatamente antes da chamada.
+
+`JsonArticleCatalogReader` lê exclusivamente os snapshots versionados dos catálogos LinkedIn/PT-BR, DEV/en e Hashnode/es-419 associados ao SHA publicado. A identidade `article_…` é SHA-256 Base64URL de versão do contrato, origem, idioma e URL canônica normalizada. Título, descrição, ordem, SEO, RSS e sitemap não fazem parte da identidade. A baseline preserva a união histórica das identidades, portanto exclusão e reaparecimento não recriam campanha. Na primeira execução, todos os artigos são registrados em modo seed e nenhum backlog é criado. A política de elegibilidade é um componente separado e aceita somente LinkedIn `pt-BR`; EN/ES nunca criam campanha ou estado de destinatário.
+
+A campanha usa `campaign_…` determinístico por artigo. O SHA da publicação efetiva, origem, idioma, URL canônica, cutoff de audiência, estado e timestamps ficam no documento. O destino do payload continua sendo a raiz segura do portfólio; a URL externa identifica o conteúdo, mas não amplia a allowlist do Service Worker.
+
+### Modelo Cosmos DB
+
+O container Serverless existente e a partition key `/partitionKey` são reutilizados, sem novo recurso ou throughput reservado:
+
+| Documento | Partition key | Padrão de acesso e cardinalidade |
+| --- | --- | --- |
+| `publication-baseline` | `publication-baseline` | point read e create/replace com ETag uma vez por reconciliação; um documento com a união de IDs editoriais |
+| `campaign` | `campaign:<campaignId>` | point read/create condicional; um por artigo PT-BR elegível |
+| `campaign-delivery` | mesma partição da campanha | point read/create/replace por campanha + inscrição + geração; até aproximadamente o número de inscritos existentes no cutoff, inicialmente até 100 |
+
+Campanha e entregas ficam colocalizadas para permitir evolução com transactional batch dentro da campanha. A baseline fica isolada porque tem padrão global e baixa cardinalidade; Cosmos DB não oferece atomicidade cross-partition. Por isso as campanhas são criadas primeiro e a baseline avança somente por ETag após todas as criações. Falha antes desse avanço repete creates condicionais e não perde campanha. A evidência `IsLatestSuccessfulDeployment`, a sequência e a exclusão operacional de releases impedem promover uma revisão superada; uma integração que não consiga comprovar isso deve falhar fechada.
+
+O fluxo normal usa point reads — cerca de 1 RU para itens de 1 KiB — e writes pequenos, cujo custo varia com tamanho e indexação. Não foram adicionados índices, containers, serviços ou throughput. A baseline cresce linearmente com o total histórico de artigos e permanece muito abaixo do limite de item no volume esperado; antes de escala material, #165 deve medir `RequestCharge`, tamanho e hot partition. O fan-out cresce com campanhas × inscrições, mas cada campanha distribui suas próprias chaves e o MVP limita escala/concorrência. Manter o índice atual evita mudança declarativa e risco operacional desproporcional; otimização futura exige métricas reais.
+
+### Máquina de estados de entrega
+
+O ID de entrega deriva de inscrição pseudonimizada + geração. O documento não contém endpoint, chaves, capacidades ou payload. O claim condicional impede dois workers de vencerem; ETags protegem todas as transições:
+
+`Claimed → Sending → Succeeded | TransientFailure | PermanentFailure | SubscriptionExpired | OutcomeUnknown`
+
+`Claimed → Cancelled` quando revogação, expiração, geração ou recovery epoch falha na releitura final. Claims expirados antes de `Sending` podem ser retomados. `TransientFailure` com resposta conhecida pode ser reprocessada. `Sending` expirado nunca é retomado automaticamente: vira `OutcomeUnknown`, porque o provedor pode ter aceitado a mensagem antes de timeout, reinício ou falha de persistência. Isso oferece deduplicação persistente e concorrente no backend, com possível perda deliberada sob incerteza; não oferece exactly-once no Web Push.
+
+`AudienceCutoffUtc` impede geração criada depois da campanha de receber conteúdo antigo. A releitura existente ainda exige status ativo, expiração futura, geração e `recoveryEpoch` atuais imediatamente antes de `Sending`. Revogação posterior ao início do transporte não recolhe mensagem em trânsito.
+
+Os testes usam stores concorrentes controlados e exercitam o algoritmo real de create/replace/ETag, sem Azure, em vez de mocks que apenas retornam sucesso. Permanecem para #165 a validação operacional com o emulador/conta de teste autorizada, RU reais, throttling, consistência de sessão, poison queue e reconciliação de `OutcomeUnknown`. Nenhum enqueue ou envio real faz parte de #162–#163.

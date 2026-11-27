@@ -68,7 +68,8 @@ public sealed class CampaignProcessorTests
     [Fact]
     public async Task ProcessAsync_CalculatesExpirationImmediatelyBeforeEachSend()
     {
-        var repository = new FakeRepository([CreateRecord("first"), CreateRecord("second")]);
+        var createdAt = new DateTimeOffset(2026, 11, 26, 12, 0, 0, TimeSpan.Zero);
+        var repository = new FakeRepository([CreateRecord("first", createdAt), CreateRecord("second", createdAt)]);
         var transport = new FakeTransport(PushDeliveryStatus.Succeeded);
         var clock = new AdvancingTimeProvider(new DateTimeOffset(2026, 11, 27, 12, 0, 0, TimeSpan.Zero));
         var processor = CreateProcessor(
@@ -87,7 +88,7 @@ public sealed class CampaignProcessorTests
                 return document.RootElement.GetProperty("expiresAtUtc").GetDateTimeOffset();
             })
             .ToArray();
-        Assert.Equal(TimeSpan.FromMinutes(1), expirations[1] - expirations[0]);
+        Assert.Equal(TimeSpan.FromMinutes(4), expirations[1] - expirations[0]);
     }
 
     [Fact]
@@ -131,6 +132,28 @@ public sealed class CampaignProcessorTests
         Assert.Empty(transport.Deliveries);
     }
 
+    [Fact]
+    public async Task ProcessAsync_PersistenceFailureAfterTransportLeavesSendingAndReplayDoesNotSendAgain()
+    {
+        var subscriptions = new FakeRepository([CreateRecord()]);
+        var transport = new FakeTransport(PushDeliveryStatus.OutcomeUnknown);
+        var store = new InMemoryCampaignDocumentStore();
+        var durable = new CampaignRepository(store);
+        var failing = new FailingCompletionCampaignRepository(durable);
+        var processor = CreateProcessor(
+            subscriptions,
+            transport,
+            new CollectingLogger<CampaignProcessor>(),
+            campaignRepository: failing);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            processor.ProcessAsync(new("article-2026-11"), CancellationToken.None));
+        await processor.ProcessAsync(new("article-2026-11"), CancellationToken.None);
+
+        Assert.Single(transport.Deliveries);
+        Assert.Equal(DeliveryStatus.Sending, Assert.Single(store.Deliveries).Status);
+    }
+
     [Theory]
     [InlineData("https://fcm.googleapis.com/fcm/send/test", true)]
     [InlineData("https://updates.push.services.mozilla.com/wpush/v2/test", true)]
@@ -169,8 +192,10 @@ public sealed class CampaignProcessorTests
         FakeRepository repository,
         FakeTransport transport,
         ILogger<CampaignProcessor> logger,
-        TimeProvider? timeProvider = null) => new(
+        TimeProvider? timeProvider = null,
+        ICampaignRepository? campaignRepository = null) => new(
             new FakeCampaignCatalog(),
+            campaignRepository ?? new CampaignRepository(new InMemoryCampaignDocumentStore()),
             repository,
             new FakeVapidKeyProvider(),
             transport,
@@ -178,15 +203,16 @@ public sealed class CampaignProcessorTests
             Options.Create(new WebPushOptions { PushTimeToLiveSeconds = 86400 }),
             timeProvider ?? TimeProvider.System);
 
-    private static SubscriptionRecord CreateRecord(string endpointSuffix = "test-only")
+    private static SubscriptionRecord CreateRecord(string endpointSuffix = "test-only", DateTimeOffset? createdAt = null)
     {
         var subscription = Subscriptions.WebPushSubscriptionValidatorTests.CreateValid() with
         {
             Endpoint = $"https://fcm.googleapis.com/fcm/send/{endpointSuffix}",
         };
         var (id, partitionKey) = WebPushSubscriptionValidator.DeriveIdentity(subscription.Endpoint);
-        return new(id, partitionKey, subscription, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(365),
-            "generation-test", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, "etag-test");
+        var created = createdAt ?? DateTimeOffset.UtcNow;
+        return new(id, partitionKey, subscription, created, created.AddDays(365),
+            "generation-test", created, created, "etag-test");
     }
 
     private sealed class FakeCampaignCatalog : ICampaignCatalog
@@ -297,5 +323,20 @@ public sealed class CampaignProcessorTests
             Exception? exception,
             Func<TState, Exception?, string> formatter) =>
             _messages.Add(formatter(state, exception));
+    }
+
+    private sealed class FailingCompletionCampaignRepository(ICampaignRepository inner) : ICampaignRepository
+    {
+        private int _failuresRemaining = 1;
+        public Task<CampaignWriteResult> CreateAsync(CampaignDefinition campaign, CancellationToken cancellationToken) => inner.CreateAsync(campaign, cancellationToken);
+        public Task<StoredCampaign?> GetAsync(string campaignId, CancellationToken cancellationToken) => inner.GetAsync(campaignId, cancellationToken);
+        public Task<CampaignDeliveryClaim?> TryClaimAsync(CampaignDefinition campaign, SubscriptionRecord subscription, DateTimeOffset now, CancellationToken cancellationToken) => inner.TryClaimAsync(campaign, subscription, now, cancellationToken);
+        public Task<CampaignDeliveryClaim?> BeginTransportAsync(CampaignDeliveryClaim claim, DateTimeOffset now, CancellationToken cancellationToken) => inner.BeginTransportAsync(claim, now, cancellationToken);
+        public Task<CampaignWriteResult> CompleteAsync(CampaignDeliveryClaim claim, DeliveryStatus outcome, DateTimeOffset now, CancellationToken cancellationToken)
+        {
+            if (Interlocked.Decrement(ref _failuresRemaining) >= 0)
+                throw new InvalidOperationException("simulated post-transport persistence failure");
+            return inner.CompleteAsync(claim, outcome, now, cancellationToken);
+        }
     }
 }

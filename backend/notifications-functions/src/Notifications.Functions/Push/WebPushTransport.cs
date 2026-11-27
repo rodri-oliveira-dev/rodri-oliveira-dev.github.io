@@ -14,6 +14,7 @@ internal enum PushDeliveryStatus
     SubscriptionExpired,
     PermanentFailure,
     TransientFailure,
+    OutcomeUnknown,
 }
 
 internal interface IWebPushTransport
@@ -86,7 +87,11 @@ internal sealed class WebPushTransport : IWebPushTransport
             return PushDeliveryStatus.SubscriptionExpired;
         }
         catch (PushServiceClientException exception) when (
-            exception.StatusCode == HttpStatusCode.RequestTimeout ||
+            exception.StatusCode == HttpStatusCode.RequestTimeout)
+        {
+            return PushDeliveryStatus.OutcomeUnknown;
+        }
+        catch (PushServiceClientException exception) when (
             exception.StatusCode == HttpStatusCode.TooManyRequests ||
             (int)exception.StatusCode >= 500)
         {
@@ -98,11 +103,11 @@ internal sealed class WebPushTransport : IWebPushTransport
         }
         catch (HttpRequestException)
         {
-            return PushDeliveryStatus.TransientFailure;
+            return PushDeliveryStatus.OutcomeUnknown;
         }
         catch (WebPushResponseTimeoutException)
         {
-            return PushDeliveryStatus.TransientFailure;
+            return PushDeliveryStatus.OutcomeUnknown;
         }
         catch (Exception exception) when (
             exception is ArgumentException or FormatException or CryptographicException or InvalidOperationException)

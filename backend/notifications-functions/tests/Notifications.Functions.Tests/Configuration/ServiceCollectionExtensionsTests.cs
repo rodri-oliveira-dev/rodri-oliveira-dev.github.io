@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Notifications.Functions.Configuration;
 using Notifications.Functions.Health;
+using Notifications.Functions.Publications;
 using Notifications.Functions.Security;
 
 namespace Notifications.Functions.Tests.Configuration;
@@ -34,6 +35,7 @@ public sealed class ServiceCollectionExtensionsTests
         var apiOptions = provider.GetRequiredService<IOptions<PublicApiOptions>>().Value;
         var healthStatus = provider.GetRequiredService<IHealthStatusService>();
         var concurrencyLimiter = provider.GetRequiredService<IApiConcurrencyLimiter>();
+        var publicationCoordinator = provider.GetRequiredService<IPublicationCampaignCoordinator>();
 
         Assert.Equal("test-notifications", options.ServiceName);
         Assert.Equal("test", options.DeploymentEnvironment);
@@ -41,6 +43,7 @@ public sealed class ServiceCollectionExtensionsTests
         Assert.Equal("https://kv-example.vault.azure.net/", webPushOptions.KeyVaultUri!.AbsoluteUri);
         Assert.Equal("https://rodri-oliveira-dev.github.io", apiOptions.AllowedOrigin);
         Assert.NotNull(concurrencyLimiter);
+        Assert.NotNull(publicationCoordinator);
         Assert.Equal(new HealthResponse("healthy", "test-notifications"), healthStatus.GetStatus());
     }
 

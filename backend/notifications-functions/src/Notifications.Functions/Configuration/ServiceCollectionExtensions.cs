@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Notifications.Functions.Health;
 using Notifications.Functions.Push;
+using Notifications.Functions.Publications;
 using Notifications.Functions.Security;
 using Notifications.Functions.Subscriptions;
 
@@ -102,6 +103,12 @@ public static class ServiceCollectionExtensions
         });
         services.AddSingleton<IWebPushTransport, WebPushTransport>();
         services.AddSingleton<ICampaignCatalog, ConfigurationCampaignCatalog>();
+        services.AddSingleton<ICampaignDocumentStore, CosmosCampaignDocumentStore>();
+        services.AddSingleton<ICampaignRepository, CampaignRepository>();
+        services.AddSingleton<IPublicationBaselineStore, CosmosPublicationBaselineStore>();
+        services.AddSingleton<IArticleCatalogReader, JsonArticleCatalogReader>();
+        services.AddSingleton<INotificationEligibilityPolicy, PtBrNotificationEligibilityPolicy>();
+        services.AddSingleton<IPublicationCampaignCoordinator, PublicationCampaignCoordinator>();
         services.AddSingleton<ICampaignProcessor, CampaignProcessor>();
 
         return services;

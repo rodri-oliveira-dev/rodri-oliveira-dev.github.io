@@ -1,9 +1,52 @@
 using Microsoft.Extensions.Configuration;
 using System.Text.RegularExpressions;
+using Notifications.Functions.Publications;
 
 namespace Notifications.Functions.Push;
 
-internal sealed record CampaignDefinition(string Title, string Body, string Url);
+internal sealed record CampaignDefinition(
+    string Title,
+    string Body,
+    string Url,
+    string CampaignId = "",
+    string ArticleId = "",
+    ArticleOrigin Origin = ArticleOrigin.LinkedIn,
+    string Locale = "pt-BR",
+    string PublicationSha = "",
+    string CanonicalArticleUrl = "",
+    DateTimeOffset AudienceCutoffUtc = default)
+{
+    public static CampaignDefinition FromArticle(
+        PublishedArticle article,
+        string publicationSha,
+        DateTimeOffset audienceCutoffUtc) => new(
+            Truncate(article.Title, 80),
+            "Novo artigo em português publicado no portfólio.",
+            "https://rodri-oliveira-dev.github.io/",
+            CampaignIdentity.ForArticle(article.Id),
+            article.Id,
+            article.Origin,
+            article.Locale,
+            publicationSha,
+            article.CanonicalUrl,
+            audienceCutoffUtc);
+
+    private static string Truncate(string value, int maximumLength)
+    {
+        if (value.Length <= maximumLength)
+        {
+            return value;
+        }
+
+        var end = maximumLength - 1;
+        if (char.IsHighSurrogate(value[end - 1]))
+        {
+            end--;
+        }
+
+        return value[..end].TrimEnd() + "…";
+    }
+}
 
 internal interface ICampaignCatalog
 {
