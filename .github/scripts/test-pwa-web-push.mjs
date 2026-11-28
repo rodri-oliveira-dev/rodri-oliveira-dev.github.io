@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { STATES, WebPushLifecycle, validConfig } from "../../assets/js/web-push-lifecycle.mjs";
 import { WebPushApiClient, WebPushBrowserGateway, WebPushStorage, base64UrlToUint8Array, detectWebPushCapabilities, exactPublicConfiguration } from "../../assets/js/web-push-platform.mjs";
 import { WebPushView } from "../../assets/js/web-push-view.mjs";
+import { createWebPushBootstrap } from "../../assets/js/web-push.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const read = (relativePath) => fs.readFileSync(path.join(ROOT, relativePath), "utf8");
@@ -410,6 +411,57 @@ test("public configuration accepts only the exact fail-closed contract", async (
   assert.equal(requests[0].url, "https://api.fixture.invalid/api/web-push/config");
   assert.equal(requests[0].options.method, "GET");
   assert.equal(requests[0].options.credentials, "omit");
+});
+
+test("bootstrap applies the verified remote gate once and reuses the lifecycle", async () => {
+  const remoteApi = { getPublicConfiguration: async () => ({ enabled: true, vapidPublicKey: CONFIG.vapidPublicKey }) };
+  const initializeCalls = [];
+  let dependencies;
+  const bootstrap = createWebPushBootstrap({
+    root: {},
+    baseConfig: { ...CONFIG, enabled: false, vapidPublicKey: null },
+    createApi: (baseUrl) => {
+      assert.equal(baseUrl, CONFIG.apiBaseUrl);
+      return remoteApi;
+    },
+    createBrowser: () => "browser",
+    createStorage: () => "storage",
+    createView: (config) => ({ config }),
+    createLifecycle: (value) => {
+      dependencies = value;
+      return { initialize: async () => initializeCalls.push("initialize") };
+    },
+  });
+
+  await bootstrap();
+  await bootstrap();
+
+  assert.equal(dependencies.config.enabled, true);
+  assert.equal(dependencies.config.vapidPublicKey, CONFIG.vapidPublicKey);
+  assert.equal(dependencies.api, remoteApi);
+  assert.deepEqual(initializeCalls, ["initialize", "initialize"]);
+});
+
+test("bootstrap fails closed when public configuration cannot be verified", async () => {
+  let dependencies;
+  const bootstrap = createWebPushBootstrap({
+    root: {},
+    baseConfig: { ...CONFIG, enabled: false, vapidPublicKey: null },
+    createApi: () => { throw new Error("configuration unavailable"); },
+    createBrowser: () => ({}),
+    createStorage: () => ({}),
+    createView: () => ({}),
+    createLifecycle: (value) => {
+      dependencies = value;
+      return { initialize: async () => {} };
+    },
+  });
+
+  await bootstrap();
+
+  assert.equal(dependencies.config.enabled, false);
+  await assert.rejects(dependencies.api.register(), /disabled/);
+  await assert.rejects(dependencies.api.revoke(), /disabled/);
 });
 
 const createViewFixture = () => {

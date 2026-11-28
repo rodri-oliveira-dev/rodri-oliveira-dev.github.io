@@ -3,38 +3,49 @@ import { WebPushLifecycle } from "./web-push-lifecycle.mjs";
 import { WebPushApiClient, WebPushBrowserGateway, WebPushStorage } from "./web-push-platform.mjs";
 import { WebPushView } from "./web-push-view.mjs";
 
-const root = document.querySelector("[data-web-push]");
-if (root) {
+export const createWebPushBootstrap = ({
+  root,
+  baseConfig = WEB_PUSH_CONFIG,
+  createApi = (baseUrl) => new WebPushApiClient({ baseUrl }),
+  createBrowser = () => new WebPushBrowserGateway(),
+  createStorage = () => new WebPushStorage(),
+  createView = (config) => new WebPushView(root, { config }),
+  createLifecycle = (dependencies) => new WebPushLifecycle(dependencies),
+}) => {
   const disabledApi = Object.freeze({
     register: async () => { throw new Error("Web Push is disabled"); },
     revoke: async () => { throw new Error("Web Push is disabled"); },
   });
   let lifecycle;
-  const bootstrap = async () => {
+
+  return async () => {
     if (!lifecycle) {
-      let config = WEB_PUSH_CONFIG;
+      let config = baseConfig;
       let api = disabledApi;
       try {
-        api = new WebPushApiClient({ baseUrl: WEB_PUSH_CONFIG.apiBaseUrl });
+        api = createApi(baseConfig.apiBaseUrl);
         const remote = await api.getPublicConfiguration();
-        config = Object.freeze({ ...WEB_PUSH_CONFIG, ...remote });
+        config = Object.freeze({ ...baseConfig, ...remote });
       } catch {
         api = disabledApi;
       }
-      const view = new WebPushView(root, { config });
-      lifecycle = new WebPushLifecycle({
+      lifecycle = createLifecycle({
         config,
-        browser: new WebPushBrowserGateway(),
+        browser: createBrowser(),
         api: config.enabled ? api : disabledApi,
-        storage: new WebPushStorage(),
-        view,
+        storage: createStorage(),
+        view: createView(config),
       });
     }
     await lifecycle.initialize();
   };
+};
 
+const root = globalThis.document?.querySelector("[data-web-push]");
+if (root) {
+  const bootstrap = createWebPushBootstrap({ root });
   void bootstrap().catch(() => {});
-  window.addEventListener("pageshow", (event) => {
+  globalThis.window?.addEventListener("pageshow", (event) => {
     if (event.persisted) void bootstrap().catch(() => {});
   });
 }
