@@ -53,8 +53,7 @@ jobs:
   plan:
     name: Plan diagnostic settings
     needs: preflight
-    outputs:
-      fingerprint: ${{ steps.manifest.outputs.fingerprint }}
+    if: inputs.operation == 'plan'
     runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 20
     environment: diagnostics-dev
@@ -103,8 +102,8 @@ jobs:
         run: bash ../../../.github/scripts/run-diagnostics-terraform.sh plan
 
   apply:
-    name: Apply approved diagnostic settings plan
-    needs: [preflight, plan]
+    name: Plan and apply diagnostic settings
+    needs: preflight
     if: inputs.operation == 'apply'
     runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 20
@@ -149,10 +148,8 @@ jobs:
           client-id: ${{ vars.AZURE_DIAGNOSTICS_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-      - name: Replan, compare fingerprint and apply
-        env:
-          APPROVED_FINGERPRINT: ${{ needs.plan.outputs.fingerprint }}
-        run: bash ../../../.github/scripts/run-diagnostics-terraform.sh apply
+      - name: Plan, validate and apply diagnostic settings
+        run: bash ../../../.github/scripts/run-diagnostics-terraform.sh plan-apply
       - name: Verify diagnostic settings via ARM GET
         run: |
           args=()

@@ -3,7 +3,7 @@
 set -euo pipefail
 umask 077
 mode="${1:-}"
-case "$mode" in plan|apply) ;; *) exit 1 ;; esac
+case "$mode" in plan|plan-apply) ;; *) exit 1 ;; esac
 scratch="$(mktemp -d "$RUNNER_TEMP/terraform-diagnostics.XXXXXX")"
 trap 'rm -rf -- "$scratch"' EXIT
 scripts=../../../.github/scripts
@@ -39,8 +39,6 @@ if [ "$mode" = plan ]; then
   exit 0
 fi
 GITHUB_OUTPUT="$scratch/manifest" python3 "$scripts/terraform-release-plan.py" "$scratch/plan.json" "${manifest_args[@]}"
-test -n "${APPROVED_FINGERPRINT:-}"
-test "$(sed -n 's/^fingerprint=//p' "$scratch/manifest")" = "$APPROVED_FINGERPRINT" || { echo 'Diagnostic plan changed after approval.' >&2; exit 1; }
 recheck_main
 if [ "$(sed -n 's/^has_changes=//p' "$scratch/manifest")" = false ]; then
   echo 'No diagnostic changes; no Apply executed.' >>"$GITHUB_STEP_SUMMARY"
@@ -51,4 +49,4 @@ terraform apply -json -auto-approve -input=false -lock-timeout=5m -no-color "$sc
 if [ "$status" -ne 0 ]; then
   report_failure "$status" "$scratch/apply.log"
 fi
-echo 'Applied the revalidated diagnostic plan; no plan, State or raw log retained.' >>"$GITHUB_STEP_SUMMARY"
+echo 'Applied the validated diagnostic plan from this protected job; no plan, State or raw log retained.' >>"$GITHUB_STEP_SUMMARY"

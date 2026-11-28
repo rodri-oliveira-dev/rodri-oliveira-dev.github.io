@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       operation:
-        description: Plan only or apply with a second protected approval
+        description: Plan only or protected plan and apply
         required: true
         type: choice
         default: plan
