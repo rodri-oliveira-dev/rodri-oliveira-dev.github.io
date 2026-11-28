@@ -51,6 +51,7 @@ Para manutenção, edite as três traduções no mesmo PR e execute `python3 .gi
 | Azure OIDC Validation | [`azure-oidc-validation.yml`](workflows/azure-oidc-validation.yml) | Manual, somente `main` | Validar autenticação OIDC, acesso ao Resource Group, backend remoto e Blob Lease descartável |
 | Site validation | [`site-validation.yml`](workflows/site-validation.yml) | Pull Request, push em `main` e manual | Validar HTML, links, ortografia e workflows |
 | Release and Deploy | [`deploy-pages.yml`](workflows/deploy-pages.yml) | CI em PR/push; release manual em `main` | Coordenar workload, Function, Pages, tag, release e pós-release no mesmo SHA |
+| Release and Deploy (Site Only) | [`deploy-site.yml`](workflows/deploy-site.yml) | Manual em `main` | Publicar apenas site/PDFs, tag, release, IndexNow e evidência Web Push dry-run, após provar ausência de mudanças protegidas |
 | SEO validation | [`seo-validation.yml`](workflows/seo-validation.yml) | Pull Request, push em `main` e manual | Validar JSON-LD, sitemap, RSS discovery e consistência dos artefatos SEO |
 | Accessibility | [`accessibility.yml`](workflows/accessibility.yml) | Pull Request, push em `main` e manual | Aplicar verificações automatizadas de WCAG 2 AA |
 | GitHub Actions security | [`actions-security.yml`](workflows/actions-security.yml) | Pull Request, push em `main` e manual | Auditar a segurança da automação com zizmor |
@@ -78,6 +79,8 @@ As três versões são URLs canônicas indexáveis (`/curriculo/`, `/en/resume/`
 
 
 ## Release e publicação manual
+
+**Publicação somente do site:** em **Actions → Release and Deploy (Site Only) → Run workflow**, selecionar `main` e o incremento SemVer. O workflow completo permanece inalterado. O preflight exige a última release completa bem-sucedida com evidência dos jobs e smoke do backend, ancestralidade e diferenças permitidas entre a revisão implantada e a main, além de todos os quality gates existentes. Alterações em backend, IaC, contratos Web Push protegidos (incluindo `sw.js`) ou caminhos não classificados exigem a release completa. Não há Apply nem credenciais Azure; Web Push somente em dry-run. Ambos compartilham a fila `production-release` e o Environment `github-pages`. Em caso de bloqueio, não contornar o gate: usar Release and Deploy. Se a main avançar antes do deploy, iniciar nova execução; tag/release exigem evidência de publicação não superada.
 
 O workflow `Release and Deploy` implementa a sequência coordenada definida na ADR 0012: preflight → job protegido de plano/apply do workload Terraform → job protegido de plano/apply de diagnostics → pacote, deploy e health check da Function → build do site/PDFs → deploy e smoke do Pages → tag → GitHub Release → IndexNow e reconciliação Web Push. A ADR está `Accepted`; a aceitação não substitui as autorizações operacionais da #149. Push e Pull Request executam somente build, testes e validações, sem credenciais Azure nem publicação.
 

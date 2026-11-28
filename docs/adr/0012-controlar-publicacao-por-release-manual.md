@@ -41,6 +41,14 @@ A [ADR 0018](0018-segregar-diagnostic-settings.md) complementa o fluxo: os Diagn
 
 Refinamento operacional aprovado em 27/11/2026: workload e diagnostics deixaram de usar dois deployments protegidos sequenciais para plan e apply. Cada identidade continua segregada em seu próprio Environment, mas recebe uma única aprovação por execução. O plano é gerado depois dessa aprovação, validado por manifesto sem valores e aplicado pelo mesmo job. Essa escolha reduz intervenções humanas repetitivas, mas transfere a revisão do plano de uma pausa manual entre jobs para controles automáticos fail-closed; por isso SHA imutável, allowlists, bloqueio destrutivo, locking e aplicação do arquivo exato permanecem obrigatórios.
 
+### Publicação independente do site (refinamento aprovado em 28/11/2026)
+
+Manter integralmente o workflow `Release and Deploy` e adicionar `Release and Deploy (Site Only)`, manual e restrito à main. O segundo reutiliza a semântica de versão/tag/release e os quality gates existentes, mas inicia na etapa de geração de PDFs e build público após preflight próprio. Preserva o Environment github-pages, a fila exclusiva de produção e a conferência do SHA. Não possui etapas Terraform, Azure Functions ou credenciais Azure. IndexNow é executado após a release; Web Push limita-se à evidência dry-run sem autenticação Azure. Processamento real continua sujeito ao workflow de reconciliação existente e suas autorizações.
+
+A última execução manual do workflow completo deve estar concluída com sucesso, incluindo workload, diagnostics, pacote, deploy e smoke do backend. A revisão de referência deve ser ancestral da main selecionada. Uma allowlist conservadora de diferenças de árvore permite somente mudanças de site e automação/documentação correspondente; backend, IaC, contratos de integração Web Push protegidos e caminhos desconhecidos bloqueiam o fluxo e exigem Release and Deploy. O baseline e os gates são revalidados imediatamente antes do deploy, inclusive em reexecuções. Tag e release só são criadas após confirmação do deployment Pages bem-sucedido para o SHA, sem aceitar publicação superada. A análise por caminhos não substitui revisão de compatibilidade semântica; não constitui verificação independente de drift na Azure.
+
+A duplicação do trecho de orquestração do site é aceita para preservar o workflow completo sem alterações; revisar ambos quando o processo de publicação mudar. A nova opção não autoriza nenhuma implantação por si só.
+
 ## Consequences
 
 A main pode ficar à frente da produção por decisão operacional. A publicação requer ação humana e validações bem-sucedidas. Pages deve usar GitHub Actions, não publicação por branch.
