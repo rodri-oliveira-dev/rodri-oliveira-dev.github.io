@@ -41,6 +41,8 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertEqual(workflow.count("terraform plan -input=false"), 1)
         self.assertEqual(workflow.count('terraform apply -json'), 1)
         self.assertIn('terraform apply -json -auto-approve -input=false -lock-timeout=5m -no-color "$plan_file"', workflow)
+        self.assertIn("WORKLOAD_MODE: ${{ inputs.bootstrap_foundation_only && 'foundation' || 'full' }}", workflow)
+        self.assertIn('args=(--workload-mode "$WORKLOAD_MODE")', workflow)
 
     def test_diagnostics_plan_and_apply_are_mutually_exclusive(self):
         workflow = (WORKFLOWS / "terraform-diagnostics-reusable.yml").read_text(encoding="utf-8")

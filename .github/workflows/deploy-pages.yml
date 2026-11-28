@@ -184,6 +184,7 @@ jobs:
           ALLOW_DESTRUCTIVE: ${{ inputs.allow_destructive_terraform_changes }}
           GH_TOKEN: ${{ github.token }}
           RELEASE_SHA: ${{ needs.preflight.outputs.sha }}
+          WORKLOAD_MODE: ${{ inputs.bootstrap_foundation_only && 'foundation' || 'full' }}
         run: |
           set -euo pipefail
           plan_file="$RUNNER_TEMP/workload.tfplan"; plan_json="$RUNNER_TEMP/workload.json"; plan_log="$RUNNER_TEMP/workload-plan.log"; apply_log="$RUNNER_TEMP/workload-apply.log"; manifest_output="$RUNNER_TEMP/manifest-output"
@@ -191,7 +192,7 @@ jobs:
           terraform init -backend-config=backend.hcl.example -input=false -lockfile=readonly -no-color
           if ! terraform plan -input=false -lock-timeout=5m -no-color -out="$plan_file" >"$plan_log" 2>&1; then echo 'Terraform plan failed; sensitive log withheld.' >&2; exit 1; fi
           terraform show -json "$plan_file" >"$plan_json"
-          args=(); if [ "$ALLOW_DESTRUCTIVE" = true ]; then args+=(--allow-destructive); fi
+          args=(--workload-mode "$WORKLOAD_MODE"); if [ "$ALLOW_DESTRUCTIVE" = true ]; then args+=(--allow-destructive); fi
           GITHUB_OUTPUT="$manifest_output" python3 ../../.github/scripts/terraform-release-plan.py "$plan_json" "${args[@]}"
           if [ "$(sed -n 's/^has_changes=//p' "$manifest_output")" = false ]; then
             echo 'No workload changes; no Apply executed.' >>"$GITHUB_STEP_SUMMARY"
