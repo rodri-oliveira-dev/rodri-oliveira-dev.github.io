@@ -67,3 +67,4 @@ Pelo canal `rodrigodotnet@outlook.com`, o titular poderá pedir confirmação, a
 A perda do dispositivo e das duas credenciais não elimina direitos, mas pode impedir a identificação segura de um registro específico sem evidência adicional. O caso será tratado manualmente, sem exigir cadastro; se não houver prova proporcional suficiente, o controlador explicará a limitação e a expiração automática continuará aplicável.
 
 O titular também pode peticionar perante a ANPD. Esta versão candidata deve ser confirmada ou ajustada pela revisão jurídica antes da publicação efetiva e da coleta de qualquer inscrição.
+> **Situação em 28/11/2026:** a abertura pública foi autorizada como decisão de produto, mas este aviso continua candidato até a conclusão documentada de #155 e da revisão de obrigações em #167. Nenhuma coleta pode ser ativada com texto materialmente divergente do consentimento versionado.

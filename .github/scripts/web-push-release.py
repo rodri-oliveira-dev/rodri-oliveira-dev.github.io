@@ -125,15 +125,38 @@ def write_summary(path: Path, evidence: dict, counts: dict[str, int], release: d
     )
 
 
+PUBLIC_LAUNCH_ISSUES = (155, 156, 167)
+
+
+def require_closed_public_launch_issues(repo: str) -> None:
+    for number in PUBLIC_LAUNCH_ISSUES:
+        issue = api(repo, f"issues/{number}")
+        if issue.get("state") != "closed":
+            raise RuntimeError(f"Web Push público bloqueado enquanto a issue #{number} estiver aberta")
+
+
+def public_launch_gate(
+    repo: str,
+    confirmation: str,
+    mode: str,
+    enqueue_confirmation: str,
+    bootstrap_only: str = "false",
+) -> None:
+    if confirmation != "ENABLE-PUBLIC-WEB-PUSH":
+        raise RuntimeError("Abertura pública exige a confirmação exata ENABLE-PUBLIC-WEB-PUSH")
+    if mode != "enqueue" or enqueue_confirmation != "ENQUEUE":
+        raise RuntimeError("Abertura pública exige processamento real em modo enqueue com confirmação ENQUEUE")
+    if bootstrap_only != "false":
+        raise RuntimeError("Abertura pública não pode usar o modo de bootstrap da fundação")
+    require_closed_public_launch_issues(repo)
+
+
 def real_processing_gate(repo: str, confirmation: str, enabled: str, sender_enabled: str) -> None:
     if confirmation != "ENQUEUE":
         raise RuntimeError("Processamento real exige a confirmação exata ENQUEUE")
     if enabled != "true" or sender_enabled != "true":
         raise RuntimeError("Processamento real bloqueado por kill switches fail-closed")
-    for number in (155, 156):
-        issue = api(repo, f"issues/{number}")
-        if issue.get("state") != "closed":
-            raise RuntimeError(f"Processamento real bloqueado enquanto a issue #{number} estiver aberta")
+    require_closed_public_launch_issues(repo)
 
 
 def output(name: str, value: str) -> None:
@@ -155,6 +178,8 @@ def main() -> None:
     evidence_parser.add_argument("--mode", choices=("dry-run", "enqueue"), default="dry-run")
     gate_parser = subparsers.add_parser("gate")
     gate_parser.add_argument("--repo", required=True)
+    launch_parser = subparsers.add_parser("public-launch-gate")
+    launch_parser.add_argument("--repo", required=True)
     resolve_parser = subparsers.add_parser("resolve")
     resolve_parser.add_argument("--repo", required=True)
     args = parser.parse_args()
@@ -165,6 +190,16 @@ def main() -> None:
             os.environ.get("WEB_PUSH_CONFIRMATION", ""),
             os.environ.get("WEB_PUSH_REAL_PROCESSING_ENABLED", "false"),
             os.environ.get("WEB_PUSH_SENDER_ENABLED", "false"),
+        )
+        return
+
+    if args.command == "public-launch-gate":
+        public_launch_gate(
+            args.repo,
+            os.environ.get("WEB_PUSH_PUBLIC_LAUNCH_CONFIRMATION", ""),
+            os.environ.get("WEB_PUSH_MODE", "dry-run"),
+            os.environ.get("WEB_PUSH_CONFIRMATION", ""),
+            os.environ.get("BOOTSTRAP_FOUNDATION_ONLY", "false"),
         )
         return
 

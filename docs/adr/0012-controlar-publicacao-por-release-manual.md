@@ -4,6 +4,12 @@
 
 Accepted
 
+### Primeira ativação pública do Web Push (refinamento aprovado em 28/11/2026)
+
+Preservar os dois workflows. A primeira publicação que altera Terraform, backend e frontend deve usar `Release and Deploy` e manter a ordem efetiva Terraform → Diagnostic Settings → Backend → Frontend → Tag → Release → Pós-release. `Release and Deploy (Site Only)` continua permitido apenas para publicações posteriores comprovadamente restritas ao site; seus classificadores devem bloquear IaC, backend e contratos protegidos de Web Push.
+
+A ativação pública exige, no preflight do fluxo completo, `enable_public_web_push=true`, confirmação exata `ENABLE-PUBLIC-WEB-PUSH`, pós-release em `enqueue`, confirmação `ENQUEUE` e fechamento de #155, #156 e #167. O Environment do pós-release preserva seus switches independentes e aprovação. Essa combinação liga configuração pública, inscrição, cancelamento e processamento no mesmo plano; qualquer ausência falha antes do Apply. A autorização registrada não executa release, Apply, deploy ou envio por si só.
+
 ## Context
 
 O portfólio era publicado a cada push na main, em paralelo com as validações, enquanto a tag era criada após os gates de um único PR. O deploy nativo por branch também pode competir com o artefato que inclui os currículos em PDF. A frequência de integração não representa necessariamente a frequência de entrega desejada.

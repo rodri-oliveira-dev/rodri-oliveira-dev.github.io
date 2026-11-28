@@ -320,11 +320,15 @@ test("profile, skills, contact and resume match published HTML and JSON-LD", () 
   assert.ok(read("es/index.html").includes('href="/es/curriculo/"'));
 });
 
-test("page loading and existing CSP remain unchanged and safe", () => {
+test("page loading and CSP remain narrowly scoped and safe", () => {
   for (const language of SUPPORTED_LANGUAGES) {
     const html = read(PAGE[language]);
     assert.ok(html.includes('<script type="module" src="/assets/js/webmcp.js"></script>'));
-    assert.ok(html.includes("connect-src 'none'"));
+    if (language === "pt-BR") {
+      assert.ok(html.includes("connect-src https://func-portpush-dev-1350159615.azurewebsites.net"));
+    } else {
+      assert.ok(html.includes("connect-src 'none'"));
+    }
     assert.ok(html.includes("script-src 'self'"));
     for (const project of PROJECTS) {
       const relative = (language === "en" ? "en/" : language === "es-419" ? "es/" : "") +

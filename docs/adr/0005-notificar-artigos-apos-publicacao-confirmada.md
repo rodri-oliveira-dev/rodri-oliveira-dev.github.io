@@ -4,6 +4,10 @@
 
 Proposed
 
+### Atualização de 28/11/2026 — preparação para abertura pública
+
+O responsável autorizou a abertura pública real do Web Push, sem tornar obrigatório um piloto individual anterior. A finalidade permanece estritamente limitada a artigos novos PT-BR e o processamento real continua condicionado à publicação confirmada, deduplicação durável, gates #155, #156 e #167, confirmações explícitas e kill switches. A autorização de produto não comprova entrega, operação, privacidade ou conformidade jurídica e não altera o status `Proposed` desta ADR.
+
 ## Context
 
 A atualização editorial não corresponde necessariamente a conteúdo disponível ao visitante. O fluxo `import-newsletter-article.yml` incorpora manualmente artigos em português e abre PR; `sync-newsletter-articles.yml` é um mecanismo de reconciliação manual. Os fluxos DEV Community e Hashnode atendem inglês e espanhol e possuem regras de merge diferentes.

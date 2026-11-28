@@ -4,6 +4,10 @@
 
 Accepted
 
+### Atualização de 28/11/2026 — ativação sem novos recursos
+
+A abertura pública usará exclusivamente a infraestrutura Azure existente: Function App Flex Consumption, Cosmos DB, Storage Queue, Key Vault, identidades gerenciadas, OIDC e os limites de escala/consumo já declarados. A mudança de ativação é feita por configuração versionada e kill switches no fluxo completo de release; não cria serviço, Always Ready, telemetria adicional ou privilégio. Budget, alertas, consumo e retenção efetivos ainda exigem evidência operacional antes do go-live.
+
 ## Context
 
 A arquitetura inicial previa Cloud Run e Firestore na GCP (ADRs 0004 e 0008). A ativação da conta exigiu um compromisso financeiro inicial incompatível com a necessidade atual do portfólio, cujo volume de inscrições ainda é incerto. A alternativa em AWS também não avançou no cadastro.

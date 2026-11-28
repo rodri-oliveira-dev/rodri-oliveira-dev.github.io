@@ -4,6 +4,14 @@
 
 Accepted
 
+### Atualização de 28/11/2026 — piloto individual deixa de ser etapa obrigatória
+
+O responsável autorizou expressamente a habilitação pública real das notificações como decisão de produto. Esta atualização substitui a sequência de lançamento descrita abaixo somente no ponto em que exigia #166 e evidências de piloto individual antes de #167. A issue #166 passa a ser histórica e pode ser encerrada como não planejada; seus controles técnicos, operacionais, de segurança e privacidade pertinentes são transferidos para #156 e #167.
+
+A ordem aplicável passa a ser: concluir a implementação fail-closed; concluir #155 com aviso e consentimento definitivos; concluir #156 com evidências reais de operação, segurança, privacidade, retenção, recuperação e custos; concluir #167 com revisão das obrigações jurídicas pendentes e go/no-go humano; somente depois executar a release completa protegida. Testes físicos e multiabas continuam necessários, mas podem integrar a validação pré-release de #167 sem constituir um período de piloto em produção.
+
+A autorização não é evidência de conformidade, não aprova o aviso definitivo, não comprova contratos, papéis, subprocessadores, países ou mecanismos de transferência internacional, não comprova retenção/restauração/custos no ambiente e não autoriza automaticamente IAM, Apply, deploy, inscrição ou envio. Permanecem a finalidade exclusiva de artigos novos PT-BR, consentimento `1.0.0` sujeito a reconciliação com o aviso aprovado, 365 dias, revogação, recuperação, deduplicação, antiabuso, minimização e kill switches. O histórico anterior permanece registrado.
+
 ## Context
 
 Em 27/11/2026, após o merge do PR #219, o responsável pelo portfólio decidiu priorizar a conclusão funcional do MVP Web Push e concentrar as pendências de privacidade ao final do desenvolvimento. A expectativa é de até 100 usuários inscritos, não uma quota técnica nem critério de dispensa legal. A finalidade continua exclusivamente notificar novos artigos PT-BR, sem cadastro, publicidade ou perfil comportamental.

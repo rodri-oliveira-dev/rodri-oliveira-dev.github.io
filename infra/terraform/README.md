@@ -344,3 +344,4 @@ O root isolado [`notification-iam/`](notification-iam/README.md) propõe as apli
 
 As definições não foram aplicadas e não comprovam Environment, credencial, RBAC ou propagação efetivos. Não configurar as variáveis `AZURE_WEB_PUSH_COORDINATOR_CLIENT_ID`, `AZURE_WEB_PUSH_ENQUEUE_CLIENT_ID`, `WEB_PUSH_COSMOS_ENDPOINT` e `WEB_PUSH_QUEUE_URI`, nem habilitar switches, antes das autorizações posteriores. Nenhuma chave VAPID, connection string, Shared Key ou dado de inscrição é necessário no GitHub.
 
+> **Ativação pública:** `enable_public_web_push` permanece `false` por padrão e não provisiona recursos. Somente a release completa pode defini-lo como `true`, depois do preflight público; a variável habilita configuração pública, inscrição, revogação e Queue Trigger no mesmo plano, preservando os kill switches versionados e reversíveis.

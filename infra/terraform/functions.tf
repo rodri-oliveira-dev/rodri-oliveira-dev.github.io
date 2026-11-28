@@ -71,9 +71,9 @@ locals {
     CampaignQueue__queueServiceUri                      = azurerm_storage_account.functions.primary_queue_endpoint
     CampaignQueue__credential                           = "managedidentity"
     CampaignQueue__clientId                             = azurerm_user_assigned_identity.functions_runtime.client_id
-    "AzureWebJobs.ProcessWebPushCampaign.Disabled"      = "true"
-    "AzureWebJobs.register-subscription.Disabled"       = "true"
-    "AzureWebJobs.revoke-subscription.Disabled"         = "true"
+    "AzureWebJobs.ProcessWebPushCampaign.Disabled"      = tostring(!var.enable_public_web_push)
+    "AzureWebJobs.register-subscription.Disabled"       = tostring(!var.enable_public_web_push)
+    "AzureWebJobs.revoke-subscription.Disabled"         = tostring(!var.enable_public_web_push)
     Notifications__CosmosEndpoint                       = "https://${local.cosmos_account_name}.documents.azure.com:443/"
     Notifications__CosmosDatabaseName                   = local.subscriptions_database
     Notifications__CosmosContainerName                  = local.subscriptions_container
@@ -83,6 +83,7 @@ locals {
     Notifications__VapidSubject                         = "https://rodri-oliveira-dev.github.io/"
     Notifications__VapidPublicKeySecretName             = "vapid-public-key"
     Notifications__VapidPrivateKeySecretName            = "vapid-private-key"
+    Notifications__PublicLaunchEnabled                  = tostring(var.enable_public_web_push)
     Notifications__PushTimeToLiveSeconds                = "86400"
     Notifications__RequestTimeoutSeconds                = "15"
     Notifications__AllowedOrigin                        = "https://rodri-oliveira-dev.github.io"

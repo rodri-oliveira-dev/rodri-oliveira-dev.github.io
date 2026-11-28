@@ -41,13 +41,23 @@ on:
         required: false
         type: string
       web_push_mode:
-        description: Web Push post-release mode; keep dry-run until later privacy and pilot gates
+        description: Web Push post-release mode; public activation requires enqueue after all gates
         required: true
         default: dry-run
         type: choice
         options: [dry-run, enqueue]
       web_push_confirmation:
         description: Type ENQUEUE only after explicit authorization; ignored by dry-run
+        required: false
+        default: ''
+        type: string
+      enable_public_web_push:
+        description: Enable public PT-BR subscriptions and campaign processing after all public-launch gates
+        required: true
+        default: false
+        type: boolean
+      public_web_push_confirmation:
+        description: Type ENABLE-PUBLIC-WEB-PUSH when enabling the public flow
         required: false
         default: ''
         type: string
@@ -126,6 +136,15 @@ jobs:
           ALLOW_FIRST_BACKEND_DEPLOY: ${{ inputs.allow_first_backend_deploy }}
           BACKEND_ROLLBACK_RUN_ID: ${{ inputs.backend_rollback_run_id }}
         run: python3 .github/scripts/site-release.py plan
+      - name: Validate public Web Push authorization
+        if: inputs.enable_public_web_push
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WEB_PUSH_PUBLIC_LAUNCH_CONFIRMATION: ${{ inputs.public_web_push_confirmation }}
+          WEB_PUSH_MODE: ${{ inputs.web_push_mode }}
+          WEB_PUSH_CONFIRMATION: ${{ inputs.web_push_confirmation }}
+          BOOTSTRAP_FOUNDATION_ONLY: ${{ inputs.bootstrap_foundation_only }}
+        run: python3 .github/scripts/web-push-release.py public-launch-gate --repo "$GITHUB_REPOSITORY"
 
   terraform_apply:
     name: Plan and apply workload infrastructure
@@ -153,6 +172,7 @@ jobs:
       TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       TF_VAR_tenant_id: ${{ vars.AZURE_TENANT_ID }}
       TF_VAR_create_function_app: ${{ !inputs.bootstrap_foundation_only }}
+      TF_VAR_enable_public_web_push: ${{ inputs.enable_public_web_push }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:

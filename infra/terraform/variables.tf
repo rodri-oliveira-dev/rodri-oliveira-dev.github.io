@@ -77,6 +77,13 @@ variable "log_analytics_retention_days" {
   }
 }
 
+variable "enable_public_web_push" {
+  description = "Enable the public PT-BR subscription API, public VAPID configuration, and campaign processor only after the release gates are satisfied."
+  type        = bool
+  default     = false
+  nullable    = false
+}
+
 variable "subscription_recovery_epoch" {
   description = "Non-secret marker stored with subscriptions; rotate it after a restore before any reactivation."
   type        = string

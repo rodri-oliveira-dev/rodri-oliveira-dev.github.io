@@ -4,7 +4,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { STATES, WebPushLifecycle, validConfig } from "../../assets/js/web-push-lifecycle.mjs";
-import { WebPushApiClient, WebPushBrowserGateway, WebPushStorage, base64UrlToUint8Array, detectWebPushCapabilities } from "../../assets/js/web-push-platform.mjs";
+import { WebPushApiClient, WebPushBrowserGateway, WebPushStorage, base64UrlToUint8Array, detectWebPushCapabilities, exactPublicConfiguration } from "../../assets/js/web-push-platform.mjs";
 import { WebPushView } from "../../assets/js/web-push-view.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -95,7 +95,7 @@ const createHarness = ({
   return { lifecycle, calls, actions: () => actions, getStored: () => stored, setStored: (value) => { stored = value; } };
 };
 
-test("public PT-BR shell is gated off and EN/ES remain free of Web Push controls", () => {
+test("public PT-BR shell uses the verified remote gate and EN/ES remain free of Web Push controls", () => {
   const pt = read("index.html");
   const en = read("en/index.html");
   const es = read("es/index.html");
@@ -105,7 +105,7 @@ test("public PT-BR shell is gated off and EN/ES remain free of Web Push controls
   assert.doesNotMatch(en, /data-web-push|web-push\.mjs/);
   assert.doesNotMatch(es, /data-web-push|web-push\.mjs/);
   assert.match(config, /enabled: false/);
-  assert.match(config, /apiBaseUrl: null/);
+  assert.match(config, /apiBaseUrl: "https:\/\/func-portpush-dev-1350159615\.azurewebsites\.net\/api\/"/);
   assert.match(config, /vapidPublicKey: null/);
   assert.match(config, /privacyNoticeVersion: "1\.0\.0"/);
   assert.match(config, /privacyNoticeUrl: "https:\/\/rodri-oliveira-dev\.github\.io\/#privacidade-web-push"/);
@@ -382,13 +382,34 @@ test("VAPID conversion validates bounded base64url input", () => {
   assert.equal(validConfig(CONFIG), true);
 });
 
-test("frontend implementation contains no logging or public endpoint/key literals", () => {
+test("frontend implementation contains no logging, subscription route, or VAPID key literals", () => {
   const sources = [
     "assets/js/web-push-config.mjs", "assets/js/web-push-lifecycle.mjs",
     "assets/js/web-push-platform.mjs", "assets/js/web-push-view.mjs", "assets/js/web-push.mjs",
   ].map(read).join("\n");
   assert.doesNotMatch(sources, /console\.|sendBeacon|analytics|telemetry/i);
   assert.doesNotMatch(read("assets/js/web-push-config.mjs"), /api\/subscriptions|[A-Za-z0-9_-]{80,}/);
+});
+
+test("public configuration accepts only the exact fail-closed contract", async () => {
+  assert.equal(exactPublicConfiguration({ enabled: false }), true);
+  assert.equal(exactPublicConfiguration({ enabled: false, vapidPublicKey: CONFIG.vapidPublicKey }), false);
+  assert.equal(exactPublicConfiguration({ enabled: true, vapidPublicKey: CONFIG.vapidPublicKey }), true);
+  assert.equal(exactPublicConfiguration({ enabled: true, vapidPublicKey: "invalid" }), false);
+
+  const requests = [];
+  const client = new WebPushApiClient({
+    baseUrl: CONFIG.apiBaseUrl,
+    fetchLike: async (url, options) => {
+      requests.push({ url, options });
+      return { status: 200, json: async () => ({ enabled: true, vapidPublicKey: CONFIG.vapidPublicKey }) };
+    },
+  });
+  const result = await client.getPublicConfiguration();
+  assert.deepEqual(result, { enabled: true, vapidPublicKey: CONFIG.vapidPublicKey });
+  assert.equal(requests[0].url, "https://api.fixture.invalid/api/web-push/config");
+  assert.equal(requests[0].options.method, "GET");
+  assert.equal(requests[0].options.credentials, "omit");
 });
 
 const createViewFixture = () => {

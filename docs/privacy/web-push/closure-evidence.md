@@ -132,3 +132,4 @@ fechada e documenta validação de retenção somente leitura. A recomendação 
 decisão humana sobre o escopo de código/IaC após o merge. Retenção por tabela,
 categorias, exceções e custos continuam pendentes e foram transferidos para
 #156, #165 e #167; `retentionInDays = 30` não é tratado como comprovação.
+> **Atualização de 28/11/2026:** a autorização de produto permite preparar o fluxo público, sem piloto individual obrigatório, mas não converte as evidências históricas abaixo em validação jurídica ou operacional. Os bloqueios públicos permanecem em #155, #156 e #167.

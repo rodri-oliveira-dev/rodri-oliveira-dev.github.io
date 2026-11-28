@@ -5,21 +5,36 @@ import { WebPushView } from "./web-push-view.mjs";
 
 const root = document.querySelector("[data-web-push]");
 if (root) {
-  const view = new WebPushView(root, { config: WEB_PUSH_CONFIG });
   const disabledApi = Object.freeze({
     register: async () => { throw new Error("Web Push is disabled"); },
     revoke: async () => { throw new Error("Web Push is disabled"); },
   });
-  const lifecycle = new WebPushLifecycle({
-    config: WEB_PUSH_CONFIG,
-    browser: new WebPushBrowserGateway(),
-    api: WEB_PUSH_CONFIG.enabled ? new WebPushApiClient({ baseUrl: WEB_PUSH_CONFIG.apiBaseUrl }) : disabledApi,
-    storage: new WebPushStorage(),
-    view,
-  });
+  let lifecycle;
+  const bootstrap = async () => {
+    if (!lifecycle) {
+      let config = WEB_PUSH_CONFIG;
+      let api = disabledApi;
+      try {
+        api = new WebPushApiClient({ baseUrl: WEB_PUSH_CONFIG.apiBaseUrl });
+        const remote = await api.getPublicConfiguration();
+        config = Object.freeze({ ...WEB_PUSH_CONFIG, ...remote });
+      } catch {
+        api = disabledApi;
+      }
+      const view = new WebPushView(root, { config });
+      lifecycle = new WebPushLifecycle({
+        config,
+        browser: new WebPushBrowserGateway(),
+        api: config.enabled ? api : disabledApi,
+        storage: new WebPushStorage(),
+        view,
+      });
+    }
+    await lifecycle.initialize();
+  };
 
-  void lifecycle.initialize().catch(() => {});
+  void bootstrap().catch(() => {});
   window.addEventListener("pageshow", (event) => {
-    if (event.persisted) void lifecycle.initialize().catch(() => {});
+    if (event.persisted) void bootstrap().catch(() => {});
   });
 }

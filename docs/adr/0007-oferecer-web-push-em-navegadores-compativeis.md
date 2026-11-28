@@ -4,6 +4,10 @@
 
 Proposed
 
+### Atualização de 28/11/2026 — fluxo público preparado
+
+A abertura pública foi autorizada como decisão de produto, mantendo PT-BR como única finalidade e audiência editorial. A configuração pública deve ser obtida do backend apenas depois da ativação protegida; a chave VAPID privada nunca chega ao cliente. O frontend permanece fail-closed, não solicita permissão no carregamento e somente chama a API e `PushManager.subscribe()` após a manifestação afirmativa. A dispensa do piloto não dispensa testes reais em navegadores compatíveis nem os gates #155, #156 e #167, e não altera o status `Proposed`.
+
 ## Context
 
 A tecnologia Web Push não está restrita a smartphones. Navegadores de desktop também podem receber notificações. No iOS, o suporte depende das condições de instalação da aplicação na tela inicial; em outras plataformas, a instalação não é necessariamente obrigatória.

@@ -47,3 +47,4 @@ Esses nomes/categorias devem ser confirmados no ambiente antes de escrever consu
 3. executar somente dry-run para diagnóstico;
 4. preservar mensagens/campanhas para investigação sem copiar payloads ou dados pessoais para issues;
 5. revogar a credencial federada ou role específica somente por operação IAM autorizada, sem reutilizar identidades de Terraform/backend.
+> **Gate público vigente:** processamento real e abertura da API exigem #155, #156 e #167 fechadas, `ENABLE-PUBLIC-WEB-PUSH`, modo `enqueue`, `ENQUEUE` e os switches protegidos. Recuperação nunca autoriza alterar esses controles.
