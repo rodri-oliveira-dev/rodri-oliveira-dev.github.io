@@ -8,7 +8,7 @@ permissions:
 jobs:
   convert:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
@@ -17,10 +17,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if command -v magick >/dev/null; then
-            cmd=magick
-          else
-            cmd=convert
+          if ! python3 -c 'import PIL' 2>/dev/null; then
+            python3 -m venv "$RUNNER_TEMP/portrait-env"
+            source "$RUNNER_TEMP/portrait-env/bin/activate"
+            python -m pip install --disable-pip-version-check 'Pillow==12.2.0'
           fi
-          "$cmd" assets/profile/rodrigo-about.webp -auto-orient -resize '400x400^' -gravity center -extent 400x400 -strip -sampling-factor 4:2:0 -quality 85 "$RUNNER_TEMP/contact.jpg"
+          python3 - <<'PY'
+          from PIL import Image, ImageOps
+          from pathlib import Path
+          import os
+          with Image.open("assets/profile/rodrigo-about.webp") as image:
+              result = ImageOps.fit(ImageOps.exif_transpose(image).convert("RGB"), (400, 400), Image.Resampling.LANCZOS)
+              result.save(Path(os.environ["RUNNER_TEMP"]) / "contact.jpg", "JPEG", quality=85, optimize=True, progressive=False)
+          PY
           base64 -w 512 "$RUNNER_TEMP/contact.jpg" | sed 's/^/CONTACT_JPEG:/'
