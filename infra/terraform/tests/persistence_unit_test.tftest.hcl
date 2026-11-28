@@ -144,7 +144,7 @@ run "default_cost_and_security_baseline" {
   }
 
   assert {
-    condition     = local.function_app_settings["AzureWebJobs.ProcessWebPushCampaign.Disabled"] == "true"
+    condition     = local.function_app_settings["AzureWebJobs.ProcessWebPushCampaign.Disabled"] == "true" && local.function_app_settings["Notifications__PublicLaunchEnabled"] == "false"
     error_message = "O primeiro deploy deve manter o processamento de campanhas desabilitado até o gate de ativação da issue #150."
   }
 
@@ -176,6 +176,24 @@ run "default_cost_and_security_baseline" {
   assert {
     condition     = length(azapi_resource.function_app[0].response_export_values) == 1 && contains(azapi_resource.function_app[0].response_export_values, "properties.defaultHostName")
     error_message = "A Function deve exportar somente o hostname público."
+  }
+}
+
+run "public_launch_enables_only_the_existing_flow" {
+  command = plan
+
+  variables {
+    enable_public_web_push = true
+  }
+
+  assert {
+    condition = (
+      local.function_app_settings["Notifications__PublicLaunchEnabled"] == "true" &&
+      local.function_app_settings["AzureWebJobs.ProcessWebPushCampaign.Disabled"] == "false" &&
+      local.function_app_settings["AzureWebJobs.register-subscription.Disabled"] == "false" &&
+      local.function_app_settings["AzureWebJobs.revoke-subscription.Disabled"] == "false"
+    )
+    error_message = "A abertura pública deve habilitar configuração, inscrição, cancelamento e processamento no fluxo existente."
   }
 }
 

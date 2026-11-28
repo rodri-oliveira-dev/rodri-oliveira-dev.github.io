@@ -16,6 +16,7 @@
     "Notifications__KeyVaultUri": "https://kv-example.vault.azure.net/",
     "Notifications__VapidSubject": "https://rodri-oliveira-dev.github.io/",
     "Notifications__VapidPublicKeySecretName": "vapid-public-key",
+    "Notifications__PublicLaunchEnabled": "false",
     "Notifications__VapidPrivateKeySecretName": "vapid-private-key",
     "Notifications__PushTimeToLiveSeconds": "86400",
     "Notifications__RequestTimeoutSeconds": "15",

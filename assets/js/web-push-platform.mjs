@@ -90,6 +90,14 @@ const exactRegistrationResponse = (data) => data &&
   /^[A-Za-z0-9_-]{43}$/.test(data.recoveryCapability) &&
   typeof data.expiresAtUtc === "string" && Number.isFinite(Date.parse(data.expiresAtUtc));
 
+const exactPublicConfiguration = (data) => {
+  if (!data || Array.isArray(data) || typeof data.enabled !== "boolean") return false;
+  const keys = Object.keys(data).sort((left, right) => left.localeCompare(right));
+  if (data.enabled === false) return JSON.stringify(keys) === JSON.stringify(["enabled"]);
+  return JSON.stringify(keys) === JSON.stringify(["enabled", "vapidPublicKey"]) &&
+    /^[A-Za-z0-9_-]{87}$/.test(data.vapidPublicKey);
+};
+
 export class WebPushApiClient {
   constructor({ baseUrl, fetchLike = fetch, timeoutMs = 8000, AbortControllerLike = AbortController, setTimeoutLike = setTimeout, clearTimeoutLike = clearTimeout }) {
     const parsed = new URL(baseUrl);
@@ -97,11 +105,34 @@ export class WebPushApiClient {
       throw new Error("Invalid Web Push API configuration");
     }
     this.endpoint = new URL("subscriptions", parsed.href.endsWith("/") ? parsed : parsed.href + "/").href;
+    this.configurationEndpoint = new URL("web-push/config", parsed.href.endsWith("/") ? parsed : parsed.href + "/").href;
     this.fetch = fetchLike;
     this.timeoutMs = timeoutMs;
     this.AbortController = AbortControllerLike;
     this.setTimeout = setTimeoutLike;
     this.clearTimeout = clearTimeoutLike;
+  }
+
+  async getPublicConfiguration() {
+    const controller = new this.AbortController();
+    const timeout = this.setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      const response = await this.fetch(this.configurationEndpoint, {
+        method: "GET",
+        credentials: "omit",
+        cache: "no-store",
+        redirect: "error",
+        referrerPolicy: "no-referrer",
+        signal: controller.signal,
+      });
+      const data = response.status === 200 ? await parseJsonSafely(response) : null;
+      if (response.status !== 200 || !exactPublicConfiguration(data)) {
+        throw new Error("Invalid Web Push public configuration");
+      }
+      return Object.freeze(data);
+    } finally {
+      this.clearTimeout(timeout);
+    }
   }
 
   async register({ subscription, ...consent }) {
@@ -199,4 +230,4 @@ export class WebPushStorage {
   }
 }
 
-export { base64UrlToUint8Array, isAppleMobileContext };
+export { base64UrlToUint8Array, exactPublicConfiguration, isAppleMobileContext };

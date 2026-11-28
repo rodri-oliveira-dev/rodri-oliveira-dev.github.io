@@ -95,6 +95,22 @@ class WebPushReleaseTests(unittest.TestCase):
             self.assertIn("nenhum", text)
             self.assertNotIn("endpoint", text.lower())
 
+    def test_public_launch_gate_requires_exact_confirmations_enqueue_and_closed_issues(self):
+        with patch.object(release, "api", side_effect=fixture_api()):
+            release.public_launch_gate("owner/repo", "ENABLE-PUBLIC-WEB-PUSH", "enqueue", "ENQUEUE")
+        for values in (
+            ("wrong", "enqueue", "ENQUEUE"),
+            ("ENABLE-PUBLIC-WEB-PUSH", "dry-run", "ENQUEUE"),
+            ("ENABLE-PUBLIC-WEB-PUSH", "enqueue", "wrong"),
+        ):
+            with self.subTest(values=values), self.assertRaises(RuntimeError):
+                release.public_launch_gate("owner/repo", *values)
+        with self.assertRaisesRegex(RuntimeError, "bootstrap"):
+            release.public_launch_gate("owner/repo", "ENABLE-PUBLIC-WEB-PUSH", "enqueue", "ENQUEUE", "true")
+        with patch.object(release, "api", return_value={"state": "open"}):
+            with self.assertRaisesRegex(RuntimeError, "#155"):
+                release.public_launch_gate("owner/repo", "ENABLE-PUBLIC-WEB-PUSH", "enqueue", "ENQUEUE")
+
 
 if __name__ == "__main__":
     unittest.main()

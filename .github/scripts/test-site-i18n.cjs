@@ -513,20 +513,41 @@ assert.equal(blockedPage.prompt.hidden, true, "Dismissal persists on current pag
 /* Localized mobile contact cards: generation, routing and vCard wire format. */
 const expectedContactCards = require("./generate-vcards.cjs").expectedCards();
 const contactLocales = [
-  ["index.html", "pt-br", "pt-BR", "Arquiteto de Software", "/"],
-  ["en/index.html", "en-us", "en-US", "Software Architect", "/en/"],
-  ["es/index.html", "es", "es-419", "Arquitecto de Software", "/es/"],
+  ["index.html", "pt-br", "Arquiteto de Software", "/", "experiência", "Brasil"],
+  ["en/index.html", "en-us", "Software Architect", "/en/", "experience", "Brazil"],
+  ["es/index.html", "es", "Arquitecto de Software", "/es/", "ingeniería", "Brasil"],
 ];
 const contactIdentities = new Set();
 const contactRevisions = new Set();
 const contactNotes = new Set();
-const contactPortrait = fs.readFileSync(path.join(ROOT, "assets/profile/rodrigo-about.webp"));
-for (const [home, suffix, language, title, route] of contactLocales) {
+const contactPortrait = fs.readFileSync(path.join(ROOT, "assets/profile/rodrigo-contact.jpg"));
+
+function jpegDimensions(bytes) {
+  if (bytes[0] !== 0xff || bytes[1] !== 0xd8 || bytes.at(-2) !== 0xff || bytes.at(-1) !== 0xd9) throw new Error("Invalid JPEG markers");
+  for (let offset = 2; offset + 4 <= bytes.length;) {
+    if (bytes[offset++] !== 0xff) throw new Error("Invalid JPEG segment");
+    while (bytes[offset] === 0xff) offset++;
+    const marker = bytes[offset++];
+    if (marker === 0xda || marker === 0xd9) break;
+    const length = (bytes[offset] << 8) | bytes[offset + 1];
+    if (length < 2 || offset + length > bytes.length) throw new Error("Invalid JPEG segment length");
+    if (marker === 0xc0 || marker === 0xc2) {
+      if (length < 8) throw new Error("Invalid JPEG frame");
+      return { width: (bytes[offset + 5] << 8) | bytes[offset + 6], height: (bytes[offset + 3] << 8) | bytes[offset + 4], baseline: marker === 0xc0 };
+    }
+    offset += length;
+  }
+  throw new Error("Missing JPEG frame");
+}
+assert.deepEqual(jpegDimensions(contactPortrait), { width: 400, height: 400, baseline: true }, "Contact portrait must be a 400x400 baseline JPEG");
+for (const [home, suffix, title, route, noteWord, country] of contactLocales) {
   const name = "rodrigo-de-oliveira-" + suffix + ".vcf";
   const relative = "assets/contact/" + name;
   assert.ok(read(home).includes('class="button secondary mobile-contact-action" href="/' + relative + '" download>'), home + " localized vCard CTA");
   const raw = fs.readFileSync(path.join(ROOT, relative));
-  const card = raw.toString("utf8");
+  const card = new TextDecoder("utf-8", { fatal: true }).decode(raw);
+  assert.ok(!raw.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf])), name + " no UTF-8 BOM");
+  assert.ok(!card.includes("\ufffd"), name + " no replacement characters");
   assert.equal(card, expectedContactCards[name], name + " generated content");
   assert.ok(raw.length <= 100 * 1024, name + " size limit");
   assert.ok(card.endsWith("\r\n") && !card.replace(/\r\n/g, "").includes("\n") && !card.replace(/\r\n/g, "").includes("\r"), name + " CRLF");
@@ -536,26 +557,30 @@ for (const [home, suffix, language, title, route] of contactLocales) {
   const unfolded = card.replace(/\r\n[ \t]/g, "");
   const lines = unfolded.split("\r\n");
   assert.equal(lines[0], "BEGIN:VCARD");
-  assert.equal(lines[1], "VERSION:4.0");
+  assert.equal(lines[1], "VERSION:3.0");
   assert.equal(lines.at(-2), "END:VCARD");
   assert.ok(lines.includes("FN:Rodrigo de Oliveira"));
-  assert.ok(lines.includes("TITLE;LANGUAGE=" + language + ":" + title));
-  assert.ok(lines.includes("TEL;VALUE=uri;TYPE=cell;PREF=1:tel:+5519998861786"));
-  assert.ok(lines.includes("EMAIL;TYPE=work;PREF=1:rodrigodotnet@outlook.com"));
-  assert.ok(lines.includes("URL;PREF=1:" + SITE_URL + route));
-  assert.ok(lines.includes("URL:https://www.linkedin.com/in/rodri-oliveira-dev"));
-  assert.ok(lines.includes("URL:https://github.com/rodri-oliveira-dev"));
-  assert.ok(lines.includes("URL:https://wa.me/5519998861786"));
-  const note = lines.find(line => line.startsWith("NOTE;LANGUAGE=" + language + ":"));
-  assert.ok(note && note.length > 100, name + " localized biography");
+  assert.ok(lines.includes("TITLE:" + title));
+  assert.ok(lines.includes("TEL;TYPE=CELL:+5519998861786"));
+  assert.ok(lines.includes("EMAIL;TYPE=INTERNET,WORK,PREF:rodrigodotnet@outlook.com"));
+  assert.ok(lines.includes("URL:" + SITE_URL + route));
+  assert.ok(lines.includes("item1.URL:https://www.linkedin.com/in/rodri-oliveira-dev"));
+  assert.ok(lines.includes("item1.X-ABLabel:LinkedIn"));
+  assert.ok(lines.includes("item2.URL:https://github.com/rodri-oliveira-dev"));
+  assert.ok(lines.includes("item2.X-ABLabel:GitHub"));
+  assert.ok(lines.includes("item3.URL:https://wa.me/5519998861786"));
+  assert.ok(lines.includes("item3.X-ABLabel:WhatsApp"));
+  const note = lines.find(line => line.startsWith("NOTE:"));
+  assert.ok(note && note.length > 100 && note.includes(noteWord), name + " localized biography");
   contactNotes.add(note.split(":").slice(1).join(":"));
-  assert.ok(lines.some(line => line.startsWith("ROLE;LANGUAGE=" + language + ":")));
-  assert.ok(lines.some(line => line.startsWith("ADR;TYPE=work;LANGUAGE=" + language + ":;;;Limeira;São Paulo;;")));
+  assert.ok(lines.some(line => line.startsWith("ROLE:")));
+  assert.ok(lines.includes("ADR;TYPE=WORK:;;;Limeira;São Paulo;;" + country));
   assert.ok(lines.some(line => line.startsWith("CATEGORIES:")));
-  assert.ok(lines.includes("TZ:America/Sao_Paulo"));
-  const portrait = lines.find(line => line.startsWith("PHOTO;MEDIATYPE=image/webp:data:image/webp;base64,"));
+  assert.ok(lines.includes("TZ:-03:00"));
+  const portrait = lines.find(line => line.startsWith("PHOTO;ENCODING=b;TYPE=JPEG:"));
   assert.ok(portrait, name + " embedded photo");
-  assert.deepEqual(Buffer.from(portrait.split(",")[1], "base64"), contactPortrait);
+  assert.equal(portrait.slice("PHOTO;ENCODING=b;TYPE=JPEG:".length), contactPortrait.toString("base64"), name + " exact embedded portrait");
+  assert.ok(!lines.some(line => /;LANGUAGE=|;VALUE=uri|MEDIATYPE=|:tel:|^KIND:/.test(line)), name + " no incompatible vCard 4.0 properties");
   const uid = lines.find(line => line.startsWith("UID:"));
   assert.match(uid ?? "", /^UID:urn:uuid:[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/);
   contactIdentities.add(uid);

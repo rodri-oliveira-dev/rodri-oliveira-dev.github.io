@@ -79,6 +79,7 @@ public static class ServiceCollectionExtensions
         });
         services.AddSingleton<ISecretValueReader, KeyVaultSecretValueReader>();
         services.AddSingleton<IVapidKeyProvider, KeyVaultVapidKeyProvider>();
+        services.AddSingleton<IPublicWebPushConfigurationProvider, PublicWebPushConfigurationProvider>();
         services.AddSingleton(static serviceProvider =>
         {
             var options = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<WebPushOptions>>().Value;

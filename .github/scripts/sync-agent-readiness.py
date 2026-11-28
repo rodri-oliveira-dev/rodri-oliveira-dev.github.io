@@ -17,6 +17,7 @@ GENERATED_PATHS = (
     SKILLS_ROOT / "index.json",
     WELL_KNOWN / "ard.json",
     WELL_KNOWN / "poppy.json",
+    WELL_KNOWN / "ai-catalog.json",
 )
 NAME_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
@@ -122,6 +123,21 @@ def build_outputs() -> dict[Path, bytes]:
             }
         ),
     }
+    # AI Catalog 1.0 is a compatibility projection, not another source of truth.
+    # Its predecessor envelope has no ARD-specific JSON-LD context member.
+    outputs[GENERATED_PATHS[3]] = json_bytes(
+        {
+            "specVersion": "1.0",
+            "host": {
+                "displayName": identity["name"],
+                "logoUrl": f"{origin}{identity['logo_path']}",
+            },
+            "entries": [
+                {key: value for key, value in entry.items() if key != "@context"}
+                for entry in ard_entries
+            ],
+        }
+    )
     return outputs
 
 

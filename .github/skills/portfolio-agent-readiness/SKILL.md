@@ -12,14 +12,14 @@ description: >-
 
 - `.github/agent-readiness.json` concentra origem canônica, domínio futuro, identidade pública e metadados compartilhados das cinco skills.
 - `.well-known/agent-skills/*/SKILL.md` contém somente instruções públicas de descoberta; nunca publique `.agents/skills/` ou `.github/skills/`.
-- `.github/scripts/sync-agent-readiness.py` gera o índice Agent Skills v0.2.0, o manifesto ARD e o documento Poppy.
+- `.github/scripts/sync-agent-readiness.py` gera o índice Agent Skills v0.2.0, o manifesto ARD, a projeção AI Catalog 1.0 e o documento Poppy.
 - `docs/adr/0021-publicar-contratos-estaticos-agent-readiness.md` registra as versões, limites e decisões arquiteturais.
 
 ## Manutenção
 
-Preserve o modelo static-first e anuncie apenas páginas e capacidades públicas existentes. Edite a configuração ou as skills públicas, execute o sincronizador e revise os três JSONs gerados. Os digests devem corresponder aos bytes versionados de cada `SKILL.md`.
+Preserve o modelo static-first e anuncie apenas páginas e capacidades públicas existentes. Edite a configuração ou as skills públicas, execute o sincronizador e revise os quatro JSONs gerados. Os digests devem corresponder aos bytes versionados de cada `SKILL.md`.
 
-Mantenha todas as URLs publicadas na origem canônica configurada. O domínio planejado existe apenas para preparar uma migração futura; não o emita enquanto ela não for aprovada e executada em mudança própria. Poppy permanece no perfil website-only, sem OAuth, sessões, APIs ou agentes de conversa. ARD não anuncia MCP, Azure, notificações ou `ai-catalog.json`.
+Mantenha todas as URLs publicadas na origem canônica configurada. O domínio planejado existe apenas para preparar uma migração futura; não o emita enquanto ela não for aprovada e executada em mudança própria. Poppy permanece no perfil website-only, sem OAuth, sessões, APIs ou agentes de conversa. ARD mantém `ard.json` como manifesto canônico e publica `ai-catalog.json` como projeção compatível, com os mesmos identificadores, URLs e capacidades. Não editar os JSONs gerados manualmente nem anunciar MCP, Azure ou notificações.
 
 Enquanto o Lighthouse não reconhecer `Content-Signal`, preserve a exclusão restrita do audit `robots-txt` e a validação bloqueante equivalente em `test_agent_readiness.py`. Não reduza o threshold SEO nem exclua outros audits para acomodar essa divergência.
 

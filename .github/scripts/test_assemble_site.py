@@ -33,6 +33,8 @@ class AssembleSiteTests(unittest.TestCase):
                 path.mkdir(parents=True, exist_ok=True)
                 public_file = "ard.json" if relative == ".well-known" else "index.html"
                 (path / public_file).write_text("public", encoding="utf-8")
+                if relative == ".well-known":
+                    (path / "ai-catalog.json").write_text("catalog", encoding="utf-8")
         for relative in module.PUBLIC_DOCS:
             path = source / "docs" / relative
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -49,6 +51,7 @@ class AssembleSiteTests(unittest.TestCase):
             module.assemble(source, destination)
             self.assertTrue((destination / "index.html").is_file())
             self.assertTrue((destination / ".well-known/ard.json").is_file())
+            self.assertEqual((destination / ".well-known/ai-catalog.json").read_text(encoding="utf-8"), "catalog")
             self.assertTrue((destination / "docs/contracts/webmcp-services.v1.json").is_file())
             self.assertFalse((destination / "backend").exists())
 

@@ -66,3 +66,4 @@ Consulta realizada em 26/11/2026. A legislação e os termos dos fornecedores de
 - [Direitos dos titulares, ANPD](https://www.gov.br/anpd/pt-br/assuntos/titular-de-dados/direito-dos-titulares)
 
 Estes documentos são artefatos de arquitetura e governança, não parecer jurídico nem declaração de conformidade.
+> **Direção vigente em 28/11/2026:** o responsável autorizou preparar a abertura pública e retirou o piloto individual como etapa obrigatória. #155, #156 e #167 continuam bloqueantes; a autorização não comprova conformidade nem autoriza Apply, deploy ou envio. A atualização da ADR 0022 prevalece sobre referências históricas ao piloto neste diretório.

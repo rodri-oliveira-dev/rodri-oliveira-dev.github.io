@@ -152,3 +152,4 @@ Nenhuma expressão neste repositório deve ser apresentada como conformidade jur
 ## Decisão humana requerida
 
 O responsável deve decidir, após as evidências operacionais e jurídicas, se autoriza avançar à #166 com um único dispositivo controlado. A decisão deve registrar os riscos residuais aceitos, manter o piloto separado da produção e preservar a #167 como gate final. Fechar #155/#156 ou alterar ADRs continua sendo ação humana; este parecer não a executa.
+> **Registro histórico:** em 28/11/2026 o responsável retirou o piloto individual como etapa obrigatória. Este parecer preserva evidências e lacunas; seus controles aplicáveis foram transferidos para #156 e #167 e não foram considerados automaticamente validados.

@@ -4,6 +4,12 @@
 
 Accepted
 
+### Primeira ativação pública do Web Push (refinamento aprovado em 28/11/2026)
+
+Preservar os dois workflows. A primeira publicação que altera Terraform, backend e frontend deve usar `Release and Deploy` e manter a ordem efetiva Terraform → Diagnostic Settings → Backend → Frontend → Tag → Release → Pós-release. `Release and Deploy (Site Only)` continua permitido apenas para publicações posteriores comprovadamente restritas ao site; seus classificadores devem bloquear IaC, backend e contratos protegidos de Web Push.
+
+A ativação pública exige, no preflight do fluxo completo, `enable_public_web_push=true`, confirmação exata `ENABLE-PUBLIC-WEB-PUSH`, pós-release em `enqueue`, confirmação `ENQUEUE` e fechamento de #155, #156 e #167. O Environment do pós-release preserva seus switches independentes e aprovação. Essa combinação liga configuração pública, inscrição, cancelamento e processamento no mesmo plano; qualquer ausência falha antes do Apply. A autorização registrada não executa release, Apply, deploy ou envio por si só.
+
 ## Context
 
 O portfólio era publicado a cada push na main, em paralelo com as validações, enquanto a tag era criada após os gates de um único PR. O deploy nativo por branch também pode competir com o artefato que inclui os currículos em PDF. A frequência de integração não representa necessariamente a frequência de entrega desejada.
@@ -12,7 +18,7 @@ Com o backend Web Push em Azure Functions e a infraestrutura Terraform (ADR 0009
 
 ## Decision
 
-Adotar Continuous Delivery. PRs e pushes na main mantêm CI e quality gates automáticos, sem efeitos de implantação. Um único workflow orquestrador, Release and Deploy, iniciado por workflow_dispatch na main, define o incremento SemVer e fixa o SHA da revisão. O acionamento manual não substitui aprovação de Environments nem autorização de custos. Excepcionalmente, no primeiro provisionamento, o mesmo workflow oferece um modo de fundação sem criação da Function, publicação ou tag, para permitir a atribuição separada de IAM e configuração de VAPID antes da release completa. O modo normal preserva a ordem de jobs; a segunda execução usa a revisão então aprovada e revalida o plano.
+Adotar Continuous Delivery. PRs e pushes na main mantêm CI e quality gates automáticos, sem efeitos de implantação. O workflow orquestrador completo, Release and Deploy, iniciado por workflow_dispatch na main, define o incremento SemVer e fixa o SHA da revisão. O acionamento manual não substitui aprovação de Environments nem autorização de custos. Excepcionalmente, no primeiro provisionamento, o mesmo workflow oferece um modo de fundação sem criação da Function, publicação ou tag, para permitir a atribuição separada de IAM e configuração de VAPID antes da release completa. O modo normal preserva a ordem de jobs; a segunda execução usa a revisão então aprovada e revalida o plano.
 
 A ordem de dependência dos jobs será:
 
@@ -40,6 +46,14 @@ Alternativas consideradas:
 A [ADR 0018](0018-segregar-diagnostic-settings.md) complementa o fluxo: os Diagnostic Settings são operados em root separado, com verificação da fundação antes do plano/apply completo e verificação dos quatro settings antes do deploy do backend. A fundação não implica observabilidade pronta. A release completa chama o workflow reutilizável de diagnostics após aplicar o workload, com confirmação adicional `APPLY-DIAGNOSTICS` e um único job protegido de plan/apply na identidade dedicada. O acionamento manual de diagnóstico e as operações Terraform autenticadas compartilham a fila de release, sem adquirir a mesma fila dentro do workflow reutilizável.
 
 Refinamento operacional aprovado em 27/11/2026: workload e diagnostics deixaram de usar dois deployments protegidos sequenciais para plan e apply. Cada identidade continua segregada em seu próprio Environment, mas recebe uma única aprovação por execução. O plano é gerado depois dessa aprovação, validado por manifesto sem valores e aplicado pelo mesmo job. Essa escolha reduz intervenções humanas repetitivas, mas transfere a revisão do plano de uma pausa manual entre jobs para controles automáticos fail-closed; por isso SHA imutável, allowlists, bloqueio destrutivo, locking e aplicação do arquivo exato permanecem obrigatórios.
+
+### Publicação independente do site (refinamento aprovado em 28/11/2026)
+
+Manter integralmente o workflow `Release and Deploy` e adicionar `Release and Deploy (Site Only)`, manual e restrito à main. O segundo reutiliza a semântica de versão/tag/release e os quality gates existentes, mas inicia na etapa de geração de PDFs e build público após preflight próprio. Preserva o Environment github-pages, a fila exclusiva de produção e a conferência do SHA. Não possui etapas Terraform, Azure Functions ou credenciais Azure. IndexNow é executado após a release; Web Push limita-se à evidência dry-run sem autenticação Azure. Processamento real continua sujeito ao workflow de reconciliação existente e suas autorizações.
+
+A última execução manual do workflow completo deve estar concluída com sucesso, incluindo workload, diagnostics, pacote, deploy e smoke do backend. A revisão de referência deve ser ancestral da main selecionada. Uma allowlist conservadora de diferenças de árvore permite somente mudanças de site e automação/documentação correspondente; backend, IaC, contratos de integração Web Push protegidos e caminhos desconhecidos bloqueiam o fluxo e exigem Release and Deploy. O baseline e os gates são revalidados imediatamente antes do deploy, inclusive em reexecuções. Tag e release só são criadas após confirmação do deployment Pages bem-sucedido para o SHA, sem aceitar publicação superada. A análise por caminhos não substitui revisão de compatibilidade semântica; não constitui verificação independente de drift na Azure.
+
+A duplicação do trecho de orquestração do site é aceita para preservar o workflow completo sem alterações; revisar ambos quando o processo de publicação mudar. A nova opção não autoriza nenhuma implantação por si só.
 
 ## Consequences
 

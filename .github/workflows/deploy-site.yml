@@ -1,0 +1,201 @@
+name: Release and Deploy (Site Only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Semantic version increment
+        required: true
+        type: choice
+        default: patch
+        options: [patch, minor, major]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ format('production-release-{0}', github.repository) }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: Validate site-only release candidate
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+      pages: read
+    outputs:
+      sha: ${{ steps.plan.outputs.sha }}
+      tag: ${{ steps.plan.outputs.tag }}
+      baseline_run_id: ${{ steps.plan.outputs.baseline_run_id }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - name: Check current main, gates, full release evidence and version
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUMP: ${{ inputs.bump }}
+        run: python3 .github/scripts/site-only-release.py plan
+
+  build:
+    name: Generate PDF and build static site
+    needs: preflight
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          ref: ${{ needs.preflight.outputs.sha }}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Generate and validate localized resume PDFs
+        run: |
+          npm install --no-save --no-package-lock --ignore-scripts playwright@1.65.0
+          npx --no-install playwright install --with-deps chromium
+          node .github/scripts/generate-resume-pdf.mjs
+          if ! command -v pdftotext >/dev/null 2>&1; then sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends poppler-utils; fi
+          python3 .github/scripts/test_resume_pdf_order.py
+      - name: Assemble allowlisted Pages artifact
+        run: |
+          python3 .github/scripts/assemble-site.py . "$RUNNER_TEMP/pages-site"
+          test -s "$RUNNER_TEMP/pages-site/curriculo/rodrigo-de-oliveira.pdf"
+          test -s "$RUNNER_TEMP/pages-site/en/resume/rodrigo-de-oliveira.pdf"
+          test -s "$RUNNER_TEMP/pages-site/es/curriculo/rodrigo-de-oliveira.pdf"
+          test -s "$RUNNER_TEMP/pages-site/.well-known/agent-skills/index.json"
+          test -s "$RUNNER_TEMP/pages-site/.well-known/ard.json"
+          test -s "$RUNNER_TEMP/pages-site/.well-known/ai-catalog.json"
+          test -s "$RUNNER_TEMP/pages-site/.well-known/poppy.json"
+          test ! -e "$RUNNER_TEMP/pages-site/backend"
+          test ! -e "$RUNNER_TEMP/pages-site/infra"
+          test ! -e "$RUNNER_TEMP/pages-site/sonar-project.properties"
+          test ! -e "$RUNNER_TEMP/pages-site/.scannerwork"
+          test ! -e "$RUNNER_TEMP/pages-site/coverage"
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: ${{ runner.temp }}/pages-site
+          include-hidden-files: true
+
+  pages_deploy:
+    name: Deploy GitHub Pages
+    needs: [preflight, build]
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+      actions: read
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ needs.preflight.outputs.sha }}
+      - name: Revalidate full release baseline and main gates before Pages deploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASELINE_RUN_ID: ${{ needs.preflight.outputs.baseline_run_id }}
+        run: python3 .github/scripts/site-only-release.py recheck
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+
+  pages_smoke:
+    name: Verify published Pages site
+    needs: pages_deploy
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 10
+    steps:
+      - name: Check public pages and generated PDFs
+        env:
+          PAGE_URL: ${{ needs.pages_deploy.outputs.page_url }}
+        run: |
+          set -euo pipefail
+          base="${PAGE_URL%/}"
+          for path in / /curriculo/ /en/resume/ /es/curriculo/ /curriculo/rodrigo-de-oliveira.pdf /en/resume/rodrigo-de-oliveira.pdf /es/curriculo/rodrigo-de-oliveira.pdf /.well-known/ard.json /.well-known/ai-catalog.json; do
+            curl --fail --silent --show-error --retry 8 --retry-delay 5 --retry-all-errors --max-time 20 --output /dev/null "$base$path"
+          done
+
+  tag:
+    name: Create immutable release tag
+    needs: [preflight, pages_smoke]
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      deployments: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ needs.preflight.outputs.sha }}
+      - name: Create tag for deployed revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
+        run: python3 .github/scripts/site-only-release.py tag
+
+  release:
+    name: Create GitHub Release
+    needs: [preflight, tag]
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      deployments: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ needs.preflight.outputs.sha }}
+      - name: Publish release for deployed revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
+        run: python3 .github/scripts/site-only-release.py release
+
+  indexnow:
+    name: Notify search engines
+    needs: release
+    permissions:
+      contents: read
+    uses: ./.github/workflows/indexnow.yml
+
+  web_push_dry_run:
+    name: Verify publication evidence (Web Push dry-run only)
+    needs: [preflight, release]
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      deployments: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          ref: ${{ needs.preflight.outputs.sha }}
+      - name: Validate published SHA without Azure access
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REVISION: ${{ needs.preflight.outputs.sha }}
+        run: |
+          python3 .github/scripts/web-push-release.py evidence --repo "$GITHUB_REPOSITORY" --expected-sha "$REVISION" --mode dry-run --output "$RUNNER_TEMP/publication-evidence.json" --summary "$RUNNER_TEMP/web-push-summary.md"
+          cat "$RUNNER_TEMP/web-push-summary.md" >> "$GITHUB_STEP_SUMMARY"

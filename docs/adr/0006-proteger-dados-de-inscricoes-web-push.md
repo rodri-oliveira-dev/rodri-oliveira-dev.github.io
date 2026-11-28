@@ -4,6 +4,10 @@
 
 Proposed
 
+### Atualização de 28/11/2026 — autorização de produto para o fluxo público
+
+O responsável autorizou preparar a abertura pública sem piloto individual obrigatório. Isso substitui apenas a ordem de lançamento: consentimento explícito e versionado, aviso definitivo, validade absoluta de 365 dias, revogação, recuperação, minimização, antiabuso, retenção, direitos, resposta a incidentes e avaliação de fornecedores e transferências permanecem requisitos do gate público. As issues #155, #156 e #167 devem estar efetivamente concluídas antes da ativação. Esta autorização não é parecer jurídico, não declara conformidade e não altera o status `Proposed`.
+
 ## Context
 
 Uma inscrição Web Push contém um endpoint de entrega e material criptográfico associado ao navegador. Esses valores não identificam necessariamente o visitante pelo nome, mas podem funcionar como identificadores de um dispositivo ou instalação e, portanto, serão tratados como dados pessoais para fins de projeto.
