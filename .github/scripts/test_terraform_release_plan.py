@@ -40,6 +40,14 @@ class TerraformReleasePlanTests(unittest.TestCase):
         self.assertEqual(result["changes"], [])
         self.assertFalse(result["destructive"])
 
+    def test_output_only_change_is_not_a_noop(self):
+        result = module.analyze({"output_changes": {
+            "function_app_health_url": {"actions": ["update"], "before": "old", "after": "new"}
+        }})
+        self.assertEqual(result["changes"], [])
+        self.assertTrue(result["has_changes"])
+        self.assertTrue(result["has_output_changes"])
+
     def test_top_level_timestamp_does_not_change_fingerprint(self):
         plan = {
             "timestamp": "2026-11-24T12:00:00Z",
@@ -136,7 +144,8 @@ class TerraformReleasePlanTests(unittest.TestCase):
             plan_file.write_text(json.dumps({"relevant_attributes": "SECRET_VALUE"}), encoding="utf-8")
             env = {**os.environ, "GITHUB_OUTPUT": str(output), "GITHUB_STEP_SUMMARY": str(summary)}
             result = subprocess.run(
-                [sys.executable, str(Path(__file__).with_name("terraform-release-plan.py")), str(plan_file)],
+                [sys.executable, str(Path(__file__).with_name("terraform-release-plan.py")), str(plan_file),
+                 "--workload-mode", "full"],
                 env=env, capture_output=True, text=True,
             )
             self.assertNotEqual(result.returncode, 0)
@@ -151,6 +160,103 @@ class TerraformReleasePlanTests(unittest.TestCase):
                     "address": "x.y", "type": "x", "change": {"actions": actions}
                 }]})
                 self.assertTrue(result["destructive"])
+
+    @staticmethod
+    def workload_plan(address="azurerm_storage_account.functions", resource_type="azurerm_storage_account",
+                      action="create", mode="managed"):
+        return {
+            "complete": True,
+            "errored": False,
+            "applyable": action not in ("no-op", "read"),
+            "resource_changes": [{
+                "address": address,
+                "mode": mode,
+                "type": resource_type,
+                "change": {"actions": [action]},
+            }],
+        }
+
+    def test_workload_scope_accepts_reviewed_modes_and_actions(self):
+        for action in ("create", "update", "no-op"):
+            with self.subTest(action=action):
+                module.validate_workload_plan(self.workload_plan(action=action), False, False)
+        module.validate_workload_plan(
+            self.workload_plan("data.azurerm_resource_group.web_push", "azurerm_resource_group", "read", "data"),
+            False,
+            False,
+        )
+        function = self.workload_plan("azapi_resource.function_app[0]", "azapi_resource")
+        module.validate_workload_plan(function, True, False)
+        with self.assertRaises(ValueError):
+            module.validate_workload_plan(function, False, False)
+
+    def test_workload_scope_rejects_unexpected_resources_and_actions(self):
+        mutations = (
+            lambda p: p.update(complete=False),
+            lambda p: p.update(errored=True),
+            lambda p: p.update(applyable=False),
+            lambda p: p.update(deferred_changes=[{}]),
+            lambda p: p.update(action_invocations=[{}]),
+            lambda p: p["resource_changes"].append(copy.deepcopy(p["resource_changes"][0])),
+            lambda p: p["resource_changes"][0].update(address="azurerm_storage_account.extra"),
+            lambda p: p["resource_changes"][0].update(type="azurerm_key_vault"),
+            lambda p: p["resource_changes"][0].update(mode="data"),
+            lambda p: p["resource_changes"][0].update(previous_address="old"),
+            lambda p: p["resource_changes"][0]["change"].update(importing={"id": "secret"}),
+            lambda p: p["resource_changes"][0]["change"].update(actions=["read"]),
+            lambda p: p["resource_changes"][0]["change"].update(actions=["forget"]),
+        )
+        for index, mutation in enumerate(mutations):
+            with self.subTest(index=index):
+                plan = self.workload_plan()
+                mutation(plan)
+                with self.assertRaises(ValueError):
+                    module.validate_workload_plan(plan, False, False)
+
+    def test_workload_scope_gates_destructive_actions(self):
+        for actions in (["delete"], ["delete", "create"], ["create", "delete"]):
+            with self.subTest(actions=actions):
+                plan = self.workload_plan()
+                plan["resource_changes"][0]["change"]["actions"] = actions
+                with self.assertRaises(ValueError):
+                    module.validate_workload_plan(plan, False, False)
+                module.validate_workload_plan(plan, False, True)
+
+    def test_workload_scope_validates_output_only_plan(self):
+        plan = {
+            "complete": True,
+            "errored": False,
+            "applyable": True,
+            "resource_changes": [],
+            "output_changes": {"function_app_health_url": {"actions": ["update"]}},
+        }
+        module.validate_workload_plan(plan, True, False)
+        for name, actions in (("private_output", ["update"]), ("function_app_health_url", ["delete"])):
+            with self.subTest(name=name, actions=actions), self.assertRaises(ValueError):
+                invalid = copy.deepcopy(plan)
+                invalid["output_changes"] = {name: {"actions": actions}}
+                module.validate_workload_plan(invalid, True, False)
+
+    def test_workload_cli_marks_output_only_plan_as_changed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            plan_file = Path(directory) / "plan.json"
+            output = Path(directory) / "output"
+            summary = Path(directory) / "summary"
+            plan = {"complete": True, "errored": False, "applyable": True,
+                    "resource_changes": [], "output_changes": {
+                        "function_app_health_url": {"actions": ["update"]}
+                    }}
+            plan_file.write_text(json.dumps(plan), encoding="utf-8")
+            env = {**os.environ, "GITHUB_OUTPUT": str(output), "GITHUB_STEP_SUMMARY": str(summary)}
+            result = subprocess.run([
+                sys.executable, str(Path(__file__).with_name("terraform-release-plan.py")),
+                str(plan_file), "--workload-mode", "full",
+            ], env=env, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("has_changes=true", output.read_text(encoding="utf-8"))
+            rendered = summary.read_text(encoding="utf-8")
+            self.assertIn("output changes are present", rendered)
+            self.assertNotIn("No workload changes", rendered)
 
 
     def diagnostic_plan(self, include_function=False, action="create"):

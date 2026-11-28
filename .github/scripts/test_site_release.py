@@ -11,6 +11,7 @@ spec.loader.exec_module(release)
 runtime_spec = importlib.util.spec_from_file_location("runtime_iam", Path(__file__).with_name("verify-runtime-iam.py"))
 runtime_iam = importlib.util.module_from_spec(runtime_spec)
 runtime_spec.loader.exec_module(runtime_iam)
+WORKFLOWS = Path(__file__).parents[1] / "workflows"
 
 
 class RuntimeIamTests(unittest.TestCase):
@@ -27,6 +28,33 @@ class RuntimeIamTests(unittest.TestCase):
         ):
             with self.assertRaisesRegex(SystemExit, "Runtime IAM incomplete: blob, queue, vault, cosmos"):
                 runtime_iam.main()
+
+
+class ReleaseWorkflowTests(unittest.TestCase):
+    def test_release_uses_one_protected_workload_job(self):
+        workflow = (WORKFLOWS / "deploy-pages.yml").read_text(encoding="utf-8")
+        self.assertEqual(workflow.count("environment: terraform-dev"), 1)
+        self.assertNotIn("\n  terraform_plan:", workflow)
+        self.assertNotIn("\n  diagnostics_gate:", workflow)
+        self.assertIn("name: Plan and apply workload infrastructure", workflow)
+        self.assertIn("needs: [preflight, terraform_apply, backend_package, diagnostics_apply]", workflow)
+        self.assertEqual(workflow.count("terraform plan -input=false"), 1)
+        self.assertEqual(workflow.count('terraform apply -json'), 1)
+        self.assertIn('terraform apply -json -auto-approve -input=false -lock-timeout=5m -no-color "$plan_file"', workflow)
+        self.assertIn("WORKLOAD_MODE: ${{ inputs.bootstrap_foundation_only && 'foundation' || 'full' }}", workflow)
+        self.assertIn('args=(--workload-mode "$WORKLOAD_MODE")', workflow)
+
+    def test_diagnostics_plan_and_apply_are_mutually_exclusive(self):
+        workflow = (WORKFLOWS / "terraform-diagnostics-reusable.yml").read_text(encoding="utf-8")
+        script = Path(__file__).with_name("run-diagnostics-terraform.sh").read_text(encoding="utf-8")
+        self.assertIn("if: inputs.operation == 'plan'", workflow)
+        self.assertIn("if: inputs.operation == 'apply'", workflow)
+        self.assertIn("run-diagnostics-terraform.sh plan-apply", workflow)
+        self.assertNotIn("APPROVED_FINGERPRINT", workflow + script)
+        self.assertIn('case "$mode" in plan|plan-apply)', script)
+        self.assertEqual(script.count("terraform plan -json -detailed-exitcode"), 1)
+        self.assertEqual(script.count('terraform apply -json'), 1)
+        self.assertIn('terraform apply -json -auto-approve -input=false -lock-timeout=5m -no-color "$scratch/plan.tfplan"', script)
 
 
 class ReleaseTests(unittest.TestCase):
