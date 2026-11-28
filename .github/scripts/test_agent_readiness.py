@@ -21,6 +21,7 @@ class AgentReadinessTests(unittest.TestCase):
         cls.index = json.loads((ROOT / ".well-known/agent-skills/index.json").read_text(encoding="utf-8"))
         cls.ard = json.loads((ROOT / ".well-known/ard.json").read_text(encoding="utf-8"))
         cls.poppy = json.loads((ROOT / ".well-known/poppy.json").read_text(encoding="utf-8"))
+        cls.catalog = json.loads((ROOT / ".well-known/ai-catalog.json").read_text(encoding="utf-8"))
 
     def test_generated_artifacts_are_deterministic(self):
         for path, expected in sync.build_outputs().items():
@@ -84,6 +85,38 @@ class AgentReadinessTests(unittest.TestCase):
             self.assertEqual(entry["url"], self.config["canonical_origin"] + by_name[name]["url"])
             self.assertEqual(entry["description"], by_name[name]["description"])
 
+    def test_ai_catalog_v1_is_compatible_projection_of_ard(self):
+        self.assertEqual(set(self.catalog), {"specVersion", "host", "entries"})
+        self.assertEqual(self.catalog["specVersion"], "1.0")
+        identity = self.config["identity"]
+        origin = self.config["canonical_origin"]
+        self.assertEqual(
+            self.catalog["host"],
+            {"displayName": identity["name"], "logoUrl": origin + identity["logo_path"]},
+        )
+        expected = [
+            {key: value for key, value in entry.items() if key != "@context"}
+            for entry in self.ard["entries"]
+        ]
+        self.assertEqual(self.catalog["entries"], expected)
+        self.assertEqual(len(self.catalog["entries"]), 5)
+        self.assertEqual(len({entry["identifier"] for entry in expected}), 5)
+        for entry in self.catalog["entries"]:
+            self.assertEqual(
+                set(entry),
+                {"identifier", "displayName", "type", "url", "description",
+                 "representativeQueries", "capabilities"},
+            )
+            self.assertNotIn("data", entry)
+            self.assertEqual(entry["type"], "application/agent-skills+md")
+            parsed = urlparse(entry["url"])
+            self.assertEqual(f"{parsed.scheme}://{parsed.netloc}", origin)
+            self.assertTrue(parsed.path.startswith("/.well-known/agent-skills/"))
+            self.assertTrue((ROOT / parsed.path.lstrip("/")).is_file())
+            self.assertGreaterEqual(len(entry["representativeQueries"]), 2)
+            self.assertLessEqual(len(entry["representativeQueries"]), 5)
+        self.assertNotIn(self.config["planned_origin"], json.dumps(self.catalog))
+
     def test_poppy_v1_is_website_only(self):
         self.assertEqual(self.poppy["protocol_version"], "1.0")
         self.assertEqual(self.poppy["organization"]["domain"], self.config["identity"]["domain"])
@@ -132,7 +165,7 @@ class AgentReadinessTests(unittest.TestCase):
         self.assertIn("test_agent_readiness.py", workflow)
 
     def test_operational_skills_are_not_published(self):
-        serialized = json.dumps(self.index) + json.dumps(self.ard)
+        serialized = json.dumps(self.index) + json.dumps(self.ard) + json.dumps(self.catalog)
         self.assertNotIn(".agents/skills", serialized)
         self.assertNotIn(".github/skills", serialized)
 
