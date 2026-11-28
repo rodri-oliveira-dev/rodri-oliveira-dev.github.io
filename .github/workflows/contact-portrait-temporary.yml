@@ -1,0 +1,26 @@
+name: Convert public contact portrait (temporary)
+on:
+  push:
+    branches: [fix/vcard-ios-compatibility]
+    paths: ['.github/workflows/contact-portrait-temporary.yml']
+permissions:
+  contents: read
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - name: Convert existing public portrait to JPEG
+        shell: bash
+        run: |
+          set -euo pipefail
+          if command -v magick >/dev/null; then
+            cmd=magick
+          else
+            cmd=convert
+          fi
+          "$cmd" assets/profile/rodrigo-about.webp -auto-orient -resize '400x400^' -gravity center -extent 400x400 -strip -sampling-factor 4:2:0 -quality 85 "$RUNNER_TEMP/contact.jpg"
+          base64 -w 512 "$RUNNER_TEMP/contact.jpg" | sed 's/^/CONTACT_JPEG:/'
